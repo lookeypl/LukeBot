@@ -1,0 +1,7 @@
+# Build binary and intermediate files
+/Bin
+/Obj
+obj
+
+# Visual Studio details
+/.vs

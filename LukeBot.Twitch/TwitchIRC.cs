@@ -1,11 +1,10 @@
 ﻿using LukeBot.Common;
-using System;
 using System.IO;
 
 namespace LukeBot.Twitch
 {
 
-public class TwitchIRC
+public class TwitchIRC: IModule
 {
     private string mName;
     private string mChannel;
@@ -20,6 +19,7 @@ public class TwitchIRC
         // TODO get an OAuth token the proper way
         StreamReader oauthStream = File.OpenText(oauthPath);
         mOAuth = oauthStream.ReadLine();
+        Logger.Info("Read OAuth password from file " + oauthPath);
     }
 
     ~TwitchIRC()
@@ -27,7 +27,7 @@ public class TwitchIRC
         mConnection.Send("QUIT");
     }
 
-    public void Connect()
+    public void Init()
     {
         mConnection = new Connection("irc.chat.twitch.tv", 6697, true);
 
@@ -37,11 +37,14 @@ public class TwitchIRC
         mConnection.Send("PASS " + mOAuth);
         mConnection.Send("NICK " + mName);
         mConnection.Send("JOIN #" + mChannel);
+
+        Logger.Info("Twitch IRC module initialized");
     }
 
     public void Run()
     {
         Logger.Info("Awaiting response...");
+
         while (true)
         {
             string msg = mConnection.Read();

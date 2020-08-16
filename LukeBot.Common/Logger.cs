@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 
 namespace LukeBot.Common {
 
@@ -15,6 +16,8 @@ public class Logger
 
     private static Logger mInstance = null;
     private static readonly object mLock = new object();
+    private CultureInfo mCultureInfo = null;
+    private Timer mTimer = null;
 
     private static Logger Instance
     {
@@ -32,6 +35,9 @@ public class Logger
 
     private Logger()
     {
+        mCultureInfo = new CultureInfo("en-US");
+        mTimer = new Timer();
+        mTimer.Start();
     }
 
     private void Log(LogLevel level, string msg, params object[] args)
@@ -41,27 +47,29 @@ public class Logger
         switch (level)
         {
         case LogLevel.Error:
-            tag = "[ ERROR ] ";
+            tag = "[ ERROR ]";
             break;
         case LogLevel.Warning:
-            tag = "[WARNING] ";
+            tag = "[WARNING]";
             break;
         case LogLevel.Info:
-            tag = "[ INFO  ] ";
+            tag = "[ INFO  ]";
             break;
         case LogLevel.Debug:
-            tag = "[ DEBUG ] ";
+            tag = "[ DEBUG ]";
             break;
         case LogLevel.Trace:
-            tag = "[ TRACE ] ";
+            tag = "[ TRACE ]";
             break;
         default:
-            tag = "[ UNKNOWN ] ";
+            tag = "[ UNKNOWN ]";
             break;
         }
 
-        string formatted = string.Format(msg, args);
-        Console.WriteLine(tag + formatted);
+        double timestamp = mTimer.Stop();
+        string intro = string.Format(mCultureInfo, "{0:f4} {1} ", timestamp, tag);
+        string formatted = string.Format(mCultureInfo, msg, args);
+        Console.WriteLine(intro + formatted);
     }
 
     public static void LogE(string msg, params object[] args)

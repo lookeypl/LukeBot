@@ -6,6 +6,7 @@
     <PackageId>LukeBot.Common</PackageId>
     <AssemblyName>LukeBot.Common</AssemblyName>
     <Version>0.0.1</Version>
+    <NeutralLanguage>en-US</NeutralLanguage>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

@@ -72,29 +72,29 @@ public class Logger
         Console.WriteLine(intro + formatted);
     }
 
-    public static void LogE(string msg, params object[] args)
+    public static void Error(string msg, params object[] args)
     {
         Instance.Log(LogLevel.Error, msg, args);
     }
 
-    public static void LogW(string msg, params object[] args)
+    public static void Warning(string msg, params object[] args)
     {
         Instance.Log(LogLevel.Warning, msg, args);
     }
 
-    public static void LogI(string msg, params object[] args)
+    public static void Info(string msg, params object[] args)
     {
         Instance.Log(LogLevel.Info, msg, args);
     }
 
-    public static void LogD(string msg, params object[] args)
+    public static void Debug(string msg, params object[] args)
     {
     #if (DEBUG)
         Instance.Log(LogLevel.Debug, msg, args);
     #endif
     }
 
-    public static void LogT(string msg, params object[] args)
+    public static void Trace(string msg, params object[] args)
     {
     #if (TRACE)
         Instance.Log(LogLevel.Trace, msg, args);

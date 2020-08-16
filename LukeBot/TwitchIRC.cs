@@ -1,5 +1,6 @@
 ﻿using LukeBot.Common;
 using System;
+using System.IO;
 
 namespace LukeBot
 {
@@ -10,11 +11,12 @@ namespace LukeBot
         private string mOAuth;
         private Connection mConnection = null;
 
-        public TwitchIRC(string name, string channel, string oauth)
+        public TwitchIRC(string name, string channel, string oauthPath)
         {
             mName = name;
             mChannel = channel;
-            mOAuth = oauth;
+            StreamReader oauthStream = File.OpenText(oauthPath);
+            mOAuth = oauthStream.ReadLine();
         }
 
         ~TwitchIRC()

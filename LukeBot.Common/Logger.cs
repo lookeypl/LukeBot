@@ -1,105 +1,104 @@
 ﻿using System;
 using System.Globalization;
 
-namespace LukeBot.Common {
-
-public class Logger
+namespace LukeBot.Common
 {
-    enum LogLevel
+    public class Logger
     {
-        Error = 0,
-        Warning,
-        Info,
-        Debug,
-        Trace
-    }
-
-    private static Logger mInstance = null;
-    private static readonly object mLock = new object();
-    private CultureInfo mCultureInfo = null;
-    private Timer mTimer = null;
-
-    private static Logger Instance
-    {
-        get
+        enum LogLevel
         {
-            lock (mLock)
-            {
-                if (mInstance == null)
-                    mInstance = new Logger();
+            Error = 0,
+            Warning,
+            Info,
+            Debug,
+            Trace
+        }
 
-                return mInstance;
+        private static Logger mInstance = null;
+        private static readonly object mLock = new object();
+        private CultureInfo mCultureInfo = null;
+        private Timer mTimer = null;
+
+        private static Logger Instance
+        {
+            get
+            {
+                lock (mLock)
+                {
+                    if (mInstance == null)
+                        mInstance = new Logger();
+
+                    return mInstance;
+                }
             }
         }
-    }
 
-    private Logger()
-    {
-        mCultureInfo = new CultureInfo("en-US");
-        mTimer = new Timer();
-        mTimer.Start();
-    }
-
-    private void Log(LogLevel level, string msg, params object[] args)
-    {
-        string tag;
-
-        switch (level)
+        private Logger()
         {
-        case LogLevel.Error:
-            tag = "[ ERROR ]";
-            break;
-        case LogLevel.Warning:
-            tag = "[WARNING]";
-            break;
-        case LogLevel.Info:
-            tag = "[ INFO  ]";
-            break;
-        case LogLevel.Debug:
-            tag = "[ DEBUG ]";
-            break;
-        case LogLevel.Trace:
-            tag = "[ TRACE ]";
-            break;
-        default:
-            tag = "[ UNKNOWN ]";
-            break;
+            mCultureInfo = new CultureInfo("en-US");
+            mTimer = new Timer();
+            mTimer.Start();
         }
 
-        double timestamp = mTimer.Stop();
-        string intro = string.Format(mCultureInfo, "{0:f4} {1} ", timestamp, tag);
-        string formatted = string.Format(mCultureInfo, msg, args);
-        Console.WriteLine(intro + formatted);
-    }
+        private void Log(LogLevel level, string msg, params object[] args)
+        {
+            string tag;
 
-    public static void Error(string msg, params object[] args)
-    {
-        Instance.Log(LogLevel.Error, msg, args);
-    }
+            switch (level)
+            {
+            case LogLevel.Error:
+                tag = "[ ERROR ]";
+                break;
+            case LogLevel.Warning:
+                tag = "[WARNING]";
+                break;
+            case LogLevel.Info:
+                tag = "[ INFO  ]";
+                break;
+            case LogLevel.Debug:
+                tag = "[ DEBUG ]";
+                break;
+            case LogLevel.Trace:
+                tag = "[ TRACE ]";
+                break;
+            default:
+                tag = "[ UNKNOWN ]";
+                break;
+            }
 
-    public static void Warning(string msg, params object[] args)
-    {
-        Instance.Log(LogLevel.Warning, msg, args);
-    }
+            double timestamp = mTimer.Stop();
+            string intro = string.Format(mCultureInfo, "{0:f4} {1} ", timestamp, tag);
+            string formatted = string.Format(mCultureInfo, msg, args);
+            Console.WriteLine(intro + formatted);
+        }
 
-    public static void Info(string msg, params object[] args)
-    {
-        Instance.Log(LogLevel.Info, msg, args);
-    }
+        public static void Error(string msg, params object[] args)
+        {
+            Instance.Log(LogLevel.Error, msg, args);
+        }
 
-    public static void Debug(string msg, params object[] args)
-    {
-    #if (DEBUG)
-        Instance.Log(LogLevel.Debug, msg, args);
-    #endif
-    }
+        public static void Warning(string msg, params object[] args)
+        {
+            Instance.Log(LogLevel.Warning, msg, args);
+        }
 
-    public static void Trace(string msg, params object[] args)
-    {
-    #if (TRACE)
-        Instance.Log(LogLevel.Trace, msg, args);
-    #endif
-    }
-}
+        public static void Info(string msg, params object[] args)
+        {
+            Instance.Log(LogLevel.Info, msg, args);
+        }
 
+        public static void Debug(string msg, params object[] args)
+        {
+        #if (DEBUG)
+            Instance.Log(LogLevel.Debug, msg, args);
+        #endif
+        }
+
+        public static void Trace(string msg, params object[] args)
+        {
+        #if (TRACE)
+            Instance.Log(LogLevel.Trace, msg, args);
+        #endif
+        }
+    }
 }

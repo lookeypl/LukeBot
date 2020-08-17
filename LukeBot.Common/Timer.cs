@@ -3,27 +3,25 @@ using System.Diagnostics;
 
 namespace LukeBot.Common
 {
-
-public class Timer
-{
-    private double mFreq = 0;
-    private long mStart = 0;
-
-    public Timer()
+    public class Timer
     {
-        mFreq = Stopwatch.Frequency;
-    }
+        private double mFreq = 0;
+        private long mStart = 0;
 
-    public void Start()
-    {
-        mStart = Stopwatch.GetTimestamp();
-    }
+        public Timer()
+        {
+            mFreq = Stopwatch.Frequency;
+        }
 
-    public double Stop()
-    {
-        long stop = Stopwatch.GetTimestamp();
-        return (double)(stop - mStart) / mFreq;
-    }
-}
+        public void Start()
+        {
+            mStart = Stopwatch.GetTimestamp();
+        }
 
+        public double Stop()
+        {
+            long stop = Stopwatch.GetTimestamp();
+            return (double)(stop - mStart) / mFreq;
+        }
+    }
 }

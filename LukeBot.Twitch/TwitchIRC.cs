@@ -5,20 +5,34 @@ namespace LukeBot.Twitch
 {
     public class TwitchIRC: IModule
     {
-        private string mName;
-        private string mChannel;
+        private string mName = "lukeboto";
+        private string mChannel = "lookey";
+        private string mOAuthPath = "Data/oauth_secret.lukebot";
         private string mOAuth;
         private Connection mConnection = null;
 
-        public TwitchIRC(string name, string channel, string oauthPath)
+        void ParseMessage(string msg)
         {
-            mName = name;
-            mChannel = channel;
+            string[] tokens = msg.Split(' ');
 
-            // TODO get an OAuth token the proper way
-            StreamReader oauthStream = File.OpenText(oauthPath);
+            // TODO PING-PONG with Twitch IRC server should be handled as a message
+            if (tokens[0].Equals("PING"))
+            {
+                Logger.Debug("PING received - " + msg);
+                Logger.Debug("Responding with PONG " + tokens[1]);
+                mConnection.Send("PONG " + tokens[1]);
+                return;
+            }
+
+            Logger.Info(msg);
+        }
+
+        public TwitchIRC()
+        {
+            // TODO get an OAuth token the proper way, aka. authenticate via Twitch as an app
+            StreamReader oauthStream = File.OpenText(mOAuthPath);
             mOAuth = oauthStream.ReadLine();
-            Logger.Info("Read OAuth password from file " + oauthPath);
+            Logger.Info("Read OAuth password from file " + mOAuthPath);
         }
 
         ~TwitchIRC()
@@ -51,17 +65,7 @@ namespace LukeBot.Twitch
                 if (msg == null)
                     Logger.Error("Received empty message");
 
-                string[] tokens = msg.Split(' ');
-
-                if (tokens[0].Equals("PING"))
-                {
-                    Logger.Info("PING received - " + msg);
-                    Logger.Info("Responding with PONG " + tokens[1]);
-                    mConnection.Send("PONG " + tokens[1]);
-                    continue;
-                }
-
-                Logger.Info(msg);
+                ParseMessage(msg);
             }
         }
     }

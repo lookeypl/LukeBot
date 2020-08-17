@@ -18,6 +18,7 @@ namespace LukeBot.Common
         private static readonly object mLock = new object();
         private CultureInfo mCultureInfo = null;
         private Timer mTimer = null;
+        private ConsoleColor mDefaultColor;
 
         private static Logger Instance
         {
@@ -38,38 +39,49 @@ namespace LukeBot.Common
             mCultureInfo = new CultureInfo("en-US");
             mTimer = new Timer();
             mTimer.Start();
+
+            mDefaultColor = Console.ForegroundColor;
         }
 
         private void Log(LogLevel level, string msg, params object[] args)
         {
             string tag;
+            ConsoleColor color;
 
             switch (level)
             {
             case LogLevel.Error:
                 tag = "[ ERROR ]";
+                color = ConsoleColor.Red;
                 break;
             case LogLevel.Warning:
                 tag = "[WARNING]";
+                color = ConsoleColor.Yellow;
                 break;
             case LogLevel.Info:
                 tag = "[ INFO  ]";
+                color = mDefaultColor;
                 break;
             case LogLevel.Debug:
                 tag = "[ DEBUG ]";
+                color = ConsoleColor.DarkCyan;
                 break;
             case LogLevel.Trace:
                 tag = "[ TRACE ]";
+                color = ConsoleColor.DarkGray;
                 break;
             default:
                 tag = "[ UNKNOWN ]";
+                color = mDefaultColor;
                 break;
             }
 
             double timestamp = mTimer.Stop();
             string intro = string.Format(mCultureInfo, "{0:f4} {1} ", timestamp, tag);
             string formatted = string.Format(mCultureInfo, msg, args);
+            Console.ForegroundColor = color;
             Console.WriteLine(intro + formatted);
+            Console.ForegroundColor = mDefaultColor;
         }
 
         public static void Error(string msg, params object[] args)

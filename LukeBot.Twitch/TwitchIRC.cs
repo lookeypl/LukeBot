@@ -1,4 +1,5 @@
 ﻿using LukeBot.Common;
+using System;
 using System.IO;
 
 namespace LukeBot.Twitch
@@ -11,7 +12,9 @@ namespace LukeBot.Twitch
         private string mOAuth;
         private Connection mConnection = null;
 
-        void ParseMessage(string msg)
+        public EventHandler<OnChatMessageArgs> OnChatMessage;
+
+        void ProcessMessage(string msg)
         {
             string[] tokens = msg.Split(' ');
 
@@ -65,7 +68,7 @@ namespace LukeBot.Twitch
                 if (msg == null)
                     Logger.Error("Received empty message");
 
-                ParseMessage(msg);
+                ProcessMessage(msg);
             }
         }
     }

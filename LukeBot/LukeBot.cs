@@ -7,31 +7,21 @@ namespace LukeBot
 {
     class LukeBot
     {
-        private List<IModule> mModules = null;
-
-        void StartModules()
-        {
-            Logger.Info("Initializing LukeBot modules");
-            foreach (IModule m in mModules)
-                m.Init();
-
-            Logger.Info("Running LukeBot modules");
-            foreach (IModule m in mModules)
-                m.Run();
-        }
+        private List<UserContext> mUsers;
 
         public LukeBot()
         {
-            mModules = new List<IModule>();
+            mUsers = new List<UserContext>();
         }
 
         public void Run()
         {
             Logger.Info("LukeBot v0.0.1 starting");
 
-            mModules.Add(new TwitchIRC());
+            mUsers.Add(new UserContext("Lookey"));
 
-            StartModules();
+            mUsers[0].AddModule(new TwitchIRC());
+            mUsers[0].RunModules();
         }
     }
 }

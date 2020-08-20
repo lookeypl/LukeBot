@@ -12,7 +12,7 @@ namespace LukeBot
             try
             {
                 LukeBot bot = new LukeBot();
-                bot.Run();
+                bot.Run(args);
             }
             catch (Exception e)
             {

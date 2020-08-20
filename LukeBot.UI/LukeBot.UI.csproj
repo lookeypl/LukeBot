@@ -1,16 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RootNamespace>LukeBot.Common</RootNamespace>
-    <PackageId>LukeBot.Common</PackageId>
-    <AssemblyName>LukeBot.Common</AssemblyName>
+    <OutputType>Library</OutputType>
     <Version>0.0.1</Version>
-    <NeutralLanguage>en-US</NeutralLanguage>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <OutputPath>$(SolutionDir)Bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)Obj\$(ProjectName)\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>

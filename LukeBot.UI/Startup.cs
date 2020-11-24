@@ -4,18 +4,24 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace LukeBot.UI
 {
     public class Startup
     {
-        // This method gets called by the runtime. Use this method to add services to the container.
-        // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
+        async Task LoadPage(string page, HttpContext context)
+        {
+            StreamReader reader = File.OpenText("LukeBot.UI/Pages/" + page);
+            string p = reader.ReadToEnd();
+            reader.Close();
+            await context.Response.WriteAsync(p);
+        }
+
         public void ConfigureServices(IServiceCollection services)
         {
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -24,16 +30,27 @@ namespace LukeBot.UI
             }
 
             app.UseRouting();
-
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapGet("/", async context =>
-                    {
-                        StreamReader reader = File.OpenText("LukeBot.UI/Pages/index.html");
-                        string page = reader.ReadToEnd();
-                        reader.Close();
-                        await context.Response.WriteAsync(page);
-                    });
+                endpoints.MapGet("/", async context => {
+                    await LoadPage("index.html", context);
+                });
+                endpoints.MapGet("/{page:alpha}", async context => {
+                    var page = context.Request.RouteValues["page"];
+                    await LoadPage($"{page}.html", context);
+                });
+                endpoints.MapGet("css/{stylesheet}", async context => {
+                    var stylesheet = context.Request.RouteValues["stylesheet"];
+                    await LoadPage($"css/{stylesheet}", context);
+                });
+                endpoints.MapGet("js/{script}", async context => {
+                    var script = context.Request.RouteValues["script"];
+                    await LoadPage($"js/{script}", context);
+                });
+                endpoints.MapGet("views/{view}", async context => {
+                    var view = context.Request.RouteValues["view"];
+                    await LoadPage($"views/{view}", context);
+                });
             });
         }
     }

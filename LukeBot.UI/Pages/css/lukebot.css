@@ -1,0 +1,15 @@
+body {
+    padding: 64px;
+    background-color: #f2f2f2;
+    color: #333333;
+}
+.dark-mode {
+    background-color: #333333;
+    color: #e0e0e0;
+}
+.bg-appbar {
+    background-color: #92d9fe;
+}
+.bg-appbar-dark-mode {
+    background-color: #2294cf;
+}

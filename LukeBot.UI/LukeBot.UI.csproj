@@ -17,4 +17,12 @@
     <IntermediateOutputPath>$(SolutionDir)Obj\$(ProjectName)\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Pages\css\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
+  </ItemGroup>
+
 </Project>

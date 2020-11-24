@@ -1,7 +1,8 @@
 # Build binary and intermediate files
-/Bin
-/Obj
+Bin
+Obj
 obj
 
 # Visual Studio details
 /.vs
+/.vscode

@@ -7,12 +7,11 @@
     <div class="app-bar-container ml-auto d-none d-flex-md">
         <a class="app-bar-item" href="modules">Modules</a>
         <a class="app-bar-item dropdown-toggle">Users</a>
-        <ul class="d-menu" data-role="dropdown">
-            <li><a href="todo">Lookey</a></li>
+        <ul id="lukebot-users-dropdown" class="d-menu" data-role="dropdown">
             <li class="divider"></li>
-            <li><a onclick="test('adduser')">Add user...</a></li>
+            <li><a onclick="Metro.dialog.open('#lukebot-adduser-dialog')">Add user...</a></li>
             <li class="divider"></li>
-            <li><a onclick="DarkModeToggle()">Dark Mode</a></li>
         </ul>
+        <a class="app-bar-item" onclick="DarkModeToggle()">Dark Mode</a>
     </div>
 </header>

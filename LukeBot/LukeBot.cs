@@ -17,9 +17,16 @@ namespace LukeBot
             mInterfaceThread = new Thread(new ThreadStart(Interface.ThreadMain));
         }
 
+        ~LukeBot()
+        {
+            if (mInterfaceThread != null)
+                mInterfaceThread.Join();
+        }
+
         public void Run(string[] args)
         {
             Logger.Info("LukeBot v0.0.1 starting");
+
             Logger.Info("LukeBot interface starting...");
             mInterfaceThread.Start();
 

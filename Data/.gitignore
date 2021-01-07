@@ -1,3 +1,4 @@
-# oauth_secret.lukebot file contains a secret OAuth password for logging in via your bot
-# Get a token from https://twitchapps.com/tmi/ and paste it into oauth_secret.lukebot
-oauth_secret.lukebot
+# oauth data
+oauth_client_id.lukebot
+oauth_client_secret.lukebot
+oauth_token.lukebot

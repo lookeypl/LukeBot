@@ -11,5 +11,10 @@ namespace LukeBot.Common
             Logger.Info("Setting CWD to " + newCwd);
             Directory.SetCurrentDirectory(newCwd);
         }
+
+        public static bool Exists(string path)
+        {
+            return Directory.Exists(path) || File.Exists(path);
+        }
     }
 }

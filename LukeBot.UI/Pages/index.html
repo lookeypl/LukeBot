@@ -3,12 +3,12 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <link rel="stylesheet" href="css/metro-all-4.4.2.min.css" />
-    <link rel="stylesheet" href="css/lukebot.css" />
-    <script src="js/metro-4.4.2.min.js"></script>
-    <script src="js/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
-    <script src="js/lukebot.js"></script>
+    <link rel="stylesheet" href="/css/metro-all-4.4.2.min.css" />
+    <link rel="stylesheet" href="/css/lukebot.css" />
+    <script type="text/javascript" src="/js/metro-4.4.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery-3.5.1.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+    <script type="text/javascript" src="/js/lukebot.js"></script>
     <title>LukeBot</title>
 </head>
 <body>
@@ -16,9 +16,12 @@
     <div class="container-fluid" style="height: auto !important;">
         <main class="cell-xl-10"
               style="height: auto !important; min-height: 0px !important;">
-            bababooey
+            Welcome to LukeBot!<br />
+            Choose user:
+            <ul class="v-menu bg-main-menu" id="lukebot-users-main-menu">
+            </ul>
         </main>
     </div>
-    <div data-include="lukebot-adduser-dialog"></div>
+    <div data-include="lukebot-ui-elements"></div>
 </body>
 </html>

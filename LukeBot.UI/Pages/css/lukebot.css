@@ -3,7 +3,7 @@ body {
     background-color: #f2f2f2;
     color: #333333;
 }
-.dark-mode {
+.body-dark-mode {
     background-color: #333333;
     color: #e0e0e0;
 }
@@ -12,4 +12,15 @@ body {
 }
 .bg-appbar-dark-mode {
     background-color: #2294cf;
+}
+.bg-main-menu {
+    background-color: #f2f2f2;
+    color: #333333;
+    border: outset;
+    border-width: 2px;
+    margin-top: 4px;
+}
+.bg-main-menu-dark-mode {
+    background-color: #333333;
+    color: #e0e0e0;
 }

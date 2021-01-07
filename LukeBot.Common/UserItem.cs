@@ -1,4 +1,8 @@
-public class UserItem
+namespace LukeBot.Common
 {
-    public string Name { get; set; }
+    public class UserItem
+    {
+        public string name { get; set; }
+        public string displayName { get; set; }
+    }
 }

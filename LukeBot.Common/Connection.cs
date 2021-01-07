@@ -43,6 +43,7 @@ namespace LukeBot.Common
                 return;
             }
 
+            Logger.Debug("Send: {0}", msg);
             mOutput.WriteLine(msg);
             mOutput.Flush();
         }
@@ -58,7 +59,7 @@ namespace LukeBot.Common
             {
                 return mInput.ReadLine();
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 return "Error while reading message: " + ex.Message;
             }

@@ -1,6 +1,8 @@
 ﻿using LukeBot.Common;
+using LukeBot.Common.OAuth;
 using System;
 using System.IO;
+using LukeBot;
 
 namespace LukeBot.Twitch
 {
@@ -8,14 +10,19 @@ namespace LukeBot.Twitch
     {
         private string mName = "lukeboto";
         private string mChannel = "lookey";
-        private string mOAuthPath = "Data/oauth_secret.lukebot";
-        private string mOAuth;
         private Connection mConnection = null;
+        private Token mToken;
 
         public EventHandler<OnChatMessageArgs> OnChatMessage;
 
         void ProcessMessage(string msg)
         {
+            if (msg == null)
+            {
+                Logger.Error("Message is NULL");
+                return;
+            }
+
             string[] tokens = msg.Split(' ');
 
             // TODO PING-PONG with Twitch IRC server should be handled as a message
@@ -27,32 +34,56 @@ namespace LukeBot.Twitch
                 return;
             }
 
-            Logger.Info(msg);
+            Logger.Info("Recv: {0}", msg);
         }
 
         public TwitchIRC()
         {
-            // TODO get an OAuth token the proper way, aka. authenticate via Twitch as an app
-            StreamReader oauthStream = File.OpenText(mOAuthPath);
-            mOAuth = oauthStream.ReadLine();
-            Logger.Info("Read OAuth password from file " + mOAuthPath);
         }
 
         ~TwitchIRC()
         {
-            mConnection.Send("QUIT");
+            if (mConnection != null)
+                mConnection.Send("QUIT");
         }
 
         public void Init()
         {
+            CommunicationManager.Instance.Register(Constants.SERVICE_NAME);
+
             mConnection = new Connection("irc.chat.twitch.tv", 6697, true);
+
+            mToken = new TwitchToken(AuthFlow.AuthorizationCode);
 
             // log in
             Logger.Info("Logging in to Twitch IRC server...");
             Logger.Debug("Login details: Name {0} Channel {1}", mName, mChannel);
-            mConnection.Send("PASS " + mOAuth);
+
+            // WORKAROUND TO NOT PASS DATA TO TWITCH EVERY LAUNCH WHILE WORKING
+            string token;
+            if (FileUtils.Exists("Data/oauth_token.lukebot"))
+            {
+                Logger.Debug("Found already existing token, using it");
+                StreamReader fileStream = File.OpenText("Data/oauth_token.lukebot");
+                token = fileStream.ReadLine();
+            }
+            else
+            {
+                Logger.Debug("No token found, acquiring new token");
+                token = mToken.Get("chat:read chat:edit");
+                FileStream fileStream = File.OpenWrite("Data/oauth_token.lukebot");
+                StreamWriter writerStream = new StreamWriter(fileStream);
+                writerStream.WriteLine(token);
+                writerStream.Close();
+                fileStream.Close();
+            }
+
+            mConnection.Send("PASS oauth:" + token);
             mConnection.Send("NICK " + mName);
             mConnection.Send("JOIN #" + mChannel);
+
+            string response = mConnection.Read();
+            Logger.Info(response);
 
             Logger.Info("Twitch IRC module initialized");
         }
@@ -66,7 +97,7 @@ namespace LukeBot.Twitch
                 string msg = mConnection.Read();
 
                 if (msg == null)
-                    Logger.Error("Received empty message");
+                    throw new InvalidOperationException("Received empty message");
 
                 ProcessMessage(msg);
             }

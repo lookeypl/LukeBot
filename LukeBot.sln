@@ -16,6 +16,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data", "Data", "{10B3DA8C-4D82-4798-8727-26F2C073E513}"
 	ProjectSection(SolutionItems) = preProject
 		Data\.gitignore = Data\.gitignore
+		Data\oauth_client_id.lukebot = Data\oauth_client_id.lukebot
+		Data\oauth_client_secret.lukebot = Data\oauth_client_secret.lukebot
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Twitch", "LukeBot.Twitch\LukeBot.Twitch.csproj", "{564B1BE4-C13B-4168-A9E4-34061DA82052}"

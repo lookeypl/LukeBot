@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
+using LukeBot.Common.Exception;
 
 namespace LukeBot.Common.OAuth
 {
@@ -11,9 +14,8 @@ namespace LukeBot.Common.OAuth
 
     public class Token
     {
-        // TODO OAuth token validator thread
         private Flow mFlow = null;
-        private Dictionary<string, AuthTokenResponse> mTokens = new Dictionary<string, AuthTokenResponse>();
+        private AuthToken mToken;
 
         public Token(string service, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)
         {
@@ -37,12 +39,52 @@ namespace LukeBot.Common.OAuth
         {
         }
 
-        public string Get(string scope)
+        public string Get()
         {
-            if (!mTokens.ContainsKey(scope))
-                mTokens.Add(scope, mFlow.Request(scope));
+            if (mToken == null)
+                throw new InvalidTokenException("Token is not acquired");
 
-            return mTokens[scope].access_token;
+            return mToken.access_token;
+        }
+
+        public string Request(string scope)
+        {
+            mToken = mFlow.Request(scope);
+            return mToken.access_token;
+        }
+
+        public string Refresh()
+        {
+            if (mToken == null)
+                throw new InvalidTokenException("Token is not acquired");
+
+            mToken = mFlow.Refresh(mToken);
+            return mToken.access_token;
+        }
+
+        public void Revoke()
+        {
+            mFlow.Revoke(mToken);
+            mToken = null;
+        }
+
+        public void ImportFromFile(string path)
+        {
+            StreamReader fileStream = File.OpenText(path);
+            mToken = JsonSerializer.Deserialize<AuthToken>(fileStream.ReadToEnd());
+            fileStream.Close();
+        }
+
+        public void ExportToFile(string path)
+        {
+            if (mToken == null)
+                throw new InvalidTokenException("Token is not acquired");
+
+            FileStream file = File.OpenWrite(path);
+            StreamWriter writer = new StreamWriter(file);
+            writer.Write(JsonSerializer.Serialize(mToken));
+            writer.Close();
+            file.Close();
         }
     }
 }

@@ -64,5 +64,13 @@ namespace LukeBot.Common
                 return "Error while reading message: " + ex.Message;
             }
         }
+
+        public void Close()
+        {
+            mClient.Close();
+            mClient = null;
+            mInput = null;
+            mOutput = null;
+        }
     }
 }

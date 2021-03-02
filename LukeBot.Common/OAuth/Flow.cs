@@ -30,8 +30,8 @@ namespace LukeBot.Common.OAuth
             mRevokeURL = revokeURL;
         }
 
-        public abstract AuthTokenResponse Request(string scope);
-        public abstract string Refresh(string token);
-        public abstract void Revoke(string token);
+        public abstract AuthToken Request(string scope);
+        public abstract AuthToken Refresh(AuthToken token);
+        public abstract void Revoke(AuthToken token);
     }
 }

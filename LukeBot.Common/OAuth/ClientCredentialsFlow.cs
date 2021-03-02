@@ -14,7 +14,7 @@ namespace LukeBot.Common.OAuth
     {
         private readonly HttpClient mHttpClient = new HttpClient();
 
-        public override AuthTokenResponse Request(string scope)
+        public override AuthToken Request(string scope)
         {
             Logger.Info("Requesting OAuth token...");
             Dictionary<string, string> query = new Dictionary<string, string>();
@@ -46,7 +46,7 @@ namespace LukeBot.Common.OAuth
 
             Logger.Debug("Received content: {0}", retContentStr);
 
-            AuthTokenResponse token = JsonSerializer.Deserialize<AuthTokenResponse>(retContentStr);
+            AuthToken token = JsonSerializer.Deserialize<AuthToken>(retContentStr);
 
             Logger.Debug("Response from Twitch OAuth:");
             Logger.Debug("  Access token: {0}", token.access_token);
@@ -62,19 +62,19 @@ namespace LukeBot.Common.OAuth
             return token;
         }
 
-        public override string Refresh(string token)
+        public override AuthToken Refresh(AuthToken token)
         {
             throw new NotImplementedException();
         }
 
-        public override void Revoke(string token)
+        public override void Revoke(AuthToken token)
         {
             Logger.Info("Revoking previously acquired OAuth token...");
             Dictionary<string, string> query = new Dictionary<string, string>();
 
             // TODO client_id and client_secret should come from PropertyStore
             query.Add("client_id", mClientID);
-            query.Add("token", token);
+            query.Add("token", token.access_token);
 
             FormUrlEncodedContent content = new FormUrlEncodedContent(query);
             Task<HttpResponseMessage> retMessageTask = mHttpClient.PostAsync(mRevokeURL, content);

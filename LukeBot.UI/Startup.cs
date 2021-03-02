@@ -82,7 +82,7 @@ namespace LukeBot.UI
 
                 await context.Response.WriteAsync(
                     "<html><body style=\"font-family: sans-serif; margin-left: 30px; margin-top: 30px;\">" +
-                        "Login successful, you can close the window now.\n" +
+                        "Login to " + service + " successful, you can close the window now.\n" +
                         "<script type=\"text/javascript\">$(document).ready(function() { doCountdown(); });</script>\n" +
                     "</body></html>"
                 );
@@ -92,7 +92,7 @@ namespace LukeBot.UI
                 Logger.Error("{0}", e.Message);
                 await context.Response.WriteAsync(
                     "<html><body style=\"font-family: sans-serif; margin-left: 30px; margin-top: 30px;\">" +
-                        "Login failed. Check log for details.\n" +
+                        "Login to " + service + " failed. Check log for details.\n" +
                         "<script type=\"text/javascript\">$(document).ready(function() { doCountdown(); });</script>\n" +
                     "</body></html>"
                 );

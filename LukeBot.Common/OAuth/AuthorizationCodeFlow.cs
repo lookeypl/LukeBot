@@ -13,7 +13,7 @@ namespace LukeBot.Common.OAuth
         private readonly HttpClient mClient = new HttpClient();
         private string mCallbackURL = null;
 
-        public override AuthTokenResponse Request(string scope)
+        public override AuthToken Request(string scope)
         {
             //
             // Step 1: Acquire user token
@@ -39,7 +39,7 @@ namespace LukeBot.Common.OAuth
             Logger.Debug("Login window with URI " + URL);
 
             Logger.Debug("Notifying comms manager");
-            PromiseData userResponseBase = new UserTokenResponse();
+            PromiseData userResponseBase = new UserToken();
             IntermediaryPromise userPromise = CommunicationManager.Instance.GetIntermediary(mService).Expect(state, ref userResponseBase);
 
             Logger.Debug("Opening browser window with query {0}", URL);
@@ -51,8 +51,8 @@ namespace LukeBot.Common.OAuth
 
             Logger.Debug("Promise {0} for service {1} fulfilled", state, mService);
 
-            // TODO we probably should hold on to this token? Check
-            UserTokenResponse userResponse = (UserTokenResponse)userResponseBase;
+            // TODO we probably should hold on to this token? Check if that's the case
+            UserToken userResponse = (UserToken)userResponseBase;
             Logger.Debug("User token from service {0}:", mService);
             Logger.Debug("  Code: {0}", userResponse.code);
             Logger.Debug("  Scope: ");
@@ -96,7 +96,7 @@ namespace LukeBot.Common.OAuth
 
             Logger.Debug("Received content: {0}", retContentStr);
 
-            AuthTokenResponse authResponse = JsonSerializer.Deserialize<AuthTokenResponse>(retContentStr);
+            AuthToken authResponse = JsonSerializer.Deserialize<AuthToken>(retContentStr);
             Logger.Debug("Response from OAuth service {0}:", mService);
             Logger.Debug("  Access token: {0}", authResponse.access_token);
             Logger.Debug("  Refresh token: {0}", authResponse.refresh_token);
@@ -111,14 +111,77 @@ namespace LukeBot.Common.OAuth
             return authResponse;
         }
 
-        public override string Refresh(string token)
+        public override AuthToken Refresh(AuthToken token)
         {
-            throw new NotImplementedException();
+            Logger.Debug("Refreshing OAuth token {0}", token.access_token);
+
+            Dictionary<string, string> query = new Dictionary<string, string>();
+            query.Clear();
+
+            query.Add("grant_type", "refresh_token");
+            query.Add("refresh_token", token.refresh_token);
+            query.Add("client_id", mClientID);
+            query.Add("client_secret", mClientSecret);
+
+            FormUrlEncodedContent content = new FormUrlEncodedContent(query);
+
+            Task<string> contentStrTask = content.ReadAsStringAsync();
+            contentStrTask.Wait();
+            Logger.Debug("Sending POST with content " + contentStrTask.Result);
+
+            Task<HttpResponseMessage> retMessageTask = mClient.PostAsync(mTokenURL, content);
+            retMessageTask.Wait(30 * 1000);
+            HttpResponseMessage retMessage = retMessageTask.Result;
+
+            Logger.Debug("Response status code is " + retMessage.StatusCode);
+            retMessage.EnsureSuccessStatusCode();
+
+            HttpContent retContent = retMessage.Content;
+            Logger.Debug("Received content type " + retContent.Headers.ContentType);
+
+            Task<string> retContentStrTask = retContent.ReadAsStringAsync();
+            retContentStrTask.Wait();
+            string retContentStr = retContentStrTask.Result;
+
+            Logger.Debug("Received content: {0}", retContentStr);
+
+            AuthToken refreshResponse = JsonSerializer.Deserialize<AuthToken>(retContentStr);
+            Logger.Debug("Response from OAuth service {0}:", mService);
+            Logger.Debug("  Access token: {0}", refreshResponse.access_token);
+            Logger.Debug("  Refresh token: {0}", refreshResponse.refresh_token);
+            Logger.Debug("  Expires in: {0}", refreshResponse.expires_in);
+            Logger.Debug("  Token type: {0}", refreshResponse.token_type);
+            Logger.Debug("  Scope: ");
+            foreach (var s in refreshResponse.scope)
+            {
+                Logger.Debug("    -> {0}", s);
+            }
+
+            return refreshResponse;
         }
 
-        public override void Revoke(string token)
+        public override void Revoke(AuthToken token)
         {
-            throw new NotImplementedException();
+            Logger.Info("Revoking previously acquired OAuth token...");
+            Dictionary<string, string> query = new Dictionary<string, string>();
+
+            // TODO client_id and client_secret should come from PropertyStore
+            query.Add("client_id", mClientID);
+            query.Add("token", token.access_token);
+
+            FormUrlEncodedContent content = new FormUrlEncodedContent(query);
+            Task<HttpResponseMessage> retMessageTask = mClient.PostAsync(mRevokeURL, content);
+            retMessageTask.Wait(30 * 1000);
+            HttpResponseMessage retMessage = retMessageTask.Result;
+
+            if (!retMessage.IsSuccessStatusCode)
+            {
+                Logger.Error("Failed to revoke OAuth token");
+            }
+            else
+            {
+                Logger.Info("OAuth Token revoked successfully");
+            }
         }
 
         public AuthorizationCodeFlow(string service, string idPath, string secretPath,

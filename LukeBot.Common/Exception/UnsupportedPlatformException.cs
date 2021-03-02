@@ -2,7 +2,7 @@
 
 namespace LukeBot.Common.Exception
 {
-    class UnsupportedPlatformException: System.Exception
+    public class UnsupportedPlatformException: System.Exception
     {
         public UnsupportedPlatformException(string msg): base(msg) {}
     }

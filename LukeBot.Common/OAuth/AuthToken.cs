@@ -4,7 +4,7 @@ using System.Text;
 
 namespace LukeBot.Common.OAuth
 {
-    class AuthTokenResponse: PromiseData
+    class AuthToken: PromiseData
     {
         public string access_token { get; set; }
         public string refresh_token { get; set; }
@@ -14,7 +14,7 @@ namespace LukeBot.Common.OAuth
 
         public override void Fill(PromiseData data)
         {
-            AuthTokenResponse r = (AuthTokenResponse)data;
+            AuthToken r = (AuthToken)data;
 
             access_token = r.access_token;
             refresh_token = r.refresh_token;

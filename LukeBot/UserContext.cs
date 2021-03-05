@@ -32,5 +32,11 @@ namespace LukeBot
             foreach (IModule m in mModules)
                 m.Run();
         }
+
+        public void WaitForModules()
+        {
+            foreach (IModule m in mModules)
+                m.Wait();
+        }
     }
 }

@@ -4,5 +4,6 @@
     {
         public void Init();
         public void Run();
+        public void Wait();
     }
 }

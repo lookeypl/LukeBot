@@ -68,7 +68,7 @@ namespace LukeBot.UI
 
                 if (service == "twitch")
                 {
-                    UserTokenResponse token = new UserTokenResponse();
+                    UserToken token = new UserToken();
                     token.code = context.Request.Query["code"];
                     token.state = context.Request.Query["state"];
                     token.scope = new List<string>();

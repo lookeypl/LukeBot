@@ -33,8 +33,15 @@ namespace LukeBot
             Logger.Info("LukeBot modules starting...");
             mUsers.Add(new UserContext("Lookey"));
 
-            mUsers[0].AddModule(new TwitchIRC());
+            TwitchIRC twitch = new TwitchIRC();
+            mUsers[0].AddModule(twitch);
             mUsers[0].RunModules();
+
+            twitch.AwaitLoggedIn();
+            twitch.JoinChannel("lookey");
+            twitch.AddCommandToChannel("lookey", "discord", new Twitch.Command.Print("Discord server: lmao"));
+
+            mUsers[0].WaitForModules();
         }
     }
 }

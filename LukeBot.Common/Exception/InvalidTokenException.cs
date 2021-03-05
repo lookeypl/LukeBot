@@ -1,6 +1,6 @@
 using System;
 
-namespace LukeBot.Common.Exception
+namespace LukeBot.Common
 {
     public class InvalidTokenException: System.Exception
     {

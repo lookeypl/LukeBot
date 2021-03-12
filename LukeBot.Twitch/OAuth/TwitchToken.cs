@@ -1,10 +1,10 @@
-using LukeBot.Common;
+using LukeBot.Common.OAuth;
 
-namespace LukeBot.Twitch
+namespace LukeBot.Twitch.OAuth
 {
-    public class TwitchToken: Common.OAuth.Token
+    public class TwitchToken: Token
     {
-        public TwitchToken(Common.OAuth.AuthFlow flow)
+        public TwitchToken(AuthFlow flow)
             : base(
                 Constants.SERVICE_NAME,
                 flow,

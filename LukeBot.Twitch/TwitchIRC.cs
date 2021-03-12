@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading;
-using LukeBot;
+
 
 namespace LukeBot.Twitch
 {
@@ -17,70 +17,20 @@ namespace LukeBot.Twitch
 
         private int mRunning = 0;
         private AutoResetEvent mLoggedInEvent;
-        private bool mLoggedIn = false;
 
         private Thread mWorker;
         private Mutex mChannelsMutex;
 
-        void ProcessSystemMsg(string msg)
+        void ProcessPRIVMSG(Message m)
         {
-            Logger.Debug("Sys Recv: {0}", msg);
-            string[] tokens = msg.Split(' ');
-
-            if (tokens[1].Equals("NOTICE"))
-            {
-                string notice = "";
-                for (int i = 3; i < tokens.Length; ++i)
-                {
-                    notice = String.Concat(notice, tokens[i]);
-                }
-                Logger.Info("Received a Notice from server: {0}", notice);
-                return;
-            }
-
-            if (tokens[1].Equals("376"))
-            {
-                mLoggedIn = true;
-                mLoggedInEvent.Set();
-                return;
-            }
-        }
-
-        void ProcessMessage(string msg)
-        {
-            if (msg == null)
-                throw new ArgumentNullException("Message is NULL");
-
-            string[] tokens = msg.Split(' ');
-
-            // TODO PING-PONG with Twitch IRC server should be handled as an
-            // event, like all other messages
-            if (tokens[0].Equals("PING"))
-            {
-                Logger.Debug("PING received - " + msg);
-                Logger.Debug("Responding with PONG " + tokens[1]);
-                mConnection.Send("PONG " + tokens[1]);
-                return;
-            }
-
-            // TODO this should be handled as an event too
-            if (tokens[0].Equals(":tmi.twitch.tv"))
-            {
-                ProcessSystemMsg(msg);
-                return;
-            }
-
-            if (!mLoggedIn)
-                return;
-
             mChannelsMutex.WaitOne();
 
             try
             {
-                if (!mChannels.ContainsKey(tokens[1]))
-                    throw new InvalidDataException(String.Format("Unknown channel: {0}", tokens[1]));
+                if (!mChannels.ContainsKey(m.Channel))
+                    throw new InvalidDataException(String.Format("Unknown channel: {0}", m.Channel));
 
-                Logger.Info("Message for channel {0}: {1}", tokens[1], msg);
+                Logger.Info("Message for channel {0} from {1}: {2}", m.Channel, m.Nick, m.Params[m.Params.Count - 1]);
                 // TODO CALL COMMAND
             }
             catch (Exception e)
@@ -91,8 +41,51 @@ namespace LukeBot.Twitch
             }
 
             mChannelsMutex.ReleaseMutex();
+        }
 
-            Logger.Info("Unrecognized message: {0}", msg);
+        void ProcessMessage(string msg)
+        {
+            if (msg == null)
+                throw new ArgumentNullException("Message is NULL");
+
+            Message m = Message.Parse(msg);
+
+            switch (m.Command)
+            {
+            case IRCCommand.UNKNOWN_NUMERIC:
+                Logger.Warning("Unrecognized command: {0}", m);
+                break;
+            case IRCCommand.LOGIN_001:
+            case IRCCommand.LOGIN_002:
+            case IRCCommand.LOGIN_003:
+            case IRCCommand.LOGIN_004:
+            case IRCCommand.LOGIN_372:
+            case IRCCommand.LOGIN_375:
+                Logger.Debug("Welcome message: {0}", m.ParamsString);
+                break;
+            case IRCCommand.LOGIN_376:
+                mLoggedInEvent.Set();
+                Logger.Debug("Welcome message: {0}", m.ParamsString);
+                break;
+            case IRCCommand.UNKNOWN_421:
+                Logger.Error("Unknown command sent: {0}", string.Join(" ", m.Params));
+                break;
+            case IRCCommand.JOIN:
+                Logger.Info("Joined channel {0}", m.Channel);
+                break;
+            case IRCCommand.NOTICE:
+                Logger.Info("Received a Notice from server: {0}", m.ParamsString);
+                break;
+            case IRCCommand.PING:
+                Logger.Debug("Received PING - responding with PONG");
+                mConnection.Send("PONG :" + m.Params[0]);
+                break;
+            case IRCCommand.PRIVMSG:
+                ProcessPRIVMSG(m);
+                break;
+            default:
+                throw new ArgumentException("Invalid IRC command");
+            }
         }
 
         void WorkerMain()
@@ -121,20 +114,19 @@ namespace LukeBot.Twitch
             if (msg == null)
                 return true; // no message, we good
 
-            string[] msgTokens = msg.Split(' ');
-            if (msgTokens[1] == "NOTICE")
+            Message m = Message.Parse(msg);
+            if (m.Command == IRCCommand.NOTICE)
             {
                 Logger.Info("While trying to login received Notice from Server:");
                 Logger.Info("  {0}", msg);
 
-                if (msg.Contains(":Login authentication failed"))
+                if (m.ParamsString.Equals("Login authentication failed"))
                     return false;
                 else
                     return true;
             }
 
-            // Login fail comes as IRC "NOTICE" call. If we don't get it,
-            // assume we logged in successfully.
+            // Login fail comes as IRC "NOTICE" call. If we don't get it, assume we logged in successfully.
             Logger.Debug("Recv: {0}", msg);
             return true;
         }
@@ -144,7 +136,7 @@ namespace LukeBot.Twitch
         {
             mConnection = new Connection("irc.chat.twitch.tv", 6697, true);
 
-            mToken = new TwitchToken(AuthFlow.AuthorizationCode);
+            mToken = new OAuth.TwitchToken(AuthFlow.AuthorizationCode);
 
             // log in
             Logger.Info("Logging in to Twitch IRC server...");
@@ -256,9 +248,9 @@ namespace LukeBot.Twitch
             mChannelsMutex.ReleaseMutex();
         }
 
-        public void AwaitLoggedIn()
+        public bool AwaitLoggedIn(int timeoutMs)
         {
-            mLoggedInEvent.WaitOne(30 * 1000);
+            return mLoggedInEvent.WaitOne(timeoutMs);
         }
 
         // IModule overrides

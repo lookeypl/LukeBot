@@ -6,7 +6,7 @@ namespace LukeBot.Common
 {
     public class Logger
     {
-        enum LogLevel
+        public enum LogLevel
         {
             Error = 0,
             Warning,
@@ -44,7 +44,7 @@ namespace LukeBot.Common
             mDefaultColor = Console.ForegroundColor;
         }
 
-        private void Log(LogLevel level, string msg, params object[] args)
+        private void LogInternal(LogLevel level, string msg, params object[] args)
         {
             string tag;
             ConsoleColor color;
@@ -85,32 +85,38 @@ namespace LukeBot.Common
             Console.ForegroundColor = mDefaultColor;
         }
 
+        public static void Log(LogLevel level, string msg, params object[] args)
+        {
+            if (level != LogLevel.Debug && level != LogLevel.Trace)
+                Instance.LogInternal(level, msg, args);
+        }
+
         public static void Error(string msg, params object[] args)
         {
-            Instance.Log(LogLevel.Error, msg, args);
+            Instance.LogInternal(LogLevel.Error, msg, args);
         }
 
         public static void Warning(string msg, params object[] args)
         {
-            Instance.Log(LogLevel.Warning, msg, args);
+            Instance.LogInternal(LogLevel.Warning, msg, args);
         }
 
         public static void Info(string msg, params object[] args)
         {
-            Instance.Log(LogLevel.Info, msg, args);
+            Instance.LogInternal(LogLevel.Info, msg, args);
         }
 
         public static void Debug(string msg, params object[] args)
         {
         #if (DEBUG)
-            Instance.Log(LogLevel.Debug, msg, args);
+            Instance.LogInternal(LogLevel.Debug, msg, args);
         #endif
         }
 
         public static void Trace(string msg, params object[] args)
         {
         #if (TRACE)
-            Instance.Log(LogLevel.Trace, msg, args);
+            Instance.LogInternal(LogLevel.Trace, msg, args);
         #endif
         }
     }

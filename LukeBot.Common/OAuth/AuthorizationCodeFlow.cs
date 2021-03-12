@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Text.Json;
-using LukeBot.Common.Exception;
 
 namespace LukeBot.Common.OAuth
 {

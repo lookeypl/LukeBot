@@ -20,7 +20,7 @@ namespace LukeBot.Common
             }
             else
             {
-                throw new Exception.UnsupportedPlatformException("Platform is not supported");
+                throw new UnsupportedPlatformException("Platform is not supported");
             }
 
             return result;

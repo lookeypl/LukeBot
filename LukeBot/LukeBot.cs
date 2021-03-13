@@ -3,6 +3,7 @@ using LukeBot.Twitch;
 using LukeBot.UI;
 using System.Collections.Generic;
 using System.Threading;
+using System;
 
 namespace LukeBot
 {
@@ -10,6 +11,12 @@ namespace LukeBot
     {
         private List<UserContext> mUsers;
         private Thread mInterfaceThread;
+
+        void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
+        {
+            Logger.Info("Requested shutdown");
+            mUsers[0].RequestModuleShutdown();
+        }
 
         public LukeBot()
         {
@@ -25,6 +32,8 @@ namespace LukeBot
 
         public void Run(string[] args)
         {
+            Console.CancelKeyPress += OnCancelKeyPress;
+
             Logger.Info("LukeBot v0.0.1 starting");
 
             Logger.Info("LukeBot interface starting...");
@@ -38,8 +47,8 @@ namespace LukeBot
             mUsers[0].RunModules();
 
             twitch.AwaitLoggedIn(30 * 1000);
-            twitch.JoinChannel("michakes");
-            twitch.AddCommandToChannel("michakes", "discord", new Twitch.Command.Print("Discord server: lmao"));
+            twitch.JoinChannel("lookey");
+            twitch.AddCommandToChannel("lookey", "discord", new Twitch.Command.Print("Discord server: lmao"));
 
             mUsers[0].WaitForModules();
         }

@@ -92,7 +92,7 @@ namespace LukeBot.Twitch
             return token;
         }
 
-        private static IRCCommand ParseCommandToken(string token)
+        private static IRCCommand ParseCommandToken(string token, ref Message m)
         {
             int code = 0;
             if (Int32.TryParse(token, out code))
@@ -128,7 +128,7 @@ namespace LukeBot.Twitch
                 case "USERNOTICE":  return IRCCommand.USERNOTICE;
                 case "USERSTATE":   return IRCCommand.USERSTATE;
                 default:
-                    throw new ParsingErrorException("Unrecognized string command");
+                    throw new ParsingErrorException(String.Format("Unrecognized string command: {0}; message {1}", token, m.MessageString));
                 }
             }
         }
@@ -199,7 +199,7 @@ namespace LukeBot.Twitch
                 }
                 case State.Command:
                 {
-                    m.Command = ParseCommandToken(tokens[i]);
+                    m.Command = ParseCommandToken(tokens[i], ref m);
                     break;
                 }
                 case State.Param:

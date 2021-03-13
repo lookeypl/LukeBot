@@ -67,6 +67,8 @@ namespace LukeBot.Common
 
         public void Close()
         {
+            mInput.Close();
+            mOutput.Close();
             mClient.Close();
             mClient = null;
             mInput = null;

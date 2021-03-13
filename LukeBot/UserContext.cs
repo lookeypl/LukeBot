@@ -33,6 +33,12 @@ namespace LukeBot
                 m.Run();
         }
 
+        public void RequestModuleShutdown()
+        {
+            foreach (IModule m in mModules)
+                m.RequestShutdown();
+        }
+
         public void WaitForModules()
         {
             foreach (IModule m in mModules)

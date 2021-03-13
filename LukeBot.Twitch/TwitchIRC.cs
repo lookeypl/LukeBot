@@ -15,7 +15,7 @@ namespace LukeBot.Twitch
         private Token mToken;
         private Dictionary<string, IRCChannel> mChannels;
 
-        private int mRunning = 0;
+        private bool mRunning = false;
         private AutoResetEvent mLoggedInEvent;
 
         private Thread mWorker;
@@ -43,10 +43,13 @@ namespace LukeBot.Twitch
             mChannelsMutex.ReleaseMutex();
         }
 
-        void ProcessMessage(string msg)
+        bool ProcessMessage(string msg)
         {
             if (msg == null)
-                throw new ArgumentNullException("Message is NULL");
+            {
+                Logger.Warning("Connection dropped - exiting");
+                return false;
+            }
 
             Message m = Message.Parse(msg);
 
@@ -76,6 +79,9 @@ namespace LukeBot.Twitch
             case IRCCommand.NOTICE:
                 Logger.Info("Received a Notice from server: {0}", m.ParamsString);
                 break;
+            case IRCCommand.PART:
+                Logger.Info("Leaving channel {0}", m.Channel);
+                break;
             case IRCCommand.PING:
                 Logger.Debug("Received PING - responding with PONG");
                 mConnection.Send("PONG :" + m.Params[0]);
@@ -84,8 +90,10 @@ namespace LukeBot.Twitch
                 ProcessPRIVMSG(m);
                 break;
             default:
-                throw new ArgumentException("Invalid IRC command");
+                throw new ArgumentException(String.Format("Invalid IRC command: {0}", m.Command));
             }
+
+            return true;
         }
 
         void WorkerMain()
@@ -94,7 +102,7 @@ namespace LukeBot.Twitch
             try
             {
                 Login();
-                Interlocked.Exchange(ref mRunning, 1);
+                mRunning = true;
             }
             catch (Exception e)
             {
@@ -104,8 +112,8 @@ namespace LukeBot.Twitch
 
             Logger.Info("Listening for response...");
 
-            while (Interlocked.Equals(mRunning, 1))
-                ProcessMessage(mConnection.Read());
+            while (mRunning)
+                mRunning = ProcessMessage(mConnection.Read());
         }
 
         bool CheckIfLoginSuccessful()
@@ -189,13 +197,15 @@ namespace LukeBot.Twitch
             }
         }
 
-        void CloseConnection()
+        void Disconnect()
         {
-            if (mConnection != null)
+            if (mRunning)
             {
+                foreach (var c in mChannels)
+                {
+                    mConnection.Send("PART #" + c.Key);
+                }
                 mConnection.Send("QUIT");
-                mConnection.Close();
-                mConnection = null;
             }
         }
 
@@ -211,8 +221,7 @@ namespace LukeBot.Twitch
 
         ~TwitchIRC()
         {
-            Interlocked.Exchange(ref mRunning, 0);
-            CloseConnection();
+            Disconnect();
             Wait();
         }
 
@@ -264,9 +273,17 @@ namespace LukeBot.Twitch
             mWorker.Start();
         }
 
+        public void RequestShutdown()
+        {
+            Disconnect();
+        }
+
         public void Wait()
         {
             mWorker.Join();
+
+            mConnection.Close();
+            mConnection = null;
         }
     }
 }

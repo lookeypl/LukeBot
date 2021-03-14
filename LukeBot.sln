@@ -16,8 +16,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data", "Data", "{10B3DA8C-4D82-4798-8727-26F2C073E513}"
 	ProjectSection(SolutionItems) = preProject
 		Data\.gitignore = Data\.gitignore
-		Data\oauth_client_id.lukebot = Data\oauth_client_id.lukebot
-		Data\oauth_client_secret.lukebot = Data\oauth_client_secret.lukebot
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Twitch", "LukeBot.Twitch\LukeBot.Twitch.csproj", "{564B1BE4-C13B-4168-A9E4-34061DA82052}"
@@ -26,35 +24,35 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.UI", "LukeBot.UI\Lu
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		SecureDebug|Any CPU = SecureDebug|Any CPU
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
+		SecureDebug|Any CPU = SecureDebug|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{31AE6813-99E8-4739-B46A-4F91C62D225F}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
-		{31AE6813-99E8-4739-B46A-4F91C62D225F}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 		{31AE6813-99E8-4739-B46A-4F91C62D225F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{31AE6813-99E8-4739-B46A-4F91C62D225F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{31AE6813-99E8-4739-B46A-4F91C62D225F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{31AE6813-99E8-4739-B46A-4F91C62D225F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E788B775-CF23-4872-893C-4FFF44E09943}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
-		{E788B775-CF23-4872-893C-4FFF44E09943}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
+		{31AE6813-99E8-4739-B46A-4F91C62D225F}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{31AE6813-99E8-4739-B46A-4F91C62D225F}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 		{E788B775-CF23-4872-893C-4FFF44E09943}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E788B775-CF23-4872-893C-4FFF44E09943}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E788B775-CF23-4872-893C-4FFF44E09943}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E788B775-CF23-4872-893C-4FFF44E09943}.Release|Any CPU.Build.0 = Release|Any CPU
-		{564B1BE4-C13B-4168-A9E4-34061DA82052}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
-		{564B1BE4-C13B-4168-A9E4-34061DA82052}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
+		{E788B775-CF23-4872-893C-4FFF44E09943}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{E788B775-CF23-4872-893C-4FFF44E09943}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 		{564B1BE4-C13B-4168-A9E4-34061DA82052}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{564B1BE4-C13B-4168-A9E4-34061DA82052}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{564B1BE4-C13B-4168-A9E4-34061DA82052}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{564B1BE4-C13B-4168-A9E4-34061DA82052}.Release|Any CPU.Build.0 = Release|Any CPU
-		{20E971C2-B196-417D-A6FE-DC2831B76B24}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
-		{20E971C2-B196-417D-A6FE-DC2831B76B24}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
+		{564B1BE4-C13B-4168-A9E4-34061DA82052}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{564B1BE4-C13B-4168-A9E4-34061DA82052}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 		{20E971C2-B196-417D-A6FE-DC2831B76B24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{20E971C2-B196-417D-A6FE-DC2831B76B24}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{20E971C2-B196-417D-A6FE-DC2831B76B24}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{20E971C2-B196-417D-A6FE-DC2831B76B24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20E971C2-B196-417D-A6FE-DC2831B76B24}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{20E971C2-B196-417D-A6FE-DC2831B76B24}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -34,6 +34,9 @@ namespace LukeBot.Twitch
         // IRC Command sent by server.
         public IRCCommand Command { get; private set; }
 
+        // IRC Reply sent from the server in response to command sent by us.
+        public IRCReply Reply { get; private set; }
+
         // Message params; most commonly for PRIVMSG is the actual message in chat.
         // For some commands can be set to empty string
         public List<string> Params { get; private set; }
@@ -94,42 +97,23 @@ namespace LukeBot.Twitch
 
         private static IRCCommand ParseCommandToken(string token, ref Message m)
         {
-            int code = 0;
-            if (Int32.TryParse(token, out code))
+            switch (token)
             {
-                switch (code)
-                {
-                case 001: return IRCCommand.LOGIN_001;
-                case 002: return IRCCommand.LOGIN_002;
-                case 003: return IRCCommand.LOGIN_003;
-                case 004: return IRCCommand.LOGIN_004;
-                case 372: return IRCCommand.LOGIN_372;
-                case 375: return IRCCommand.LOGIN_375;
-                case 376: return IRCCommand.LOGIN_376;
-                case 421: return IRCCommand.UNKNOWN_421;
-                default:
-                    return IRCCommand.UNKNOWN_NUMERIC;
-                }
-            }
-            else
-            {
-                switch (token)
-                {
-                case "CLEARCHAT":   return IRCCommand.CLEARCHAT;
-                case "CLEARMSG":    return IRCCommand.CLEARMSG;
-                case "HOSTTARGET":  return IRCCommand.HOSTTARGET;
-                case "JOIN":        return IRCCommand.JOIN;
-                case "NOTICE":      return IRCCommand.NOTICE;
-                case "PART":        return IRCCommand.PART;
-                case "PING":        return IRCCommand.PING;
-                case "PRIVMSG":     return IRCCommand.PRIVMSG;
-                case "RECONNECT":   return IRCCommand.RECONNECT;
-                case "ROOMSTATE":   return IRCCommand.ROOMSTATE;
-                case "USERNOTICE":  return IRCCommand.USERNOTICE;
-                case "USERSTATE":   return IRCCommand.USERSTATE;
-                default:
-                    throw new ParsingErrorException(String.Format("Unrecognized string command: {0}; message {1}", token, m.MessageString));
-                }
+            case "CAP":         return IRCCommand.CAP;
+            case "CLEARCHAT":   return IRCCommand.CLEARCHAT;
+            case "CLEARMSG":    return IRCCommand.CLEARMSG;
+            case "HOSTTARGET":  return IRCCommand.HOSTTARGET;
+            case "JOIN":        return IRCCommand.JOIN;
+            case "NOTICE":      return IRCCommand.NOTICE;
+            case "PART":        return IRCCommand.PART;
+            case "PING":        return IRCCommand.PING;
+            case "PRIVMSG":     return IRCCommand.PRIVMSG;
+            case "RECONNECT":   return IRCCommand.RECONNECT;
+            case "ROOMSTATE":   return IRCCommand.ROOMSTATE;
+            case "USERNOTICE":  return IRCCommand.USERNOTICE;
+            case "USERSTATE":   return IRCCommand.USERSTATE;
+            default:
+                throw new ParsingErrorException(String.Format("Unrecognized string command: {0}; message {1}", token, m.MessageString));
             }
         }
 
@@ -199,7 +183,20 @@ namespace LukeBot.Twitch
                 }
                 case State.Command:
                 {
-                    m.Command = ParseCommandToken(tokens[i], ref m);
+                    ushort code = 0;
+                    if (UInt16.TryParse(tokens[i], out code))
+                    {
+                        m.Command = IRCCommand.REPLY;
+                        IRCReply reply;
+                        if (Enum.TryParse<IRCReply>(tokens[i], true, out reply))
+                            m.Reply = reply;
+                        else
+                            m.Reply = IRCReply.INVALID;
+                    }
+                    else
+                    {
+                        m.Command = ParseCommandToken(tokens[i], ref m);
+                    }
                     break;
                 }
                 case State.Param:

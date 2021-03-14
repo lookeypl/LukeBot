@@ -21,6 +21,34 @@ namespace LukeBot.Twitch
         private Thread mWorker;
         private Mutex mChannelsMutex;
 
+        void ProcessReply(Message m)
+        {
+            switch (m.Reply)
+            {
+            case IRCReply.RPL_TWITCH_WELCOME1:
+            case IRCReply.RPL_TWITCH_WELCOME2:
+            case IRCReply.RPL_TWITCH_WELCOME3:
+            case IRCReply.RPL_TWITCH_WELCOME4:
+                Logger.Info("Welcome msg: {0}", m.ParamsString);
+                break;
+            case IRCReply.RPL_MOTDSTART:
+                Logger.Info("Server's Message of the Day:");
+                Logger.Info("  {0}", m.ParamsString);
+                break;
+            case IRCReply.RPL_MOTD:
+                Logger.Info("  {0}", m.ParamsString);
+                break;
+            case IRCReply.RPL_ENDOFMOTD:
+                Logger.Info("  {0}", m.ParamsString);
+                Logger.Info("End of Message of the Day");
+                mLoggedInEvent.Set();
+                break;
+            default:
+                Logger.Info("Reply {0} ({1}): {2}", (int)m.Reply, m.Reply.ToString(), m.ParamsString);
+                break;
+            }
+        }
+
         void ProcessPRIVMSG(Message m)
         {
             mChannelsMutex.WaitOne();
@@ -43,36 +71,16 @@ namespace LukeBot.Twitch
             mChannelsMutex.ReleaseMutex();
         }
 
-        bool ProcessMessage(string msg)
+        bool ProcessMessage(Message m)
         {
-            if (msg == null)
-            {
-                Logger.Warning("Connection dropped - exiting");
-                return false;
-            }
-
-            Message m = Message.Parse(msg);
-
             switch (m.Command)
             {
-            case IRCCommand.UNKNOWN_NUMERIC:
-                Logger.Warning("Unrecognized command: {0}", m);
+            // Numeric commands (aka. replies)
+            case IRCCommand.REPLY:
+                ProcessReply(m);
                 break;
-            case IRCCommand.LOGIN_001:
-            case IRCCommand.LOGIN_002:
-            case IRCCommand.LOGIN_003:
-            case IRCCommand.LOGIN_004:
-            case IRCCommand.LOGIN_372:
-            case IRCCommand.LOGIN_375:
-                Logger.Debug("Welcome message: {0}", m.ParamsString);
-                break;
-            case IRCCommand.LOGIN_376:
-                mLoggedInEvent.Set();
-                Logger.Debug("Welcome message: {0}", m.ParamsString);
-                break;
-            case IRCCommand.UNKNOWN_421:
-                Logger.Error("Unknown command sent: {0}", string.Join(" ", m.Params));
-                break;
+
+            // String commands
             case IRCCommand.JOIN:
                 Logger.Info("Joined channel {0}", m.Channel);
                 break;
@@ -84,7 +92,7 @@ namespace LukeBot.Twitch
                 break;
             case IRCCommand.PING:
                 Logger.Debug("Received PING - responding with PONG");
-                mConnection.Send("PONG :" + m.Params[0]);
+                mConnection.Send("PONG :" + m.Params[m.Params.Count - 1]);
                 break;
             case IRCCommand.PRIVMSG:
                 ProcessPRIVMSG(m);
@@ -94,6 +102,18 @@ namespace LukeBot.Twitch
             }
 
             return true;
+        }
+
+        bool ProcessMessage(string msg)
+        {
+            if (msg == null)
+            {
+                Logger.Warning("Connection dropped - exiting");
+                return false;
+            }
+
+            Message m = Message.Parse(msg);
+            return ProcessMessage(m);
         }
 
         void WorkerMain()
@@ -120,7 +140,7 @@ namespace LukeBot.Twitch
         {
             string msg = mConnection.Read();
             if (msg == null)
-                return true; // no message, we good
+                return false; // no message, connection was dropped without any reason
 
             Message m = Message.Parse(msg);
             if (m.Command == IRCCommand.NOTICE)
@@ -128,14 +148,15 @@ namespace LukeBot.Twitch
                 Logger.Info("While trying to login received Notice from Server:");
                 Logger.Info("  {0}", msg);
 
-                if (m.ParamsString.Equals("Login authentication failed"))
+                if (m.Params[m.Params.Count - 1].Equals("Login authentication failed"))
                     return false;
                 else
                     return true;
             }
 
             // Login fail comes as IRC "NOTICE" call. If we don't get it, assume we logged in successfully.
-            Logger.Debug("Recv: {0}", msg);
+            // Process the message as normal afterwards.
+            ProcessMessage(m);
             return true;
         }
 
@@ -173,9 +194,11 @@ namespace LukeBot.Twitch
             mConnection.Send("NICK " + mName);
             if (!CheckIfLoginSuccessful())
             {
+                Logger.Error("Login to Twitch IRC server failed");
                 if (!tokenFromRequest)
                 {
                     // token might be old; refresh it
+                    Logger.Info("OAuth token might be expired - refreshing...");
                     token = mToken.Refresh();
                     mToken.ExportToFile(tokenPath);
 
@@ -189,7 +212,9 @@ namespace LukeBot.Twitch
                     if (!CheckIfLoginSuccessful())
                     {
                         File.Delete(tokenPath);
-                        throw new InvalidOperationException("Failed to refresh OAuth Token; restart to login and request a fresh one");
+                        throw new InvalidOperationException(
+                            "Failed to refresh OAuth Token. Token has been removed, restart to re-login and request a fresh OAuth token"
+                        );
                     }
                 }
                 else

@@ -2,16 +2,13 @@ namespace LukeBot.Twitch
 {
     public enum IRCCommand
     {
+        // Stub for variable initialization
         INVALID,
-        UNKNOWN_NUMERIC,
-        LOGIN_001,
-        LOGIN_002,
-        LOGIN_003,
-        LOGIN_004,
-        LOGIN_375,
-        LOGIN_372,
-        LOGIN_376,
-        UNKNOWN_421,
+
+        // Marks numeric response from the server; can be an actual reply or an error
+        REPLY,
+
+        // Regular "string" IRC commands
         CAP,
         CLEARCHAT,
         CLEARMSG,

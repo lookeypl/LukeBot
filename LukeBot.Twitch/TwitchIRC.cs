@@ -51,6 +51,15 @@ namespace LukeBot.Twitch
 
         void ProcessPRIVMSG(Message m)
         {
+            string chatMsg = m.Params[m.Params.Count - 1];
+            Logger.Info("{0} #{1}: {2}", m.User, m.Channel, chatMsg);
+            if (chatMsg[0] != '!')
+                return;
+
+            string[] chatMsgTokens = chatMsg.Split(' ');
+            string cmd = chatMsgTokens[0].Substring(1); // strip '!' character
+            string response = "";
+
             mChannelsMutex.WaitOne();
 
             try
@@ -58,17 +67,20 @@ namespace LukeBot.Twitch
                 if (!mChannels.ContainsKey(m.Channel))
                     throw new InvalidDataException(String.Format("Unknown channel: {0}", m.Channel));
 
-                Logger.Info("Message for channel {0} from {1}: {2}", m.Channel, m.Nick, m.Params[m.Params.Count - 1]);
-                // TODO CALL COMMAND
+                Logger.Debug("Processing command {0}", cmd);
+                response = mChannels[m.Channel].ProcessMessage(cmd, chatMsgTokens);
             }
             catch (Exception e)
             {
-                Logger.Error("Failed to process message: {0}", e.Message);
+                Logger.Error("Failed to process command: {0}", e.Message);
                 mChannelsMutex.ReleaseMutex();
                 return;
             }
 
             mChannelsMutex.ReleaseMutex();
+
+            if (response.Length > 0)
+                mConnection.Send(String.Format("PRIVMSG #{0} :{1}", m.Channel, response));
         }
 
         bool ProcessMessage(Message m)
@@ -169,7 +181,7 @@ namespace LukeBot.Twitch
 
             // log in
             Logger.Info("Logging in to Twitch IRC server...");
-            Logger.Debug("Bot login to: {0}", mName);
+            Logger.Debug("Bot login account: {0}", mName);
 
             // WORKAROUND TO NOT PASS DATA TO TWITCH EVERY LAUNCH WHILE WORKING
             string token;

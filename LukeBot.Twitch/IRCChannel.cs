@@ -18,7 +18,13 @@ namespace LukeBot.Twitch
         public string ProcessMessage(string cmd, string[] args)
         {
             if (!mCommands.ContainsKey(cmd))
-                throw new ArgumentException(String.Format("{0}: Unrecognized command {1}", mChannelName, cmd));
+            {
+                #if (DEBUG)
+                return String.Format("Unrecognized command: {0}", cmd);
+                #else
+                return "";
+                #endif
+            }
 
             return mCommands[cmd].Execute(args);
         }

@@ -48,7 +48,7 @@ namespace LukeBot
 
             twitch.AwaitLoggedIn(30 * 1000);
             twitch.JoinChannel("lookey");
-            twitch.AddCommandToChannel("lookey", "discord", new Twitch.Command.Print("Discord server: lmao"));
+            twitch.AddCommandToChannel("lookey", "discord", new Twitch.Command.Print("Discord server: https://discord.gg/wsx2sY5"));
 
             mUsers[0].WaitForModules();
         }

@@ -230,8 +230,6 @@ namespace LukeBot.Twitch
                 }
             }
 
-            m.Print(Logger.LogLevel.Debug);
-
             return m;
         }
 

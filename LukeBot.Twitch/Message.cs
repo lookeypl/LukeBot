@@ -252,6 +252,7 @@ namespace LukeBot.Twitch
         public void Print(Logger.LogLevel level)
         {
             Logger.Log(level, "Message data:");
+            Logger.Log(level, "  String: {0}", MessageString);
             Logger.Log(level, "  Tags (count {0}):", Tags.Count);
             foreach (var v in Tags)
                 Logger.Log(level, "   -> {0} = {1}", v.Key, v.Value);

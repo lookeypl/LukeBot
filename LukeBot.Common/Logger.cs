@@ -12,7 +12,8 @@ namespace LukeBot.Common
             Warning,
             Info,
             Debug,
-            Trace
+            Trace,
+            Secure,
         }
 
         private static Logger mInstance = null;
@@ -71,6 +72,10 @@ namespace LukeBot.Common
                 tag = "[ TRACE ]";
                 color = ConsoleColor.DarkGray;
                 break;
+            case LogLevel.Secure:
+                tag = "[ SECURE ]";
+                color = ConsoleColor.DarkYellow;
+                break;
             default:
                 tag = "[ UNKNOWN ]";
                 color = mDefaultColor;
@@ -85,9 +90,40 @@ namespace LukeBot.Common
             Console.ForegroundColor = mDefaultColor;
         }
 
+        private static bool IsLogLevelEnabled(LogLevel level)
+        {
+            switch (level)
+            {
+            case LogLevel.Error:
+            case LogLevel.Warning:
+            case LogLevel.Info:
+                return true;
+            case LogLevel.Debug:
+                #if (DEBUG)
+                    return true;
+                #else
+                    return false;
+                #endif
+            case LogLevel.Trace:
+                #if (TRACE)
+                    return true;
+                #else
+                    return false;
+                #endif
+            case LogLevel.Secure:
+                #if (ENABLE_SECURE_LOGS)
+                    return true;
+                #else
+                    return false;
+                #endif
+            default:
+                return false;
+            }
+        }
+
         public static void Log(LogLevel level, string msg, params object[] args)
         {
-            if (level != LogLevel.Debug && level != LogLevel.Trace)
+            if (IsLogLevelEnabled(level))
                 Instance.LogInternal(level, msg, args);
         }
 
@@ -117,6 +153,13 @@ namespace LukeBot.Common
         {
         #if (TRACE)
             Instance.LogInternal(LogLevel.Trace, msg, args);
+        #endif
+        }
+
+        public static void Secure(string msg, params object[] args)
+        {
+        #if (ENABLE_SECURE_LOGS)
+            Instance.LogInternal(LogLevel.Secure, msg, args);
         #endif
         }
     }

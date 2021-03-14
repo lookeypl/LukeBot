@@ -5,6 +5,12 @@
     <Version>0.0.1</Version>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SecureDebug|AnyCPU'">
+    <DefineConstants>DEBUG;TRACE;ENABLE_SECURE_LOGS</DefineConstants>
+    <OutputPath>$(SolutionDir)Bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>$(SolutionDir)Obj\$(ProjectName)\$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <OutputPath>$(SolutionDir)Bin\$(Configuration)\</OutputPath>

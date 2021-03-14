@@ -28,7 +28,8 @@ namespace LukeBot.Common.OAuth
 
             Task<string> contentStrTask = content.ReadAsStringAsync();
             contentStrTask.Wait();
-            Logger.Debug("Sending POST with content " + contentStrTask.Result);
+            Logger.Debug("Sending POST request");
+            Logger.Secure(" -> Content: {0}", contentStrTask.Result);
 
             Task<HttpResponseMessage> retMessageTask = mHttpClient.PostAsync(mTokenURL, content);
             retMessageTask.Wait(10000);
@@ -44,13 +45,11 @@ namespace LukeBot.Common.OAuth
             retContentStrTask.Wait();
             string retContentStr = retContentStrTask.Result;
 
-            Logger.Debug("Received content: {0}", retContentStr);
-
             AuthToken token = JsonSerializer.Deserialize<AuthToken>(retContentStr);
 
             Logger.Debug("Response from Twitch OAuth:");
-            Logger.Debug("  Access token: {0}", token.access_token);
-            Logger.Debug("  Refresh token: {0}", token.refresh_token);
+            Logger.Secure("  Access token: {0}", token.access_token);
+            Logger.Secure("  Refresh token: {0}", token.refresh_token);
             Logger.Debug("  Expires in: {0}", token.expires_in);
             Logger.Debug("  Scope: ");
             foreach (var s in token.scope)

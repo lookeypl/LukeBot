@@ -9,6 +9,12 @@
     <NeutralLanguage>en-US</NeutralLanguage>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SecureDebug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;ENABLE_SECURE_LOGS</DefineConstants>
+    <OutputPath>$(SolutionDir)Bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>$(SolutionDir)Obj\$(ProjectName)\$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <OutputPath>$(SolutionDir)Bin\$(Configuration)\</OutputPath>

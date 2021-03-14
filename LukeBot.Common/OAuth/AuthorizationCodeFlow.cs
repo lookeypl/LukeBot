@@ -52,7 +52,7 @@ namespace LukeBot.Common.OAuth
             // TODO we probably should hold on to this token? Check if that's the case
             UserToken userResponse = (UserToken)userResponseBase;
             Logger.Debug("User token from service {0}:", mService);
-            Logger.Debug("  Code: {0}", userResponse.code);
+            Logger.Secure("  Code: {0}", userResponse.code);
             Logger.Debug("  Scope: ");
             foreach (var s in userResponse.scope)
             {
@@ -76,7 +76,8 @@ namespace LukeBot.Common.OAuth
 
             contentStrTask = content.ReadAsStringAsync();
             contentStrTask.Wait();
-            Logger.Debug("Sending POST with content " + contentStrTask.Result);
+            Logger.Debug("Sending POST request");
+            Logger.Secure(" -> Content: {0}", contentStrTask.Result);
 
             Task<HttpResponseMessage> retMessageTask = mClient.PostAsync(mTokenURL, content);
             retMessageTask.Wait(30 * 1000);
@@ -92,12 +93,10 @@ namespace LukeBot.Common.OAuth
             retContentStrTask.Wait();
             string retContentStr = retContentStrTask.Result;
 
-            Logger.Debug("Received content: {0}", retContentStr);
-
             AuthToken authResponse = JsonSerializer.Deserialize<AuthToken>(retContentStr);
             Logger.Debug("Response from OAuth service {0}:", mService);
-            Logger.Debug("  Access token: {0}", authResponse.access_token);
-            Logger.Debug("  Refresh token: {0}", authResponse.refresh_token);
+            Logger.Secure("  Access token: {0}", authResponse.access_token);
+            Logger.Secure("  Refresh token: {0}", authResponse.refresh_token);
             Logger.Debug("  Expires in: {0}", authResponse.expires_in);
             Logger.Debug("  Scope: ");
             foreach (var s in authResponse.scope)
@@ -111,7 +110,7 @@ namespace LukeBot.Common.OAuth
 
         public override AuthToken Refresh(AuthToken token)
         {
-            Logger.Debug("Refreshing OAuth token {0}", token.access_token);
+            Logger.Debug("Refreshing OAuth token...");
 
             Dictionary<string, string> query = new Dictionary<string, string>();
             query.Clear();
@@ -125,7 +124,8 @@ namespace LukeBot.Common.OAuth
 
             Task<string> contentStrTask = content.ReadAsStringAsync();
             contentStrTask.Wait();
-            Logger.Debug("Sending POST with content " + contentStrTask.Result);
+            Logger.Debug("Sending POST request");
+            Logger.Secure(" -> Content: {0}", contentStrTask.Result);
 
             Task<HttpResponseMessage> retMessageTask = mClient.PostAsync(mTokenURL, content);
             retMessageTask.Wait(30 * 1000);
@@ -141,12 +141,10 @@ namespace LukeBot.Common.OAuth
             retContentStrTask.Wait();
             string retContentStr = retContentStrTask.Result;
 
-            Logger.Debug("Received content: {0}", retContentStr);
-
             AuthToken refreshResponse = JsonSerializer.Deserialize<AuthToken>(retContentStr);
             Logger.Debug("Response from OAuth service {0}:", mService);
-            Logger.Debug("  Access token: {0}", refreshResponse.access_token);
-            Logger.Debug("  Refresh token: {0}", refreshResponse.refresh_token);
+            Logger.Secure("  Access token: {0}", refreshResponse.access_token);
+            Logger.Secure("  Refresh token: {0}", refreshResponse.refresh_token);
             Logger.Debug("  Expires in: {0}", refreshResponse.expires_in);
             Logger.Debug("  Token type: {0}", refreshResponse.token_type);
             Logger.Debug("  Scope: ");

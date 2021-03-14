@@ -43,7 +43,7 @@ namespace LukeBot.Common
                 return;
             }
 
-            Logger.Debug("Send: {0}", msg);
+            Logger.Secure("Send: {0}", msg);
             mOutput.WriteLine(msg);
             mOutput.Flush();
         }

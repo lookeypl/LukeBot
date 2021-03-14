@@ -26,22 +26,31 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.UI", "LukeBot.UI\Lu
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		SecureDebug|Any CPU = SecureDebug|Any CPU
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{31AE6813-99E8-4739-B46A-4F91C62D225F}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{31AE6813-99E8-4739-B46A-4F91C62D225F}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 		{31AE6813-99E8-4739-B46A-4F91C62D225F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{31AE6813-99E8-4739-B46A-4F91C62D225F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{31AE6813-99E8-4739-B46A-4F91C62D225F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{31AE6813-99E8-4739-B46A-4F91C62D225F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E788B775-CF23-4872-893C-4FFF44E09943}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{E788B775-CF23-4872-893C-4FFF44E09943}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 		{E788B775-CF23-4872-893C-4FFF44E09943}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E788B775-CF23-4872-893C-4FFF44E09943}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E788B775-CF23-4872-893C-4FFF44E09943}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E788B775-CF23-4872-893C-4FFF44E09943}.Release|Any CPU.Build.0 = Release|Any CPU
+		{564B1BE4-C13B-4168-A9E4-34061DA82052}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{564B1BE4-C13B-4168-A9E4-34061DA82052}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 		{564B1BE4-C13B-4168-A9E4-34061DA82052}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{564B1BE4-C13B-4168-A9E4-34061DA82052}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{564B1BE4-C13B-4168-A9E4-34061DA82052}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{564B1BE4-C13B-4168-A9E4-34061DA82052}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20E971C2-B196-417D-A6FE-DC2831B76B24}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{20E971C2-B196-417D-A6FE-DC2831B76B24}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 		{20E971C2-B196-417D-A6FE-DC2831B76B24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{20E971C2-B196-417D-A6FE-DC2831B76B24}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{20E971C2-B196-417D-A6FE-DC2831B76B24}.Release|Any CPU.ActiveCfg = Release|Any CPU

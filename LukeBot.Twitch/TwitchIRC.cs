@@ -8,7 +8,7 @@ using System.Threading;
 
 namespace LukeBot.Twitch
 {
-    public class TwitchIRC: IModule
+    public class TwitchIRCModule: IModule
     {
         private string mName = "lukeboto";
         private Connection mConnection = null;
@@ -246,7 +246,7 @@ namespace LukeBot.Twitch
             }
         }
 
-        public TwitchIRC()
+        public TwitchIRCModule()
         {
             mWorker = new Thread(this.WorkerMain);
             mChannelsMutex = new Mutex();
@@ -256,7 +256,7 @@ namespace LukeBot.Twitch
             Logger.Info("Twitch IRC module initialized");
         }
 
-        ~TwitchIRC()
+        ~TwitchIRCModule()
         {
             Disconnect();
             Wait();

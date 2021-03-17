@@ -42,7 +42,7 @@ namespace LukeBot
             Logger.Info("LukeBot modules starting...");
             mUsers.Add(new UserContext("Lookey"));
 
-            TwitchIRC twitch = new TwitchIRC();
+            TwitchIRCModule twitch = new TwitchIRCModule();
             mUsers[0].AddModule(twitch);
             mUsers[0].RunModules();
 

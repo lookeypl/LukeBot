@@ -22,6 +22,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Twitch", "LukeBot.T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.UI", "LukeBot.UI\LukeBot.UI.csproj", "{20E971C2-B196-417D-A6FE-DC2831B76B24}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Spotify", "LukeBot.Spotify\LukeBot.Spotify.csproj", "{4C3B92FE-CEC2-4321-B1D5-8533255D99DA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,6 +55,12 @@ Global
 		{20E971C2-B196-417D-A6FE-DC2831B76B24}.Release|Any CPU.Build.0 = Release|Any CPU
 		{20E971C2-B196-417D-A6FE-DC2831B76B24}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
 		{20E971C2-B196-417D-A6FE-DC2831B76B24}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
+		{4C3B92FE-CEC2-4321-B1D5-8533255D99DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C3B92FE-CEC2-4321-B1D5-8533255D99DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C3B92FE-CEC2-4321-B1D5-8533255D99DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C3B92FE-CEC2-4321-B1D5-8533255D99DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C3B92FE-CEC2-4321-B1D5-8533255D99DA}.SecureDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C3B92FE-CEC2-4321-B1D5-8533255D99DA}.SecureDebug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

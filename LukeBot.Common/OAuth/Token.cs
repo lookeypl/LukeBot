@@ -17,8 +17,8 @@ namespace LukeBot.Common.OAuth
 
         public Token(string service, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)
         {
-            string idPath = "Data/oauth_client_id.lukebot";
-            string secretPath = "Data/oauth_client_secret.lukebot";
+            string idPath = "Data/" + service + ".client_id.lukebot";
+            string secretPath = "Data/" + service + ".client_secret.lukebot";
 
             switch (flow)
             {

@@ -175,8 +175,6 @@ namespace LukeBot.Twitch
         // TODO parametrize
         void Login()
         {
-            mConnection = new Connection("irc.chat.twitch.tv", 6697, true);
-
             mToken = new OAuth.TwitchToken(AuthFlow.AuthorizationCode);
 
             // log in
@@ -185,7 +183,7 @@ namespace LukeBot.Twitch
 
             // WORKAROUND TO NOT PASS DATA TO TWITCH EVERY LAUNCH WHILE WORKING
             string token;
-            string tokenPath = "Data/oauth_token.lukebot";
+            string tokenPath = "Data/" + Constants.SERVICE_NAME + ".token.lukebot";
             string tokenScope = "chat:read chat:edit";
             bool tokenFromRequest = false;
             if (FileUtils.Exists(tokenPath))
@@ -201,6 +199,8 @@ namespace LukeBot.Twitch
                 mToken.ExportToFile(tokenPath);
                 tokenFromRequest = true;
             }
+
+            mConnection = new Connection("irc.chat.twitch.tv", 6697, true);
 
             mConnection.Send("PASS oauth:" + token);
             mConnection.Send("NICK " + mName);

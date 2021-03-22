@@ -1,6 +1,7 @@
 ﻿using LukeBot.Common;
 using LukeBot.Twitch;
 using LukeBot.UI;
+using LukeBot.CLI;
 using System.Collections.Generic;
 using System.Threading;
 using System;
@@ -11,17 +12,23 @@ namespace LukeBot
     {
         private List<UserContext> mUsers;
         private Thread mInterfaceThread;
+        private CLI.Interface mCLI;
+        private UI.Interface mUI;
 
         void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
         {
+            // UI is not handled here; it captures Ctrl+C on its own
             Logger.Info("Requested shutdown");
+            mCLI.Terminate();
             mUsers[0].RequestModuleShutdown();
         }
 
         public LukeBot()
         {
             mUsers = new List<UserContext>();
-            mInterfaceThread = new Thread(new ThreadStart(Interface.ThreadMain));
+            mCLI = new CLI.Interface();
+            mUI = new UI.Interface();
+            mInterfaceThread = new Thread(new ThreadStart(mUI.Run));
         }
 
         ~LukeBot()
@@ -35,8 +42,9 @@ namespace LukeBot
             Console.CancelKeyPress += OnCancelKeyPress;
 
             Logger.Info("LukeBot v0.0.1 starting");
+            mCLI = new CLI.Interface();
 
-            Logger.Info("LukeBot interface starting...");
+            Logger.Info("LukeBot UI starting...");
             mInterfaceThread.Start();
 
             Logger.Info("LukeBot modules starting...");
@@ -50,6 +58,14 @@ namespace LukeBot
             twitch.JoinChannel("lookey");
             twitch.AddCommandToChannel("lookey", "discord", new Twitch.Command.Print("Discord server: https://discord.gg/wsx2sY5"));
 
+            Logger.Info("Giving control to CLI");
+            mCLI.MainLoop();
+
+            mUI.Stop();
+            mInterfaceThread.Join();
+
+            Logger.Info("UI stopped. Stopping modules...");
+            mUsers[0].RequestModuleShutdown();
             mUsers[0].WaitForModules();
         }
     }

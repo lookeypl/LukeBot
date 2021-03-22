@@ -52,7 +52,7 @@ namespace LukeBot.Twitch
         void ProcessPRIVMSG(Message m)
         {
             string chatMsg = m.Params[m.Params.Count - 1];
-            Logger.Info("{0} #{1}: {2}", m.User, m.Channel, chatMsg);
+            Logger.Info("#{0} {1}: {2}", m.Channel, m.User, chatMsg);
             if (chatMsg[0] != '!')
                 return;
 
@@ -317,10 +317,16 @@ namespace LukeBot.Twitch
 
         public void Wait()
         {
-            mWorker.Join();
+            if (mWorker.IsAlive)
+            {
+                mWorker.Join();
+            }
 
-            mConnection.Close();
-            mConnection = null;
+            if (mConnection != null)
+            {
+                mConnection.Close();
+                mConnection = null;
+            }
         }
     }
 }

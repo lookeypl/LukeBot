@@ -1,4 +1,5 @@
 # oauth data
+/oauth_*.lukebot
 /*.client_id.lukebot
 /*.client_secret.lukebot
 /*.token.lukebot

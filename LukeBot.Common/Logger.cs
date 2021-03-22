@@ -74,7 +74,7 @@ namespace LukeBot.Common
                 break;
             case LogLevel.Secure:
                 tag = "[ SECURE ]";
-                color = ConsoleColor.DarkYellow;
+                color = ConsoleColor.DarkMagenta;
                 break;
             default:
                 tag = "[ UNKNOWN ]";

@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using System.Threading.Tasks;
 
 namespace LukeBot.UI
 {
     public class Interface
     {
+        IHost mHost = null;
+
         public static void ThreadMain()
         {
             Interface iface = new Interface();
@@ -13,7 +16,14 @@ namespace LukeBot.UI
 
         public void Run()
         {
-            CreateHostBuilder().Build().Run();
+            mHost = CreateHostBuilder().Build();
+            mHost.Run();
+        }
+
+        public void Stop()
+        {
+            Task stop = mHost.StopAsync();
+            stop.Wait();
         }
 
         public IHostBuilder CreateHostBuilder() =>

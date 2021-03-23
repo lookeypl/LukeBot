@@ -21,8 +21,11 @@ namespace LukeBot.CLI
 
         public static void CancelConsoleIO()
         {
+        #if (WINDOWS)
             IntPtr handle = GetStdHandle(STD_INPUT_HANDLE);
             CancelIoEx(handle, IntPtr.Zero);
+        #elif (LINUX)
+        #endif
         }
     }
 }

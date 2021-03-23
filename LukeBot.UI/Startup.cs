@@ -83,7 +83,6 @@ namespace LukeBot.UI
                 await context.Response.WriteAsync(
                     "<html><body style=\"font-family: sans-serif; margin-left: 30px; margin-top: 30px;\">" +
                         "Login to " + service + " successful, you can close the window now.\n" +
-                        "<script type=\"text/javascript\">$(document).ready(function() { doCountdown(); });</script>\n" +
                     "</body></html>"
                 );
             }
@@ -93,10 +92,14 @@ namespace LukeBot.UI
                 await context.Response.WriteAsync(
                     "<html><body style=\"font-family: sans-serif; margin-left: 30px; margin-top: 30px;\">" +
                         "Login to " + service + " failed. Check log for details.\n" +
-                        "<script type=\"text/javascript\">$(document).ready(function() { doCountdown(); });</script>\n" +
                     "</body></html>"
                 );
             }
+        }
+
+        async Task HandleWidgetCallback(string widgetUUID, HttpContext context)
+        {
+            await context.Response.WriteAsync(WidgetManager.Instance.GetWidgetPage(widgetUUID));
         }
 
         public void ConfigureServices(IServiceCollection services)
@@ -140,6 +143,10 @@ namespace LukeBot.UI
                 endpoints.MapGet("callback/{service}", async context => {
                     var service = context.Request.RouteValues["service"];
                     await HandleServiceCallback($"{service}", context);
+                });
+                endpoints.MapGet("widget/{widget}", async context => {
+                    var widget = context.Request.RouteValues["widget"];
+                    await HandleWidgetCallback($"{widget}", context);
                 });
             });
         }

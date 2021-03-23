@@ -11,6 +11,7 @@ namespace LukeBot.CLI
 
         void ProcessCommand(string cmd)
         {
+            Logger.Debug("cmd: {0}", cmd);
             if (cmd == "quit")
             {
                 Console.WriteLine("Exiting");
@@ -38,7 +39,7 @@ namespace LukeBot.CLI
                         ProcessCommand(response);
                 }
             }
-            catch (System.OperationCanceledException e)
+            catch (System.OperationCanceledException)
             {
                 Logger.Warning("CLI input cancelled");
             }

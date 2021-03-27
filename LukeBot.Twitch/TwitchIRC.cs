@@ -175,55 +175,42 @@ namespace LukeBot.Twitch
         // TODO parametrize
         void Login()
         {
+            string tokenScope = "chat:read chat:edit";
             mToken = new OAuth.TwitchToken(AuthFlow.AuthorizationCode);
 
             // log in
             Logger.Info("Logging in to Twitch IRC server...");
             Logger.Debug("Bot login account: {0}", mName);
 
-            // WORKAROUND TO NOT PASS DATA TO TWITCH EVERY LAUNCH WHILE WORKING
-            string token;
-            string tokenPath = "Data/" + Constants.SERVICE_NAME + ".token.lukebot";
-            string tokenScope = "chat:read chat:edit";
-            bool tokenFromRequest = false;
-            if (FileUtils.Exists(tokenPath))
-            {
-                Logger.Debug("Found already existing token, using it");
-                mToken.ImportFromFile(tokenPath);
-                token = mToken.Get();
-            }
-            else
-            {
-                Logger.Debug("No token found, acquiring new token");
-                token = mToken.Request(tokenScope);
-                mToken.ExportToFile(tokenPath);
-                tokenFromRequest = true;
-            }
+            // at this stage if token is loaded, it has been imported from a file
+            bool tokenFromFile = mToken.Loaded;
+
+            if (!mToken.Loaded)
+                mToken.Request(tokenScope);
 
             mConnection = new Connection("irc.chat.twitch.tv", 6697, true);
 
-            mConnection.Send("PASS oauth:" + token);
+            mConnection.Send("PASS oauth:" + mToken.Get());
             mConnection.Send("NICK " + mName);
             if (!CheckIfLoginSuccessful())
             {
                 Logger.Error("Login to Twitch IRC server failed");
-                if (!tokenFromRequest)
+                if (tokenFromFile)
                 {
-                    // token might be old; refresh it
+                    // token from file might be old; refresh it
                     Logger.Info("OAuth token might be expired - refreshing...");
-                    token = mToken.Refresh();
-                    mToken.ExportToFile(tokenPath);
+                    mToken.Refresh();
 
                     // Connection must be remade
                     mConnection.Close();
                     mConnection = new Connection("irc.chat.twitch.tv", 6697, true);
 
-                    mConnection.Send("PASS oauth:" + token);
+                    mConnection.Send("PASS oauth:" + mToken.Get());
                     mConnection.Send("NICK " + mName);
 
                     if (!CheckIfLoginSuccessful())
                     {
-                        File.Delete(tokenPath);
+                        mToken.Remove();
                         throw new InvalidOperationException(
                             "Failed to refresh OAuth Token. Token has been removed, restart to re-login and request a fresh OAuth token"
                         );

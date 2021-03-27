@@ -18,7 +18,7 @@ namespace LukeBot
         void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
         {
             // UI is not handled here; it captures Ctrl+C on its own
-            Logger.Info("Requested shutdown");
+            Logger.Info("Requested shutondown");
             mCLI.Terminate();
             mUsers[0].RequestModuleShutdown();
         }

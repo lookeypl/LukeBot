@@ -13,7 +13,32 @@ namespace LukeBot.Common.OAuth
     public class Token
     {
         private Flow mFlow = null;
-        private AuthToken mToken;
+        private string mTokenPath = null;
+        private AuthToken mToken = null;
+
+        public bool Loaded { get; private set; }
+
+
+        private void ImportFromFile()
+        {
+            StreamReader fileStream = File.OpenText(mTokenPath);
+            mToken = JsonSerializer.Deserialize<AuthToken>(fileStream.ReadToEnd());
+            fileStream.Close();
+            Loaded = true;
+        }
+
+        private void ExportToFile()
+        {
+            if (mToken == null)
+                throw new InvalidTokenException("Token is not acquired");
+
+            FileStream file = File.OpenWrite(mTokenPath);
+            StreamWriter writer = new StreamWriter(file);
+            writer.Write(JsonSerializer.Serialize(mToken));
+            writer.Close();
+            file.Close();
+            Loaded = true;
+        }
 
         public Token(string service, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)
         {
@@ -30,6 +55,13 @@ namespace LukeBot.Common.OAuth
                 break;
             default:
                 throw new ArgumentOutOfRangeException("Invalid AuthFlow mode: {0}" + flow.ToString());
+            }
+
+            mTokenPath = "Data/" + service + ".token.lukebot";
+
+            if (FileUtils.Exists(mTokenPath)) {
+                Logger.Debug("Found token {0}, importing", mTokenPath);
+                ImportFromFile();
             }
         }
 
@@ -48,6 +80,7 @@ namespace LukeBot.Common.OAuth
         public string Request(string scope)
         {
             mToken = mFlow.Request(scope);
+            ExportToFile();
             return mToken.access_token;
         }
 
@@ -57,32 +90,17 @@ namespace LukeBot.Common.OAuth
                 throw new InvalidTokenException("Token is not acquired");
 
             mToken = mFlow.Refresh(mToken);
+            ExportToFile();
             return mToken.access_token;
         }
 
-        public void Revoke()
+        public void Remove()
         {
-            mFlow.Revoke(mToken);
-            mToken = null;
-        }
-
-        public void ImportFromFile(string path)
-        {
-            StreamReader fileStream = File.OpenText(path);
-            mToken = JsonSerializer.Deserialize<AuthToken>(fileStream.ReadToEnd());
-            fileStream.Close();
-        }
-
-        public void ExportToFile(string path)
-        {
-            if (mToken == null)
-                throw new InvalidTokenException("Token is not acquired");
-
-            FileStream file = File.OpenWrite(path);
-            StreamWriter writer = new StreamWriter(file);
-            writer.Write(JsonSerializer.Serialize(mToken));
-            writer.Close();
-            file.Close();
+            if (Loaded) {
+                File.Delete(mTokenPath);
+                mFlow.Revoke(mToken);
+                mToken = null;
+            }
         }
     }
 }

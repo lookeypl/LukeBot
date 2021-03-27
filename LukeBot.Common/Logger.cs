@@ -16,11 +16,20 @@ namespace LukeBot.Common
             Secure,
         }
 
+        public struct LogMessageArgs
+        {
+            public LogLevel severity;
+            public string msg;
+        }
+
         private static Logger mInstance = null;
         private static readonly object mLock = new object();
         private CultureInfo mCultureInfo = null;
         private Timer mTimer = null;
         private ConsoleColor mDefaultColor;
+
+        public static event EventHandler<LogMessageArgs> PreLogMessage;
+        public static event EventHandler<LogMessageArgs> PostLogMessage;
 
         private static Logger Instance
         {
@@ -43,6 +52,20 @@ namespace LukeBot.Common
             mTimer.Start();
 
             mDefaultColor = Console.ForegroundColor;
+        }
+
+        private void OnPreLogMessage(LogMessageArgs args)
+        {
+            EventHandler<LogMessageArgs> handler = PreLogMessage;
+            if (handler != null)
+                handler(this, args);
+        }
+
+        private void OnPostLogMessage(LogMessageArgs args)
+        {
+            EventHandler<LogMessageArgs> handler = PostLogMessage;
+            if (handler != null)
+                handler(this, args);
         }
 
         private void LogInternal(LogLevel level, string msg, params object[] args)
@@ -86,8 +109,16 @@ namespace LukeBot.Common
             string intro = string.Format(mCultureInfo, "{0:f4} {1} ", timestamp, tag);
             string formatted = string.Format(mCultureInfo, msg, args);
             Console.ForegroundColor = color;
+
+            LogMessageArgs msgArgs = new LogMessageArgs {
+                msg = formatted,
+                severity = level
+            };
+
+            OnPreLogMessage(msgArgs);
             Console.WriteLine(intro + formatted);
             Console.ForegroundColor = mDefaultColor;
+            OnPostLogMessage(msgArgs);
         }
 
         private static bool IsLogLevelEnabled(LogLevel level)

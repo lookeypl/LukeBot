@@ -1,5 +1,6 @@
 ﻿using System;
 using LukeBot.Common;
+using System.Threading;
 
 namespace LukeBot.CLI
 {
@@ -8,19 +9,41 @@ namespace LukeBot.CLI
         private readonly string PROMPT = "> ";
 
         private bool mDone = false;
+        private volatile bool mPromptWritten = false;
+        private Mutex mMessageMutex = new Mutex();
+
+        void PreLogMessageEvent(object sender, Logger.LogMessageArgs args)
+        {
+            mMessageMutex.WaitOne();
+            if (!mDone) {
+                Console.Write('\r');
+                mPromptWritten = false;
+            }
+        }
+
+        void PostLogMessageEvent(object sender, Logger.LogMessageArgs args)
+        {
+            if (!mDone) {
+                Console.Write(PROMPT);
+                mPromptWritten = true;
+            }
+            mMessageMutex.ReleaseMutex();
+        }
 
         void ProcessCommand(string cmd)
         {
             Logger.Debug("cmd: {0}", cmd);
             if (cmd == "quit")
             {
-                Console.WriteLine("Exiting");
                 mDone = true;
+                Console.WriteLine("Exiting");
             }
         }
 
         public Interface()
         {
+            Logger.PreLogMessage += PreLogMessageEvent;
+            Logger.PostLogMessage += PostLogMessageEvent;
         }
 
         ~Interface()
@@ -33,7 +56,14 @@ namespace LukeBot.CLI
             {
                 while (!mDone)
                 {
-                    Console.Write(PROMPT);
+                    mMessageMutex.WaitOne();
+                    if (!mPromptWritten)
+                    {
+                        Console.Write(PROMPT);
+                        mPromptWritten = true;
+                    }
+                    mMessageMutex.ReleaseMutex();
+
                     string response = Console.ReadLine();
                     if (response != null)
                         ProcessCommand(response);

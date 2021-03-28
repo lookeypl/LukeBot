@@ -16,8 +16,8 @@ namespace LukeBot.CLI
         {
             mMessageMutex.WaitOne();
             if (!mDone) {
-                Console.Write('\r');
                 mPromptWritten = false;
+                Console.Write('\r');
             }
         }
 
@@ -32,11 +32,9 @@ namespace LukeBot.CLI
 
         void ProcessCommand(string cmd)
         {
-            Logger.Debug("cmd: {0}", cmd);
             if (cmd == "quit")
             {
                 mDone = true;
-                Console.WriteLine("Exiting");
             }
         }
 
@@ -65,8 +63,12 @@ namespace LukeBot.CLI
                     mMessageMutex.ReleaseMutex();
 
                     string response = Console.ReadLine();
+
+                    mMessageMutex.WaitOne();
                     if (response != null)
                         ProcessCommand(response);
+                    mPromptWritten = false;
+                    mMessageMutex.ReleaseMutex();
                 }
             }
             catch (System.OperationCanceledException)

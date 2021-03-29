@@ -32,6 +32,9 @@ namespace LukeBot.Common.OAuth
             if (mToken == null)
                 throw new InvalidTokenException("Token is not acquired");
 
+            if (File.Exists(mTokenPath))
+                File.Delete(mTokenPath);
+
             FileStream file = File.OpenWrite(mTokenPath);
             StreamWriter writer = new StreamWriter(file);
             writer.Write(JsonSerializer.Serialize(mToken));
@@ -89,7 +92,13 @@ namespace LukeBot.Common.OAuth
             if (mToken == null)
                 throw new InvalidTokenException("Token is not acquired");
 
+            AuthToken oldToken = mToken;
             mToken = mFlow.Refresh(mToken);
+
+            // preserve refresh token - some services (ex. Spotify) don't provide it in refresh response
+            if (mToken.refresh_token == null)
+                mToken.refresh_token = oldToken.refresh_token;
+
             ExportToFile();
             return mToken.access_token;
         }

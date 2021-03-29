@@ -11,7 +11,7 @@ namespace LukeBot.Spotify.OAuth
                 "https://accounts.spotify.com/authorize",
                 "https://accounts.spotify.com/api/token",
                 "https://accounts.spotify.com/api/revoke",
-                "http://localhost:5000/callback/twitch"
+                "http://localhost:5000/callback/spotify"
             )
         {
         }

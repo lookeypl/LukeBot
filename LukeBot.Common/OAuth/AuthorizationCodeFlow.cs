@@ -53,11 +53,15 @@ namespace LukeBot.Common.OAuth
             UserToken userResponse = (UserToken)userResponseBase;
             Logger.Debug("User token from service {0}:", mService);
             Logger.Secure("  Code: {0}", userResponse.code);
-            Logger.Debug("  Scope: ");
+            // TODO commented out, since services treat "Scope" differently:
+            //  - Twitch - should be List<string>
+            //  - Spotify - should be string
+            // In the future it would be nice to cross-check if we got scopes we wanted
+            /*Logger.Debug("  Scope: ");
             foreach (var s in userResponse.scope)
             {
                 Logger.Debug("    -> {0}", s);
-            }
+            }*/
             Logger.Debug("  State: {0}", userResponse.state);
 
 
@@ -93,16 +97,18 @@ namespace LukeBot.Common.OAuth
             retContentStrTask.Wait();
             string retContentStr = retContentStrTask.Result;
 
+            Logger.Secure("Returned content {0}", retContentStr);
+
             AuthToken authResponse = JsonSerializer.Deserialize<AuthToken>(retContentStr);
             Logger.Debug("Response from OAuth service {0}:", mService);
             Logger.Secure("  Access token: {0}", authResponse.access_token);
             Logger.Secure("  Refresh token: {0}", authResponse.refresh_token);
             Logger.Debug("  Expires in: {0}", authResponse.expires_in);
-            Logger.Debug("  Scope: ");
+            /*Logger.Debug("  Scope: ");
             foreach (var s in authResponse.scope)
             {
                 Logger.Debug("    -> {0}", s);
-            }
+            }*/
             Logger.Debug("  Token type: {0}", authResponse.token_type);
 
             return authResponse;
@@ -147,11 +153,11 @@ namespace LukeBot.Common.OAuth
             Logger.Secure("  Refresh token: {0}", refreshResponse.refresh_token);
             Logger.Debug("  Expires in: {0}", refreshResponse.expires_in);
             Logger.Debug("  Token type: {0}", refreshResponse.token_type);
-            Logger.Debug("  Scope: ");
+            /*Logger.Debug("  Scope: ");
             foreach (var s in refreshResponse.scope)
             {
                 Logger.Debug("    -> {0}", s);
-            }
+            }*/
 
             return refreshResponse;
         }

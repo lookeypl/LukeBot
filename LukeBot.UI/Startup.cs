@@ -62,23 +62,23 @@ namespace LukeBot.UI
                 Logger.Info("  -> " + query.Key + " = " + query.Value);
             }
 
+            Intermediary srv = CommunicationManager.Instance.GetIntermediary(service);
+
+            if (!context.Request.Query.ContainsKey("state"))
+            {
+                Logger.Error("Received back no state. This should not happen.");
+                return;
+            }
+
+            string state = context.Request.Query["state"];
+
             try
             {
-                Intermediary srv = CommunicationManager.Instance.GetIntermediary(service);
+                UserToken token = new UserToken();
+                token.code = context.Request.Query["code"];
+                token.state = state;
 
-                if (service == "twitch")
-                {
-                    UserToken token = new UserToken();
-                    token.code = context.Request.Query["code"];
-                    token.state = context.Request.Query["state"];
-                    token.scope = new List<string>();
-                    string scopes = context.Request.Query["scope"];
-                    string[] scopesArray = scopes.Split(' ');
-                    foreach (string str in scopesArray)
-                        token.scope.Add(str);
-
-                    srv.Fulfill(token.state, token);
-                }
+                srv.Fulfill(token.state, token);
 
                 await context.Response.WriteAsync(
                     "<html><body style=\"font-family: sans-serif; margin-left: 30px; margin-top: 30px;\">" +
@@ -89,6 +89,7 @@ namespace LukeBot.UI
             catch (System.Exception e)
             {
                 Logger.Error("{0}", e.Message);
+                srv.Reject(state);
                 await context.Response.WriteAsync(
                     "<html><body style=\"font-family: sans-serif; margin-left: 30px; margin-top: 30px;\">" +
                         "Login to " + service + " failed. Check log for details.\n" +

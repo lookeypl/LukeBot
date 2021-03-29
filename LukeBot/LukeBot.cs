@@ -1,5 +1,6 @@
 ﻿using LukeBot.Common;
 using LukeBot.Twitch;
+using LukeBot.Spotify;
 using LukeBot.UI;
 using LukeBot.CLI;
 using System.Collections.Generic;
@@ -52,9 +53,10 @@ namespace LukeBot
 
             TwitchIRCModule twitch = new TwitchIRCModule();
             mUsers[0].AddModule(twitch);
+            mUsers[0].AddModule(new SpotifyModule());
             mUsers[0].RunModules();
 
-            twitch.AwaitLoggedIn(30 * 1000);
+            twitch.AwaitLoggedIn(120 * 1000);
             twitch.JoinChannel("lookey");
             twitch.AddCommandToChannel("lookey", "discord", new Twitch.Command.Print("Discord server: https://discord.gg/wsx2sY5"));
 

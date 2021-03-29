@@ -51,11 +51,11 @@ namespace LukeBot.Common.OAuth
             Logger.Secure("  Access token: {0}", token.access_token);
             Logger.Secure("  Refresh token: {0}", token.refresh_token);
             Logger.Debug("  Expires in: {0}", token.expires_in);
-            Logger.Debug("  Scope: ");
+            /*Logger.Debug("  Scope: ");
             foreach (var s in token.scope)
             {
                 Logger.Debug("    -> {0}", s);
-            }
+            }*/
             Logger.Debug("  Token type: {0}", token.token_type);
 
             return token;

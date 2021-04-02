@@ -86,6 +86,7 @@ namespace LukeBot.Spotify
 
         public void RequestShutdown()
         {
+
         }
 
         public void Run()
@@ -95,6 +96,7 @@ namespace LukeBot.Spotify
 
         public void Wait()
         {
+
         }
     }
 }

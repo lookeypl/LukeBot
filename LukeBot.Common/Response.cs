@@ -1,9 +1,8 @@
 using System.Net;
-using LukeBot.Common;
 
-namespace LukeBot.Spotify
+namespace LukeBot.Common
 {
-    class Response
+    public class Response
     {
         public HttpStatusCode code { get; set; }
 

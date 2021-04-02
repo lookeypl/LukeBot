@@ -1,21 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Threading;
 using LukeBot.Common;
 using LukeBot.Common.OAuth;
+
 
 namespace LukeBot.Spotify
 {
     class NowPlaying
     {
-        class NowPlayingData
+        class NowPlayingData: Response
         {
-
+            public override string ToString()
+            {
+                return "";
+            }
         };
 
         private readonly int DEFAULT_EVENT_TIMEOUT = 5 * 1000; // 5 seconds
@@ -44,7 +41,9 @@ namespace LukeBot.Spotify
 
         void FetchData()
         {
-            //NowPlayingData data = Utils.GetRequest<NowPlayingData>(REQUEST_URI, mToken
+            Logger.Debug("NowPlaying refresh");
+            NowPlayingData data = Utils.GetRequest<NowPlayingData>(REQUEST_URI, mToken, null);
+            Logger.Debug("Read NowPlaying data: {0}", data);
         }
 
         void ThreadMain()

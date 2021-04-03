@@ -59,6 +59,9 @@ namespace LukeBot
             twitch.AwaitLoggedIn(120 * 1000);
             twitch.JoinChannel("lookey");
             twitch.AddCommandToChannel("lookey", "discord", new Twitch.Command.Print("Discord server: https://discord.gg/wsx2sY5"));
+            twitch.AddCommandToChannel("lookey", "spoilers", new Twitch.Command.Print(
+                "No spoilers please! To prevent random people from spoiling the game, chat is in 10 minute Followers-only mode during Playthroughs. That will stay on at least until we're done with main story of the game."
+            ));
 
             Logger.Info("Giving control to CLI");
             mCLI.MainLoop();

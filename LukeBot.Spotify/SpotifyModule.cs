@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Collections.Generic;
 using LukeBot.Common;
@@ -13,6 +14,7 @@ namespace LukeBot.Spotify
 
         private Token mToken;
         private NowPlaying mNowPlaying;
+        private NowPlayingTextFile mNowPlayingTextFile;
 
         private List<IWidget> mWidgets;
         private string mWidgetID;
@@ -65,6 +67,9 @@ namespace LukeBot.Spotify
         {
             mWidgets = new List<IWidget>();
             CommunicationManager.Instance.Register(Constants.SERVICE_NAME);
+            string storagePath = "Outputs/" + Constants.SERVICE_NAME;
+            if (!Directory.Exists(storagePath))
+                Directory.CreateDirectory(storagePath);
         }
 
         ~SpotifyModule()
@@ -76,6 +81,10 @@ namespace LukeBot.Spotify
             Login();
 
             mNowPlaying = new NowPlaying(mToken);
+            mNowPlayingTextFile = new NowPlayingTextFile(mNowPlaying,
+                "Outputs/" + Constants.SERVICE_NAME + "/nowplaying_artist.txt",
+                "Outputs/" + Constants.SERVICE_NAME + "/nowplaying_title.txt"
+            );
 
             // TODO Temporary
             IWidget widget = new NowPlayingWidget(mToken);
@@ -86,17 +95,17 @@ namespace LukeBot.Spotify
 
         public void RequestShutdown()
         {
-
+            mNowPlaying.RequestShutdown();
         }
 
         public void Run()
         {
-
+            mNowPlaying.Run();
         }
 
         public void Wait()
         {
-
+            mNowPlaying.Wait();
         }
     }
 }

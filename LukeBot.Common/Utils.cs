@@ -32,9 +32,9 @@ namespace LukeBot.Common
                 r.code = response.StatusCode;
                 return r;
             }
+
             Task<string> retContentStrTask = response.Content.ReadAsStringAsync();
             retContentStrTask.Wait();
-            Logger.Secure("GET request response: {0}", retContentStrTask.Result);
             return JsonSerializer.Deserialize<TResp>(retContentStrTask.Result);
         }
 

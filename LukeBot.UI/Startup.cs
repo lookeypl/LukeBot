@@ -100,6 +100,7 @@ namespace LukeBot.UI
 
         async Task HandleWidgetCallback(string widgetUUID, HttpContext context)
         {
+            Logger.Debug("Handling {0}", widgetUUID);
             await context.Response.WriteAsync(WidgetManager.Instance.GetWidgetPage(widgetUUID));
         }
 

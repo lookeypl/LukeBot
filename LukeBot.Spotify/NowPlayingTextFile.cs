@@ -9,7 +9,6 @@ namespace LukeBot.Spotify
         private string mArtistFilePath;
         private string mTitleFilePath;
         private bool mNeedsUpdate;
-
         private NowPlaying.TrackChangedArgs mCurrentTrack;
 
         public NowPlayingTextFile(NowPlaying engine, string artistPath, string titlePath)
@@ -22,6 +21,17 @@ namespace LukeBot.Spotify
             engine.StateUpdate += OnStateUpdate;
         }
 
+        ~NowPlayingTextFile()
+        {
+            Cleanup();
+        }
+
+        public void Cleanup()
+        {
+            ClearFile(mArtistFilePath);
+            ClearFile(mTitleFilePath);
+        }
+
         private void WriteToFile(string path, string text)
         {
             FileStream file = File.Open(path, FileMode.Create);
@@ -31,13 +41,17 @@ namespace LukeBot.Spotify
             file.Close();
         }
 
+        private void ClearFile(string path)
+        {
+            File.Open(path, FileMode.Create).Close();
+        }
+
         private void OnTrackChanged(object o, NowPlaying.TrackChangedArgs args)
         {
             try
             {
                 mCurrentTrack = args;
                 mNeedsUpdate = true;
-                Logger.Debug("Track {0}", mCurrentTrack);
             }
             catch (Exception e)
             {
@@ -53,16 +67,16 @@ namespace LukeBot.Spotify
                 {
                 case NowPlaying.State.Unloaded:
                 case NowPlaying.State.Stopped:
-                    Logger.Debug("Clearing files");
+                    Logger.Debug("Playback stopped/unloaded - clearing files");
                     // Open files with Create mode to clear them
-                    File.Open(mArtistFilePath, FileMode.Create).Close();
-                    File.Open(mTitleFilePath, FileMode.Create).Close();
+                    ClearFile(mArtistFilePath);
+                    ClearFile(mTitleFilePath);
                     mNeedsUpdate = true;
                     break;
                 case NowPlaying.State.Playing:
                     if (mNeedsUpdate)
                     {
-                        Logger.Debug("Updating files with data {0}", mCurrentTrack);
+                        Logger.Debug("Playing - updating with {0}", mCurrentTrack);
                         WriteToFile(mArtistFilePath, mCurrentTrack.Artists);
                         WriteToFile(mTitleFilePath, mCurrentTrack.Title);
                         mNeedsUpdate = false;

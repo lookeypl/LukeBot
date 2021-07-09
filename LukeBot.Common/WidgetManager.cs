@@ -33,6 +33,7 @@ namespace LukeBot.Common
 
             mMutex.WaitOne();
             mWidgets.Add(ID, widget);
+            widget.ID = ID;
             mMutex.ReleaseMutex();
 
             return ID;
@@ -53,6 +54,12 @@ namespace LukeBot.Common
             mMutex.ReleaseMutex();
 
             return ret;
+        }
+
+        public void Unregister(IWidget widget)
+        {
+            if (!mWidgets.Remove(widget.ID))
+                Logger.Warning("Cannot remove widget of ID {0} - not registered", widget.ID);
         }
     }
 }

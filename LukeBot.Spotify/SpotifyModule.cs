@@ -28,11 +28,17 @@ namespace LukeBot.Spotify
         {
             UserEmailResponse testResponse = Utils.GetRequest<UserEmailResponse>(GET_PROFILE_URI, mToken, null);
             if (testResponse.code == HttpStatusCode.OK)
+            {
+                Logger.Debug("Spotify login successful");
                 return true;
+            }
             else if (testResponse.code == HttpStatusCode.Unauthorized)
+            {
+                Logger.Error("Failed to login to Spotify - Unauthorized");
                 return false;
+            }
             else
-                throw new LoginFailedException("Failed to login to Spotify service - received other error: " + testResponse.code.ToString());
+                throw new LoginFailedException("Failed to login to Spotify service: " + testResponse.code.ToString());
         }
 
         void Login()
@@ -74,6 +80,11 @@ namespace LukeBot.Spotify
 
         ~SpotifyModule()
         {
+            mNowPlayingTextFile = null;
+            mNowPlaying = null;
+
+            foreach (IWidget w in mWidgets)
+                WidgetManager.Instance.Unregister(w);
         }
 
         public void Init()
@@ -87,15 +98,19 @@ namespace LukeBot.Spotify
             );
 
             // TODO Temporary
-            IWidget widget = new NowPlayingWidget(mToken);
+            NowPlayingWidget widget = new NowPlayingWidget(mNowPlaying);
             mWidgets.Add(widget);
             mWidgetID = WidgetManager.Instance.Register(widget);
             Logger.Info("Registered NowPlaying widget at link http://localhost:5000/widget/{0}", mWidgetID);
+            widget.Test();
         }
 
         public void RequestShutdown()
         {
             mNowPlaying.RequestShutdown();
+            mNowPlayingTextFile.Cleanup();
+            foreach (IWidget w in mWidgets)
+                w.RequestShutdown();
         }
 
         public void Run()
@@ -106,6 +121,8 @@ namespace LukeBot.Spotify
         public void Wait()
         {
             mNowPlaying.Wait();
+            foreach (IWidget w in mWidgets)
+                w.WaitForShutdown();
         }
     }
 }

@@ -1,33 +1,59 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>LukeBot Now Playing widget</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <meta name="description" content="LukeBot Now Playing widget from Spotify">
-    <meta name="keywords" content="LukeBot,Spotify">
+<div id="artist" class="artist">
+    Artist
+</div>
+<div id="title" class="title">
+    Title
+</div>
+<br />
+<div id="debug" class="debug">
+    Debug logs:<br />
+</div>
 
-    <meta name="obs-width" content="500">
-    <meta name="obs-height" content="200">
-    <meta name="obs-fps" content="60">
-    <meta name="obs-shutdown" content="true">
-    <meta name="obs-refresh" content="false">
+<script>
+const dbg = document.getElementById("debug");
+function printDebug(text) {
+    if (dbg) {
+        dbg.innerHTML += text + "<br />";
+    }
+}
 
+const metadata = document.getElementsByTagName('meta');
+function getMeta(name) {
+    for (let i = 0; i < metadata.length; ++i) {
+        if (metadata[i].getAttribute('name') === name) {
+            return metadata[i].getAttribute('content');
+        }
+    }
+    return '';
+}
 
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+const port = getMeta('widgetport');
+const artist = document.getElementById('artist');
+const title = document.getElementById('title');
 
-    <script>
+printDebug(port);
 
-    </script>
-</head>
-<body>
-    <div id="artist">
-        Artist
-    </div>
-    <div id="title">
-        Title
-    </div>
-</body>
-</html>
+let socket = new WebSocket("ws://localhost:" + port + "/");
+socket.onopen = function(e) {
+    printDebug(`Connected to server at port ${port}`);
+    socket.send("Hello server!");
+    socket.send("Hi server! I am sending a very long message to make sure that long message receiving and payload extension code is working perfectly fine (I hope)");
+}
+
+socket.onclose = function(event) {
+    if (event.wasClean) {
+        printDebug(`Connection closed cleanly`);
+    } else {
+        printDebug(`Connection died`);
+    }
+}
+
+socket.onerror = function(error) {
+    printDebug(`Error: ${error.message}`);
+}
+
+socket.onmessage = function(event) {
+    printDebug(`Msg: ${event.data}`);
+}
+</script>

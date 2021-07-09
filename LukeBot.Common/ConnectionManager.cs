@@ -16,7 +16,7 @@ namespace LukeBot.Common
         {
             public bool taken;
 
-            PortStatus()
+            public PortStatus()
             {
                 taken = false;
             }
@@ -31,7 +31,7 @@ namespace LukeBot.Common
 
         private ConnectionManager(int firstPort, int lastPort)
         {
-            Debug.Assert(firstPort > lastPort, "Invalid firstPort", "First port {0} must be lower than last port {1}", firstPort, lastPort);
+            Debug.Assert(firstPort < lastPort, "Invalid firstPort", "First port {0} must be lower than last port {1}", firstPort, lastPort);
             Debug.Assert(lastPort <= 65535, "Available port range too high", "Available ports cannot exceed 65535 (requested {0})", lastPort);
 
             mFirstPort = firstPort;
@@ -48,7 +48,9 @@ namespace LukeBot.Common
                 if (ep.Port < mFirstPort || ep.Port > mLastPort)
                     continue;
 
-                mPorts[PortToArrayIdx(ep.Port)].taken = true;
+                int idx = PortToArrayIdx(ep.Port);
+                mPorts[idx] = new PortStatus();
+                mPorts[idx].taken = true;
                 Logger.Debug("Marking TCP port {0} as taken by outside service", ep.Port);
             }
 
@@ -57,7 +59,9 @@ namespace LukeBot.Common
                 if (ep.Port < mFirstPort || ep.Port > mLastPort)
                     continue;
 
-                mPorts[PortToArrayIdx(ep.Port)].taken = true;
+                int idx = PortToArrayIdx(ep.Port);
+                mPorts[idx] = new PortStatus();
+                mPorts[idx].taken = true;
                 Logger.Debug("Marking UDP port {0} as taken by outside service", ep.Port);
             }
         }
@@ -75,13 +79,16 @@ namespace LukeBot.Common
         {
             int idx = PortToArrayIdx(port);
             Debug.Assert((idx >= 0) && (idx <= mPorts.Length), "Invalid port array index");
+            if (mPorts[idx] == null)
+                return false;
+
             return mPorts[idx].taken;
         }
 
         public ConnectionPort AcquirePort()
         {
             int searchStartPort = mNextPort;
-            while (!IsPortInUse(mNextPort))
+            while (IsPortInUse(mNextPort))
             {
                 mNextPort++;
                 if (mNextPort > mLastPort)
@@ -91,11 +98,16 @@ namespace LukeBot.Common
                     throw new NoFreePortException("Cannot find a free port");
             }
 
+            int idx = PortToArrayIdx(mNextPort);
+            mPorts[idx] = new PortStatus();
+            mPorts[idx].taken = true;
             return new ConnectionPort(mNextPort);
         }
 
         public void ReleasePort(int port)
         {
+            Debug.Assert(mPorts[PortToArrayIdx(port)] != null, "Tried to release not yet reached port");
+            Debug.Assert(mPorts[PortToArrayIdx(port)].taken == true, "Tried to release freed port");
             mPorts[PortToArrayIdx(port)].taken = false;
         }
     }

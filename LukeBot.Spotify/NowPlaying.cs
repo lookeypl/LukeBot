@@ -196,6 +196,12 @@ namespace LukeBot.Spotify
                 return;
             }
 
+            if (data.item == null)
+            {
+                Logger.Warning("No track item received");
+                return;
+            }
+
             mDataAccessMutex.WaitOne();
 
             // Track change
@@ -266,7 +272,14 @@ namespace LukeBot.Spotify
                 }
 
                 // no signal means no shutdown requested - continue as normal
-                FetchData();
+                try
+                {
+                    FetchData();
+                }
+                catch (Exception e)
+                {
+                    Logger.Warning("Caught exception while fetching data: {0}. Ignoring and continuing anyway...", e.Message);
+                }
             }
         }
 

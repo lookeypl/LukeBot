@@ -187,7 +187,7 @@ namespace LukeBot.Common
 
             long written = 0;
             buffer[0] = (byte)((Final ? 0x80 : 0) | (int)Opcode);
-            buffer[1] = (byte)((mMasked ? 0x80 : 0) | mPayloadLength);
+            buffer[1] = mPayloadLength; // TODO verify why masking no work
             written += 2;
 
             if (mPayloadLength == USE_PAYLOAD_LENGTH_B)
@@ -210,8 +210,6 @@ namespace LukeBot.Common
             }
 
             Array.Copy(mPayload, 0, buffer, written, mPayloadLengthExt);
-            written += mPayloadLengthExt;
-
             return buffer;
         }
     }

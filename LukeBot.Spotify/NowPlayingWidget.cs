@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using LukeBot.Common;
 using LukeBot.Common.OAuth;
@@ -15,14 +16,24 @@ namespace LukeBot.Spotify
     {
         NowPlaying mEngine;
         ConnectionPort mPort;
+        NowPlaying.StateUpdateArgs mState;
         NowPlaying.TrackChangedArgs mCurrentTrack;
         WebSocketServer mServer;
+        Thread mRecvThread;
+        volatile bool mDone = false;
 
+        private void OnStateUpdate(object o, NowPlaying.StateUpdateArgs args)
+        {
+            mState = args;
+            if (mServer.Running)
+                mServer.Send(JsonSerializer.Serialize(args));
+        }
 
         private void OnTrackChanged(object o, NowPlaying.TrackChangedArgs args)
         {
             mCurrentTrack = args;
-            mServer.Send(mCurrentTrack.ToString());
+            if (mServer.Running)
+                mServer.Send(JsonSerializer.Serialize(args));
         }
 
         public NowPlayingWidget(NowPlaying engine)
@@ -34,65 +45,72 @@ namespace LukeBot.Spotify
             Logger.Debug("Widget will have port {0}", mPort.Value);
 
             mEngine.TrackChanged += OnTrackChanged;
+            mEngine.StateUpdate += OnStateUpdate;
 
             AddToHead(string.Format("<meta name=\"widgetport\" content=\"{0}\">", mPort.Value));
 
-            // TEMPORARY - should be generated and added to OBS maybe?
-            AddToHead(
-                "<style>" +
-                "body {" +
-                "    background-color: rgba(0, 0, 0, 0);" +
-                "    margin: 0px auto;" +
-                "    overflow: hidden;" +
-                "    color: #ffffff;" +
-                "    font: 48px Arial;" +
-                "    -webkit-text-stroke-width: 1px;" +
-                "    -webkit-text-stroke-color: black;" +
-                "}" +
-                ".debug {" +
-                "    font: 16px Arial;" +
-                "    -webkit-text-stroke-width: 0px;" +
-                "    color: #ffffff;" +
-                "}" +
-                "</style>"
-            );
-
             mServer = new WebSocketServer("127.0.0.1", mPort.Value);
-            mServer.Start();
+            mState = null;
+            mCurrentTrack = null;
         }
 
         ~NowPlayingWidget()
         {
         }
 
-        public void Test()
+        public void ThreadMain()
         {
+            mServer.Start();
             mServer.AwaitConnection();
-            WebSocketMessage msg1 = mServer.Recv();
-            Logger.Debug("Received message: {0}", msg1.TextMessage);
-            WebSocketMessage msg2 = mServer.Recv();
-            Logger.Debug("Received 2 message: {0}", msg2.TextMessage);
-            mServer.Send(msg1);
-            mServer.Send(msg2);
-            mServer.Send("Oh my god is this thing actually working");
+
+            if (mState != null && mState.State != NowPlaying.State.Unloaded)
+                OnTrackChanged(null, mCurrentTrack); // to send over currently playing track
+
+            while (!mDone)
+            {
+                try {
+                    WebSocketMessage msg1 = mServer.Recv();
+                    Logger.Debug("Received message: {0}", msg1.TextMessage);
+                } catch (Exception e) {
+                    Logger.Warning("Exception caught: {0}: {1}", e.GetType().ToString(), e.Message);
+                }
+            }
         }
 
         protected override string GetWidgetCode()
         {
+            if (mServer.Running)
+            {
+                mDone = true;
+                mServer.RequestShutdown();
+                mServer.WaitForShutdown();
+                mRecvThread.Join();
+            }
+
             StreamReader reader = File.OpenText("LukeBot.Spotify/Widgets/NowPlaying.html");
             string p = reader.ReadToEnd();
             reader.Close();
+
+            mDone = false;
+            mRecvThread = new Thread(ThreadMain);
+            mRecvThread.Start();
+
             return p;
         }
 
         public override void RequestShutdown()
         {
+            mDone = true;
             mServer.RequestShutdown();
         }
 
         public override void WaitForShutdown()
         {
-            mServer.WaitForShutdown();
+            if (mServer.Running)
+            {
+                mServer.WaitForShutdown();
+                mRecvThread.Join();
+            }
         }
     }
 }

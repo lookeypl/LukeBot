@@ -41,10 +41,8 @@ namespace LukeBot.Spotify
                 string artists = item.artists[0].name;
                 for (int i = 1; i < item.artists.Count; ++i)
                 {
-                    if (i == (item.artists.Count - 1))
-                        artists += " & ";
-                    else
-                        artists += ", ";
+                    artists += ", ";
+                    artists += item.artists[i].name;
                 }
                 return String.Format("{0} - {1} ({2}/{3})", artists, item.name,
                                      progress_ms / 1000.0f, item.duration_ms / 1000.0f);
@@ -53,6 +51,7 @@ namespace LukeBot.Spotify
 
         public class TrackChangedArgs
         {
+            public string Type { get; private set; }
             public string Artists { get; private set; }
             public string Title { get; private set; }
             public float Duration { get; private set; }
@@ -60,16 +59,13 @@ namespace LukeBot.Spotify
             public static TrackChangedArgs FromDataItem(DataItem item)
             {
                 TrackChangedArgs ret = new TrackChangedArgs();
+                ret.Type = "NowPlayingTrackChanged"; // to recognize it widget-side
                 ret.Duration = item.duration_ms / 1000.0f; // convert to seconds
                 ret.Title = item.name;
                 ret.Artists = item.artists[0].name;
                 for (int i = 1; i < item.artists.Count; ++i)
                 {
-                    if (i == (item.artists.Count - 1))
-                        ret.Artists += " & ";
-                    else
-                        ret.Artists += ", ";
-
+                    ret.Artists += ", ";
                     ret.Artists += item.artists[i].name;
                 }
                 return ret;
@@ -83,22 +79,25 @@ namespace LukeBot.Spotify
 
         public class StateUpdateArgs
         {
+            public string Type { get; private set; }
             public State State { get; private set; }
             public float Progress { get; private set; }
 
             public static bool operator ==(StateUpdateArgs a, StateUpdateArgs b)
             {
-                return (a.Progress == b.Progress) && (a.State == b.State);
+                return ReferenceEquals(a, b) || !ReferenceEquals(a, null) && a.Equals(b);
             }
 
             public static bool operator !=(StateUpdateArgs a, StateUpdateArgs b)
             {
-                return (a.Progress != b.Progress) || (a.State != b.State);
+                return !(a == b);
             }
 
             public override bool Equals(Object o)
             {
-                return this == (StateUpdateArgs)o;
+                StateUpdateArgs other = (StateUpdateArgs)o;
+                return !object.ReferenceEquals(o, null) &&
+                    (State == other.State && Progress == other.Progress);
             }
 
             public override int GetHashCode()
@@ -109,6 +108,7 @@ namespace LukeBot.Spotify
             public static StateUpdateArgs FromData(Data data)
             {
                 StateUpdateArgs ret = new StateUpdateArgs();
+                ret.Type = "NowPlayingStateUpdate"; // to recognize it widget-side
                 if (data.code == HttpStatusCode.NoContent)
                 {
                     ret.Progress = 0.0f;

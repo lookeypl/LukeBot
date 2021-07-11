@@ -102,7 +102,6 @@ namespace LukeBot.Spotify
             mWidgets.Add(widget);
             mWidgetID = WidgetManager.Instance.Register(widget);
             Logger.Info("Registered NowPlaying widget at link http://localhost:5000/widget/{0}", mWidgetID);
-            widget.Test();
         }
 
         public void RequestShutdown()

@@ -90,7 +90,7 @@ namespace LukeBot.Common
 
             foreach (WebSocketFrame f in mFrames)
             {
-                buf = buf.Concat(f.ToSendBuffer()).ToArray<byte>();
+                buf = buf.Concat(f.ToSendBuffer()).ToArray();
             }
 
             return buf;

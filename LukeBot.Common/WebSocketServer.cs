@@ -13,6 +13,7 @@ namespace LukeBot.Common
     {
         enum ServerState
         {
+            Stopped,
             Listening,
             Connecting,
             Connected
@@ -53,6 +54,15 @@ namespace LukeBot.Common
                 }
             }
         }
+
+        public bool Running
+        {
+            get
+            {
+                return (State != ServerState.Stopped);
+            }
+        }
+
 
         private HTTPRequest ReadRequest(NetworkStream stream)
         {
@@ -153,7 +163,7 @@ namespace LukeBot.Common
                     break;
                 case ServerState.Connected:
                     // here send/receive is handled by WSServer user
-                    // wait until some sort of event comes up that we disconnect/shutdown/etc
+                    // wait until some sort of event comes up (disconnect/shutdown/etc)
                     mEvent.WaitOne();
                     break;
                 }
@@ -163,6 +173,8 @@ namespace LukeBot.Common
                 mListener.Stop();
             else
                 Disconnect();
+
+            State = ServerState.Stopped;
         }
 
         public WebSocketServer(string address, int port, bool useSSL = true)
@@ -172,17 +184,18 @@ namespace LukeBot.Common
 
         public WebSocketServer(IPAddress address, int port, bool useSSL = true)
         {
-            mServerThread = new Thread(ThreadMain);
             mListener = new TcpListener(address, port);
             mEvent = new AutoResetEvent(false);
             mConnectedEvent = new ManualResetEvent(false);
             mRecvMessageQueue = new Queue<WebSocketMessage>();
+            State = ServerState.Stopped;
         }
 
         public void Start()
         {
             mDone = false;
             mClient = null;
+            mServerThread = new Thread(ThreadMain);
             mServerThread.Start();
         }
 
@@ -246,14 +259,12 @@ namespace LukeBot.Common
             if (!Fetch(out buffer))
                 return new WebSocketMessage();
 
-            long processed = 0;
             long total = 0;
             while (total != buffer.LongLength)
             {
                 WebSocketMessage m = new WebSocketMessage();
-                processed = m.FromReceivedData(buffer, total);
+                total += m.FromReceivedData(buffer, total);
                 mRecvMessageQueue.Enqueue(m);
-                total += processed;
             }
 
             return mRecvMessageQueue.Dequeue();
@@ -274,7 +285,8 @@ namespace LukeBot.Common
 
         public void WaitForShutdown()
         {
-            mServerThread.Join();
+            if (State != ServerState.Stopped)
+                mServerThread.Join();
         }
     }
 }

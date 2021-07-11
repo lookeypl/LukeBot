@@ -1,59 +1,202 @@
 <!DOCTYPE html>
-<div id="artist" class="artist">
-    Artist
+
+<style>
+    body {
+        background-color: rgba(0, 0, 0, 0);
+        margin: 0px;
+        margin-left: 3px;
+        overflow: hidden;
+        white-space: nowrap;
+        color: #ffffff;
+        font: 48px Arial;
+        text-shadow: black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px;
+        height: 100%;
+    }
+
+    #title {
+    }
+
+    #subTitleMain {
+        margin-right: 50px;
+    }
+
+    #artists {
+        font: 36px Arial;
+    }
+
+    #subArtistsMain {
+        margin-right: 50px;
+    }
+
+    #debug {
+        font: 16px Arial;
+        white-space: normal;
+        color: #ffffff;
+    }
+</style>
+
+<div id="title">
+    <span id="subTitleMain">Title</span><span id="subTitleExtra"></span>
 </div>
-<div id="title" class="title">
-    Title
+<div id="artists">
+    <span id="subArtistsMain">Artists</span><span id="subArtistsExtra"></span>
 </div>
 <br />
-<div id="debug" class="debug">
+<div>
     Debug logs:<br />
+</div>
+<div id="debug" class="debug">
 </div>
 
 <script>
-const dbg = document.getElementById("debug");
-function printDebug(text) {
-    if (dbg) {
-        dbg.innerHTML += text + "<br />";
-    }
-}
-
-const metadata = document.getElementsByTagName('meta');
-function getMeta(name) {
-    for (let i = 0; i < metadata.length; ++i) {
-        if (metadata[i].getAttribute('name') === name) {
-            return metadata[i].getAttribute('content');
+    const dbg = document.getElementById("debug");
+    function printDebug(text) {
+        if (dbg) {
+            dbg.innerHTML += text + "<br />";
         }
     }
-    return '';
-}
 
-const port = getMeta('widgetport');
-const artist = document.getElementById('artist');
-const title = document.getElementById('title');
-
-printDebug(port);
-
-let socket = new WebSocket("ws://localhost:" + port + "/");
-socket.onopen = function(e) {
-    printDebug(`Connected to server at port ${port}`);
-    socket.send("Hello server!");
-    socket.send("Hi server! I am sending a very long message to make sure that long message receiving and payload extension code is working perfectly fine (I hope)");
-}
-
-socket.onclose = function(event) {
-    if (event.wasClean) {
-        printDebug(`Connection closed cleanly`);
-    } else {
-        printDebug(`Connection died`);
+    const metadata = document.getElementsByTagName('meta');
+    function getMeta(name) {
+        for (let i = 0; i < metadata.length; ++i) {
+            if (metadata[i].getAttribute('name') === name) {
+                return metadata[i].getAttribute('content');
+            }
+        }
+        return '';
     }
-}
 
-socket.onerror = function(error) {
-    printDebug(`Error: ${error.message}`);
-}
+    const port = getMeta('widgetport');
+    const artists = document.getElementById('artists');
+    const subArtistsMain = document.getElementById('subArtistsMain');
+    const subArtistsExtra = document.getElementById('subArtistsExtra');
+    let subArtistsMainStyle = window.getComputedStyle(document.querySelector('#subArtistsMain'));
+    const title = document.getElementById('title');
+    const subTitleMain = document.getElementById('subTitleMain');
+    const subTitleExtra = document.getElementById('subTitleExtra');
+    let subTitleMainStyle = window.getComputedStyle(document.querySelector('#subTitleMain'));
 
-socket.onmessage = function(event) {
-    printDebug(`Msg: ${event.data}`);
-}
+    const STATE_UNLOADED = 0;
+    const STATE_STOPPED = 1;
+    const STATE_PLAYING = 2;
+    let playbackState = STATE_UNLOADED;
+    let currentTrack = null;
+    let trackChanged = false;
+    function AnimState(divElement, mainElement, extraElement, mainElementStyle) {
+        this.divElement = divElement;
+        this.mainElement = mainElement;
+        this.extraElement = extraElement;
+        this.mainElementStyle = mainElementStyle;
+        this.inProgress = false;
+        this.offset = 0.0; // px
+        this.speed = 20.0; // px/s
+        this.wait = 2.0; // seconds
+        this.start = undefined;
+        this.lastTime = undefined;
+
+        this.animStep = function (currentTime) {
+            if (this.start === undefined) {
+                this.start = currentTime;
+                this.lastTime = currentTime;
+            }
+
+            let deltaTime = (currentTime - this.lastTime) / 1000.0; // ms -> s
+            let totalTime = (currentTime - this.start) / 1000.0; // ms -> s
+
+            // only start scrolling when we waited a bit
+            if (totalTime > this.wait) {
+                this.offset -= deltaTime * this.speed;
+                if (this.offset < (-1 * (this.mainElement.offsetWidth + parseInt(this.mainElementStyle.marginRight, 10)))) {
+                    // scroll finished, restart animation
+                    this.offset = 0.0;
+                    this.start = currentTime;
+                }
+                this.divElement.style.transform = 'translateX(' + this.offset + 'px)';
+            }
+
+            this.lastTime = currentTime;
+            if (this.inProgress == true) {
+                window.requestAnimationFrame(this.animStep.bind(this));
+            }
+        }
+
+        this.checkIfAnimNeeded = function () {
+            if (this.inProgress) {
+                if (this.mainElement.offsetWidth <= window.innerWidth) {
+                    // shut down current animation
+                    this.inProgress = false;
+                    this.offset = 0.0;
+                    this.divElement.style.transform = 'translateX(0px)';
+                    this.extraElement.innerHTML = "";
+                }
+                return;
+            } else {
+                if (this.mainElement.offsetWidth > window.innerWidth) {
+                    this.inProgress = true;
+                    this.extraElement.innerHTML = this.mainElement.innerHTML;
+                    window.requestAnimationFrame(this.animStep.bind(this));
+                }
+            }
+        }
+    }
+    let artistsAnimState = new AnimState(artists, subArtistsMain, subArtistsExtra, subArtistsMainStyle);
+    let titleAnimState = new AnimState(title, subTitleMain, subTitleExtra, subTitleMainStyle);
+
+    function update() {
+        if (playbackState == STATE_PLAYING) {
+            subArtistsMain.innerHTML = currentTrack.Artists;
+            subTitleMain.innerHTML = currentTrack.Title;
+        } else {
+            subArtistsMain.innerHTML = "";
+            subTitleMain.innerHTML = "";
+        }
+
+        if (trackChanged) {
+            artistsAnimState.checkIfAnimNeeded();
+            titleAnimState.checkIfAnimNeeded();
+            trackChanged = false;
+        }
+    }
+
+
+    printDebug(port);
+    let socket = new WebSocket("ws://localhost:" + port + "/");
+    socket.onopen = function (e) {
+        printDebug(`Connected to server at port ${port}`);
+    }
+
+    socket.onclose = function (event) {
+        playbackState = STATE_UNLOADED;
+        update();
+
+        if (event.wasClean) {
+            printDebug(`Connection closed cleanly`);
+        } else {
+            printDebug(`Connection died`);
+        }
+    }
+
+    socket.onerror = function (error) {
+        printDebug(`Error: ${error.message}`);
+    }
+
+    socket.onmessage = function (event) {
+        try {
+            let obj = JSON.parse(event.data);
+
+            if (obj.Type != null) {
+                if (obj.Type == "NowPlayingTrackChanged") {
+                    currentTrack = obj;
+                    trackChanged = true;
+                } else if (obj.Type == "NowPlayingStateUpdate") {
+                    playbackState = obj.State;
+                    update();
+                }
+            } else {
+                printDebug(`Received unknown obj: ${obj}`);
+            }
+        } catch (error) {
+            printDebug(`Error: ${error}`);
+        }
+    }
 </script>

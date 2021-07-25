@@ -111,6 +111,7 @@ namespace LukeBot.Common
 
         private void ProcessWSHandshake()
         {
+            // TODO if its not websocket, send back 101
             HTTPRequest request = ReadRequest(mStream);
 
             if (!request.Headers.ContainsKey("Sec-WebSocket-Key"))

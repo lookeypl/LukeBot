@@ -8,7 +8,21 @@ using System.Threading;
 
 namespace LukeBot.Twitch
 {
-    public class TwitchIRCModule: IModule
+    public struct TwitchIRCMessage
+    {
+        public string Type { get; private set; }
+        public string Nick { get; private set; }
+        public string Message { get; private set; }
+
+        public TwitchIRCMessage(string nick, string msg)
+        {
+            Type = "TwitchIRCMessage";
+            Nick = nick;
+            Message = msg;
+        }
+    }
+
+    public class TwitchIRC
     {
         private string mName = "lukeboto";
         private Connection mConnection = null;
@@ -17,9 +31,17 @@ namespace LukeBot.Twitch
 
         private bool mRunning = false;
         private AutoResetEvent mLoggedInEvent;
+        public EventHandler<TwitchIRCMessage> Message;
 
         private Thread mWorker;
         private Mutex mChannelsMutex;
+
+        private void OnMessage(TwitchIRCMessage args)
+        {
+            EventHandler<TwitchIRCMessage> handler = Message;
+            if (handler != null)
+                handler(this, args);
+        }
 
         void ProcessReply(Message m)
         {
@@ -53,6 +75,8 @@ namespace LukeBot.Twitch
         {
             string chatMsg = m.Params[m.Params.Count - 1];
             Logger.Info("#{0} {1}: {2}", m.Channel, m.User, chatMsg);
+            OnMessage(new TwitchIRCMessage(m.User, chatMsg));
+
             if (chatMsg[0] != '!')
                 return;
 
@@ -124,28 +148,8 @@ namespace LukeBot.Twitch
                 return false;
             }
 
-            Message m = Message.Parse(msg);
+            Message m = Twitch.Message.Parse(msg);
             return ProcessMessage(m);
-        }
-
-        void WorkerMain()
-        {
-            Logger.Info("TwitchIRC Worker thread started.");
-            try
-            {
-                Login();
-                mRunning = true;
-            }
-            catch (Exception e)
-            {
-                Logger.Error("Failed to login to Twitch IRC server: {0}", e.Message);
-                return;
-            }
-
-            Logger.Info("Listening for response...");
-
-            while (mRunning)
-                mRunning = ProcessMessage(mConnection.Read());
         }
 
         bool CheckIfLoginSuccessful()
@@ -154,7 +158,7 @@ namespace LukeBot.Twitch
             if (msg == null)
                 return false; // no message, connection was dropped without any reason
 
-            Message m = Message.Parse(msg);
+            Message m = Twitch.Message.Parse(msg);
             if (m.Command == IRCCommand.NOTICE)
             {
                 Logger.Info("While trying to login received Notice from Server:");
@@ -221,6 +225,26 @@ namespace LukeBot.Twitch
             }
         }
 
+        void WorkerMain()
+        {
+            Logger.Info("TwitchIRC Worker thread started.");
+            try
+            {
+                Login();
+                mRunning = true;
+            }
+            catch (Exception e)
+            {
+                Logger.Error("Failed to login to Twitch IRC server: {0}", e.Message);
+                return;
+            }
+
+            Logger.Info("Listening for response...");
+
+            while (mRunning)
+                mRunning = ProcessMessage(mConnection.Read());
+        }
+
         void Disconnect()
         {
             if (mRunning)
@@ -233,7 +257,7 @@ namespace LukeBot.Twitch
             }
         }
 
-        public TwitchIRCModule()
+        public TwitchIRC()
         {
             mWorker = new Thread(this.WorkerMain);
             mChannelsMutex = new Mutex();
@@ -243,10 +267,10 @@ namespace LukeBot.Twitch
             Logger.Info("Twitch IRC module initialized");
         }
 
-        ~TwitchIRCModule()
+        ~TwitchIRC()
         {
             Disconnect();
-            Wait();
+            WaitForShutdown();
         }
 
         public void JoinChannel(string channel)
@@ -286,12 +310,6 @@ namespace LukeBot.Twitch
             return mLoggedInEvent.WaitOne(timeoutMs);
         }
 
-        // IModule overrides
-
-        public void Init()
-        {
-        }
-
         public void Run()
         {
             mWorker.Start();
@@ -302,7 +320,7 @@ namespace LukeBot.Twitch
             Disconnect();
         }
 
-        public void Wait()
+        public void WaitForShutdown()
         {
             if (mWorker.IsAlive)
             {

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+
+<style>
+    body {
+        background-color: rgba(0, 0, 0, 255);
+        margin: 0px;
+        margin-left: 3px;
+        overflow: hidden;
+        white-space: normal;
+        color: #ffffff;
+        font: 12px Arial;
+        text-shadow: black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px;
+        height: 100%;
+    }
+
+    #debug {
+        font: 16px Arial;
+        white-space: normal;
+        color: #ffffff;
+    }
+</style>
+
+<div id="chat">
+</div>
+<br />
+<div>
+    Debug logs:<br />
+</div>
+<div id="debug" class="debug">
+</div>
+
+<script>
+    const dbg = document.getElementById("debug");
+    function printDebug(text) {
+        if (dbg) {
+            dbg.innerHTML += text + "<br />";
+        }
+    }
+
+    const metadata = document.getElementsByTagName('meta');
+    function getMeta(name) {
+        for (let i = 0; i < metadata.length; ++i) {
+            if (metadata[i].getAttribute('name') === name) {
+                return metadata[i].getAttribute('content');
+            }
+        }
+        return '';
+    }
+
+    const port = getMeta('widgetport');
+    const chat = document.getElementById('chat');
+
+    printDebug(port);
+    let socket = new WebSocket("ws://localhost:" + port + "/");
+    socket.onopen = function (e) {
+        printDebug(`Connected to server at port ${port}`);
+    }
+
+    socket.onclose = function (event) {
+        if (event.wasClean) {
+            printDebug(`Connection closed cleanly`);
+        } else {
+            printDebug(`Connection died`);
+        }
+    }
+
+    socket.onerror = function (error) {
+        printDebug(`Error: ${error.message}`);
+    }
+
+    socket.onmessage = function (event) {
+        try {
+            let obj = JSON.parse(event.data);
+
+            if (obj.Type != null) {
+                chat.innerHTML += `${obj.Nick}: ${obj.Message}<br/>`;
+            } else {
+                printDebug(`Received unknown obj: ${obj}`);
+            }
+        } catch (error) {
+            printDebug(`Error: ${error}`);
+        }
+    }
+</script>

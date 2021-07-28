@@ -51,12 +51,12 @@ namespace LukeBot
             Logger.Info("LukeBot modules starting...");
             mUsers.Add(new UserContext("Lookey"));
 
-            TwitchIRCModule twitch = new TwitchIRCModule();
+            TwitchModule twitch = new TwitchModule();
             mUsers[0].AddModule(twitch);
             mUsers[0].AddModule(new SpotifyModule());
             mUsers[0].RunModules();
 
-            twitch.AwaitLoggedIn(120 * 1000);
+            twitch.AwaitIRCLoggedIn(120 * 1000);
             twitch.JoinChannel("lookey");
             twitch.AddCommandToChannel("lookey", "discord", new Twitch.Command.Print("Discord server: https://discord.gg/wsx2sY5"));
             twitch.AddCommandToChannel("lookey", "spoilers", new Twitch.Command.Print(

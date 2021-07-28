@@ -27,4 +27,8 @@
     <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Widgets\" />
+  </ItemGroup>
+
 </Project>

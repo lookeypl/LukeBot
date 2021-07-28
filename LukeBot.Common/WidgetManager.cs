@@ -26,11 +26,9 @@ namespace LukeBot.Common
         {
         }
 
-        public string Register(IWidget widget)
+        public string Register(IWidget widget, string ID)
         {
-            // TODO replace with random UUID
-            string ID = "TEST-WIDGET-ID";
-
+            // TODO replace ID with random UUID
             mMutex.WaitOne();
             mWidgets.Add(ID, widget);
             widget.ID = ID;

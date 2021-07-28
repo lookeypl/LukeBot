@@ -87,6 +87,8 @@ namespace LukeBot.Common
 
         public ConnectionPort AcquirePort()
         {
+            mMutex.WaitOne();
+
             int searchStartPort = mNextPort;
             while (IsPortInUse(mNextPort))
             {
@@ -101,14 +103,21 @@ namespace LukeBot.Common
             int idx = PortToArrayIdx(mNextPort);
             mPorts[idx] = new PortStatus();
             mPorts[idx].taken = true;
+
+            mMutex.ReleaseMutex();
+
             return new ConnectionPort(mNextPort);
         }
 
         public void ReleasePort(int port)
         {
+            mMutex.WaitOne();
+
             Debug.Assert(mPorts[PortToArrayIdx(port)] != null, "Tried to release not yet reached port");
             Debug.Assert(mPorts[PortToArrayIdx(port)].taken == true, "Tried to release freed port");
             mPorts[PortToArrayIdx(port)].taken = false;
+
+            mMutex.ReleaseMutex();
         }
     }
 }

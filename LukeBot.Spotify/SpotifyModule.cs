@@ -100,7 +100,7 @@ namespace LukeBot.Spotify
             // TODO Temporary
             NowPlayingWidget widget = new NowPlayingWidget(mNowPlaying);
             mWidgets.Add(widget);
-            mWidgetID = WidgetManager.Instance.Register(widget);
+            mWidgetID = WidgetManager.Instance.Register(widget, "TEST-WIDGET-ID");
             Logger.Info("Registered NowPlaying widget at link http://localhost:5000/widget/{0}", mWidgetID);
         }
 

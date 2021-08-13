@@ -5,6 +5,6 @@
         public void Init();
         public void Run();
         public void RequestShutdown();
-        public void Wait();
+        public void WaitForShutdown();
     }
 }

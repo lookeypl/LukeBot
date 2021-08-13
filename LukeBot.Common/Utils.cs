@@ -96,5 +96,15 @@ namespace LukeBot.Common
 
             return result;
         }
+
+        // TODO temporary until PropertyStore shows up
+        public static string GetConfigServerIP()
+        {
+            string ret;
+            if (!DataFileReader.Instance.Get(Constants.SERVER_IP_FILE, out ret))
+                ret = Constants.DEFAULT_SERVER_IP;
+
+            return ret;
+        }
     }
 }

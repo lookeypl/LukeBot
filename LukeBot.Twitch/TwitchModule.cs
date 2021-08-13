@@ -7,14 +7,11 @@ namespace LukeBot.Twitch
     {
         TwitchIRC mIRC;
         ChatWidget mWidget;
-        private string mWidgetID;
 
         public TwitchModule()
         {
             mIRC = new TwitchIRC();
             mWidget = new ChatWidget(mIRC);
-            mWidgetID = WidgetManager.Instance.Register(mWidget, "TEST-CHAT-WIDGET");
-            Logger.Info("Registered Chat widget at link http://localhost:5000/widget/{0}", mWidgetID);
         }
 
         // TEMPORARY
@@ -53,7 +50,7 @@ namespace LukeBot.Twitch
             mWidget.RequestShutdown();
         }
 
-        public void Wait()
+        public void WaitForShutdown()
         {
             mIRC.WaitForShutdown();
             mWidget.WaitForShutdown();

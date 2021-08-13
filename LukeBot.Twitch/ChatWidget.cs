@@ -26,9 +26,13 @@ namespace LukeBot.Twitch
 
             mIRC.Message += OnMessage;
 
-            AddToHead(string.Format("<meta name=\"widgetport\" content=\"{0}\">", mPort.Value));
+            string serverIP = Utils.GetConfigServerIP();
+            AddToHead(string.Format("<meta name=\"serveraddress\" content=\"{0}\">", serverIP + ":" + mPort.Value));
 
-            mServer = new WebSocketServer("127.0.0.1", mPort.Value);
+            mServer = new WebSocketServer(serverIP, mPort.Value);
+
+            WidgetManager.Instance.Register(this, "TEST-CHAT-WIDGET");
+            Logger.Info("Registered Chat widget at link http://{0}:{1}/widget/{2}", serverIP, mPort.Value, ID);
         }
 
         ~ChatWidget()

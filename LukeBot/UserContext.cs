@@ -39,10 +39,10 @@ namespace LukeBot
                 m.RequestShutdown();
         }
 
-        public void WaitForModules()
+        public void WaitForModulesShutdown()
         {
             foreach (IModule m in mModules)
-                m.Wait();
+                m.WaitForShutdown();
         }
     }
 }

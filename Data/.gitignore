@@ -1,5 +1,4 @@
-# oauth data
-/oauth_*.lukebot
-/*.client_id.lukebot
-/*.client_secret.lukebot
-/*.token.lukebot
+# LukeBot files which should be kept locally (not on repo)
+# These include OAuth keys acquired from services we connect to
+# plus some other minor custom details
+/*.lukebot

@@ -77,7 +77,7 @@ namespace LukeBot
 
             Logger.Info("UI stopped. Stopping modules...");
             mUsers[0].RequestModuleShutdown();
-            mUsers[0].WaitForModules();
+            mUsers[0].WaitForModulesShutdown();
             mUsers = null;
         }
     }

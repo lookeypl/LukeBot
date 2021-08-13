@@ -42,9 +42,14 @@ namespace LukeBot.Spotify
             mEngine.TrackChanged += OnTrackChanged;
             mEngine.StateUpdate += OnStateUpdate;
 
-            AddToHead(string.Format("<meta name=\"widgetport\" content=\"{0}\">", mPort.Value));
+            string serverIP = Utils.GetConfigServerIP();
+            AddToHead(string.Format("<meta name=\"serveraddress\" content=\"{0}\">", serverIP + ":" + mPort.Value));
 
-            mServer = new WebSocketServer("127.0.0.1", mPort.Value);
+            mServer = new WebSocketServer(serverIP, mPort.Value);
+
+            string widgetID = WidgetManager.Instance.Register(this, "TEST-WIDGET-ID");
+            Logger.Info("Registered NowPlaying widget at link http://{0}:{1}/widget/{2}", serverIP, mPort.Value, widgetID);
+
             mState = null;
             mCurrentTrack = null;
         }
@@ -59,7 +64,11 @@ namespace LukeBot.Spotify
             mServer.AwaitConnection();
 
             if (mState != null && mState.State != NowPlaying.State.Unloaded)
-                OnTrackChanged(null, mCurrentTrack); // to send over currently playing track
+            {
+                // Push a state update to "pre-refresh" the widget
+                OnTrackChanged(null, mCurrentTrack);
+                OnStateUpdate(null, mState);
+            }
 
             while (!mDone)
             {

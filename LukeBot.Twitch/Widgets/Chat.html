@@ -1,32 +1,29 @@
 <!DOCTYPE html>
 
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans" rel="stylesheet">
+
 <style>
     body {
-        background-color: rgba(0, 0, 0, 255);
-        margin: 0px;
-        margin-left: 3px;
+        background-color: rgba(0, 0, 0, 0);
         overflow: hidden;
         white-space: normal;
         color: #ffffff;
-        font: 12px Arial;
-        text-shadow: black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px;
-        height: 100%;
+        font-family: 'Open Sans' Arial sans-serif;
     }
 
-    #debug {
-        font: 16px Arial;
-        white-space: normal;
-        color: #ffffff;
+    #chat {
+        overflow: hidden;
+        position: absolute;
+        bottom: 0;
+        left: 0px;
+        padding-left: 2px;
+        padding-right: 2px;
+        font: 19px 'Open Sans';
+        text-shadow: black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px;
     }
 </style>
 
 <div id="chat">
-</div>
-<br />
-<div>
-    Debug logs:<br />
-</div>
-<div id="debug" class="debug">
 </div>
 
 <script>
@@ -47,13 +44,13 @@
         return '';
     }
 
-    const port = getMeta('widgetport');
+    const serverAddress = getMeta('serveraddress');
     const chat = document.getElementById('chat');
 
-    printDebug(port);
-    let socket = new WebSocket("ws://localhost:" + port + "/");
+    printDebug(serverAddress);
+    let socket = new WebSocket("ws://" + serverAddress + "/");
     socket.onopen = function (e) {
-        printDebug(`Connected to server at port ${port}`);
+        printDebug(`Connected to server at ${serverAddress}`);
     }
 
     socket.onclose = function (event) {
@@ -80,5 +77,10 @@
         } catch (error) {
             printDebug(`Error: ${error}`);
         }
+    }
+
+    // debugging
+    for (var i = 0; i < 20; ++i) {
+        chat.innerHTML += "abcd: lazy fox jumps something idk<br />";
     }
 </script>

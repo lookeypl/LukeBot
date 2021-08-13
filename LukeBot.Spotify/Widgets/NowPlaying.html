@@ -22,6 +22,7 @@
 
     #artists {
         font: 36px Arial;
+        padding-left: 1px;
     }
 
     #subArtistsMain {
@@ -41,12 +42,14 @@
 <div id="artists">
     <span id="subArtistsMain">Artists</span><span id="subArtistsExtra"></span>
 </div>
+<!-- Debugging section - commented out in release code
 <br />
 <div>
     Debug logs:<br />
 </div>
 <div id="debug" class="debug">
 </div>
+-->
 
 <script>
     const dbg = document.getElementById("debug");
@@ -66,7 +69,6 @@
         return '';
     }
 
-    const port = getMeta('widgetport');
     const artists = document.getElementById('artists');
     const subArtistsMain = document.getElementById('subArtistsMain');
     const subArtistsExtra = document.getElementById('subArtistsExtra');
@@ -87,14 +89,20 @@
         this.mainElement = mainElement;
         this.extraElement = extraElement;
         this.mainElementStyle = mainElementStyle;
-        this.inProgress = false;
         this.offset = 0.0; // px
-        this.speed = 20.0; // px/s
+        this.speed = 25.0; // px/s
         this.wait = 2.0; // seconds
         this.start = undefined;
         this.lastTime = undefined;
+        this.inProgress = false;
+        this.animStopped = false;
 
         this.animStep = function (currentTime) {
+            // early exit so we don't update anything by accident if animation should be over
+            if (this.inProgress == false) {
+                return;
+            }
+
             if (this.start === undefined) {
                 this.start = currentTime;
                 this.lastTime = currentTime;
@@ -115,54 +123,67 @@
             }
 
             this.lastTime = currentTime;
-            if (this.inProgress == true) {
-                window.requestAnimationFrame(this.animStep.bind(this));
+            window.requestAnimationFrame(this.animStep.bind(this));
+        }
+
+        this.updateElements = function (newContent) {
+            this.mainElement.innerHTML = newContent;
+            if (this.mainElement.offsetWidth > window.innerWidth) {
+                this.extraElement.innerHTML = newContent;
+            } else {
+                this.extraElement.innerHTML = "";
             }
         }
 
         this.checkIfAnimNeeded = function () {
-            if (this.inProgress) {
-                if (this.mainElement.offsetWidth <= window.innerWidth) {
-                    // shut down current animation
-                    this.inProgress = false;
-                    this.offset = 0.0;
-                    this.divElement.style.transform = 'translateX(0px)';
-                    this.extraElement.innerHTML = "";
-                }
+            if (this.inProgress && this.mainElement.offsetWidth <= window.innerWidth) {
+                // shut down unneeded animation
+                this.inProgress = false;
+                this.divElement.style.transform = 'translateX(0px)';
                 return;
-            } else {
-                if (this.mainElement.offsetWidth > window.innerWidth) {
-                    this.inProgress = true;
-                    this.extraElement.innerHTML = this.mainElement.innerHTML;
-                    window.requestAnimationFrame(this.animStep.bind(this));
-                }
+            }
+
+            this.start = undefined;
+            this.offset = 0.0;
+            this.divElement.style.transform = 'translateX(0px)';
+
+            if (this.mainElement.offsetWidth > window.innerWidth) {
+                this.inProgress = true;
+                window.requestAnimationFrame(this.animStep.bind(this));
             }
         }
     }
-    let artistsAnimState = new AnimState(artists, subArtistsMain, subArtistsExtra, subArtistsMainStyle);
+
     let titleAnimState = new AnimState(title, subTitleMain, subTitleExtra, subTitleMainStyle);
+    let artistsAnimState = new AnimState(artists, subArtistsMain, subArtistsExtra, subArtistsMainStyle);
 
     function update() {
         if (playbackState == STATE_PLAYING) {
-            subArtistsMain.innerHTML = currentTrack.Artists;
-            subTitleMain.innerHTML = currentTrack.Title;
+            titleAnimState.updateElements(currentTrack.Title);
+            artistsAnimState.updateElements(currentTrack.Artists);
+        } else if (playbackState == STATE_STOPPED) {
+            titleAnimState.updateElements("Playback paused");
+            artistsAnimState.updateElements("");
+        } else if (playbackState == STATE_UNLOADED) {
+            titleAnimState.updateElements("");
+            artistsAnimState.updateElements("");
         } else {
-            subArtistsMain.innerHTML = "";
-            subTitleMain.innerHTML = "";
+            titleAnimState.updateElements("INVALID STATE");
+            artistsAnimState.updateElements("This should not happen");
         }
 
         if (trackChanged) {
-            artistsAnimState.checkIfAnimNeeded();
-            titleAnimState.checkIfAnimNeeded();
             trackChanged = false;
+            titleAnimState.checkIfAnimNeeded();
+            artistsAnimState.checkIfAnimNeeded();
         }
     }
 
-
-    printDebug(port);
-    let socket = new WebSocket("ws://localhost:" + port + "/");
+    const serverAddress = getMeta('serveraddress');
+    printDebug(serverAddress);
+    let socket = new WebSocket("ws://" + serverAddress + "/");
     socket.onopen = function (e) {
-        printDebug(`Connected to server at port ${port}`);
+        printDebug(`Connected to server at ${serverAddress}`);
     }
 
     socket.onclose = function (event) {

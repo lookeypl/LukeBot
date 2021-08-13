@@ -48,7 +48,7 @@ namespace LukeBot.Spotify
             mServer = new WebSocketServer(serverIP, mPort.Value);
 
             string widgetID = WidgetManager.Instance.Register(this, "TEST-WIDGET-ID");
-            Logger.Info("Registered NowPlaying widget at link http://{0}:{1}/widget/{2}", serverIP, mPort.Value, widgetID);
+            Logger.Secure("Registered Chat widget at link http://{0}/widget/{1}; WS port {2}", serverIP, ID, mPort.Value);
 
             mState = null;
             mCurrentTrack = null;
@@ -58,6 +58,8 @@ namespace LukeBot.Spotify
         {
         }
 
+        // TODO remove this thread, instead and OnConnected event to WebSocketServer
+        // and react there with state/track update
         public void ThreadMain()
         {
             mServer.Start();

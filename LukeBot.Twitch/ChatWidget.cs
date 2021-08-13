@@ -32,7 +32,7 @@ namespace LukeBot.Twitch
             mServer = new WebSocketServer(serverIP, mPort.Value);
 
             WidgetManager.Instance.Register(this, "TEST-CHAT-WIDGET");
-            Logger.Info("Registered Chat widget at link http://{0}:{1}/widget/{2}", serverIP, mPort.Value, ID);
+            Logger.Secure("Registered Chat widget at link http://{0}/widget/{1}; WS port {2}", serverIP, ID, mPort.Value);
         }
 
         ~ChatWidget()

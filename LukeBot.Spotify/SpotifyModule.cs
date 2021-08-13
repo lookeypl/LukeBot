@@ -17,7 +17,6 @@ namespace LukeBot.Spotify
         private NowPlayingTextFile mNowPlayingTextFile;
 
         private List<IWidget> mWidgets;
-        private string mWidgetID;
 
         private class UserEmailResponse: Response
         {

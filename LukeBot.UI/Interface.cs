@@ -31,7 +31,8 @@ namespace LukeBot.UI
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     string IP = Common.Utils.GetConfigServerIP();
-                    if (IP != Common.Constants.DEFAULT_SERVER_IP) {
+                    if (IP != Common.Constants.DEFAULT_SERVER_IP)
+                    {
                         string[] URLs = new string[]
                         {
                             // TODO readd below with certificates

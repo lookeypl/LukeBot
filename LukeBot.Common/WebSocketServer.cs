@@ -222,15 +222,13 @@ namespace LukeBot.Common
 
         private bool Fetch(out byte[] buffer)
         {
-            while (!mStream.DataAvailable);
-
             const int CHUNK_SIZE = 1024;
             byte[] chunk = new byte[CHUNK_SIZE];
             buffer = new byte[0];
 
             int read = 0;
             int written = 0;
-            while (mStream.DataAvailable)
+            do
             {
                 read = mStream.Read(chunk, 0, CHUNK_SIZE);
                 Logger.Debug("Read {0}", read);
@@ -241,6 +239,7 @@ namespace LukeBot.Common
                 Array.Copy(chunk, 0, buffer, written, read);
                 written += read;
             }
+            while (mStream.DataAvailable);
 
             return true;
         }

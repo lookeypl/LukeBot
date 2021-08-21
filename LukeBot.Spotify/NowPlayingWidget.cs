@@ -58,7 +58,7 @@ namespace LukeBot.Spotify
         {
         }
 
-        // TODO remove this thread, instead and OnConnected event to WebSocketServer
+        // TODO remove this thread, instead add OnConnected event to WebSocketServer
         // and react there with state/track update
         public void ThreadMain()
         {

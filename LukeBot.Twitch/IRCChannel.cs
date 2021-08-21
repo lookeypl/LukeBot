@@ -19,12 +19,9 @@ namespace LukeBot.Twitch
         {
             if (!mCommands.ContainsKey(cmd))
             {
-                // TODO workaround - a launch argument would be a good solution for this
-                #if (DEBUG)
-                return String.Format("Unrecognized command: {0}", cmd);
-                #else
+                // TODO activate below with a launch argument or a property
+                //return String.Format("Unrecognized command: {0}", cmd);
                 return "";
-                #endif
             }
 
             return mCommands[cmd].Execute(args);

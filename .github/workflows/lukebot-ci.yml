@@ -1,0 +1,37 @@
+name: LukeBot CI
+on:
+  push:
+    branches: [ $default-branch, devel ]
+  pull_request:
+    branches: [ $default-branch ]
+
+jobs:
+  linux-build:
+    name: Linux Build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build Release
+      run: dotnet build --no-restore -c Release
+    - name: Build Debug
+      run: dotnet build --no-restore -c Debug
+
+  windows-build:
+    name: Windows Build
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.0.2
+      with:
+        vs-version: 16.10
+    - name: Restore
+      run: nuget restore LukeBot.sln
+    - name: Build
+      run: msbuild LukeBot.sln

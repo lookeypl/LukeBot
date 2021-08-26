@@ -1,5 +1,5 @@
 ﻿using LukeBot.Common;
-using LukeBot.Common.OAuth;
+using LukeBot.Auth;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -180,7 +180,7 @@ namespace LukeBot.Twitch
         void Login()
         {
             string tokenScope = "chat:read chat:edit";
-            mToken = new OAuth.TwitchToken(AuthFlow.AuthorizationCode);
+            mToken = new TwitchToken(AuthFlow.AuthorizationCode);
 
             // log in
             Logger.Info("Logging in to Twitch IRC server...");

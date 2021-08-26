@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 
-namespace LukeBot.Common.OAuth
+namespace LukeBot.Auth
 {
     abstract class Flow
     {

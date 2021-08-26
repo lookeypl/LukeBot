@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using LukeBot.Common;
 
-namespace LukeBot.Common.OAuth
+
+namespace LukeBot.Auth
 {
     // ClientCredentialsFlow relies purely on submitting a POST request
     // and receiving a token in return. It does not tie its user to any

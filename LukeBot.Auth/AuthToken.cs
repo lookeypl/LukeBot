@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using LukeBot.Common;
 
-namespace LukeBot.Common.OAuth
+namespace LukeBot.Auth
 {
     class AuthToken: PromiseData
     {

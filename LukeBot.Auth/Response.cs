@@ -1,6 +1,7 @@
 using System.Net;
 
-namespace LukeBot.Common
+// TODO this probably should be moved to separate DLL like LukeBot.Network
+namespace LukeBot.Auth
 {
     public class Response
     {

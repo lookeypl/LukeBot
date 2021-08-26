@@ -1,8 +1,10 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using LukeBot.Common;
 
-namespace LukeBot.Common.OAuth
+
+namespace LukeBot.Auth
 {
     public enum AuthFlow
     {

@@ -3,7 +3,7 @@ using System.IO;
 using System.Net;
 using System.Collections.Generic;
 using LukeBot.Common;
-using LukeBot.Common.OAuth;
+using LukeBot.Auth;
 
 
 namespace LukeBot.Spotify
@@ -25,7 +25,7 @@ namespace LukeBot.Spotify
 
         bool CheckIfLoginSuccessful()
         {
-            UserEmailResponse testResponse = Utils.GetRequest<UserEmailResponse>(GET_PROFILE_URI, mToken, null);
+            UserEmailResponse testResponse = Request.Get<UserEmailResponse>(GET_PROFILE_URI, mToken, null);
             if (testResponse.code == HttpStatusCode.OK)
             {
                 Logger.Debug("Spotify login successful");
@@ -43,7 +43,7 @@ namespace LukeBot.Spotify
         void Login()
         {
             string scope = "user-read-currently-playing user-read-playback-state user-read-email";
-            mToken = new OAuth.SpotifyToken(AuthFlow.AuthorizationCode);
+            mToken = new SpotifyToken(AuthFlow.AuthorizationCode);
 
             bool tokenFromFile = mToken.Loaded;
 

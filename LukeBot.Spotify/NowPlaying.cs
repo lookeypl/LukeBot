@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using LukeBot.Common;
-using LukeBot.Common.OAuth;
+using LukeBot.Auth;
 
 
 namespace LukeBot.Spotify
@@ -176,13 +176,12 @@ namespace LukeBot.Spotify
 
         void FetchData()
         {
-            Data data = Utils.GetRequest<Data>(REQUEST_URI, mToken, null);
-
+            Data data = Request.Get<Data>(REQUEST_URI, mToken, null);
             if (data.code == HttpStatusCode.Unauthorized)
             {
                 Logger.Debug("OAuth token expired - refreshing...");
                 mToken.Refresh();
-                data = Utils.GetRequest<Data>(REQUEST_URI, mToken, null);
+                data = Request.Get<Data>(REQUEST_URI, mToken, null);
             }
 
             if (data.code != HttpStatusCode.OK)

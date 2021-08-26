@@ -6,9 +6,8 @@ using Microsoft.Extensions.Hosting;
 using System.IO;
 using System.Threading.Tasks;
 using System.Text.Json;
-using System.Collections.Generic;
 using LukeBot.Common;
-using LukeBot.Common.OAuth;
+using LukeBot.Auth;
 
 namespace LukeBot.UI
 {

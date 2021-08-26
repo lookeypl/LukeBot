@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Text.Json;
+using LukeBot.Common;
 
-namespace LukeBot.Common.OAuth
+
+namespace LukeBot.Auth
 {
     class AuthorizationCodeFlow: Flow
     {

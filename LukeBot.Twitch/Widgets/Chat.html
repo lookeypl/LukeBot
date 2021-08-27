@@ -72,7 +72,13 @@
             let obj = JSON.parse(event.data);
 
             if (obj.Type != null) {
-                chat.innerHTML += `${obj.Nick}: ${obj.Message}<br/>`;
+                if (obj.Type != "TwitchIRCMessage")
+                    return;
+
+                var nick = obj.DisplayName;
+                if (nick == "")
+                    nick = obj.Nick;
+                chat.innerHTML += `<span style="color:${obj.Color}">${nick}</span>: ${obj.Message}<br/>`;
             } else {
                 printDebug(`Received unknown obj: ${obj}`);
             }

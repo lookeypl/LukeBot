@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using LukeBot.Common;
 
 
@@ -13,7 +14,7 @@ namespace LukeBot.Twitch
         // Tags aka. metadata for each message sent. Consists of key-value pairs.
         // Can be empty if capability was not set or if message is missing a token
         // with '@' prefix character.
-        public Dictionary<MessageTag, string> Tags { get; private set; }
+        public Dictionary<string, string> Tags { get; private set; }
 
         // Message prefix. This is 1:1 what prefix was sent minus the ':' symbol.
         // Prefix can be empty if message is missing the token beginning with ':' character.
@@ -62,9 +63,20 @@ namespace LukeBot.Twitch
 
         private static State mState;
 
-        private static Dictionary<MessageTag, string> ParseTags(string token)
+        private static Dictionary<string, string> ParseTags(string token)
         {
-            return new Dictionary<MessageTag, string>();
+            Dictionary<string, string> tags = new Dictionary<string, string>();
+
+            string tagsString = token.Substring(1);
+            string[] tagsArray = tagsString.Split(';');
+            foreach (string t in tagsArray)
+            {
+                string[] tArray = t.Split('=');
+                Debug.Assert(tArray.Length == 2, "Invalid amount of elements");
+                tags.Add(tArray[0], tArray[1]);
+            }
+
+            return tags;
         }
 
         private static string ParsePrefixToken(string token, ref Message m)
@@ -237,7 +249,7 @@ namespace LukeBot.Twitch
         public Message(string msg)
         {
             MessageString = msg;
-            Tags = new Dictionary<MessageTag, string>();
+            Tags = new Dictionary<string, string>();
             Nick = "";
             User = "";
             Host = "";

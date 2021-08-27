@@ -11,13 +11,17 @@ namespace LukeBot.Twitch
     public struct TwitchIRCMessage
     {
         public string Type { get; private set; }
+        public string Color { get; private set; }
         public string Nick { get; private set; }
+        public string DisplayName { get; private set; }
         public string Message { get; private set; }
 
-        public TwitchIRCMessage(string nick, string msg)
+        public TwitchIRCMessage(string color, string nick, string displayName, string msg)
         {
             Type = "TwitchIRCMessage";
+            Color = (color.Length > 0 ? color : "#4477aa");
             Nick = nick;
+            DisplayName = displayName;
             Message = msg;
         }
     }
@@ -28,6 +32,7 @@ namespace LukeBot.Twitch
         private Connection mConnection = null;
         private Token mToken;
         private Dictionary<string, IRCChannel> mChannels;
+        private bool mTagsEnabled = false;
 
         private bool mRunning = false;
         private AutoResetEvent mLoggedInEvent;
@@ -74,8 +79,17 @@ namespace LukeBot.Twitch
         void ProcessPRIVMSG(Message m)
         {
             string chatMsg = m.Params[m.Params.Count - 1];
-            Logger.Info("#{0} {1}: {2}", m.Channel, m.User, chatMsg);
-            OnMessage(new TwitchIRCMessage(m.User, chatMsg));
+            Logger.Info("({0} tags) #{1} {2}: {3}", m.Tags.Count, m.Channel, m.User, chatMsg);
+
+            string userColor;
+            string userDisplayName;
+            if (!m.Tags.TryGetValue("color", out userColor))
+                userColor = "#dddddd";
+
+            if (!m.Tags.TryGetValue("display-name", out userDisplayName))
+                userDisplayName = "";
+
+            OnMessage(new TwitchIRCMessage(userColor, m.User, userDisplayName, chatMsg));
 
             if (chatMsg[0] != '!')
                 return;
@@ -107,6 +121,12 @@ namespace LukeBot.Twitch
                 mConnection.Send(String.Format("PRIVMSG #{0} :{1}", m.Channel, response));
         }
 
+        void ProcessCAP(Message m)
+        {
+            // TODO complete this part to discover if CAP was acquired
+            Logger.Debug("CAP response: {0}", m.MessageString);
+        }
+
         bool ProcessMessage(Message m)
         {
             switch (m.Command)
@@ -132,6 +152,9 @@ namespace LukeBot.Twitch
                 break;
             case IRCCommand.PRIVMSG:
                 ProcessPRIVMSG(m);
+                break;
+            case IRCCommand.CAP:
+                ProcessCAP(m);
                 break;
             default:
                 throw new ArgumentException(String.Format("Invalid IRC command: {0}", m.Command));
@@ -223,6 +246,8 @@ namespace LukeBot.Twitch
                 else
                     throw new InvalidOperationException("Failed to login to Twitch IRC");
             }
+
+            mConnection.Send("CAP REQ :twitch.tv/tags");
         }
 
         void WorkerMain()

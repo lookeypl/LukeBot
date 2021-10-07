@@ -1,3 +1,5 @@
+using LukeBot.Common;
+
 namespace LukeBot.Auth
 {
     public class TwitchToken: Token
@@ -9,7 +11,7 @@ namespace LukeBot.Auth
                 "https://id.twitch.tv/oauth2/authorize",
                 "https://id.twitch.tv/oauth2/token",
                 "https://id.twitch.tv/oauth2/revoke",
-                "http://localhost:5000/callback/twitch"
+                "https://" + Utils.GetConfigServerIP() + "/callback/twitch"
             )
         {
         }

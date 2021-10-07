@@ -43,7 +43,7 @@ namespace LukeBot.Spotify
         void Login()
         {
             string scope = "user-read-currently-playing user-read-playback-state user-read-email";
-            mToken = new SpotifyToken(AuthFlow.AuthorizationCode);
+            mToken = AuthManager.Instance.GetToken(ServiceType.Spotify);
 
             bool tokenFromFile = mToken.Loaded;
 

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Threading;
 using LukeBot.Common;
 
 
@@ -17,6 +18,7 @@ namespace LukeBot.Auth
         private Flow mFlow = null;
         private string mTokenPath = null;
         private AuthToken mToken = null;
+        private Mutex mMutex = null;
 
         public bool Loaded { get; private set; }
 
@@ -63,6 +65,7 @@ namespace LukeBot.Auth
             }
 
             mTokenPath = "Data/" + service + ".token.lukebot";
+            mMutex = new Mutex();
 
             if (FileUtils.Exists(mTokenPath)) {
                 Logger.Debug("Found token {0}, importing", mTokenPath);
@@ -76,21 +79,34 @@ namespace LukeBot.Auth
 
         public string Get()
         {
+            mMutex.WaitOne();
+
             if (mToken == null)
                 throw new InvalidTokenException("Token is not acquired");
 
-            return mToken.access_token;
+            string ret = mToken.access_token;
+            mMutex.ReleaseMutex();
+
+            return ret;
         }
 
         public string Request(string scope)
         {
+            mMutex.WaitOne();
+
             mToken = mFlow.Request(scope);
             ExportToFile();
-            return mToken.access_token;
+
+            string ret = mToken.access_token;
+            mMutex.ReleaseMutex();
+
+            return ret;
         }
 
         public string Refresh()
         {
+            mMutex.WaitOne();
+
             if (mToken == null)
                 throw new InvalidTokenException("Token is not acquired");
 
@@ -102,16 +118,25 @@ namespace LukeBot.Auth
                 mToken.refresh_token = oldToken.refresh_token;
 
             ExportToFile();
-            return mToken.access_token;
+
+            string ret = mToken.access_token;
+            mMutex.ReleaseMutex();
+
+            return ret;
         }
 
         public void Remove()
         {
+            mMutex.WaitOne();
+
             if (Loaded) {
                 File.Delete(mTokenPath);
                 mFlow.Revoke(mToken);
                 mToken = null;
+                Loaded = false;
             }
+
+            mMutex.ReleaseMutex();
         }
     }
 }

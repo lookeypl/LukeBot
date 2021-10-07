@@ -20,10 +20,9 @@ namespace LukeBot.UI
             mHost.Run();
         }
 
-        public void Stop()
+        public async void Stop()
         {
-            Task stop = mHost.StopAsync();
-            stop.Wait();
+            await mHost.StopAsync();
         }
 
         public IHostBuilder CreateHostBuilder() =>

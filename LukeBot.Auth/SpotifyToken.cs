@@ -1,3 +1,5 @@
+using LukeBot.Common;
+
 namespace LukeBot.Auth
 {
     public class SpotifyToken: Token
@@ -9,7 +11,7 @@ namespace LukeBot.Auth
                 "https://accounts.spotify.com/authorize",
                 "https://accounts.spotify.com/api/token",
                 "https://accounts.spotify.com/api/revoke",
-                "http://localhost:5000/callback/spotify"
+                "https://" + Utils.GetConfigServerIP() + "/callback/spotify"
             )
         {
         }

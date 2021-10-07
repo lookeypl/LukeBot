@@ -203,7 +203,7 @@ namespace LukeBot.Twitch
         void Login()
         {
             string tokenScope = "chat:read chat:edit";
-            mToken = new TwitchToken(AuthFlow.AuthorizationCode);
+            mToken = AuthManager.Instance.GetToken(ServiceType.Twitch);
 
             // log in
             Logger.Info("Logging in to Twitch IRC server...");

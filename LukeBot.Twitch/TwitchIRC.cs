@@ -11,18 +11,48 @@ namespace LukeBot.Twitch
     public struct TwitchIRCMessage
     {
         public string Type { get; private set; }
-        public string Color { get; private set; }
-        public string Nick { get; private set; }
-        public string DisplayName { get; private set; }
-        public string Message { get; private set; }
+        public string MessageID { get; private set; }
+        public string UserID { get; set; }
+        public string Color { get; set; }
+        public string Nick { get; set; }
+        public string DisplayName { get; set; }
+        public string Message { get; set; }
 
-        public TwitchIRCMessage(string color, string nick, string displayName, string msg)
+        public TwitchIRCMessage(string msgID)
         {
             Type = "TwitchIRCMessage";
-            Color = (color.Length > 0 ? color : "#4477aa");
+            MessageID = msgID;
+            UserID = "";
+            Color = "#dddddd";
+            Nick = "";
+            DisplayName = "";
+            Message = "";
+        }
+    }
+
+    public struct TwitchIRCClearChat
+    {
+        public string Type { get; private set; }
+        public string Nick { get; private set; }
+
+        public TwitchIRCClearChat(string nick)
+        {
+            Type = "TwitchIRCClearChat";
             Nick = nick;
-            DisplayName = displayName;
-            Message = msg;
+        }
+    }
+
+    public struct TwitchIRCClearMsg
+    {
+        public string Type { get; private set; }
+        public string Message { get; private set; }
+        public string MessageID { get; set; }
+
+        public TwitchIRCClearMsg(string message)
+        {
+            Type = "TwitchIRCClearMsg";
+            Message = message;
+            MessageID = "";
         }
     }
 
@@ -36,7 +66,10 @@ namespace LukeBot.Twitch
 
         private bool mRunning = false;
         private AutoResetEvent mLoggedInEvent;
+        private int mMsgIDCounter = 0; // backup for when we don't have metadata
         public EventHandler<TwitchIRCMessage> Message;
+        public EventHandler<TwitchIRCClearChat> ClearChat;
+        public EventHandler<TwitchIRCClearMsg> ClearMsg;
 
         private Thread mWorker;
         private Mutex mChannelsMutex;
@@ -44,6 +77,20 @@ namespace LukeBot.Twitch
         private void OnMessage(TwitchIRCMessage args)
         {
             EventHandler<TwitchIRCMessage> handler = Message;
+            if (handler != null)
+                handler(this, args);
+        }
+
+        private void OnClearChat(TwitchIRCClearChat args)
+        {
+            EventHandler<TwitchIRCClearChat> handler = ClearChat;
+            if (handler != null)
+                handler(this, args);
+        }
+
+        private void OnClearMsg(TwitchIRCClearMsg args)
+        {
+            EventHandler<TwitchIRCClearMsg> handler = ClearMsg;
             if (handler != null)
                 handler(this, args);
         }
@@ -81,15 +128,28 @@ namespace LukeBot.Twitch
             string chatMsg = m.Params[m.Params.Count - 1];
             Logger.Info("({0} tags) #{1} {2}: {3}", m.Tags.Count, m.Channel, m.User, chatMsg);
 
-            string userColor;
-            string userDisplayName;
-            if (!m.Tags.TryGetValue("color", out userColor))
-                userColor = "#dddddd";
+            // Message related tags pulled from metadata (if available)
+            string msgID;
+            if (!m.Tags.TryGetValue("id", out msgID))
+                msgID = String.Format("{0}", mMsgIDCounter++);
 
-            if (!m.Tags.TryGetValue("display-name", out userDisplayName))
-                userDisplayName = "";
+            TwitchIRCMessage message = new TwitchIRCMessage(msgID);
+            message.Nick = m.User;
+            message.Message = chatMsg;
 
-            OnMessage(new TwitchIRCMessage(userColor, m.User, userDisplayName, chatMsg));
+            string userID;
+            if (m.Tags.TryGetValue("user-id", out userID))
+                message.UserID = userID;
+
+            string color;
+            if (m.Tags.TryGetValue("color", out color))
+                message.Color = color;
+
+            string displayName;
+            if (m.Tags.TryGetValue("display-name", out displayName))
+                message.DisplayName = displayName;
+
+            OnMessage(message);
 
             if (chatMsg[0] != '!')
                 return;
@@ -121,10 +181,42 @@ namespace LukeBot.Twitch
                 mConnection.Send(String.Format("PRIVMSG #{0} :{1}", m.Channel, response));
         }
 
+        void ProcessCLEARCHAT(Message m)
+        {
+            string msg = m.Params[m.Params.Count - 1];
+            Logger.Warning("CLEARCHAT ({0} tags) #{1} :{2}", m.Tags.Count, m.Channel, msg);
+            TwitchIRCClearChat message = new TwitchIRCClearChat(msg);
+            OnClearChat(message);
+        }
+
+        void ProcessCLEARMSG(Message m)
+        {
+            string msg = m.Params[m.Params.Count - 1];
+            Logger.Warning("CLEARMSG ({0} tags) #{1} :{2}", m.Tags.Count, m.Channel, msg);
+
+            TwitchIRCClearMsg message = new TwitchIRCClearMsg(msg);
+
+            string msgID;
+            if (m.Tags.TryGetValue("target-msg-id", out msgID))
+                message.MessageID = msgID;
+
+            OnClearMsg(message);
+        }
+
         void ProcessCAP(Message m)
         {
             // TODO complete this part to discover if CAP was acquired
             Logger.Debug("CAP response: {0}", m.MessageString);
+        }
+
+        void ProcessNOTICE(Message m)
+        {
+            Logger.Info("Received a Notice from server: {0}", m.ParamsString);
+        }
+
+        void ProcessUSERNOTICE(Message m)
+        {
+            Logger.Info("Received a User Notice from server: {0}", m.ParamsString);
         }
 
         bool ProcessMessage(Message m)
@@ -141,7 +233,10 @@ namespace LukeBot.Twitch
                 Logger.Info("Joined channel {0}", m.Channel);
                 break;
             case IRCCommand.NOTICE:
-                Logger.Info("Received a Notice from server: {0}", m.ParamsString);
+                ProcessNOTICE(m);
+                break;
+            case IRCCommand.USERNOTICE:
+                ProcessUSERNOTICE(m);
                 break;
             case IRCCommand.PART:
                 Logger.Info("Leaving channel {0}", m.Channel);
@@ -153,11 +248,15 @@ namespace LukeBot.Twitch
             case IRCCommand.PRIVMSG:
                 ProcessPRIVMSG(m);
                 break;
+            case IRCCommand.CLEARCHAT:
+                ProcessCLEARCHAT(m);
+                break;
+            case IRCCommand.CLEARMSG:
+                ProcessCLEARMSG(m);
+                break;
             case IRCCommand.CAP:
                 ProcessCAP(m);
                 break;
-            default:
-                throw new ArgumentException(String.Format("Invalid IRC command: {0}", m.Command));
             }
 
             return true;
@@ -248,6 +347,7 @@ namespace LukeBot.Twitch
             }
 
             mConnection.Send("CAP REQ :twitch.tv/tags");
+            mConnection.Send("CAP REQ :twitch.tv/commands");
         }
 
         void WorkerMain()

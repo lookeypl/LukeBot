@@ -16,6 +16,18 @@ namespace LukeBot.Twitch
                 mServer.Send(JsonSerializer.Serialize(args));
         }
 
+        private void OnClearChat(object o, TwitchIRCClearChat args)
+        {
+            if (mServer.Running)
+                mServer.Send(JsonSerializer.Serialize(args));
+        }
+
+        private void OnClearMsg(object o, TwitchIRCClearMsg args)
+        {
+            if (mServer.Running)
+                mServer.Send(JsonSerializer.Serialize(args));
+        }
+
         public ChatWidget(TwitchIRC IRC)
             : base()
         {
@@ -25,6 +37,8 @@ namespace LukeBot.Twitch
             Logger.Debug("Widget will have port {0}", mPort.Value);
 
             mIRC.Message += OnMessage;
+            mIRC.ClearChat += OnClearChat;
+            mIRC.ClearMsg += OnClearMsg;
 
             string serverIP = Utils.GetConfigServerIP();
             AddToHead(string.Format("<meta name=\"serveraddress\" content=\"{0}\">", serverIP + ":" + mPort.Value));

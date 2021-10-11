@@ -29,6 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Ngrok.AspNetCore" Version="1.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\LukeBot.Auth\LukeBot.Auth.csproj" />
     <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
   </ItemGroup>

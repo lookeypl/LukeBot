@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans" rel="stylesheet">
 
@@ -51,79 +51,6 @@
     printDebug(serverAddress);
 
 
-    class Message {
-        constructor(msg) {
-            if (msg.Type != "TwitchIRCMessage")
-                return;
-
-            this.mID = msg.MessageID;
-            this.mUserID = msg.UserID;
-            this.mColor = msg.Color;
-            this.mNick = msg.Nick;
-            this.mDisplayName = msg.DisplayName;
-            this.mMessage = msg.Message;
-        }
-    }
-
-    class MessageList {
-        constructor() {
-            this.mMessages = [];
-        }
-
-        updateChat() {
-            chat.innerHTML = "";
-            this.mMessages.forEach(function (e) {
-                var nick = e.mDisplayName;
-                if (nick == "")
-                    nick = e.mNick;
-                chat.innerHTML += `<span style="color:${e.mColor}">${nick}</span>: ${e.mMessage}<br/>`;
-            })
-        }
-
-        add(msgObj) {
-            this.mMessages.push(new Message(msgObj));
-
-            // remove oldest message
-            if (this.mMessages.length > 30) {
-                this.mMessages.shift();
-            }
-
-            this.updateChat();
-        }
-
-        remove(msgObj) {
-            let id = msgObj.Message;
-            let hasID = false;
-            if (msgObj.MessageID != "") {
-                id = msgObj.MessageID;
-                hasID = true;
-            }
-
-            let msgIdx = this.mMessages.findIndex(function (e) {
-                if (hasID)
-                    return e.mID == id;
-                else
-                    return e.mMessage == id;
-            });
-
-            printDebug(msgIdx);
-            if (msgIdx != -1) {
-                this.mMessages.splice(msgIdx, 1);
-                this.updateChat();
-            }
-        }
-
-        removeUser(msgObj) {
-            this.mMessages = this.mMessages.filter(function (e) {
-                return e.mNick != msgObj.Nick;
-            });
-            this.updateChat();
-        }
-    }
-
-    let msgList = new MessageList();
-
-
     let socket = new WebSocket("ws://" + serverAddress + "/");
     socket.onopen = function (e) {
         printDebug(`Connected to server at ${serverAddress}`);
@@ -150,12 +77,6 @@
                 {
                 case "TwitchIRCMessage":
                     msgList.add(obj);
-                    break;
-                case "TwitchIRCClearChat":
-                    msgList.removeUser(obj);
-                    break;
-                case "TwitchIRCClearMsg":
-                    msgList.remove(obj);
                     break;
                 }
             } else {

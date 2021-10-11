@@ -16,6 +16,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data", "Data", "{10B3DA8C-4D82-4798-8727-26F2C073E513}"
 	ProjectSection(SolutionItems) = preProject
 		Data\.gitignore = Data\.gitignore
+		Data\spotify.client_id.lukebot = Data\spotify.client_id.lukebot
+		Data\spotify.client_secret.lukebot = Data\spotify.client_secret.lukebot
+		Data\twitch.client_id.lukebot = Data\twitch.client_id.lukebot
+		Data\twitch.client_secret.lukebot = Data\twitch.client_secret.lukebot
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Twitch", "LukeBot.Twitch\LukeBot.Twitch.csproj", "{564B1BE4-C13B-4168-A9E4-34061DA82052}"
@@ -26,7 +30,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Spotify", "LukeBot.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.CLI", "LukeBot.CLI\LukeBot.CLI.csproj", "{DDC69D3C-B018-4C17-A6C9-6BD2229BAAD2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Auth", "LukeBot.Auth\LukeBot.Auth.csproj", "{DE4E822E-AE4A-4989-A02F-2D263966206E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Auth", "LukeBot.Auth\LukeBot.Auth.csproj", "{DE4E822E-AE4A-4989-A02F-2D263966206E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

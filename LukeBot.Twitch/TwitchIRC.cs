@@ -56,6 +56,18 @@ namespace LukeBot.Twitch
         }
     }
 
+    public struct TwitchIRCUserNotice
+    {
+        public string Type { get; private set; }
+        public string NoticeType { get; private set; }
+
+        public TwitchIRCUserNotice(string noticeType)
+        {
+            Type = "TwitchIRCUserNotice";
+            NoticeType = noticeType;
+        }
+    }
+
     public class TwitchIRC
     {
         private string mName = "lukeboto";
@@ -67,30 +79,31 @@ namespace LukeBot.Twitch
         private bool mRunning = false;
         private AutoResetEvent mLoggedInEvent;
         private int mMsgIDCounter = 0; // backup for when we don't have metadata
-        public EventHandler<TwitchIRCMessage> Message;
-        public EventHandler<TwitchIRCClearChat> ClearChat;
-        public EventHandler<TwitchIRCClearMsg> ClearMsg;
+        public EventHandler<TwitchIRCMessage> MessageEvent;
+        public EventHandler<TwitchIRCClearChat> ClearChatEvent;
+        public EventHandler<TwitchIRCClearMsg> ClearMsgEvent;
+        public EventHandler<TwitchIRCUserNotice> UserNoticeEvent;
 
         private Thread mWorker;
         private Mutex mChannelsMutex;
 
         private void OnMessage(TwitchIRCMessage args)
         {
-            EventHandler<TwitchIRCMessage> handler = Message;
+            EventHandler<TwitchIRCMessage> handler = MessageEvent;
             if (handler != null)
                 handler(this, args);
         }
 
         private void OnClearChat(TwitchIRCClearChat args)
         {
-            EventHandler<TwitchIRCClearChat> handler = ClearChat;
+            EventHandler<TwitchIRCClearChat> handler = ClearChatEvent;
             if (handler != null)
                 handler(this, args);
         }
 
         private void OnClearMsg(TwitchIRCClearMsg args)
         {
-            EventHandler<TwitchIRCClearMsg> handler = ClearMsg;
+            EventHandler<TwitchIRCClearMsg> handler = ClearMsgEvent;
             if (handler != null)
                 handler(this, args);
         }
@@ -216,7 +229,9 @@ namespace LukeBot.Twitch
 
         void ProcessUSERNOTICE(Message m)
         {
-            Logger.Info("Received a User Notice from server: {0}", m.ParamsString);
+            Logger.Info("Received a User Notice from server");
+            Logger.Secure("USERNOTICE message details:");
+            m.Print(Logger.LogLevel.Secure);
         }
 
         bool ProcessMessage(Message m)

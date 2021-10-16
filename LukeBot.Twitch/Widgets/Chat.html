@@ -34,6 +34,7 @@
         if (dbg) {
             dbg.innerHTML += text + "<br />";
         }
+        console.log(text);
     }
 
     const metadata = document.getElementsByTagName('meta');
@@ -54,7 +55,7 @@
     class Message {
         constructor(msg) {
             if (msg.Type != "TwitchIRCMessage")
-                return;
+                throw new TypeError("Invalid message type");
 
             this.mID = msg.MessageID;
             this.mUserID = msg.UserID;
@@ -62,6 +63,7 @@
             this.mNick = msg.Nick;
             this.mDisplayName = msg.DisplayName;
             this.mMessage = msg.Message;
+            this.mEmotes = msg.Emotes;
         }
     }
 
@@ -71,13 +73,33 @@
         }
 
         updateChat() {
-            chat.innerHTML = "";
-            this.mMessages.forEach(function (e) {
-                var nick = e.mDisplayName;
-                if (nick == "")
-                    nick = e.mNick;
-                chat.innerHTML += `<span style="color:${e.mColor}">${nick}</span>: ${e.mMessage}<br/>`;
-            })
+            let lastMsg = this.mMessages[this.mMessages.length - 1];
+
+            let nick = lastMsg.mDisplayName;
+            if (nick == "")
+                nick = lastMsg.mNick;
+
+            let nickTextNode = document.createTextNode(nick);
+
+            let nickNode = document.createElement("span");
+            nickNode.style.color = lastMsg.mColor;
+            nickNode.appendChild(nickTextNode);
+
+            // TODO emote replacement goes here
+            let textNode = document.createTextNode(`: ${lastMsg.mMessage}`);
+
+            let newMsgNode = document.createElement("span");
+            newMsgNode.setAttribute("msgId", lastMsg.mID);
+            newMsgNode.appendChild(nickNode);
+            newMsgNode.appendChild(textNode);
+            newMsgNode.appendChild(document.createElement("br"));
+
+            chat.appendChild(newMsgNode);
+
+            // TODO remove messages which exceed window height + backup height
+            if (chat.childNodes.length > 30) {
+                chat.removeChild(chat.firstChild);
+            }
         }
 
         add(msgObj) {

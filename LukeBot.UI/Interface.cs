@@ -35,8 +35,8 @@ namespace LukeBot.UI
                         string[] URLs = new string[]
                         {
                             // TODO readd below with certificates
-                            //"https://" + IP + ":443/",
-                            "http://" + IP + ":80/",
+                            //"https://" + IP + "/",
+                            "http://" + IP + ":5000/",
                         };
                         webBuilder.UseUrls(URLs);
                     }

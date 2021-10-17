@@ -23,6 +23,13 @@
         font: 19px 'Open Sans';
         text-shadow: black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px;
     }
+
+    .chat-emote {
+        inline-size: 1.3em;
+        position: relative;
+        top: 0.15em;
+        margin: -0.15em -0.05em -0.15em -0.05em;
+    }
 </style>
 
 <div id="chat">
@@ -52,6 +59,16 @@
     printDebug(serverAddress);
 
 
+    const EMOTE_URL_SCHEME = ["http://static-cdn.jtvnw.net/emoticons/v2/", "/static/light/2.0"];
+
+    class Emote {
+        constructor(id, from, to) {
+            this.mID = id;
+            this.mFrom = from;
+            this.mTo = to;
+        }
+    }
+
     class Message {
         constructor(msg) {
             if (msg.Type != "TwitchIRCMessage")
@@ -63,7 +80,25 @@
             this.mNick = msg.Nick;
             this.mDisplayName = msg.DisplayName;
             this.mMessage = msg.Message;
-            this.mEmotes = msg.Emotes;
+            this.mEmotes = [];
+            if (msg.Emotes != undefined) {
+                msg.Emotes.forEach(function (e) {
+                    e.Ranges.forEach(function (r) {
+                        this.mEmotes.push(new Emote(e.ID, r.From, r.To));
+                    }, this);
+                }, this);
+
+                // reverse-sort the emotes, mostly because it's easier to go through
+                // the message in reverse afterwards (less indexing/shifting magic)
+                this.mEmotes.sort(function(a, b) {
+                    if (a.mFrom < b.mFrom)
+                        return 1;
+                    else if (a.mFrom > b.mFrom)
+                        return -1;
+                    else
+                        return 0;
+                });
+            }
         }
     }
 
@@ -85,12 +120,29 @@
             nickNode.style.color = lastMsg.mColor;
             nickNode.appendChild(nickTextNode);
 
-            // TODO emote replacement goes here
-            let textNode = document.createTextNode(`: ${lastMsg.mMessage}`);
+            let textNode = document.createElement("span");
+            let textDataNode = document.createTextNode(`${lastMsg.mMessage}`);
+            textNode.appendChild(textDataNode);
+
+            // replace emote texts based on ranges with links to emotes
+            console.log(lastMsg.mEmotes);
+            if (lastMsg.mEmotes != undefined) {
+                lastMsg.mEmotes.forEach(function (e) {
+                    let url = EMOTE_URL_SCHEME[0] + e.mID + EMOTE_URL_SCHEME[1];
+                    let img = document.createElement("img");
+                    img.src = url;
+                    img.className = "chat-emote";
+
+                    let textRemainder = textDataNode.splitText(e.mFrom);
+                    textRemainder.deleteData(0, e.mTo - e.mFrom + 1);
+                    textNode.insertBefore(img.cloneNode(), textRemainder);
+                });
+            }
 
             let newMsgNode = document.createElement("span");
             newMsgNode.setAttribute("msgId", lastMsg.mID);
             newMsgNode.appendChild(nickNode);
+            newMsgNode.appendChild(document.createTextNode(": "));
             newMsgNode.appendChild(textNode);
             newMsgNode.appendChild(document.createElement("br"));
 

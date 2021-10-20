@@ -19,6 +19,7 @@ namespace LukeBot.Auth
                 request.Content = new FormUrlEncodedContent(query);
 
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Get());
+            request.Headers.Add("Client-Id", token.ClientID);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
             Task<HttpResponseMessage> responseTask = client.SendAsync(request);

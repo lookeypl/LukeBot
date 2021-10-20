@@ -11,6 +11,14 @@ namespace LukeBot.Auth
         protected string mTokenURL;
         protected string mRevokeURL;
 
+        public string ClientID
+        {
+            get
+            {
+                return mClientID;
+            }
+        }
+
         private string ReadFromFile(string path)
         {
             StreamReader fileStream = File.OpenText(path);

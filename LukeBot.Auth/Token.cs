@@ -21,7 +21,13 @@ namespace LukeBot.Auth
         private Mutex mMutex = null;
 
         public bool Loaded { get; private set; }
-
+        public string ClientID
+        {
+            get
+            {
+                return mFlow.ClientID;
+            }
+        }
 
         private void ImportFromFile()
         {

@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading;
+using System.Diagnostics;
 
 
 namespace LukeBot.Twitch
@@ -372,18 +373,11 @@ namespace LukeBot.Twitch
         // TODO parametrize
         void Login()
         {
-            string tokenScope = "chat:read chat:edit";
-            mToken = AuthManager.Instance.GetToken(ServiceType.Twitch);
+            if (!mToken.Loaded)
+                throw new InvalidOperationException("Provided token was not loaded properly");
 
             // log in
-            Logger.Info("Logging in to Twitch IRC server...");
             Logger.Debug("Bot login account: {0}", mName);
-
-            // at this stage if token is loaded, it has been imported from a file
-            bool tokenFromFile = mToken.Loaded;
-
-            if (!mToken.Loaded)
-                mToken.Request(tokenScope);
 
             mConnection = new Connection("irc.chat.twitch.tv", 6697, true);
 
@@ -391,30 +385,7 @@ namespace LukeBot.Twitch
             mConnection.Send("NICK " + mName);
             if (!CheckIfLoginSuccessful())
             {
-                Logger.Error("Login to Twitch IRC server failed");
-                if (tokenFromFile)
-                {
-                    // token from file might be old; refresh it
-                    Logger.Info("OAuth token might be expired - refreshing...");
-                    mToken.Refresh();
-
-                    // Connection must be remade
-                    mConnection.Close();
-                    mConnection = new Connection("irc.chat.twitch.tv", 6697, true);
-
-                    mConnection.Send("PASS oauth:" + mToken.Get());
-                    mConnection.Send("NICK " + mName);
-
-                    if (!CheckIfLoginSuccessful())
-                    {
-                        mToken.Remove();
-                        throw new InvalidOperationException(
-                            "Failed to refresh OAuth Token. Token has been removed, restart to re-login and request a fresh OAuth token"
-                        );
-                    }
-                }
-                else
-                    throw new InvalidOperationException("Failed to login to Twitch IRC");
+                throw new InvalidOperationException("Login to Twitch IRC server failed");
             }
 
             mConnection.Send("CAP REQ :twitch.tv/tags");
@@ -453,13 +424,14 @@ namespace LukeBot.Twitch
             }
         }
 
-        public TwitchIRC()
+        public TwitchIRC(Token token)
         {
             mWorker = new Thread(this.WorkerMain);
             mChannelsMutex = new Mutex();
             mLoggedInEvent = new AutoResetEvent(false);
             mChannels = new Dictionary<string, IRCChannel>();
-            CommunicationManager.Instance.Register(Constants.SERVICE_NAME);
+            mToken = token;
+
             Logger.Info("Twitch IRC module initialized");
         }
 

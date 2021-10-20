@@ -59,7 +59,7 @@ namespace LukeBot.Spotify
                     {
                         mToken.Remove();
                         throw new InvalidOperationException(
-                            "Failed to refresh OAuth Token. Token has been removed, restart to re-login and request a fresh OAuth token"
+                            "Failed to refresh Spotify OAuth Token. Token has been removed, restart to re-login and request a fresh OAuth token"
                         );
                     }
                 }

@@ -30,22 +30,15 @@ class API
 
     // Get data about specified user. If login field is empty, gets data about user
     // based on provided Token.
-    public GetUserResponse GetUser(Token token, string login = "")
+    public static GetUserResponse GetUser(Token token, string login = "")
     {
         Dictionary<string, string> query = null;
         if (login.Length > 0) {
             query = new Dictionary<string, string>();
             query.Add("login", login);
         }
-        GetUserResponse response = Request.Get<GetUserResponse>(GET_USERS_API_URI, token, query);
 
-        if (response.code != HttpStatusCode.OK)
-        {
-            Logger.Error("API call failed: received status code {0}", response.code);
-            throw new APIErrorException("API call failed: received status code " + response.code.ToString());
-        }
-
-        return response;
+        return Request.Get<GetUserResponse>(GET_USERS_API_URI, token, query);
     }
 }
 

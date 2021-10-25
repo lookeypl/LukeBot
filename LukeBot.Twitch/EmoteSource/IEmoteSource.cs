@@ -1,10 +1,13 @@
+using System.Collections.Generic;
+
+
 namespace LukeBot.Twitch
 {
 
-interface IEmoteSource
-{
-    void GetEmoteSet();
-    void GetEmoteInfo();
-};
+    public interface IEmoteSource
+    {
+        void FetchEmoteSet(ref Dictionary<string, Emote> emoteSet);
+        void GetEmoteInfo();
+    };
 
 }

@@ -1,9 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text.Json;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using LukeBot.Common;
+
 
 // TODO this probably should be moved to separate DLL like LukeBot.Network
 namespace LukeBot.Auth
@@ -14,12 +18,20 @@ namespace LukeBot.Auth
         {
             HttpClient client = new HttpClient();
 
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, uri);
+            UriBuilder builder = new UriBuilder(uri);
             if (query != null && query.Count > 0)
-                request.Content = new FormUrlEncodedContent(query);
+            {
+                builder.Query += string.Join("&", query.Select(x => x.Key + "=" + x.Value).ToArray());
+            }
 
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Get());
-            request.Headers.Add("Client-Id", token.ClientID);
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, builder.ToString());
+
+            if (token != null)
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Get());
+                request.Headers.Add("Client-Id", token.ClientID);
+            }
+
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
             Task<HttpResponseMessage> responseTask = client.SendAsync(request);
@@ -35,7 +47,38 @@ namespace LukeBot.Auth
 
             Task<string> retContentStrTask = response.Content.ReadAsStringAsync();
             retContentStrTask.Wait();
-            return JsonSerializer.Deserialize<TResp>(retContentStrTask.Result);
+            return JsonConvert.DeserializeObject<TResp>(retContentStrTask.Result);
+        }
+
+        public static ResponseJObject GetJObject(string uri, Token token, Dictionary<string, string> query)
+        {
+            HttpClient client = new HttpClient();
+
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, uri);
+            if (query != null && query.Count > 0)
+                request.Content = new FormUrlEncodedContent(query);
+
+            if (token != null)
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Get());
+                request.Headers.Add("Client-Id", token.ClientID);
+            }
+
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            Task<HttpResponseMessage> responseTask = client.SendAsync(request);
+            responseTask.Wait(30 * 1000);
+            HttpResponseMessage response = responseTask.Result;
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                return new ResponseJObject(response.StatusCode);
+            }
+
+            Task<string> retContentStrTask = response.Content.ReadAsStringAsync();
+            retContentStrTask.Wait();
+            Logger.Secure("Got JSON:\n{0}", retContentStrTask.Result);
+            return new ResponseJObject(response.StatusCode, retContentStrTask.Result);
         }
     }
 }

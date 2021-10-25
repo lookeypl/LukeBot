@@ -12,7 +12,7 @@ class API
     private const string API_URI = "https://api.twitch.tv/helix/";
     private const string GET_USERS_API_URI = API_URI + "users";
 
-    public class GetUserResponse: Auth.Response
+    public struct GetUserData
     {
         public string broadcaster_type { get; set; }
         public string description { get; set; }
@@ -25,6 +25,11 @@ class API
         public int view_count { get; set; }
         public string email { get; set; }
         public string created_at { get; set; }
+    }
+
+    public class GetUserResponse: Auth.Response
+    {
+        public List<GetUserData> data { get; set; }
     }
 
 

@@ -3,11 +3,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans" rel="stylesheet">
 
 <style>
+    html {
+        font-family: 'Open Sans',Arial,sans-serif;
+        font: 16px 'Open Sans';
+    }
+
     body {
         background-color: rgba(0, 0, 0, 0);
         overflow: hidden;
         color: #ffffff;
-        font-family: 'Open Sans' Arial sans-serif;
     }
 
     #chat {
@@ -20,15 +24,25 @@
         padding-right: 2px;
         white-space: normal;
         word-wrap: break-word;
-        font: 19px 'Open Sans';
-        text-shadow: black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px;
+        text-shadow: black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px;
+    }
+
+    .chat-inline {
+        display: inline;
+    }
+
+    .chat-line {
+        line-height: 1.9rem;
+    }
+
+    .chat-text-fragment {
+        vertical-align: baseline;
     }
 
     .chat-emote {
-        inline-size: 1.3em;
         position: relative;
-        top: 0.15em;
-        margin: -0.15em -0.05em -0.15em -0.05em;
+        margin: -.45rem 0;
+        vertical-align: middle;
     }
 </style>
 
@@ -59,11 +73,15 @@
     printDebug(serverAddress);
 
 
-    const EMOTE_URL_SCHEME = ["http://static-cdn.jtvnw.net/emoticons/v2/", "/default/dark/2.0"];
+    const TWITCH_EMOTE_URL_SCHEME = ["//static-cdn.jtvnw.net/emoticons/v2/", "/default/dark/1.0", "/default/dark/2.0", "/default/dark/3.0"];
+    const FFZ_EMOTE_URL_SCHEME = ["//cdn.frankerfacez.com/emote/", "/1", "/2", "/4"];
 
     class Emote {
-        constructor(id, from, to) {
+        constructor(source, id, width, height, from, to) {
+            this.mSource = source;
             this.mID = id;
+            this.mWidth = width;
+            this.mHeight = height;
             this.mFrom = from;
             this.mTo = to;
         }
@@ -84,7 +102,7 @@
             if (msg.Emotes != undefined) {
                 msg.Emotes.forEach(function (e) {
                     e.Ranges.forEach(function (r) {
-                        this.mEmotes.push(new Emote(e.ID, r.From, r.To));
+                        this.mEmotes.push(new Emote(e.Source, e.ID, e.Width, e.Height, r.From, r.To));
                     }, this);
                 }, this);
 
@@ -119,7 +137,11 @@
             nickNode.style.color = lastMsg.mColor;
             nickNode.appendChild(nickTextNode);
 
+            let colonNode = document.createElement("span");
+            colonNode.appendChild(document.createTextNode(": "));
+
             let textNode = document.createElement("span");
+            textNode.classList.add("chat-text-fragment");
             let textDataNode = document.createTextNode(`${lastMsg.mMessage}`);
             textNode.appendChild(textDataNode);
 
@@ -127,22 +149,40 @@
             console.log(lastMsg.mEmotes);
             if (lastMsg.mEmotes != undefined) {
                 lastMsg.mEmotes.forEach(function (e) {
-                    let url = EMOTE_URL_SCHEME[0] + e.mID + EMOTE_URL_SCHEME[1];
+                    let scheme = undefined;
+                    if (e.mSource == "Twitch") {
+                        scheme = TWITCH_EMOTE_URL_SCHEME;
+                    } else if (e.mSource == "FFZ") {
+                        scheme = FFZ_EMOTE_URL_SCHEME;
+                    } else {
+                        printDebug("Invalid emote source - skipping");
+                        return;
+                    }
+                    let url = scheme[0] + e.mID;
                     let img = document.createElement("img");
-                    img.src = url;
-                    img.className = "chat-emote";
+                    img.src = url + scheme[1];
+                    img.srcset =
+                        url + scheme[1] + " 1x, " +
+                        url + scheme[2] + " 2x, " +
+                        url + scheme[3] + " 4x";
+                    img.classList.add("chat-emote");
+
+                    let imgDiv = document.createElement("div");
+                    imgDiv.classList.add("chat-inline");
+                    imgDiv.appendChild(img.cloneNode());
 
                     let textRemainder = textDataNode.splitText(e.mFrom);
                     textRemainder.deleteData(0, e.mTo - e.mFrom + 1);
-                    textNode.insertBefore(img.cloneNode(), textRemainder);
+                    textNode.insertBefore(imgDiv, textRemainder);
                 });
             }
 
             let newMsgNode = document.createElement("span");
             newMsgNode.setAttribute("msgid", lastMsg.mID);
             newMsgNode.setAttribute("msguser", lastMsg.mNick);
+            newMsgNode.classList.add("chat-line");
             newMsgNode.appendChild(nickNode);
-            newMsgNode.appendChild(document.createTextNode(": "));
+            newMsgNode.appendChild(colonNode);
             newMsgNode.appendChild(textNode);
             newMsgNode.appendChild(document.createElement("br"));
 

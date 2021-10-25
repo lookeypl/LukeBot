@@ -9,47 +9,13 @@ using System.Diagnostics;
 
 namespace LukeBot.Twitch
 {
-    public struct TwitchIRCMessageEmoteRange
-    {
-        public int From { get; private set; }
-        public int To { get; private set; }
-
-        public TwitchIRCMessageEmoteRange(int from, int to)
-        {
-            From = from;
-            To = to;
-        }
-    }
-
-    public struct TwitchIRCMessageEmote
-    {
-        public string ID { get; private set; }
-        public List<TwitchIRCMessageEmoteRange> Ranges { get; private set; }
-
-        public TwitchIRCMessageEmote(string id, string rangesStr)
-        {
-            ID = id;
-            Ranges = new List<TwitchIRCMessageEmoteRange>();
-            string[] ranges = rangesStr.Split(',');
-            foreach (string r in ranges)
-            {
-                int dash = r.IndexOf('-');
-                Ranges.Add(
-                    new TwitchIRCMessageEmoteRange(
-                        Int32.Parse(r.Substring(0, dash)), Int32.Parse(r.Substring(dash + 1))
-                    )
-                );
-            }
-        }
-    }
-
     public struct TwitchIRCMessage
     {
         public string Type { get; private set; }
         public string MessageID { get; private set; }
         public string UserID { get; set; }
         public string Color { get; set; }
-        public List<TwitchIRCMessageEmote> Emotes { get; private set; }
+        public List<MessageEmote> Emotes { get; private set; }
         public string Nick { get; set; }
         public string DisplayName { get; set; }
         public string Message { get; set; }
@@ -60,7 +26,7 @@ namespace LukeBot.Twitch
             MessageID = msgID;
             UserID = "";
             Color = "#dddddd";
-            Emotes = new List<TwitchIRCMessageEmote>();
+            Emotes = new List<MessageEmote>();
             Nick = "";
             DisplayName = "";
             Message = "";
@@ -75,8 +41,13 @@ namespace LukeBot.Twitch
             foreach (string e in emotes)
             {
                 int separatorIdx = e.IndexOf(':');
-                Emotes.Add(new TwitchIRCMessageEmote(e.Substring(0, separatorIdx), e.Substring(separatorIdx + 1)));
+                Emotes.Add(new MessageEmote(EmoteSource.Twitch, e.Substring(0, separatorIdx), 32, 32, e.Substring(separatorIdx + 1)));
             }
+        }
+
+        public void AddExternalEmotes(List<MessageEmote> emotes)
+        {
+            Emotes.AddRange(emotes);
         }
     }
 
@@ -125,6 +96,8 @@ namespace LukeBot.Twitch
         private Token mToken;
         private Dictionary<string, IRCChannel> mChannels;
         private bool mTagsEnabled = false;
+        private API.GetUserResponse mIRCUser;
+        private EmoteProvider mExternalEmotes;
 
         private bool mRunning = false;
         private AutoResetEvent mLoggedInEvent;
@@ -212,12 +185,15 @@ namespace LukeBot.Twitch
             if (m.Tags.TryGetValue("display-name", out displayName))
                 message.DisplayName = displayName;
 
+            // Twitch global/sub emotes - taken from IRC tags
             string emotes;
             if (m.Tags.TryGetValue("emotes", out emotes))
             {
                 Logger.Debug("Emotes string: {0}", emotes);
                 message.ParseEmotesString(emotes);
             }
+
+            message.AddExternalEmotes(mExternalEmotes.ParseEmotes(message.Message));
 
             OnMessage(message);
 
@@ -431,6 +407,7 @@ namespace LukeBot.Twitch
             mLoggedInEvent = new AutoResetEvent(false);
             mChannels = new Dictionary<string, IRCChannel>();
             mToken = token;
+            mExternalEmotes = new EmoteProvider();
 
             Logger.Info("Twitch IRC module initialized");
         }
@@ -454,6 +431,11 @@ namespace LukeBot.Twitch
             mConnection.Send("JOIN #" + channel);
 
             mChannels.Add(channel, new IRCChannel(channel));
+
+            mIRCUser = API.GetUser(mToken, channel);
+            Logger.Secure("Joined channel twitch ID: {0}", mIRCUser.data[0].id);
+
+            mExternalEmotes.AddEmoteSource(new FFZEmoteSource(mIRCUser.data[0].id));
 
             mChannelsMutex.ReleaseMutex();
         }

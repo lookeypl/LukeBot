@@ -12,7 +12,6 @@ namespace LukeBot.Twitch
         private TwitchIRC mIRC;
         private ChatWidget mWidget;
 
-
         bool IsLoginSuccessful()
         {
             API.GetUserResponse testResponse = API.GetUser(mToken);
@@ -65,6 +64,7 @@ namespace LukeBot.Twitch
         // TEMPORARY
         public void JoinChannel(string channel)
         {
+            Logger.Debug("Joining channel {0}", channel);
             mIRC.JoinChannel(channel);
         }
 

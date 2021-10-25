@@ -104,11 +104,10 @@
 
     class MessageList {
         constructor() {
-            this.mMessages = [];
         }
 
-        updateChat() {
-            let lastMsg = this.mMessages[this.mMessages.length - 1];
+        add(msgObj) {
+            let lastMsg = new Message(msgObj);
 
             let nick = lastMsg.mDisplayName;
             if (nick == "")
@@ -140,7 +139,8 @@
             }
 
             let newMsgNode = document.createElement("span");
-            newMsgNode.setAttribute("msgId", lastMsg.mID);
+            newMsgNode.setAttribute("msgid", lastMsg.mID);
+            newMsgNode.setAttribute("msguser", lastMsg.mNick);
             newMsgNode.appendChild(nickNode);
             newMsgNode.appendChild(document.createTextNode(": "));
             newMsgNode.appendChild(textNode);
@@ -154,44 +154,24 @@
             }
         }
 
-        add(msgObj) {
-            this.mMessages.push(new Message(msgObj));
-
-            // remove oldest message
-            if (this.mMessages.length > 30) {
-                this.mMessages.shift();
-            }
-
-            this.updateChat();
-        }
-
         remove(msgObj) {
-            let id = msgObj.Message;
-            let hasID = false;
-            if (msgObj.MessageID != "") {
-                id = msgObj.MessageID;
-                hasID = true;
+            let id = msgObj.MessageID;
+            if (msgObj.MessageID == "") {
+                printDebug("Cannot remove message - no msg id provided");
+                return;
             }
 
-            let msgIdx = this.mMessages.findIndex(function (e) {
-                if (hasID)
-                    return e.mID == id;
-                else
-                    return e.mMessage == id;
-            });
-
-            printDebug(msgIdx);
-            if (msgIdx != -1) {
-                this.mMessages.splice(msgIdx, 1);
-                this.updateChat();
-            }
+            let msgNode = chat.querySelector(`[msgid="${id}"]`);
+            printDebug(msgNode);
+            msgNode.remove();
         }
 
         removeUser(msgObj) {
-            this.mMessages = this.mMessages.filter(function (e) {
-                return e.mNick != msgObj.Nick;
+            let msgs = chat.querySelectorAll(`[msguser=${msgObj.Nick}]`);
+
+            msgs.forEach(function(m) {
+                m.remove();
             });
-            this.updateChat();
         }
     }
 

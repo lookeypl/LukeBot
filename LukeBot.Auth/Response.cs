@@ -32,4 +32,22 @@ namespace LukeBot.Auth
             obj = JObject.Parse(jsonStr);
         }
     }
+
+    public class ResponseJArray
+    {
+        public HttpStatusCode code { get; private set; }
+        public JArray array { get; private set; }
+
+        public ResponseJArray(HttpStatusCode c)
+        {
+            code = c;
+            array = null;
+        }
+
+        public ResponseJArray(HttpStatusCode c, string jsonStr)
+        {
+            code = c;
+            array = JArray.Parse(jsonStr);
+        }
+    }
 }

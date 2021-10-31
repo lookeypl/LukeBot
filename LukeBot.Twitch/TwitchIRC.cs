@@ -436,6 +436,7 @@ namespace LukeBot.Twitch
             Logger.Secure("Joined channel twitch ID: {0}", mIRCUser.data[0].id);
 
             mExternalEmotes.AddEmoteSource(new FFZEmoteSource(mIRCUser.data[0].id));
+            mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(mIRCUser.data[0].login));
 
             mChannelsMutex.ReleaseMutex();
         }

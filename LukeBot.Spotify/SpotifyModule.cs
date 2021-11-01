@@ -97,8 +97,8 @@ namespace LukeBot.Spotify
             );
 
             // TODO Temporary
-            NowPlayingWidget widget = new NowPlayingWidget(mNowPlaying);
-            mWidgets.Add(widget);
+            mWidgets.Add(new NowPlayingWidget(mNowPlaying, "BIG-NOW-PLAYING-WIDGET"));
+            mWidgets.Add(new NowPlayingWidget(mNowPlaying, "SMALL-NOW-PLAYING-WIDGET"));
         }
 
         public void RequestShutdown()

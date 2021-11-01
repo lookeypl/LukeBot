@@ -31,7 +31,7 @@ namespace LukeBot.Spotify
                 mServer.Send(JsonSerializer.Serialize(args));
         }
 
-        public NowPlayingWidget(NowPlaying engine)
+        public NowPlayingWidget(NowPlaying engine, string widgetID)
             : base()
         {
             mEngine = engine;
@@ -47,7 +47,7 @@ namespace LukeBot.Spotify
 
             mServer = new WebSocketServer(serverIP, mPort.Value);
 
-            string widgetID = WidgetManager.Instance.Register(this, "TEST-WIDGET-ID");
+            WidgetManager.Instance.Register(this, widgetID);
             Logger.Secure("Registered Chat widget at link http://{0}/widget/{1}; WS port {2}", serverIP, ID, mPort.Value);
 
             mState = null;

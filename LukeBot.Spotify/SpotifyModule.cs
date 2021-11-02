@@ -28,12 +28,12 @@ namespace LukeBot.Spotify
             UserEmailResponse testResponse = Request.Get<UserEmailResponse>(GET_PROFILE_URI, mToken, null);
             if (testResponse.code == HttpStatusCode.OK)
             {
-                Logger.Debug("Spotify login successful");
+                Logger.Log().Debug("Spotify login successful");
                 return true;
             }
             else if (testResponse.code == HttpStatusCode.Unauthorized)
             {
-                Logger.Error("Failed to login to Spotify - Unauthorized");
+                Logger.Log().Error("Failed to login to Spotify - Unauthorized");
                 return false;
             }
             else

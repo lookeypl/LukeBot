@@ -54,18 +54,18 @@ namespace LukeBot.UI
 
         async Task HandleServiceCallback(string service, HttpContext context)
         {
-            Logger.Info("Received callback for service " + service + ": " + context.Request.Path.Value);
-            Logger.Info("We have " + context.Request.Query.Count + " queries:");
+            Logger.Log().Info("Received callback for service " + service + ": " + context.Request.Path.Value);
+            Logger.Log().Info("We have " + context.Request.Query.Count + " queries:");
             foreach (var query in context.Request.Query)
             {
-                Logger.Info("  -> " + query.Key + " = " + query.Value);
+                Logger.Log().Info("  -> " + query.Key + " = " + query.Value);
             }
 
             Intermediary srv = CommunicationManager.Instance.GetIntermediary(service);
 
             if (!context.Request.Query.ContainsKey("state"))
             {
-                Logger.Error("Received back no state. This should not happen.");
+                Logger.Log().Error("Received back no state. This should not happen.");
                 return;
             }
 
@@ -87,7 +87,7 @@ namespace LukeBot.UI
             }
             catch (System.Exception e)
             {
-                Logger.Error("{0}", e.Message);
+                Logger.Log().Error("{0}", e.Message);
                 srv.Reject(state);
                 await context.Response.WriteAsync(
                     "<html><body style=\"font-family: sans-serif; margin-left: 30px; margin-top: 30px;\">" +
@@ -99,7 +99,7 @@ namespace LukeBot.UI
 
         async Task HandleWidgetCallback(string widgetUUID, HttpContext context)
         {
-            Logger.Debug("Handling {0}", widgetUUID);
+            Logger.Log().Debug("Handling {0}", widgetUUID);
             await context.Response.WriteAsync(WidgetManager.Instance.GetWidgetPage(widgetUUID));
         }
 

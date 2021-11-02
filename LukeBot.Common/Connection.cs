@@ -39,11 +39,11 @@ namespace LukeBot.Common
         {
             if ((mClient == null) || (!mClient.Connected))
             {
-                Logger.Error("Connection not established - cannot send message");
+                Logger.Log().Error("Connection not established - cannot send message");
                 return;
             }
 
-            Logger.Secure("Send: {0}", msg);
+            Logger.Log().Secure("Send: {0}", msg);
             mOutput.WriteLine(msg);
             mOutput.Flush();
         }

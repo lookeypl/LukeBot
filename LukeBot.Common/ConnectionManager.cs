@@ -51,7 +51,7 @@ namespace LukeBot.Common
                 int idx = PortToArrayIdx(ep.Port);
                 mPorts[idx] = new PortStatus();
                 mPorts[idx].taken = true;
-                Logger.Debug("Marking TCP port {0} as taken by outside service", ep.Port);
+                Logger.Log().Debug("Marking TCP port {0} as taken by outside service", ep.Port);
             }
 
             foreach (IPEndPoint ep in udpEndpoints)
@@ -62,7 +62,7 @@ namespace LukeBot.Common
                 int idx = PortToArrayIdx(ep.Port);
                 mPorts[idx] = new PortStatus();
                 mPorts[idx].taken = true;
-                Logger.Debug("Marking UDP port {0} as taken by outside service", ep.Port);
+                Logger.Log().Debug("Marking UDP port {0} as taken by outside service", ep.Port);
             }
         }
 

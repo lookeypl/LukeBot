@@ -22,7 +22,7 @@ namespace LukeBot.Twitch
             mIRC = IRC;
 
             mPort = ConnectionManager.Instance.AcquirePort();
-            Logger.Debug("Widget will have port {0}", mPort.Value);
+            Logger.Log().Debug("Widget will have port {0}", mPort.Value);
 
             string serverIP = Utils.GetConfigServerIP();
             AddToHead(string.Format("<meta name=\"serveraddress\" content=\"{0}\">", serverIP + ":" + mPort.Value));
@@ -30,7 +30,7 @@ namespace LukeBot.Twitch
             mServer = new WebSocketServer(serverIP, mPort.Value);
 
             WidgetManager.Instance.Register(this, "TEST-ALERTS-WIDGET");
-            Logger.Secure("Registered Alerts widget at link http://{0}/widget/{1}; WS port {2}", serverIP, ID, mPort.Value);
+            Logger.Log().Secure("Registered Alerts widget at link http://{0}/widget/{1}; WS port {2}", serverIP, ID, mPort.Value);
         }
 
         ~AlertsWidget()

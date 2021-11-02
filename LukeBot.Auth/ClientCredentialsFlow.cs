@@ -18,7 +18,7 @@ namespace LukeBot.Auth
 
         public override AuthToken Request(string scope)
         {
-            Logger.Info("Requesting OAuth token...");
+            Logger.Log().Info("Requesting OAuth token...");
             Dictionary<string, string> query = new Dictionary<string, string>();
 
             query.Add("client_id", mClientID);
@@ -30,18 +30,18 @@ namespace LukeBot.Auth
 
             Task<string> contentStrTask = content.ReadAsStringAsync();
             contentStrTask.Wait();
-            Logger.Debug("Sending POST request");
-            Logger.Secure(" -> Content: {0}", contentStrTask.Result);
+            Logger.Log().Debug("Sending POST request");
+            Logger.Log().Secure(" -> Content: {0}", contentStrTask.Result);
 
             Task<HttpResponseMessage> retMessageTask = mHttpClient.PostAsync(mTokenURL, content);
             retMessageTask.Wait(10000);
             HttpResponseMessage retMessage = retMessageTask.Result;
 
-            Logger.Debug("Response status code is " + retMessage.StatusCode);
+            Logger.Log().Debug("Response status code is " + retMessage.StatusCode);
             retMessage.EnsureSuccessStatusCode();
 
             HttpContent retContent = retMessage.Content;
-            Logger.Debug("Received content type " + retContent.Headers.ContentType);
+            Logger.Log().Debug("Received content type " + retContent.Headers.ContentType);
 
             Task<string> retContentStrTask = retContent.ReadAsStringAsync();
             retContentStrTask.Wait();
@@ -49,16 +49,16 @@ namespace LukeBot.Auth
 
             AuthToken token = JsonSerializer.Deserialize<AuthToken>(retContentStr);
 
-            Logger.Debug("Response from Twitch OAuth:");
-            Logger.Secure("  Access token: {0}", token.access_token);
-            Logger.Secure("  Refresh token: {0}", token.refresh_token);
-            Logger.Debug("  Expires in: {0}", token.expires_in);
-            /*Logger.Debug("  Scope: ");
+            Logger.Log().Debug("Response from Twitch OAuth:");
+            Logger.Log().Secure("  Access token: {0}", token.access_token);
+            Logger.Log().Secure("  Refresh token: {0}", token.refresh_token);
+            Logger.Log().Debug("  Expires in: {0}", token.expires_in);
+            /*Logger.Log().Debug("  Scope: ");
             foreach (var s in token.scope)
             {
-                Logger.Debug("    -> {0}", s);
+                Logger.Log().Debug("    -> {0}", s);
             }*/
-            Logger.Debug("  Token type: {0}", token.token_type);
+            Logger.Log().Debug("  Token type: {0}", token.token_type);
 
             return token;
         }
@@ -70,7 +70,7 @@ namespace LukeBot.Auth
 
         public override void Revoke(AuthToken token)
         {
-            Logger.Info("Revoking previously acquired OAuth token...");
+            Logger.Log().Info("Revoking previously acquired OAuth token...");
             Dictionary<string, string> query = new Dictionary<string, string>();
 
             // TODO client_id and client_secret should come from PropertyStore
@@ -84,11 +84,11 @@ namespace LukeBot.Auth
 
             if (!retMessage.IsSuccessStatusCode)
             {
-                Logger.Error("Failed to revoke OAuth token");
+                Logger.Log().Error("Failed to revoke OAuth token");
             }
             else
             {
-                Logger.Info("OAuth Token revoked successfully");
+                Logger.Log().Info("OAuth Token revoked successfully");
             }
         }
 

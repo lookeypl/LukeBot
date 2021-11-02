@@ -37,7 +37,7 @@ namespace LukeBot.Spotify
             mEngine = engine;
 
             mPort = ConnectionManager.Instance.AcquirePort();
-            Logger.Debug("Widget will have port {0}", mPort.Value);
+            Logger.Log().Debug("Widget will have port {0}", mPort.Value);
 
             mEngine.TrackChanged += OnTrackChanged;
             mEngine.StateUpdate += OnStateUpdate;
@@ -48,7 +48,7 @@ namespace LukeBot.Spotify
             mServer = new WebSocketServer(serverIP, mPort.Value);
 
             WidgetManager.Instance.Register(this, widgetID);
-            Logger.Secure("Registered Chat widget at link http://{0}/widget/{1}; WS port {2}", serverIP, ID, mPort.Value);
+            Logger.Log().Secure("Registered Chat widget at link http://{0}/widget/{1}; WS port {2}", serverIP, ID, mPort.Value);
 
             mState = null;
             mCurrentTrack = null;
@@ -76,9 +76,9 @@ namespace LukeBot.Spotify
             {
                 try {
                     WebSocketMessage msg1 = mServer.Recv();
-                    Logger.Debug("Received message: {0}", msg1.TextMessage);
+                    Logger.Log().Debug("Received message: {0}", msg1.TextMessage);
                 } catch (Exception e) {
-                    Logger.Warning("Exception caught: {0}: {1}", e.GetType().ToString(), e.Message);
+                    Logger.Log().Warning("Exception caught: {0}: {1}", e.GetType().ToString(), e.Message);
                 }
             }
         }

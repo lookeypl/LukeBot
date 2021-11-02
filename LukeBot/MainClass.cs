@@ -1,5 +1,7 @@
 ﻿using LukeBot.Common;
 using System;
+using System.IO;
+
 
 namespace LukeBot
 {
@@ -8,6 +10,7 @@ namespace LukeBot
         static void Main(string[] args)
         {
             FileUtils.SetUnifiedCWD();
+            Logger.SetProjectRootDir(Directory.GetCurrentDirectory());
 
             try
             {
@@ -16,7 +19,7 @@ namespace LukeBot
             }
             catch (Exception e)
             {
-                Logger.Error("Caught exception: " + e.Message + "\n" + e.StackTrace);
+                Logger.Log().Error("Caught exception: " + e.Message + "\n" + e.StackTrace);
             }
         }
     }

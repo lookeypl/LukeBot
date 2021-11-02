@@ -139,22 +139,22 @@ namespace LukeBot.Twitch
             case IRCReply.RPL_TWITCH_WELCOME2:
             case IRCReply.RPL_TWITCH_WELCOME3:
             case IRCReply.RPL_TWITCH_WELCOME4:
-                Logger.Info("Welcome msg: {0}", m.ParamsString);
+                Logger.Log().Info("Welcome msg: {0}", m.ParamsString);
                 break;
             case IRCReply.RPL_MOTDSTART:
-                Logger.Info("Server's Message of the Day:");
-                Logger.Info("  {0}", m.ParamsString);
+                Logger.Log().Info("Server's Message of the Day:");
+                Logger.Log().Info("  {0}", m.ParamsString);
                 break;
             case IRCReply.RPL_MOTD:
-                Logger.Info("  {0}", m.ParamsString);
+                Logger.Log().Info("  {0}", m.ParamsString);
                 break;
             case IRCReply.RPL_ENDOFMOTD:
-                Logger.Info("  {0}", m.ParamsString);
-                Logger.Info("End of Message of the Day");
+                Logger.Log().Info("  {0}", m.ParamsString);
+                Logger.Log().Info("End of Message of the Day");
                 mLoggedInEvent.Set();
                 break;
             default:
-                Logger.Info("Reply {0} ({1}): {2}", (int)m.Reply, m.Reply.ToString(), m.ParamsString);
+                Logger.Log().Info("Reply {0} ({1}): {2}", (int)m.Reply, m.Reply.ToString(), m.ParamsString);
                 break;
             }
         }
@@ -162,7 +162,7 @@ namespace LukeBot.Twitch
         void ProcessPRIVMSG(Message m)
         {
             string chatMsg = m.Params[m.Params.Count - 1];
-            Logger.Info("({0} tags) #{1} {2}: {3}", m.Tags.Count, m.Channel, m.User, chatMsg);
+            Logger.Log().Info("({0} tags) #{1} {2}: {3}", m.Tags.Count, m.Channel, m.User, chatMsg);
 
             // Message related tags pulled from metadata (if available)
             string msgID;
@@ -189,7 +189,7 @@ namespace LukeBot.Twitch
             string emotes;
             if (m.Tags.TryGetValue("emotes", out emotes))
             {
-                Logger.Debug("Emotes string: {0}", emotes);
+                Logger.Log().Debug("Emotes string: {0}", emotes);
                 message.ParseEmotesString(emotes);
             }
 
@@ -211,12 +211,12 @@ namespace LukeBot.Twitch
                 if (!mChannels.ContainsKey(m.Channel))
                     throw new InvalidDataException(String.Format("Unknown channel: {0}", m.Channel));
 
-                Logger.Debug("Processing command {0}", cmd);
+                Logger.Log().Debug("Processing command {0}", cmd);
                 response = mChannels[m.Channel].ProcessMessage(cmd, chatMsgTokens);
             }
             catch (Exception e)
             {
-                Logger.Error("Failed to process command: {0}", e.Message);
+                Logger.Log().Error("Failed to process command: {0}", e.Message);
                 mChannelsMutex.ReleaseMutex();
                 return;
             }
@@ -230,7 +230,7 @@ namespace LukeBot.Twitch
         void ProcessCLEARCHAT(Message m)
         {
             string msg = m.Params[m.Params.Count - 1];
-            Logger.Warning("CLEARCHAT ({0} tags) #{1} :{2}", m.Tags.Count, m.Channel, msg);
+            Logger.Log().Warning("CLEARCHAT ({0} tags) #{1} :{2}", m.Tags.Count, m.Channel, msg);
             TwitchIRCClearChat message = new TwitchIRCClearChat(msg);
             OnClearChat(message);
         }
@@ -238,7 +238,7 @@ namespace LukeBot.Twitch
         void ProcessCLEARMSG(Message m)
         {
             string msg = m.Params[m.Params.Count - 1];
-            Logger.Warning("CLEARMSG ({0} tags) #{1} :{2}", m.Tags.Count, m.Channel, msg);
+            Logger.Log().Warning("CLEARMSG ({0} tags) #{1} :{2}", m.Tags.Count, m.Channel, msg);
 
             TwitchIRCClearMsg message = new TwitchIRCClearMsg(msg);
 
@@ -252,19 +252,19 @@ namespace LukeBot.Twitch
         void ProcessCAP(Message m)
         {
             // TODO complete this part to discover if CAP was acquired
-            Logger.Debug("CAP response: {0}", m.MessageString);
+            Logger.Log().Debug("CAP response: {0}", m.MessageString);
         }
 
         void ProcessNOTICE(Message m)
         {
-            Logger.Info("Received a Notice from server: {0}", m.ParamsString);
+            Logger.Log().Info("Received a Notice from server: {0}", m.ParamsString);
         }
 
         void ProcessUSERNOTICE(Message m)
         {
-            Logger.Info("Received a User Notice from server");
-            Logger.Secure("USERNOTICE message details:");
-            m.Print(Logger.LogLevel.Secure);
+            Logger.Log().Info("Received a User Notice from server");
+            Logger.Log().Secure("USERNOTICE message details:");
+            m.Print(LogLevel.Secure);
         }
 
         bool ProcessMessage(Message m)
@@ -278,7 +278,7 @@ namespace LukeBot.Twitch
 
             // String commands
             case IRCCommand.JOIN:
-                Logger.Info("Joined channel {0}", m.Channel);
+                Logger.Log().Info("Joined channel {0}", m.Channel);
                 break;
             case IRCCommand.NOTICE:
                 ProcessNOTICE(m);
@@ -287,10 +287,10 @@ namespace LukeBot.Twitch
                 ProcessUSERNOTICE(m);
                 break;
             case IRCCommand.PART:
-                Logger.Info("Leaving channel {0}", m.Channel);
+                Logger.Log().Info("Leaving channel {0}", m.Channel);
                 break;
             case IRCCommand.PING:
-                Logger.Debug("Received PING - responding with PONG");
+                Logger.Log().Debug("Received PING - responding with PONG");
                 mConnection.Send("PONG :" + m.Params[m.Params.Count - 1]);
                 break;
             case IRCCommand.PRIVMSG:
@@ -314,7 +314,7 @@ namespace LukeBot.Twitch
         {
             if (msg == null)
             {
-                Logger.Warning("Connection dropped - exiting");
+                Logger.Log().Warning("Connection dropped - exiting");
                 return false;
             }
 
@@ -331,8 +331,8 @@ namespace LukeBot.Twitch
             Message m = Twitch.Message.Parse(msg);
             if (m.Command == IRCCommand.NOTICE)
             {
-                Logger.Info("While trying to login received Notice from Server:");
-                Logger.Info("  {0}", msg);
+                Logger.Log().Info("While trying to login received Notice from Server:");
+                Logger.Log().Info("  {0}", msg);
 
                 if (m.Params[m.Params.Count - 1].Equals("Login authentication failed"))
                     return false;
@@ -353,7 +353,7 @@ namespace LukeBot.Twitch
                 throw new InvalidOperationException("Provided token was not loaded properly");
 
             // log in
-            Logger.Debug("Bot login account: {0}", mName);
+            Logger.Log().Debug("Bot login account: {0}", mName);
 
             mConnection = new Connection("irc.chat.twitch.tv", 6697, true);
 
@@ -370,7 +370,7 @@ namespace LukeBot.Twitch
 
         void WorkerMain()
         {
-            Logger.Info("TwitchIRC Worker thread started.");
+            Logger.Log().Info("TwitchIRC Worker thread started.");
             try
             {
                 Login();
@@ -378,11 +378,11 @@ namespace LukeBot.Twitch
             }
             catch (Exception e)
             {
-                Logger.Error("Failed to login to Twitch IRC server: {0}", e.Message);
+                Logger.Log().Error("Failed to login to Twitch IRC server: {0}", e.Message);
                 return;
             }
 
-            Logger.Info("Listening for response...");
+            Logger.Log().Info("Listening for response...");
 
             while (mRunning)
                 mRunning = ProcessMessage(mConnection.Read());
@@ -409,7 +409,7 @@ namespace LukeBot.Twitch
             mToken = token;
             mExternalEmotes = new EmoteProvider();
 
-            Logger.Info("Twitch IRC module initialized");
+            Logger.Log().Info("Twitch IRC module initialized");
         }
 
         ~TwitchIRC()
@@ -433,7 +433,7 @@ namespace LukeBot.Twitch
             mChannels.Add(channel, new IRCChannel(channel));
 
             mIRCUser = API.GetUser(mToken, channel);
-            Logger.Secure("Joined channel twitch ID: {0}", mIRCUser.data[0].id);
+            Logger.Log().Secure("Joined channel twitch ID: {0}", mIRCUser.data[0].id);
 
             mExternalEmotes.AddEmoteSource(new FFZEmoteSource(mIRCUser.data[0].id));
             mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(mIRCUser.data[0].login));

@@ -74,7 +74,7 @@ namespace LukeBot.Auth
             mMutex = new Mutex();
 
             if (FileUtils.Exists(mTokenPath)) {
-                Logger.Debug("Found token {0}, importing", mTokenPath);
+                Logger.Log().Debug("Found token {0}, importing", mTokenPath);
                 ImportFromFile();
             }
         }

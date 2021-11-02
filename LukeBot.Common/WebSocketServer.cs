@@ -74,23 +74,23 @@ namespace LukeBot.Common
             int read = stream.Read(buffer, 0, toRead);
             if (read != toRead)
             {
-                Logger.Warning("Read different amount of data than expected ({0} vs {1})", read, toRead);
+                Logger.Log().Warning("Read different amount of data than expected ({0} vs {1})", read, toRead);
             }
 
-            Logger.Debug("Reading done, read {0} bytes", read);
+            Logger.Log().Debug("Reading done, read {0} bytes", read);
             string requestStr = Encoding.UTF8.GetString(buffer);
-            Logger.Secure("Request:\n{0}", requestStr);
+            Logger.Log().Secure("Request:\n{0}", requestStr);
 
             HTTPRequest request = HTTPRequest.Parse(requestStr);
 
-            Logger.Secure("Parsed:");
-            Logger.Secure("Type: {0}", request.Type);
-            Logger.Secure("Path: {0}", request.Path);
-            Logger.Secure("Version: {0}", request.Version);
-            Logger.Secure("Headers:");
+            Logger.Log().Secure("Parsed:");
+            Logger.Log().Secure("Type: {0}", request.Type);
+            Logger.Log().Secure("Path: {0}", request.Path);
+            Logger.Log().Secure("Version: {0}", request.Version);
+            Logger.Log().Secure("Headers:");
             foreach (var h in request.Headers)
             {
-                Logger.Secure("  {0} = {1}", h.Key, h.Value);
+                Logger.Log().Secure("  {0} = {1}", h.Key, h.Value);
             }
 
             return request;
@@ -116,7 +116,7 @@ namespace LukeBot.Common
 
             if (!request.Headers.ContainsKey("Sec-WebSocket-Key"))
             {
-                Logger.Error("Received GET request doesn't have websocket handshake related fields. Dropping.");
+                Logger.Log().Error("Received GET request doesn't have websocket handshake related fields. Dropping.");
                 mClient.Close();
                 mState = ServerState.Listening;
                 return;
@@ -132,7 +132,7 @@ namespace LukeBot.Common
             response.Headers.Add("Sec-WebSocket-Accept", Convert.ToBase64String(respKeySHA1));
 
             string responseStr = response.GetAsString();
-            Logger.Debug("Response to send back:\n{0}", responseStr);
+            Logger.Log().Debug("Response to send back:\n{0}", responseStr);
 
             byte[] buffer = Encoding.UTF8.GetBytes(responseStr);
             mStream.Write(buffer, 0, buffer.Length);
@@ -143,7 +143,7 @@ namespace LukeBot.Common
         private void Disconnect()
         {
             // Closing handshake
-            Logger.Debug("Disconnecting Server");
+            Logger.Log().Debug("Disconnecting Server");
             mStream.Close();
             mClient.Close();
         }
@@ -211,7 +211,7 @@ namespace LukeBot.Common
         {
             if (State != ServerState.Connected)
             {
-                Logger.Warning("Message not sent to WebSocket - not connected");
+                Logger.Log().Warning("Message not sent to WebSocket - not connected");
                 return;
             }
 
@@ -231,7 +231,7 @@ namespace LukeBot.Common
             do
             {
                 read = mStream.Read(chunk, 0, CHUNK_SIZE);
-                Logger.Debug("Read {0}", read);
+                Logger.Log().Debug("Read {0}", read);
                 if (read == 0)
                     break;
 
@@ -248,7 +248,7 @@ namespace LukeBot.Common
         {
             if (State != ServerState.Connected)
             {
-                Logger.Warning("WebSocket server in invalid state - not connected");
+                Logger.Log().Warning("WebSocket server in invalid state - not connected");
                 throw new InvalidOperationException("WebSocket server in invalid state - not connected");
             }
 
@@ -278,7 +278,7 @@ namespace LukeBot.Common
 
         public void RequestShutdown()
         {
-            Logger.Debug("WebSocketServer: Requesting shutdown");
+            Logger.Log().Debug("WebSocketServer: Requesting shutdown");
             mDone = true;
             mEvent.Set();
         }

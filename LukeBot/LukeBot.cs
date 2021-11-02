@@ -19,7 +19,7 @@ namespace LukeBot
         void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
         {
             // UI is not handled here; it captures Ctrl+C on its own
-            Logger.Info("Requested shutdown");
+            Logger.Log().Info("Requested shutdown");
             mCLI.Terminate();
             mUsers[0].RequestModuleShutdown();
         }
@@ -42,13 +42,13 @@ namespace LukeBot
         {
             Console.CancelKeyPress += OnCancelKeyPress;
 
-            Logger.Info("LukeBot v0.0.1 starting");
+            Logger.Log().Info("LukeBot v0.0.1 starting");
             mCLI = new CLI.Interface();
 
-            Logger.Info("LukeBot UI starting...");
+            Logger.Log().Info("LukeBot UI starting...");
             mInterfaceThread.Start();
 
-            Logger.Info("LukeBot modules starting...");
+            Logger.Log().Info("LukeBot modules starting...");
             mUsers.Add(new UserContext("Lookey"));
 
             try
@@ -77,18 +77,18 @@ namespace LukeBot
                     "Fabric mods I'm using: Iris, Litematica, Logical Zoom, ModMenu, MiniHUD, Sodium, Tweakeroo; Shaders (if enabled): Sildur's Vibrant Shaders Extreme-VL"
                 ));
 
-                Logger.Info("Giving control to CLI");
+                Logger.Log().Info("Giving control to CLI");
                 mCLI.MainLoop();
             }
             catch (Exception e)
             {
-                Logger.Error("Exception caught: {0}", e.Message);
+                Logger.Log().Error("Exception caught: {0}", e.Message);
             }
 
             mUI.Stop();
             mInterfaceThread.Join();
 
-            Logger.Info("UI stopped. Stopping modules...");
+            Logger.Log().Info("UI stopped. Stopping modules...");
             mUsers[0].RequestModuleShutdown();
             mUsers[0].WaitForModulesShutdown();
             mUsers = null;

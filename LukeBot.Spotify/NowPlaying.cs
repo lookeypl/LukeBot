@@ -179,7 +179,7 @@ namespace LukeBot.Spotify
             Data data = Request.Get<Data>(REQUEST_URI, mToken, null);
             if (data.code == HttpStatusCode.Unauthorized)
             {
-                Logger.Debug("OAuth token expired - refreshing...");
+                Logger.Log().Debug("OAuth token expired - refreshing...");
                 mToken.Refresh();
                 data = Request.Get<Data>(REQUEST_URI, mToken, null);
             }
@@ -187,7 +187,7 @@ namespace LukeBot.Spotify
             if (data.code != HttpStatusCode.OK)
             {
                 if (data.code != HttpStatusCode.NoContent)
-                    Logger.Error("Failed to fetch Now Playing data: {0}", data.code);
+                    Logger.Log().Error("Failed to fetch Now Playing data: {0}", data.code);
 
                 mEventTimeout = DEFAULT_EVENT_TIMEOUT;
                 mChangeExpected = false;
@@ -197,7 +197,7 @@ namespace LukeBot.Spotify
 
             if (data.item == null)
             {
-                Logger.Warning("No track item received");
+                Logger.Log().Warning("No track item received");
                 return;
             }
 
@@ -266,7 +266,7 @@ namespace LukeBot.Spotify
             {
                 if (mShutdownEvent.WaitOne(mEventTimeout))
                 {
-                    Logger.Debug("Shutdown event triggered - closing");
+                    Logger.Log().Debug("Shutdown event triggered - closing");
                     break;
                 }
 
@@ -277,7 +277,7 @@ namespace LukeBot.Spotify
                 }
                 catch (Exception e)
                 {
-                    Logger.Warning("Caught exception while fetching data: {0}. Ignoring and continuing anyway...", e.Message);
+                    Logger.Log().Warning("Caught exception while fetching data: {0}. Ignoring and continuing anyway...", e.Message);
                 }
             }
         }

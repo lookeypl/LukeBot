@@ -4,51 +4,53 @@ using System.Runtime.CompilerServices;
 
 namespace LukeBot.Common
 {
-    public class Logger
+    public enum LogLevel
     {
-        public enum LogLevel
-        {
-            Error = 0,
-            Warning,
-            Info,
-            Debug,
-            Trace,
-            Secure,
-        }
+        Error = 0,
+        Warning,
+        Info,
+        Debug,
+        Trace,
+        Secure,
+    }
 
-        public struct LogMessageArgs
-        {
-            public LogLevel severity;
-            public string msg;
-        }
+    public struct LogMessageArgs
+    {
+        public LogLevel severity;
+        public string msg;
+    }
 
-        private static Logger mInstance = null;
+    class LoggerSingleton
+    {
+        private static LoggerSingleton mInstance = null;
         private static readonly object mLock = new object();
         private CultureInfo mCultureInfo = null;
         private Timer mTimer = null;
         private ConsoleColor mDefaultColor;
+        private string mProjectRootDir;
 
-        public static event EventHandler<LogMessageArgs> PreLogMessage;
-        public static event EventHandler<LogMessageArgs> PostLogMessage;
+        public event EventHandler<LogMessageArgs> PreLogMessage;
+        public event EventHandler<LogMessageArgs> PostLogMessage;
 
-        private static Logger Instance
+        public static LoggerSingleton Instance
         {
             get
             {
                 lock (mLock)
                 {
                     if (mInstance == null)
-                        mInstance = new Logger();
+                        mInstance = new LoggerSingleton();
 
                     return mInstance;
                 }
             }
         }
 
-        private Logger()
+        private LoggerSingleton()
         {
             mCultureInfo = new CultureInfo("en-US");
             mTimer = new Timer();
+            mProjectRootDir = "";
             mTimer.Start();
 
             mDefaultColor = Console.ForegroundColor;
@@ -68,7 +70,12 @@ namespace LukeBot.Common
                 handler(this, args);
         }
 
-        private void LogInternal(LogLevel level, string msg, params object[] args)
+        public void SetProjectRootDir(string dir)
+        {
+            mProjectRootDir = dir;
+        }
+
+        public void LogInternal(LogLevel level, string file, int line, string func, string msg, params object[] args)
         {
             string tag;
             ConsoleColor color;
@@ -105,8 +112,19 @@ namespace LukeBot.Common
                 break;
             }
 
+            string fileToPrint;
+            if (mProjectRootDir.Length > 0)
+            {
+                // Kind of a happy assumption, but the root dir should always be the same if it's correct
+                fileToPrint = file.Substring(mProjectRootDir.Length + 1);
+            }
+            else
+            {
+                fileToPrint = file;
+            }
+
             double timestamp = mTimer.Stop();
-            string intro = string.Format(mCultureInfo, "{0:f4} {1} ", timestamp, tag);
+            string intro = string.Format(mCultureInfo, "{0:f4} {1} {2} @ {3} <{4}>: ", timestamp, tag, fileToPrint, line, func);
             string formatted = string.Format(mCultureInfo, msg, args);
             Console.ForegroundColor = color;
 
@@ -121,7 +139,7 @@ namespace LukeBot.Common
             OnPostLogMessage(msgArgs);
         }
 
-        private static bool IsLogLevelEnabled(LogLevel level)
+        public static bool IsLogLevelEnabled(LogLevel level)
         {
             switch (level)
             {
@@ -151,47 +169,86 @@ namespace LukeBot.Common
                 return false;
             }
         }
+    }
 
-        public static void Log(LogLevel level, string msg, params object[] args)
+    public class Log
+    {
+        private string mFile;
+        private int mLine;
+        private string mFunc;
+
+        public Log(string file, int line, string func)
         {
-            if (IsLogLevelEnabled(level))
-                Instance.LogInternal(level, msg, args);
+            mFile = file;
+            mLine = line;
+            mFunc = func;
         }
 
-        public static void Error(string msg, params object[] args)
+        public void Message(LogLevel level, string msg, params object[] args)
         {
-            Instance.LogInternal(LogLevel.Error, msg, args);
+            if (LoggerSingleton.IsLogLevelEnabled(level))
+                LoggerSingleton.Instance.LogInternal(level, mFile, mLine, mFunc, msg, args);
         }
 
-        public static void Warning(string msg, params object[] args)
+        public void Error(string msg, params object[] args)
         {
-            Instance.LogInternal(LogLevel.Warning, msg, args);
+            LoggerSingleton.Instance.LogInternal(LogLevel.Error, mFile, mLine, mFunc, msg, args);
         }
 
-        public static void Info(string msg, params object[] args)
+        public void Warning(string msg, params object[] args)
         {
-            Instance.LogInternal(LogLevel.Info, msg, args);
+            LoggerSingleton.Instance.LogInternal(LogLevel.Warning, mFile, mLine, mFunc, msg, args);
         }
 
-        public static void Debug(string msg, params object[] args)
+        public void Info(string msg, params object[] args)
+        {
+            LoggerSingleton.Instance.LogInternal(LogLevel.Info, mFile, mLine, mFunc, msg, args);
+        }
+
+        public void Debug(string msg, params object[] args)
         {
         #if (DEBUG)
-            Instance.LogInternal(LogLevel.Debug, msg, args);
+            LoggerSingleton.Instance.LogInternal(LogLevel.Debug, mFile, mLine, mFunc, msg, args);
         #endif
         }
 
-        public static void Trace(string msg, params object[] args)
+        public void Trace(string msg, params object[] args)
         {
         #if (TRACE)
-            Instance.LogInternal(LogLevel.Trace, msg, args);
+            LoggerSingleton.Instance.LogInternal(LogLevel.Trace, mFile, mLine, mFunc, msg, args);
         #endif
         }
 
-        public static void Secure(string msg, params object[] args)
+        public void Secure(string msg, params object[] args)
         {
         #if (ENABLE_SECURE_LOGS)
-            Instance.LogInternal(LogLevel.Secure, msg, args);
+            LoggerSingleton.Instance.LogInternal(LogLevel.Secure, mFile, mLine, mFunc, msg, args);
         #endif
+        }
+    }
+
+    public class Logger
+    {
+        // TODO HACK has to be removed when CLI is done properly (via separate app)
+        public static void AddPreMessageEvent(EventHandler<LogMessageArgs> f)
+        {
+            LoggerSingleton.Instance.PreLogMessage += f;
+        }
+
+        // TODO HACK has to be removed when CLI is done properly (via separate app)
+        public static void AddPostMessageEvent(EventHandler<LogMessageArgs> f)
+        {
+            LoggerSingleton.Instance.PostLogMessage += f;
+        }
+
+        public static void SetProjectRootDir(string dir)
+        {
+            LoggerSingleton.Instance.SetProjectRootDir(dir);
+        }
+
+        public static Log Log([CallerFilePath] string file = "", [CallerLineNumber] int line = 0, [CallerMemberName] string func = "")
+        {
+            return new Log(file, line, func);
         }
     }
 }

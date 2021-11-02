@@ -12,7 +12,7 @@ namespace LukeBot.CLI
         private volatile bool mPromptWritten = false;
         private Mutex mMessageMutex = new Mutex();
 
-        void PreLogMessageEvent(object sender, Logger.LogMessageArgs args)
+        void PreLogMessageEvent(object sender, LogMessageArgs args)
         {
             mMessageMutex.WaitOne();
             if (!mDone) {
@@ -21,7 +21,7 @@ namespace LukeBot.CLI
             }
         }
 
-        void PostLogMessageEvent(object sender, Logger.LogMessageArgs args)
+        void PostLogMessageEvent(object sender, LogMessageArgs args)
         {
             if (!mDone) {
                 Console.Write(PROMPT);
@@ -40,8 +40,8 @@ namespace LukeBot.CLI
 
         public Interface()
         {
-            Logger.PreLogMessage += PreLogMessageEvent;
-            Logger.PostLogMessage += PostLogMessageEvent;
+            Logger.AddPreMessageEvent(PreLogMessageEvent);
+            Logger.AddPostMessageEvent(PostLogMessageEvent);
         }
 
         ~Interface()
@@ -73,11 +73,11 @@ namespace LukeBot.CLI
             }
             catch (System.OperationCanceledException)
             {
-                Logger.Warning("CLI input cancelled");
+                Logger.Log().Warning("CLI input cancelled");
             }
             catch (Exception e)
             {
-                Logger.Error("{0} caught: {1}", e.ToString(), e.Message);
+                Logger.Log().Error("{0} caught: {1}", e.ToString(), e.Message);
             }
         }
 

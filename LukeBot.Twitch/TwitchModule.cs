@@ -17,12 +17,12 @@ namespace LukeBot.Twitch
             API.GetUserResponse testResponse = API.GetUser(mToken);
             if (testResponse.code == HttpStatusCode.OK)
             {
-                Logger.Debug("Twitch login successful");
+                Logger.Log().Debug("Twitch login successful");
                 return true;
             }
             else if (testResponse.code == HttpStatusCode.Unauthorized)
             {
-                Logger.Error("Failed to login to Twitch - Unauthorized");
+                Logger.Log().Error("Failed to login to Twitch - Unauthorized");
                 return false;
             }
             else
@@ -64,7 +64,7 @@ namespace LukeBot.Twitch
         // TEMPORARY
         public void JoinChannel(string channel)
         {
-            Logger.Debug("Joining channel {0}", channel);
+            Logger.Log().Debug("Joining channel {0}", channel);
             mIRC.JoinChannel(channel);
         }
 

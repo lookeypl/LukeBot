@@ -14,7 +14,7 @@ namespace LukeBot
         {
             mUser = user;
             mModules = new List<IModule>();
-            Logger.Info("Registered LukeBot user " + mUser);
+            Logger.Log().Info("Registered LukeBot user " + mUser);
         }
 
         public void AddModule(IModule module)
@@ -24,11 +24,11 @@ namespace LukeBot
 
         public void RunModules()
         {
-            Logger.Info("Initializing LukeBot modules");
+            Logger.Log().Info("Initializing LukeBot modules");
             foreach (IModule m in mModules)
                 m.Init();
 
-            Logger.Info("Running LukeBot modules");
+            Logger.Log().Info("Running LukeBot modules");
             foreach (IModule m in mModules)
                 m.Run();
         }

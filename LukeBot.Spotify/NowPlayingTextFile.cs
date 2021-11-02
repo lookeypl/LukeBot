@@ -55,7 +55,7 @@ namespace LukeBot.Spotify
             }
             catch (Exception e)
             {
-                Logger.Error("Failed to process track change: {0}", e.Message);
+                Logger.Log().Error("Failed to process track change: {0}", e.Message);
             }
         }
 
@@ -67,7 +67,7 @@ namespace LukeBot.Spotify
                 {
                 case NowPlaying.State.Unloaded:
                 case NowPlaying.State.Stopped:
-                    Logger.Debug("Playback stopped/unloaded - clearing files");
+                    Logger.Log().Debug("Playback stopped/unloaded - clearing files");
                     // Open files with Create mode to clear them
                     ClearFile(mArtistFilePath);
                     ClearFile(mTitleFilePath);
@@ -76,7 +76,7 @@ namespace LukeBot.Spotify
                 case NowPlaying.State.Playing:
                     if (mNeedsUpdate)
                     {
-                        Logger.Debug("Playing - updating with {0}", mCurrentTrack);
+                        Logger.Log().Debug("Playing - updating with {0}", mCurrentTrack);
                         WriteToFile(mArtistFilePath, mCurrentTrack.Artists);
                         WriteToFile(mTitleFilePath, mCurrentTrack.Title);
                         mNeedsUpdate = false;
@@ -86,7 +86,7 @@ namespace LukeBot.Spotify
             }
             catch (Exception e)
             {
-                Logger.Error("Failed to process state change: {0}", e.Message);
+                Logger.Log().Error("Failed to process state change: {0}", e.Message);
             }
         }
     }

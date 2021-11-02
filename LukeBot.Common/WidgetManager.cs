@@ -54,7 +54,7 @@ namespace LukeBot.Common
         public void Unregister(IWidget widget)
         {
             if (!mWidgets.Remove(widget.ID))
-                Logger.Warning("Cannot remove widget of ID {0} - not registered", widget.ID);
+                Logger.Log().Warning("Cannot remove widget of ID {0} - not registered", widget.ID);
         }
     }
 }

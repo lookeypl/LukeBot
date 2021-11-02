@@ -259,23 +259,23 @@ namespace LukeBot.Twitch
             Channel = "";
         }
 
-        public void Print(Logger.LogLevel level)
+        public void Print(LogLevel level)
         {
-            Logger.Log(level, "Message data:");
-            Logger.Log(level, "  String: {0}", MessageString);
-            Logger.Log(level, "  Tags (count {0}):", Tags.Count);
+            Logger.Log().Message(level, "Message data:");
+            Logger.Log().Message(level, "  String: {0}", MessageString);
+            Logger.Log().Message(level, "  Tags (count {0}):", Tags.Count);
             foreach (var v in Tags)
-                Logger.Log(level, "   -> {0} = {1}", v.Key, v.Value);
-            Logger.Log(level, "  Prefix {0}", Prefix);
-            Logger.Log(level, "   -> Nick: {0}", Nick);
-            Logger.Log(level, "   -> User: {0}", User);
-            Logger.Log(level, "   -> Host: {0}", Host);
-            Logger.Log(level, "  Command {0}", Command.ToString());
-            Logger.Log(level, "  Params:");
+                Logger.Log().Message(level, "   -> {0} = {1}", v.Key, v.Value);
+            Logger.Log().Message(level, "  Prefix {0}", Prefix);
+            Logger.Log().Message(level, "   -> Nick: {0}", Nick);
+            Logger.Log().Message(level, "   -> User: {0}", User);
+            Logger.Log().Message(level, "   -> Host: {0}", Host);
+            Logger.Log().Message(level, "  Command {0}", Command.ToString());
+            Logger.Log().Message(level, "  Params:");
             foreach (var p in Params)
-                Logger.Log(level, "   -> {0}", p);
-            Logger.Log(level, "  Extracted params:");
-            Logger.Log(level, "   -> Channel: {0}", Channel);
+                Logger.Log().Message(level, "   -> {0}", p);
+            Logger.Log().Message(level, "  Extracted params:");
+            Logger.Log().Message(level, "   -> Channel: {0}", Channel);
         }
 
         public override string ToString()

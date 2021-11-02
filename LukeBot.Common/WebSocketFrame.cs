@@ -56,22 +56,22 @@ namespace LukeBot.Common
         {
             long read = 0;
 
-            Logger.Trace("WebSocketFrame fill trace:");
+            Logger.Log().Trace("WebSocketFrame fill trace:");
 
             // byte 0 - Fin flag and Opcode
             CheckBufferLength(offset + read, 1, buf.LongLength, "FIN/Opcode");
             Final = (buf[offset + read] & 0x80) > 0;
-            Logger.Trace(" -> mFinal: {0}", Final);
+            Logger.Log().Trace(" -> mFinal: {0}", Final);
             Opcode = OpFromInt(buf[offset + read] & 0x0F);
-            Logger.Trace(" -> mOpcode: {0}", Opcode);
+            Logger.Log().Trace(" -> mOpcode: {0}", Opcode);
             read++;
 
             // byte 1 - Masked flag and payload length
             CheckBufferLength(offset + read, 1, buf.LongLength, "MASK/PayloadLenA");
             mMasked = (buf[offset + read] & 0x80) > 0;
-            Logger.Trace(" -> mMasked: {0}", mMasked);
+            Logger.Log().Trace(" -> mMasked: {0}", mMasked);
             mPayloadLength = (byte)(buf[offset + read] & 0x7F);
-            Logger.Trace(" -> mPayloadLength: {0}", mPayloadLength);
+            Logger.Log().Trace(" -> mPayloadLength: {0}", mPayloadLength);
             read++;
 
             if (mPayloadLength == USE_PAYLOAD_LENGTH_B)
@@ -99,7 +99,7 @@ namespace LukeBot.Common
                 // a "shortcut" to not have to do the if USE_B or USE_C check every time
                 mPayloadLengthExt = mPayloadLength;
             }
-            Logger.Trace(" -> mPayloadLengthExt: {0}", mPayloadLengthExt);
+            Logger.Log().Trace(" -> mPayloadLengthExt: {0}", mPayloadLengthExt);
 
             if (mMasked)
             {
@@ -109,7 +109,7 @@ namespace LukeBot.Common
                 string keyStr = "";
                 foreach (var x in mMaskingKey)
                     keyStr += x.ToString("x") + " ";
-                Logger.Trace(" -> mMaskingKey: {0}", keyStr);
+                Logger.Log().Trace(" -> mMaskingKey: {0}", keyStr);
                 read += 4;
             }
 
@@ -133,7 +133,7 @@ namespace LukeBot.Common
             foreach (var c in mPayload)
                 outString += c.ToString("x") + " ";
 
-            Logger.Trace(" -> mPayload (unmasked): {0}", outString);
+            Logger.Log().Trace(" -> mPayload (unmasked): {0}", outString);
 
             return read;
         }

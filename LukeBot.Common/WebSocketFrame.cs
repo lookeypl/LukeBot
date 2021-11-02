@@ -2,39 +2,39 @@ using System;
 
 namespace LukeBot.Common
 {
+    public enum WebSocketOp
+    {
+        Continuation = 0x0,
+        Text = 0x1,
+        Binary = 0x2,
+        Close = 0x8,
+        Ping = 0x9,
+        Pong = 0xA
+    };
+
     class WebSocketFrame
     {
-        public enum Op
-        {
-            Continuation = 0x0,
-            Text = 0x1,
-            Binary = 0x2,
-            Close = 0x8,
-            Ping = 0x9,
-            Pong = 0xA
-        };
-
         const byte USE_PAYLOAD_LENGTH_B = 126;
         const byte USE_PAYLOAD_LENGTH_C = 127;
 
         public bool Final { get; private set; }
-        public Op Opcode { get; private set; }
+        public WebSocketOp Opcode { get; private set; }
         bool mMasked;
         byte mPayloadLength;
         long mPayloadLengthExt;
         byte[] mMaskingKey;
         byte[] mPayload;
 
-        Op OpFromInt(int val)
+        WebSocketOp OpFromInt(int val)
         {
             switch (val)
             {
-            case 0x0: return Op.Continuation;
-            case 0x1: return Op.Text;
-            case 0x2: return Op.Binary;
-            case 0x8: return Op.Close;
-            case 0x9: return Op.Ping;
-            case 0xA: return Op.Pong;
+            case 0x0: return WebSocketOp.Continuation;
+            case 0x1: return WebSocketOp.Text;
+            case 0x2: return WebSocketOp.Binary;
+            case 0x8: return WebSocketOp.Close;
+            case 0x9: return WebSocketOp.Ping;
+            case 0xA: return WebSocketOp.Pong;
             default:
                 throw new ArgumentException("Invalid value - " + val.ToString("x") + " is not a valid WebSocket opcode");
             }
@@ -147,7 +147,7 @@ namespace LukeBot.Common
         {
             // TODO rework to load multiple frames
             Final = true;
-            Opcode = Op.Text;
+            Opcode = WebSocketOp.Text;
             mMasked = true;
 
             mPayloadLengthExt = buffer.LongLength;

@@ -14,7 +14,7 @@ namespace LukeBot.Common
             get
             {
                 if (mText.Length == 0 && mFrames.Count > 0 &&
-                    mFrames[0].Opcode == WebSocketFrame.Op.Text)
+                    mFrames[0].Opcode == WebSocketOp.Text)
                 {
                     mText = "";
                     foreach (WebSocketFrame f in mFrames)
@@ -24,6 +24,13 @@ namespace LukeBot.Common
                 }
 
                 return mText;
+            }
+        }
+        public WebSocketOp Opcode
+        {
+            get
+            {
+                return mFrames[0].Opcode;
             }
         }
 

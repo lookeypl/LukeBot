@@ -77,10 +77,15 @@ namespace LukeBot.Spotify
                 try {
                     WebSocketMessage msg1 = mServer.Recv();
                     Logger.Log().Debug("Received message: {0}", msg1.TextMessage);
+                    if (msg1.Opcode == WebSocketOp.Close) {
+                        mDone = true;
+                    }
                 } catch (Exception e) {
                     Logger.Log().Warning("Exception caught: {0}: {1}", e.GetType().ToString(), e.Message);
                 }
             }
+
+            Logger.Log().Debug("NowPlaying Widget server thread closed");
         }
 
         protected override string GetWidgetCode()

@@ -22,9 +22,16 @@ namespace LukeBot.Spotify
             public string name { get; set; }
         };
 
+        public class DataAlbum
+        {
+            public string href { get; set; }
+            public List<DataCopyright> copyrights { get; set; }
+        };
+
         public class DataItem
         {
             public List<DataArtists> artists { get; set; }
+            public DataAlbum album { get; set; }
             public int duration_ms { get; set; }
             public string id { get; set; }
             public string name { get; set; }
@@ -49,11 +56,33 @@ namespace LukeBot.Spotify
             }
         };
 
+        public class DataCopyright
+        {
+            public string text { get; set; }
+            public string type { get; set; }
+
+            public DataCopyright()
+            {
+            }
+
+            public DataCopyright(string text, string type)
+            {
+                this.text = text;
+                this.type = type;
+            }
+        };
+
+        public class DataDetailedAlbum: Response
+        {
+            public List<DataCopyright> copyrights { get; set; }
+        }
+
         public class TrackChangedArgs
         {
             public string Type { get; private set; }
             public string Artists { get; private set; }
             public string Title { get; private set; }
+            public string Label { get; private set; }
             public float Duration { get; private set; }
 
             public static TrackChangedArgs FromDataItem(DataItem item)
@@ -68,6 +97,39 @@ namespace LukeBot.Spotify
                     ret.Artists += ", ";
                     ret.Artists += item.artists[i].name;
                 }
+
+                bool labelFilled = false;
+                // try looking for publisher (type "P")
+                foreach (DataCopyright c in item.album.copyrights)
+                {
+                    if (c.type == "P")
+                    {
+                        ret.Label = c.text;
+                        labelFilled = true;
+                        break;
+                    }
+                }
+
+                // if failed - try looking for copyright (type "C")
+                if (!labelFilled)
+                {
+                    foreach (DataCopyright c in item.album.copyrights)
+                    {
+                        if (c.type == "C")
+                        {
+                            ret.Label = c.text;
+                            labelFilled = true;
+                            break;
+                        }
+                    }
+                }
+
+                // if we succeeded earlier, reformat the extracted copyright info
+                if (labelFilled)
+                    ret.Label = '[' + ret.Label + ']';
+                else
+                    ret.Label = "[???]";
+
                 return ret;
             }
 
@@ -206,6 +268,13 @@ namespace LukeBot.Spotify
             // Track change
             if ((mCurrentData == null) || (data.item.id != mCurrentData.item.id))
             {
+                // Spotify doesn't provide copyright holder info (aka label info) with
+                // currently played track API call. For that reason we will fetch the info
+                // separately from album details and copy it to our "data" object for
+                // further reference. Shallow copy should be ok.
+                DataDetailedAlbum album = Request.Get<DataDetailedAlbum>(data.item.album.href, mToken, null);
+                data.item.album.copyrights = album.copyrights;
+
                 mCurrentData = data;
                 mChangeExpected = false;
                 OnTrackChanged(TrackChangedArgs.FromDataItem(mCurrentData.item));

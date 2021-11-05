@@ -16,14 +16,13 @@
     #title {
     }
 
-    #subTitleMain {
-        margin-right: 50px;
-    }
-
     #artists {
     }
 
-    #subArtistsMain {
+    #label {
+    }
+
+    .field-margin {
         margin-right: 50px;
     }
 
@@ -35,10 +34,13 @@
 </style>
 
 <div id="title">
-    <span id="subTitleMain">Title</span><span id="subTitleExtra"></span>
+    <span id="subTitleMain" class="field-margin">Title</span><span id="subTitleExtra"></span>
 </div>
 <div id="artists">
-    <span id="subArtistsMain">Artists</span><span id="subArtistsExtra"></span>
+    <span id="subArtistsMain" class="field-margin">Artists</span><span id="subArtistsExtra"></span>
+</div>
+<div id="label">
+    <span id="subLabelMain" class="field-margin">[Label]</span><span id="subLabelExtra"></span>
 </div>
 <!-- Debugging section - commented out in release code
 <br />
@@ -70,15 +72,23 @@
     const artists = document.getElementById('artists');
     const subArtistsMain = document.getElementById('subArtistsMain');
     const subArtistsExtra = document.getElementById('subArtistsExtra');
-    let subArtistsMainStyle = window.getComputedStyle(document.querySelector('#subArtistsMain'));
+    let subArtistsMainStyle = window.getComputedStyle(subArtistsMain);
+
     const title = document.getElementById('title');
     const subTitleMain = document.getElementById('subTitleMain');
     const subTitleExtra = document.getElementById('subTitleExtra');
-    let subTitleMainStyle = window.getComputedStyle(document.querySelector('#subTitleMain'));
+    let subTitleMainStyle = window.getComputedStyle(subTitleMain);
+
+    const label = document.getElementById('label');
+    const subLabelMain = document.getElementById('subLabelMain');
+    const subLabelExtra = document.getElementById('subLabelExtra');
+    let subLabelMainStyle = window.getComputedStyle(subLabelMain);
+
 
     const STATE_UNLOADED = 0;
     const STATE_STOPPED = 1;
     const STATE_PLAYING = 2;
+    let oldPlaybackState = STATE_UNLOADED;
     let playbackState = STATE_UNLOADED;
     let currentTrack = null;
     let trackChanged = false;
@@ -154,26 +164,32 @@
 
     let titleAnimState = new AnimState(title, subTitleMain, subTitleExtra, subTitleMainStyle);
     let artistsAnimState = new AnimState(artists, subArtistsMain, subArtistsExtra, subArtistsMainStyle);
+    let labelAnimState = new AnimState(label, subLabelMain, subLabelExtra, subLabelMainStyle);
 
     function update() {
         if (playbackState == STATE_PLAYING) {
             titleAnimState.updateElements(currentTrack.Title);
             artistsAnimState.updateElements(currentTrack.Artists);
+            labelAnimState.updateElements(currentTrack.Label);
         } else if (playbackState == STATE_STOPPED) {
             titleAnimState.updateElements("Paused");
             artistsAnimState.updateElements("");
+            labelAnimState.updateElements("");
         } else if (playbackState == STATE_UNLOADED) {
             titleAnimState.updateElements("");
             artistsAnimState.updateElements("");
+            labelAnimState.updateElements("");
         } else {
             titleAnimState.updateElements("INVALID STATE");
             artistsAnimState.updateElements("This should not happen");
+            labelAnimState.updateElements("[definitely shouldn't]");
         }
 
-        if (trackChanged) {
+        if (trackChanged || (oldPlaybackState != playbackState)) {
             trackChanged = false;
             titleAnimState.checkIfAnimNeeded();
             artistsAnimState.checkIfAnimNeeded();
+            labelAnimState.checkIfAnimNeeded();
         }
     }
 
@@ -208,6 +224,7 @@
                     currentTrack = obj;
                     trackChanged = true;
                 } else if (obj.Type == "NowPlayingStateUpdate") {
+                    oldPlaybackState = playbackState;
                     playbackState = obj.State;
                     update();
                 }

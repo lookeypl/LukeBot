@@ -17,7 +17,7 @@ namespace LukeBot.Common
 
         protected void AddToHead(string line)
         {
-            Logger.Log().Debug("Adding head line {0}", line);
+            Logger.Log().Secure("Adding head line {0}", line);
             mHead.Add(line);
         }
 

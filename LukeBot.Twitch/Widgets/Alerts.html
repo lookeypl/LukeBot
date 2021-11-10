@@ -25,7 +25,7 @@
     }
 </style>
 
-<div id="chat">
+<div id="alert">
 </div>
 
 <script>
@@ -73,12 +73,7 @@
             let obj = JSON.parse(event.data);
 
             if (obj.Type != null) {
-                switch (obj.Type)
-                {
-                case "TwitchIRCMessage":
-                    msgList.add(obj);
-                    break;
-                }
+                // ...
             } else {
                 printDebug(`Received unknown obj: ${obj}`);
             }
@@ -86,13 +81,4 @@
             printDebug(`Error: ${error}`);
         }
     }
-
-    // debugging
-    //for (var i = 0; i < 20; ++i) {
-    //    chat.innerHTML += "abcd: lazy fox jumps something idk<br />";
-    //}
-    //chat.innerHTML += "michakes: please don't play KH so you never understand that reference<br />";
-    //chat.innerHTML += "michakes: chat is cut off on the right a little<br />";
-    //chat.innerHTML += "onaku__: grinning_face_with_one_large_and_one_small_eye<br />";
-    //chat.innerHTML += "michakes: If I wanted to have like, a hot key tied to an action, how would I do that without a stream deck/something comparable?<br />";
 </script>

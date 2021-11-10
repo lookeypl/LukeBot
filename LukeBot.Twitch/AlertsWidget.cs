@@ -1,26 +1,20 @@
 ﻿using System.IO;
 using System.Text.Json;
 using LukeBot.Common;
+using System.Net;
+
 
 namespace LukeBot.Twitch
 {
     class AlertsWidget: IWidget
     {
-        TwitchIRC mIRC;
         ConnectionPort mPort;
         WebSocketServer mServer;
 
-        private void OnUSERNOTICE(object o, TwitchIRCUserNotice args)
-        {
-            if (mServer.Running)
-                mServer.Send(JsonSerializer.Serialize(args));
-        }
 
-        public AlertsWidget(TwitchIRC IRC)
+        public AlertsWidget()
             : base()
         {
-            mIRC = IRC;
-
             mPort = ConnectionManager.Instance.AcquirePort();
             Logger.Log().Debug("Widget will have port {0}", mPort.Value);
 

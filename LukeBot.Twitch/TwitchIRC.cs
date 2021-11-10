@@ -96,7 +96,6 @@ namespace LukeBot.Twitch
         private Token mToken;
         private Dictionary<string, IRCChannel> mChannels;
         private bool mTagsEnabled = false;
-        private API.GetUserResponse mIRCUser;
         private EmoteProvider mExternalEmotes;
 
         private bool mRunning = false;
@@ -418,25 +417,22 @@ namespace LukeBot.Twitch
             WaitForShutdown();
         }
 
-        public void JoinChannel(string channel)
+        public void JoinChannel(API.GetUserResponse user)
         {
             mChannelsMutex.WaitOne();
 
-            if (mChannels.ContainsKey(channel))
+            if (mChannels.ContainsKey(user.data[0].login))
             {
                 mChannelsMutex.ReleaseMutex();
-                throw new ArgumentException(String.Format("Cannot join channel {0} - already joined", channel));
+                throw new ArgumentException(String.Format("Cannot join channel {0} - already joined", user.data[0].login));
             }
 
-            mConnection.Send("JOIN #" + channel);
+            mConnection.Send("JOIN #" + user.data[0].login);
 
-            mChannels.Add(channel, new IRCChannel(channel));
+            mChannels.Add(user.data[0].login, new IRCChannel(user.data[0].login));
 
-            mIRCUser = API.GetUser(mToken, channel);
-            Logger.Log().Secure("Joined channel twitch ID: {0}", mIRCUser.data[0].id);
-
-            mExternalEmotes.AddEmoteSource(new FFZEmoteSource(mIRCUser.data[0].id));
-            mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(mIRCUser.data[0].login));
+            mExternalEmotes.AddEmoteSource(new FFZEmoteSource(user.data[0].id));
+            mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(user.data[0].login));
 
             mChannelsMutex.ReleaseMutex();
         }

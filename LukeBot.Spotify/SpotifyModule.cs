@@ -43,7 +43,7 @@ namespace LukeBot.Spotify
         void Login()
         {
             string scope = "user-read-currently-playing user-read-playback-state user-read-email";
-            mToken = AuthManager.Instance.GetToken(ServiceType.Spotify);
+            mToken = AuthManager.Instance.GetToken(ServiceType.Spotify, "lookey");
 
             bool tokenFromFile = mToken.Loaded;
 

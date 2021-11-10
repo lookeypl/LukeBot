@@ -9,24 +9,28 @@ namespace LukeBot.Twitch
     public class TwitchModule: IModule
     {
         private Token mToken;
+        private Token mUserToken;
         private TwitchIRC mIRC;
+        private PubSub mPubSub;
+        private API.GetUserResponse mBotData;
+        private API.GetUserResponse mUserData;
         private ChatWidget mWidget;
 
         bool IsLoginSuccessful()
         {
-            API.GetUserResponse testResponse = API.GetUser(mToken);
-            if (testResponse.code == HttpStatusCode.OK)
+            mBotData = API.GetUser(mToken);
+            if (mBotData.code == HttpStatusCode.OK)
             {
                 Logger.Log().Debug("Twitch login successful");
                 return true;
             }
-            else if (testResponse.code == HttpStatusCode.Unauthorized)
+            else if (mBotData.code == HttpStatusCode.Unauthorized)
             {
                 Logger.Log().Error("Failed to login to Twitch - Unauthorized");
                 return false;
             }
             else
-                throw new LoginFailedException("Failed to login to Twitch: " + testResponse.code.ToString());
+                throw new LoginFailedException("Failed to login to Twitch: " + mBotData.code.ToString());
         }
 
         public TwitchModule()
@@ -34,7 +38,7 @@ namespace LukeBot.Twitch
             CommunicationManager.Instance.Register(Constants.SERVICE_NAME);
 
             string tokenScope = "chat:read chat:edit user:read:email";
-            mToken = AuthManager.Instance.GetToken(ServiceType.Twitch);
+            mToken = AuthManager.Instance.GetToken(ServiceType.Twitch, "lukebot");
 
             bool tokenFromFile = mToken.Loaded;
             if (!mToken.Loaded)
@@ -65,7 +69,19 @@ namespace LukeBot.Twitch
         public void JoinChannel(string channel)
         {
             Logger.Log().Debug("Joining channel {0}", channel);
-            mIRC.JoinChannel(channel);
+            mUserData = API.GetUser(mToken, channel);
+
+            mIRC.JoinChannel(mUserData);
+
+            string tokenScope = "user:read:email channel:read:redemptions";
+            mUserToken = AuthManager.Instance.GetToken(ServiceType.Twitch, "lookey");
+
+            if (!mUserToken.Loaded)
+                mUserToken.Request(tokenScope);
+
+            mPubSub = new PubSub(mUserToken);
+            mPubSub.Listen(mUserData);
+            Logger.Log().Secure("Joined channel twitch ID: {0}", mUserData.data[0].id);
         }
 
         // TEMPORARY
@@ -95,12 +111,14 @@ namespace LukeBot.Twitch
         public void RequestShutdown()
         {
             mIRC.RequestShutdown();
+            mPubSub.RequestShutdown();
             mWidget.RequestShutdown();
         }
 
         public void WaitForShutdown()
         {
             mIRC.WaitForShutdown();
+            mPubSub.WaitForShutdown();
             mWidget.WaitForShutdown();
         }
     }

@@ -53,7 +53,7 @@ namespace LukeBot.Auth
             Loaded = true;
         }
 
-        public Token(string service, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)
+        public Token(string service, string tokenId, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)
         {
             string idPath = "Data/" + service + ".client_id.lukebot";
             string secretPath = "Data/" + service + ".client_secret.lukebot";
@@ -70,7 +70,7 @@ namespace LukeBot.Auth
                 throw new ArgumentOutOfRangeException("Invalid AuthFlow mode: {0}" + flow.ToString());
             }
 
-            mTokenPath = "Data/" + service + ".token.lukebot";
+            mTokenPath = "Data/" + service + "." + tokenId + ".token.lukebot";
             mMutex = new Mutex();
 
             if (FileUtils.Exists(mTokenPath)) {

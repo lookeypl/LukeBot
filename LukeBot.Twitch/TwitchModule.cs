@@ -80,7 +80,7 @@ namespace LukeBot.Twitch
                 mUserToken.Request(tokenScope);
 
             mPubSub = new PubSub(mUserToken);
-            mPubSub.Listen(mUserData);
+            //mPubSub.Listen(mUserData);
             Logger.Log().Secure("Joined channel twitch ID: {0}", mUserData.data[0].id);
         }
 

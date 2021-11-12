@@ -205,13 +205,17 @@ namespace LukeBot.Twitch
         public void RequestShutdown()
         {
             mDone = true;
-            CancellationToken cancelToken = new CancellationToken();
-            mSocket.CloseAsync(WebSocketCloseStatus.Empty, "", cancelToken);
+            if (mSocket.State == WebSocketState.Open)
+            {
+                CancellationToken cancelToken = new CancellationToken();
+                mSocket.CloseAsync(WebSocketCloseStatus.Empty, "", cancelToken);
+            }
         }
 
         public void WaitForShutdown()
         {
-            mMainThread.Join();
+            if (mMainThread.ThreadState != ThreadState.Unstarted)
+                mMainThread.Join();
         }
     }
 }

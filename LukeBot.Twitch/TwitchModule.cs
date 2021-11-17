@@ -16,15 +16,15 @@ namespace LukeBot.Twitch
         private API.GetUserResponse mUserData;
         private ChatWidget mWidget;
 
-        bool IsLoginSuccessful()
+        private bool IsLoginSuccessful(Token token)
         {
-            mBotData = API.GetUser(mToken);
-            if (mBotData.code == HttpStatusCode.OK)
+            API.GetUserResponse data = API.GetUser(token);
+            if (data.code == HttpStatusCode.OK)
             {
                 Logger.Log().Debug("Twitch login successful");
                 return true;
             }
-            else if (mBotData.code == HttpStatusCode.Unauthorized)
+            else if (data.code == HttpStatusCode.Unauthorized)
             {
                 Logger.Log().Error("Failed to login to Twitch - Unauthorized");
                 return false;
@@ -44,12 +44,12 @@ namespace LukeBot.Twitch
             if (!mToken.Loaded)
                 mToken.Request(tokenScope);
 
-            if (!IsLoginSuccessful())
+            if (!IsLoginSuccessful(mToken))
             {
                 if (tokenFromFile)
                 {
                     mToken.Refresh();
-                    if (!IsLoginSuccessful())
+                    if (!IsLoginSuccessful(mToken))
                     {
                         mToken.Remove();
                         throw new InvalidOperationException(
@@ -60,6 +60,8 @@ namespace LukeBot.Twitch
                 else
                     throw new InvalidOperationException("Failed to login to Twitch");
             }
+
+            mBotData = API.GetUser(mToken);
 
             mIRC = new TwitchIRC(mToken);
             mWidget = new ChatWidget(mIRC);
@@ -76,11 +78,29 @@ namespace LukeBot.Twitch
             string tokenScope = "user:read:email channel:read:redemptions";
             mUserToken = AuthManager.Instance.GetToken(ServiceType.Twitch, "lookey");
 
+            bool tokenFromFile = mUserToken.Loaded;
             if (!mUserToken.Loaded)
                 mUserToken.Request(tokenScope);
 
+            if (!IsLoginSuccessful(mUserToken))
+            {
+                if (tokenFromFile)
+                {
+                    mUserToken.Refresh();
+                    if (!IsLoginSuccessful(mUserToken))
+                    {
+                        mUserToken.Remove();
+                        throw new InvalidOperationException(
+                            "Failed to refresh Twitch OAuth Token. Token has been removed, restart to re-login and request a fresh OAuth token"
+                        );
+                    }
+                }
+                else
+                    throw new InvalidOperationException("Failed to login to Twitch");
+            }
+
             mPubSub = new PubSub(mUserToken);
-            //mPubSub.Listen(mUserData);
+            mPubSub.Listen(mUserData);
             Logger.Log().Secure("Joined channel twitch ID: {0}", mUserData.data[0].id);
         }
 

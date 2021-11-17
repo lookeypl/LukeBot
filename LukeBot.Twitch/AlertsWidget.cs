@@ -1,7 +1,6 @@
 ﻿using System.IO;
-using System.Text.Json;
 using LukeBot.Common;
-using System.Net;
+using Newtonsoft.Json;
 
 
 namespace LukeBot.Twitch
@@ -12,11 +11,23 @@ namespace LukeBot.Twitch
         WebSocketServer mServer;
 
 
-        public AlertsWidget()
+        public void OnChannelPointsEvent(object o, ChannelPointsEventArgs args)
+        {
+            if (mServer.Running)
+            {
+                string msg = JsonConvert.SerializeObject(args);
+                Logger.Log().Debug("{0}", msg);
+                mServer.Send(msg);
+            }
+        }
+
+        public AlertsWidget(PubSub pubsub)
             : base()
         {
             mPort = ConnectionManager.Instance.AcquirePort();
             Logger.Log().Debug("Widget will have port {0}", mPort.Value);
+
+            pubsub.ChannelPointsEvent += OnChannelPointsEvent;
 
             string serverIP = Utils.GetConfigServerIP();
             AddToHead(string.Format("<meta name=\"serveraddress\" content=\"{0}\">", serverIP + ":" + mPort.Value));

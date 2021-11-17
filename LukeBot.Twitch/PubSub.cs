@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.WebSockets;
-using System.Security.Cryptography;
 using System.Text;
 using System.Timers;
 using System.Threading;
@@ -13,122 +12,61 @@ using Newtonsoft.Json;
 
 namespace LukeBot.Twitch
 {
+    public struct ChannelPointsEventArgs
+    {
+        public string Type { get; private set; }
+        public string User { get; private set; }
+        public string DisplayName { get; private set; }
+        public string Title { get; private set; }
+
+        public ChannelPointsEventArgs(string user, string displayName, string title)
+        {
+            Type = "ChannelPointsEvent";
+            User = user;
+            DisplayName = displayName;
+            Title = title;
+        }
+    }
+
     class PubSub
     {
-        public struct ChannelPointEventArgs
-        {
-            // ...
-        }
-
-        private class PubSubMessage
-        {
-            public string type { get; set; }
-
-            public PubSubMessage(string cmdType)
-            {
-                type = cmdType;
-            }
-
-            public void Print(LogLevel level)
-            {
-                Logger.Log().Message(level, " -> type: {0}", type);
-            }
-        }
-
-        private abstract class PubSubMessageData
-        {
-            public abstract void Print(LogLevel level);
-        }
-
-        private class PubSubCommand: PubSubMessage
-        {
-            public string nonce { get; private set; }
-            public PubSubMessageData data { get; private set; }
-
-            public PubSubCommand(string cmdType, PubSubMessageData cmdData)
-                : base(cmdType)
-            {
-                using (RandomNumberGenerator rng = new RNGCryptoServiceProvider())
-                {
-                    byte[] nonceData = new byte[32];
-                    rng.GetBytes(nonceData);
-                    nonce = Convert.ToBase64String(nonceData);
-                }
-
-                data = cmdData;
-            }
-        }
-
-        private class PubSubListenCommandData: PubSubMessageData
-        {
-            public List<string> topics { get; private set; }
-            public string auth_token { get; private set; }
-
-            public PubSubListenCommandData(string topic, string authToken)
-            {
-                topics = new List<string>();
-                topics.Add(topic);
-                auth_token = authToken;
-            }
-
-            public override void Print(LogLevel level)
-            {
-                Logger.Log().Secure("   -> auth_token: {0}", auth_token);
-                Logger.Log().Message(level, "   -> topics:", topics);
-                foreach (string t in topics)
-                {
-                    Logger.Log().Message(level, "     -> {0}", t);
-                }
-            }
-        }
-
-        private class PubSubResponse: PubSubMessage
-        {
-            public string error { get; set; }
-            public string nonce { get; set; }
-
-            public PubSubResponse(string type)
-                : base(type)
-            {
-            }
-        }
-
-        private class PubSubReceivedMessageData: PubSubMessageData
-        {
-            public string topic { get; set; }
-            public string message { get; set; }
-
-            public override void Print(LogLevel logLevel)
-            {
-                Logger.Log().Message(logLevel, "   -> topic: {0}", topic);
-                Logger.Log().Message(logLevel, "   -> message: {0}", message);
-            }
-        }
-
-        private class PubSubTopicMessage: PubSubMessage
-        {
-            public PubSubMessageData data { get; set; }
-
-            public PubSubTopicMessage(string type)
-                : base(type)
-            {
-                data = null;
-            }
-
-            public new void Print(LogLevel level)
-            {
-                base.Print(level);
-                Logger.Log().Message(level, " -> data:");
-                data.Print(level);
-            }
-        }
-
-
-        private struct PubSubReceiveStatus<T>
+        private struct PubSubReceiveStatus
         {
             public bool closed { get; set; }
-            public T obj { get; set; }
+            public PubSubMessage obj { get; set; }
         }
+
+        // TODO all of this Channel Points stuff should be a separate "backend"
+        private struct ChannelPointsUser
+        {
+            public string id { get; set; }
+            public string login { get; set; }
+            public string display_name { get; set; }
+        }
+
+        private struct ChannelPointsReward
+        {
+            public string title { get; set; }
+        }
+
+        private struct ChannelPointsRedemption
+        {
+            public ChannelPointsUser user { get; set; }
+            public ChannelPointsReward reward { get; set; }
+        }
+
+        private struct ChannelPointsMessageData
+        {
+            public string timestamp { get; set; }
+            public ChannelPointsRedemption redemption { get; set; }
+        }
+
+        private struct ChannelPointsMessage
+        {
+            public string type { get; set; }
+            public ChannelPointsMessageData data { get; set; }
+        }
+
 
         private Token mToken;
         private ClientWebSocket mSocket;
@@ -140,7 +78,14 @@ namespace LukeBot.Twitch
         private System.Timers.Timer mPingPongTimer;
         private bool mDone;
 
-        public event EventHandler<ChannelPointEventArgs> ChannelPointEvent;
+        public event EventHandler<ChannelPointsEventArgs> ChannelPointsEvent;
+
+        public void OnChannelPointsEvent(ChannelPointsEventArgs args)
+        {
+            EventHandler<ChannelPointsEventArgs> handler = ChannelPointsEvent;
+            if (handler != null)
+                handler(this, args);
+        }
 
         private async Task SocketSend<T>(T obj)
         {
@@ -155,12 +100,12 @@ namespace LukeBot.Twitch
             );
         }
 
-        private async Task<PubSubReceiveStatus<T>> SocketReceive<T>()
+        private async Task<PubSubReceiveStatus> SocketReceive()
         {
             string recvMsgString = "";
             byte[] buffer = new byte[1024];
 
-            PubSubReceiveStatus<T> result = new PubSubReceiveStatus<T>();
+            PubSubReceiveStatus result = new PubSubReceiveStatus();
             CancellationToken cancelToken = new CancellationToken();
             WebSocketReceiveResult recvResult;
             do
@@ -177,20 +122,71 @@ namespace LukeBot.Twitch
             }
 
             result.closed = false;
-            result.obj = JsonConvert.DeserializeObject<T>(recvMsgString);
+
+            PubSubMessage baseMsg = JsonConvert.DeserializeObject<PubSubMessage>(recvMsgString);
+            switch (baseMsg.type)
+            {
+            case "RESPONSE":
+                result.obj = JsonConvert.DeserializeObject<PubSubResponse>(recvMsgString);
+                break;
+            case "MESSAGE":
+                result.obj = JsonConvert.DeserializeObject<PubSubTopicMessage>(
+                    recvMsgString, new PubSubMessageDataCreationConverter()
+                );
+                break;
+            default:
+                result.obj = baseMsg;
+                break;
+            }
+
             return result;
+        }
+
+        private void ProcessReceivedMessageData(PubSubReceivedMessageData data)
+        {
+            Logger.Log().Debug("  Message topic: {0}", data.topic);
+            string[] topic = data.topic.Split('.');
+            switch (topic[0])
+            {
+            case "channel-points-channel-v1":
+                ChannelPointsMessage cpMsg = JsonConvert.DeserializeObject<ChannelPointsMessage>(data.message);
+                OnChannelPointsEvent(
+                    new ChannelPointsEventArgs(
+                        cpMsg.data.redemption.user.login,
+                        cpMsg.data.redemption.user.display_name,
+                        cpMsg.data.redemption.reward.title
+                    )
+                );
+                break;
+            default:
+                Logger.Log().Warning("Skipping unsupported PubSub topic: {0}", topic[0]);
+                break;
+            }
         }
 
         private async void ReceiveThreadMain()
         {
             while (!mDone)
             {
-                PubSubReceiveStatus<PubSubMessage> msg = await SocketReceive<PubSubMessage>();
+                PubSubReceiveStatus msg = await SocketReceive();
                 if (msg.closed)
                     break;
 
                 Logger.Log().Debug("Received message: ");
-                msg.obj.Print(LogLevel.Debug);
+                PubSubMessage m = msg.obj;
+                m.Print(LogLevel.Debug);
+
+                switch (m.type)
+                {
+                case "MESSAGE":
+                    PubSubTopicMessage tm = (PubSubTopicMessage)m;
+                    PubSubReceivedMessageData rmData = (PubSubReceivedMessageData)tm.data;
+                    ProcessReceivedMessageData(rmData);
+                    break;
+                default:
+                    // TODO this also handles PONG and RECONNECT, which probably should be handled better
+                    continue;
+                }
             }
         }
 
@@ -264,7 +260,7 @@ namespace LukeBot.Twitch
                 )
             );
             await SocketSend(command);
-            PubSubReceiveStatus<PubSubResponse> r = await SocketReceive<PubSubResponse>();
+            PubSubReceiveStatus r = await SocketReceive();
             if (r.closed)
             {
                 Logger.Log().Error("Connection closed while waiting for response");
@@ -272,16 +268,24 @@ namespace LukeBot.Twitch
                 return;
             }
 
-            if (r.obj.nonce != command.nonce)
+            if (r.obj.type != "RESPONSE")
+            {
+                Logger.Log().Error("Invalid response type received");
+                await mSocket.CloseAsync(WebSocketCloseStatus.Empty, "", cancelToken);
+                return;
+            }
+
+            PubSubResponse resp = (PubSubResponse)r.obj;
+            if (resp.nonce != command.nonce)
             {
                 Logger.Log().Error("VERY BAD nonce is not the same bad twitch slap");
                 await mSocket.CloseAsync(WebSocketCloseStatus.Empty, "", cancelToken);
                 return;
             }
 
-            if (r.obj.error.Length > 0)
+            if (resp.error.Length > 0)
             {
-                Logger.Log().Error("Error after command was sent to PubSub: {0}", r.obj.error);
+                Logger.Log().Error("Error after command was sent to PubSub: {0}", resp.error);
                 await mSocket.CloseAsync(WebSocketCloseStatus.Empty, "", cancelToken);
                 return;
             }

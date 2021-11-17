@@ -9,20 +9,6 @@
         color: #ffffff;
         font-family: 'Open Sans' Arial sans-serif;
     }
-
-    #chat {
-        overflow: hidden;
-        position: absolute;
-        bottom: 0;
-        left: 0px;
-        width: 100vw;
-        padding-left: 2px;
-        padding-right: 2px;
-        white-space: normal;
-        word-wrap: break-word;
-        font: 19px 'Open Sans';
-        text-shadow: black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px, black 0px 0px 2px;
-    }
 </style>
 
 <div id="alert">
@@ -34,6 +20,7 @@
         if (dbg) {
             dbg.innerHTML += text + "<br />";
         }
+        console.log(text);
     }
 
     const metadata = document.getElementsByTagName('meta');
@@ -47,7 +34,7 @@
     }
 
     const serverAddress = getMeta('serveraddress');
-    const chat = document.getElementById('chat');
+    const alert = document.getElementById('alert');
     printDebug(serverAddress);
 
 
@@ -73,7 +60,7 @@
             let obj = JSON.parse(event.data);
 
             if (obj.Type != null) {
-                // ...
+                alert.innerHTML += obj.DisplayName + " redeemed " + obj.Title + "!!!<br />";
             } else {
                 printDebug(`Received unknown obj: ${obj}`);
             }

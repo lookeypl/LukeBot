@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using LukeBot.Common;
 using Newtonsoft.Json;
+using LukeBot.Core;
 
 
 namespace LukeBot.Twitch

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using LukeBot.Common;
 
-namespace LukeBot.Common
+namespace LukeBot.Core
 {
     public sealed class CommunicationManager
     {

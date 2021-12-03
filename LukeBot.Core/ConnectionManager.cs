@@ -3,8 +3,10 @@ using System;
 using System.Diagnostics;
 using System.Net.NetworkInformation;
 using System.Net;
+using LukeBot.Common;
 
-namespace LukeBot.Common
+
+namespace LukeBot.Core
 {
     public class ConnectionManager
     {

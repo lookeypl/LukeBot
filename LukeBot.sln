@@ -23,14 +23,25 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data", "Data", "{10B3DA8C-4
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Twitch", "LukeBot.Twitch\LukeBot.Twitch.csproj", "{564B1BE4-C13B-4168-A9E4-34061DA82052}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93D23CA9-0CBA-4025-8DA9-103283B3887A} = {93D23CA9-0CBA-4025-8DA9-103283B3887A}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.UI", "LukeBot.UI\LukeBot.UI.csproj", "{20E971C2-B196-417D-A6FE-DC2831B76B24}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Spotify", "LukeBot.Spotify\LukeBot.Spotify.csproj", "{4C3B92FE-CEC2-4321-B1D5-8533255D99DA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93D23CA9-0CBA-4025-8DA9-103283B3887A} = {93D23CA9-0CBA-4025-8DA9-103283B3887A}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.CLI", "LukeBot.CLI\LukeBot.CLI.csproj", "{DDC69D3C-B018-4C17-A6C9-6BD2229BAAD2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Auth", "LukeBot.Auth\LukeBot.Auth.csproj", "{DE4E822E-AE4A-4989-A02F-2D263966206E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93D23CA9-0CBA-4025-8DA9-103283B3887A} = {93D23CA9-0CBA-4025-8DA9-103283B3887A}
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Core", "LukeBot.Core\LukeBot.Core.csproj", "{93D23CA9-0CBA-4025-8DA9-103283B3887A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -81,6 +92,12 @@ Global
 		{DE4E822E-AE4A-4989-A02F-2D263966206E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DE4E822E-AE4A-4989-A02F-2D263966206E}.SecureDebug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DE4E822E-AE4A-4989-A02F-2D263966206E}.SecureDebug|Any CPU.Build.0 = Debug|Any CPU
+		{93D23CA9-0CBA-4025-8DA9-103283B3887A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93D23CA9-0CBA-4025-8DA9-103283B3887A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93D23CA9-0CBA-4025-8DA9-103283B3887A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93D23CA9-0CBA-4025-8DA9-103283B3887A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93D23CA9-0CBA-4025-8DA9-103283B3887A}.SecureDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93D23CA9-0CBA-4025-8DA9-103283B3887A}.SecureDebug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

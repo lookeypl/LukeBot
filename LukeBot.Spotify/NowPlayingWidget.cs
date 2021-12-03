@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Text.Json;
 using LukeBot.Common;
+using LukeBot.Core;
 
 
 namespace LukeBot.Spotify

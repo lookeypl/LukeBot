@@ -1,4 +1,4 @@
-namespace LukeBot.Common
+namespace LukeBot.Core
 {
     public class ConnectionPort
     {

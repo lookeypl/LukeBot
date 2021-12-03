@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Text.Json;
 using LukeBot.Common;
+using LukeBot.Core;
 
 
 namespace LukeBot.Auth

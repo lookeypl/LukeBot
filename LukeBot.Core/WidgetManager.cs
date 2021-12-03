@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using LukeBot.Common;
 
-namespace LukeBot.Common
+namespace LukeBot.Core
 {
     public class WidgetManager
     {

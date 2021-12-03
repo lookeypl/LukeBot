@@ -4,6 +4,7 @@ using System.Net;
 using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Auth;
+using LukeBot.Core;
 
 
 namespace LukeBot.Spotify

@@ -2,6 +2,7 @@
 using System.Net;
 using LukeBot.Common;
 using LukeBot.Auth;
+using LukeBot.Core;
 
 
 namespace LukeBot.Twitch

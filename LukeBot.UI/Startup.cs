@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using LukeBot.Common;
 using LukeBot.Auth;
+using LukeBot.Core;
+
 
 namespace LukeBot.UI
 {

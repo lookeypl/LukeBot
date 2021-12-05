@@ -81,7 +81,7 @@ namespace LukeBot.Spotify
                     if (msg1.Opcode == WebSocketOp.Close) {
                         mDone = true;
                     }
-                } catch (Exception e) {
+                } catch (System.Exception e) {
                     Logger.Log().Warning("Exception caught: {0}: {1}", e.GetType().ToString(), e.Message);
                 }
             }

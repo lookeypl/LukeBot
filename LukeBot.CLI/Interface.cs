@@ -75,7 +75,7 @@ namespace LukeBot.CLI
             {
                 Logger.Log().Warning("CLI input cancelled");
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
                 Logger.Log().Error("{0} caught: {1}", e.ToString(), e.Message);
             }

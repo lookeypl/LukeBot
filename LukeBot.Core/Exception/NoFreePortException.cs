@@ -1,8 +1,9 @@
-using System;
+using LukeBot.Common;
+
 
 namespace LukeBot.Core
 {
-    public class NoFreePortException: System.Exception
+    public class NoFreePortException: Exception
     {
         public NoFreePortException(string msg): base(msg) {}
     }

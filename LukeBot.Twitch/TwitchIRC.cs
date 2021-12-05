@@ -213,7 +213,7 @@ namespace LukeBot.Twitch
                 Logger.Log().Debug("Processing command {0}", cmd);
                 response = mChannels[m.Channel].ProcessMessage(cmd, chatMsgTokens);
             }
-            catch (Exception e)
+            catch (Common.Exception e)
             {
                 Logger.Log().Error("Failed to process command: {0}", e.Message);
                 mChannelsMutex.ReleaseMutex();
@@ -375,7 +375,7 @@ namespace LukeBot.Twitch
                 Login();
                 mRunning = true;
             }
-            catch (Exception e)
+            catch (Common.Exception e)
             {
                 Logger.Log().Error("Failed to login to Twitch IRC server: {0}", e.Message);
                 return;

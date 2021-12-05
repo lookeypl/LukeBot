@@ -1,8 +1,8 @@
-using System;
+using LukeBot.Common;
 
 namespace LukeBot.Auth
 {
-    public class InvalidTokenException: System.Exception
+    public class InvalidTokenException: Exception
     {
         public InvalidTokenException(string msg): base(msg) {}
     }

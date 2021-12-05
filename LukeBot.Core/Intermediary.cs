@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using LukeBot.Common;
 
-namespace LukeBot.Common
+
+namespace LukeBot.Core
 {
     public sealed class Intermediary
     {

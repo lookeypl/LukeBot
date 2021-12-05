@@ -1,8 +1,6 @@
-﻿using System;
-
-namespace LukeBot.Common
+﻿namespace LukeBot.Common
 {
-    public class ParsingErrorException: System.Exception
+    public class ParsingErrorException: Exception
     {
         public ParsingErrorException(string msg): base(msg) {}
     }

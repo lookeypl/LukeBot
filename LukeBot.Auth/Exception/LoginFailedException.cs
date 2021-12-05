@@ -1,8 +1,9 @@
-using System;
+using LukeBot.Common;
+
 
 namespace LukeBot.Auth
 {
-    public class LoginFailedException: System.Exception
+    public class LoginFailedException: Exception
     {
         public LoginFailedException(string msg): base(msg) {}
     }

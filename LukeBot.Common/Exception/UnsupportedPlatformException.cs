@@ -1,8 +1,6 @@
-﻿using System;
-
-namespace LukeBot.Common
+﻿namespace LukeBot.Common
 {
-    public class UnsupportedPlatformException: System.Exception
+    public class UnsupportedPlatformException: Exception
     {
         public UnsupportedPlatformException(string msg): base(msg) {}
     }

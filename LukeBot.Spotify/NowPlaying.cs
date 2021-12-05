@@ -344,7 +344,7 @@ namespace LukeBot.Spotify
                 {
                     FetchData();
                 }
-                catch (Exception e)
+                catch (System.Exception e)
                 {
                     Logger.Log().Warning("Caught exception while fetching data: {0}. Ignoring and continuing anyway...", e.Message);
                 }

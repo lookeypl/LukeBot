@@ -64,12 +64,12 @@ namespace LukeBot
                 twitch.AddCommandToChannel("lookey", "spoilers", new Twitch.Command.Print(
                     "No spoilers please! To prevent random people from spoiling the game chat is in 10 minute Followers-only mode during Playthroughs. That will stay on at least until we're done with main story of the game. VeryPog"
                 ));
-                /*twitch.AddCommandToChannel("lookey", "cam3", new Twitch.Command.Print(
+                twitch.AddCommandToChannel("lookey", "cam3", new Twitch.Command.Print(
                     "I like it"
                 ));
                 twitch.AddCommandToChannel("lookey", "hunt", new Twitch.Command.Print(
                     "I'm trying to get all ATs in the current campaign! I'm doing it WITHOUT prior knowledge related to the campaign (don't know ATs/replays for maps + figure out the route and improvements on my own) so please respect it and don't spoil or backseat - otherwise you might be timed out/banned."
-                ));*/
+                ));
                 twitch.AddCommandToChannel("lookey", "attempts", new Twitch.Command.Print(
                     "I have some goals on my way to completing a hardcore \"run\". For more details and attempt history: https://docs.google.com/spreadsheets/d/1e2Hm9SVCaZkIG-wnFc5n-5RYcZtVJE0XOhcFUx0ZQNs/edit?usp=sharing"
                 ));
@@ -80,7 +80,11 @@ namespace LukeBot
                 Logger.Log().Info("Giving control to CLI");
                 mCLI.MainLoop();
             }
-            catch (Exception e)
+            catch (Common.Exception e)
+            {
+                e.Print(LogLevel.Error);
+            }
+            catch (System.Exception e)
             {
                 Logger.Log().Error("Exception caught: {0}", e.Message);
             }

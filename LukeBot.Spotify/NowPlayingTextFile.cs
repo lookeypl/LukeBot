@@ -53,7 +53,7 @@ namespace LukeBot.Spotify
                 mCurrentTrack = args;
                 mNeedsUpdate = true;
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
                 Logger.Log().Error("Failed to process track change: {0}", e.Message);
             }
@@ -84,7 +84,7 @@ namespace LukeBot.Spotify
                     break;
                 }
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
                 Logger.Log().Error("Failed to process state change: {0}", e.Message);
             }

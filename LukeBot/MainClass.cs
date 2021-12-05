@@ -17,7 +17,7 @@ namespace LukeBot
                 LukeBot bot = new LukeBot();
                 bot.Run(args);
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
                 Logger.Log().Error("Caught exception: " + e.Message + "\n" + e.StackTrace);
             }

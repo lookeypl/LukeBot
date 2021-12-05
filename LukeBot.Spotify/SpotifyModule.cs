@@ -72,7 +72,7 @@ namespace LukeBot.Spotify
         public SpotifyModule()
         {
             mWidgets = new List<IWidget>();
-            CommunicationManager.Instance.Register(Constants.SERVICE_NAME);
+            Systems.Communication.Register(Constants.SERVICE_NAME);
             string storagePath = "Outputs/" + Constants.SERVICE_NAME;
             if (!Directory.Exists(storagePath))
                 Directory.CreateDirectory(storagePath);
@@ -84,7 +84,7 @@ namespace LukeBot.Spotify
             mNowPlaying = null;
 
             foreach (IWidget w in mWidgets)
-                WidgetManager.Instance.Unregister(w);
+                Systems.Widget.Unregister(w);
         }
 
         public void Init()

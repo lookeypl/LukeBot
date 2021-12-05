@@ -45,6 +45,9 @@ namespace LukeBot
             Logger.Log().Info("LukeBot v0.0.1 starting");
             mCLI = new CLI.Interface();
 
+            Logger.Log().Info("Initializing Core systems...");
+            Core.Systems.Initialize();
+
             Logger.Log().Info("LukeBot UI starting...");
             mInterfaceThread.Start();
 
@@ -96,6 +99,9 @@ namespace LukeBot
             mUsers[0].RequestModuleShutdown();
             mUsers[0].WaitForModulesShutdown();
             mUsers = null;
+
+            Logger.Log().Info("Core systems teardown...");
+            Core.Systems.Teardown();
         }
     }
 }

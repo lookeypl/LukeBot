@@ -5,22 +5,18 @@ using LukeBot.Common;
 
 namespace LukeBot.Core
 {
-    public class WidgetManager
+    public class WidgetSystem
     {
-        private static readonly Lazy<WidgetManager> mInstance =
-            new Lazy<WidgetManager>(() => new WidgetManager());
-        public static WidgetManager Instance { get { return mInstance.Value; } }
-
         private Dictionary<string, IWidget> mWidgets = new Dictionary<string, IWidget>();
 
         private Mutex mMutex;
 
-        private WidgetManager()
+        public WidgetSystem()
         {
             mMutex = new Mutex();
         }
 
-        ~WidgetManager()
+        ~WidgetSystem()
         {
         }
 

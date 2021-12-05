@@ -63,7 +63,7 @@ namespace LukeBot.UI
                 Logger.Log().Info("  -> " + query.Key + " = " + query.Value);
             }
 
-            Intermediary srv = CommunicationManager.Instance.GetIntermediary(service);
+            Intermediary srv = Systems.Communication.GetIntermediary(service);
 
             if (!context.Request.Query.ContainsKey("state"))
             {
@@ -102,7 +102,7 @@ namespace LukeBot.UI
         async Task HandleWidgetCallback(string widgetUUID, HttpContext context)
         {
             Logger.Log().Debug("Handling {0}", widgetUUID);
-            await context.Response.WriteAsync(WidgetManager.Instance.GetWidgetPage(widgetUUID));
+            await context.Response.WriteAsync(Systems.Widget.GetWidgetPage(widgetUUID));
         }
 
         public void ConfigureServices(IServiceCollection services)

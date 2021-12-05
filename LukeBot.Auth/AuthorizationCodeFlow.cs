@@ -41,7 +41,7 @@ namespace LukeBot.Auth
 
             Logger.Log().Debug("Notifying comms manager");
             PromiseData userResponseBase = new UserToken();
-            IntermediaryPromise userPromise = CommunicationManager.Instance.GetIntermediary(mService).Expect(state, ref userResponseBase);
+            IntermediaryPromise userPromise = Systems.Communication.GetIntermediary(mService).Expect(state, ref userResponseBase);
 
             Logger.Log().Debug("Opening browser window with query {0}", URL);
             Utils.StartBrowser(URL);

@@ -1,5 +1,4 @@
 using System.Threading;
-using System;
 using System.Diagnostics;
 using System.Net.NetworkInformation;
 using System.Net;
@@ -8,12 +7,8 @@ using LukeBot.Common;
 
 namespace LukeBot.Core
 {
-    public class ConnectionManager
+    public class ConnectionSystem
     {
-        private static readonly Lazy<ConnectionManager> mInstance =
-            new Lazy<ConnectionManager>(() => new ConnectionManager(50000, 65535));
-        public static ConnectionManager Instance { get { return mInstance.Value; } }
-
         private class PortStatus
         {
             public bool taken;
@@ -31,7 +26,7 @@ namespace LukeBot.Core
         private PortStatus[] mPorts;
         private IPGlobalProperties mIPProperties;
 
-        private ConnectionManager(int firstPort, int lastPort)
+        public ConnectionSystem(int firstPort, int lastPort)
         {
             Debug.Assert(firstPort < lastPort, "Invalid firstPort", "First port {0} must be lower than last port {1}", firstPort, lastPort);
             Debug.Assert(lastPort <= 65535, "Available port range too high", "Available ports cannot exceed 65535 (requested {0})", lastPort);
@@ -68,7 +63,7 @@ namespace LukeBot.Core
             }
         }
 
-        ~ConnectionManager()
+        ~ConnectionSystem()
         {
         }
 

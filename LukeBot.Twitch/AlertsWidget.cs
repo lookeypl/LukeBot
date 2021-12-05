@@ -25,7 +25,7 @@ namespace LukeBot.Twitch
         public AlertsWidget(PubSub pubsub)
             : base()
         {
-            mPort = ConnectionManager.Instance.AcquirePort();
+            mPort = Systems.Connection.AcquirePort();
             Logger.Log().Debug("Widget will have port {0}", mPort.Value);
 
             pubsub.ChannelPointsEvent += OnChannelPointsEvent;
@@ -35,7 +35,7 @@ namespace LukeBot.Twitch
 
             mServer = new WebSocketServer(serverIP, mPort.Value);
 
-            WidgetManager.Instance.Register(this, "TEST-ALERTS-WIDGET");
+            Systems.Widget.Register(this, "TEST-ALERTS-WIDGET");
             Logger.Log().Secure("Registered Alerts widget at link http://{0}/widget/{1}; WS port {2}", serverIP, ID, mPort.Value);
         }
 

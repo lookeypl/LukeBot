@@ -11,7 +11,7 @@ namespace LukeBot.Core
 
         ~ConnectionPort()
         {
-            ConnectionManager.Instance.ReleasePort(Value);
+            Systems.Connection.ReleasePort(Value);
         }
     }
 }

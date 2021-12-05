@@ -37,7 +37,7 @@ namespace LukeBot.Twitch
 
         public TwitchModule()
         {
-            CommunicationManager.Instance.Register(Constants.SERVICE_NAME);
+            Systems.Communication.Register(Constants.SERVICE_NAME);
 
             string tokenScope = "chat:read chat:edit user:read:email";
             mToken = AuthManager.Instance.GetToken(ServiceType.Twitch, "lukebot");

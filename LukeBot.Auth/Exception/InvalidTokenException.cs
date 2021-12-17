@@ -4,6 +4,6 @@ namespace LukeBot.Auth
 {
     public class InvalidTokenException: Exception
     {
-        public InvalidTokenException(string msg): base(msg) {}
+        public InvalidTokenException(string fmt, params object[] args): base(string.Format(fmt, args)) {}
     }
 }

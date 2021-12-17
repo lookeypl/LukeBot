@@ -2,6 +2,6 @@
 {
     public class ParsingErrorException: Exception
     {
-        public ParsingErrorException(string msg): base(msg) {}
+        public ParsingErrorException(string fmt, params object[] args): base(string.Format(fmt, args)) {}
     }
 }

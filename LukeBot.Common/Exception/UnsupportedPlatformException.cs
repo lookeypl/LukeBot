@@ -2,6 +2,6 @@
 {
     public class UnsupportedPlatformException: Exception
     {
-        public UnsupportedPlatformException(string msg): base(msg) {}
+        public UnsupportedPlatformException(string fmt, params object[] args): base(string.Format(fmt, args)) {}
     }
 }

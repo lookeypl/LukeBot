@@ -6,6 +6,7 @@ namespace LukeBot.Core
     {
         static private CommunicationSystem mCommunicationSystem;
         static private ConnectionSystem mConnectionSystem;
+        static private EventSystem mEventSystem;
         static private WidgetSystem mWidgetSystem;
         static private bool mInitialized;
 
@@ -25,6 +26,14 @@ namespace LukeBot.Core
             }
         }
 
+        static public EventSystem Event
+        {
+            get
+            {
+                return mEventSystem;
+            }
+        }
+
         static public WidgetSystem Widget
         {
             get
@@ -37,6 +46,8 @@ namespace LukeBot.Core
         {
             if (mInitialized)
                 return;
+
+            mEventSystem = new EventSystem();
 
             mCommunicationSystem = new CommunicationSystem();
             mConnectionSystem = new ConnectionSystem(50000, 65535);

@@ -1,5 +1,6 @@
 ﻿using LukeBot.Common;
 using LukeBot.Auth;
+using LukeBot.Core;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -89,7 +90,7 @@ namespace LukeBot.Twitch
         }
     }
 
-    public class TwitchIRC
+    public class TwitchIRC: IEventPublisher
     {
         private string mName = "lukeboto";
         private Connection mConnection = null;

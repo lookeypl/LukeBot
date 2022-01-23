@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30406.217
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32002.185
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot", "LukeBot\LukeBot.csproj", "{31AE6813-99E8-4739-B46A-4F91C62D225F}"
 EndProject
@@ -45,7 +45,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Core", "LukeBot.Cor
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{0EA88F14-0FD2-480F-94F3-2EB65A498D30}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpotifyManager", "Tools\SpotifyManager\SpotifyManager.csproj", "{1FBF5DE7-BCAD-49C2-B3D1-CDEB6004A6F3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpotifyManager", "Tools\SpotifyManager\SpotifyManager.csproj", "{1FBF5DE7-BCAD-49C2-B3D1-CDEB6004A6F3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -94,14 +94,14 @@ Global
 		{DE4E822E-AE4A-4989-A02F-2D263966206E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE4E822E-AE4A-4989-A02F-2D263966206E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE4E822E-AE4A-4989-A02F-2D263966206E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DE4E822E-AE4A-4989-A02F-2D263966206E}.SecureDebug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DE4E822E-AE4A-4989-A02F-2D263966206E}.SecureDebug|Any CPU.Build.0 = Debug|Any CPU
+		{DE4E822E-AE4A-4989-A02F-2D263966206E}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{DE4E822E-AE4A-4989-A02F-2D263966206E}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 		{93D23CA9-0CBA-4025-8DA9-103283B3887A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{93D23CA9-0CBA-4025-8DA9-103283B3887A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{93D23CA9-0CBA-4025-8DA9-103283B3887A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{93D23CA9-0CBA-4025-8DA9-103283B3887A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{93D23CA9-0CBA-4025-8DA9-103283B3887A}.SecureDebug|Any CPU.ActiveCfg = Debug|Any CPU
-		{93D23CA9-0CBA-4025-8DA9-103283B3887A}.SecureDebug|Any CPU.Build.0 = Debug|Any CPU
+		{93D23CA9-0CBA-4025-8DA9-103283B3887A}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{93D23CA9-0CBA-4025-8DA9-103283B3887A}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 		{1FBF5DE7-BCAD-49C2-B3D1-CDEB6004A6F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1FBF5DE7-BCAD-49C2-B3D1-CDEB6004A6F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1FBF5DE7-BCAD-49C2-B3D1-CDEB6004A6F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -112,10 +112,10 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {99F9D361-986B-40DF-8E28-53D52471619B}
-	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1FBF5DE7-BCAD-49C2-B3D1-CDEB6004A6F3} = {0EA88F14-0FD2-480F-94F3-2EB65A498D30}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {99F9D361-986B-40DF-8E28-53D52471619B}
 	EndGlobalSection
 EndGlobal

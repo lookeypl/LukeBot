@@ -33,7 +33,15 @@ namespace LukeBot.Twitch
             Message = "";
         }
 
-        public void ParseEmotesString(string emotesStr)
+        private string GetEmoteName(string msg, string range)
+        {
+            int dash = range.IndexOf('-');
+            int from = Int32.Parse(range.Substring(0, dash));
+            int count = Int32.Parse(range.Substring(dash + 1)) - from + 1;
+            return msg.Substring(from, count);
+        }
+
+        public void ParseEmotesString(string msg, string emotesStr)
         {
             if (emotesStr.Length == 0)
                 return;
@@ -42,13 +50,33 @@ namespace LukeBot.Twitch
             foreach (string e in emotes)
             {
                 int separatorIdx = e.IndexOf(':');
-                Emotes.Add(new MessageEmote(EmoteSource.Twitch, e.Substring(0, separatorIdx), 32, 32, e.Substring(separatorIdx + 1)));
+                string ranges = e.Substring(separatorIdx + 1);
+                int firstRangeIdx = ranges.IndexOf(',');
+                string name;
+                if (firstRangeIdx == -1)
+                    name = GetEmoteName(msg, ranges);
+                else
+                    name = GetEmoteName(msg, ranges.Substring(0, firstRangeIdx));
+
+                Emotes.Add(new MessageEmote(EmoteSource.Twitch, name, e.Substring(0, separatorIdx), 32, 32, e.Substring(separatorIdx + 1)));
             }
         }
 
         public void AddExternalEmotes(List<MessageEmote> emotes)
         {
-            Emotes.AddRange(emotes);
+            List<MessageEmote> filteredEmotes = new List<MessageEmote>(emotes.Count);
+            foreach (MessageEmote e in emotes)
+            {
+                if (Emotes.Exists(x => x.Name == e.Name))
+                {
+                    Logger.Log().Debug("Removing external emote {0} from message, duplicated by sub emotes", e.Name);
+                    continue;
+                }
+
+                filteredEmotes.Add(e);
+            }
+
+            Emotes.AddRange(filteredEmotes);
         }
     }
 
@@ -190,7 +218,7 @@ namespace LukeBot.Twitch
             if (m.Tags.TryGetValue("emotes", out emotes))
             {
                 Logger.Log().Debug("Emotes string: {0}", emotes);
-                message.ParseEmotesString(emotes);
+                message.ParseEmotesString(chatMsg, emotes);
             }
 
             message.AddExternalEmotes(mExternalEmotes.ParseEmotes(message.Message));

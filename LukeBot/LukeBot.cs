@@ -80,6 +80,9 @@ namespace LukeBot
                 twitch.AddCommandToChannel("lookey", "mods", new Twitch.Command.Print(
                     "Fabric mods I'm using: Iris, Litematica, Logical Zoom, ModMenu, MiniHUD, Sodium, Tweakeroo; Shaders (if enabled): Sildur's Vibrant Shaders Extreme-VL"
                 ));
+                twitch.AddCommandToChannel("lookey", "rando", new Twitch.Command.Print(
+                    "Randomizer I'm using is MFOR (Metroid Fusion Open Randomizer) v 0.9.7; you can get it here: https://forum.metroidconstruction.com/index.php/topic,5376.0.html"
+                ));
 
                 Logger.Log().Info("Giving control to CLI");
                 mCLI.MainLoop();

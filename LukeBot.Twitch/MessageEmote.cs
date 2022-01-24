@@ -21,6 +21,7 @@ namespace LukeBot.Twitch
     public struct MessageEmote
     {
         public string Source { get; private set; }
+        public string Name { get; private set; }
         public string ID { get; private set; }
         public int Width { get; private set; }
         public int Height { get; private set; }
@@ -29,6 +30,7 @@ namespace LukeBot.Twitch
         public MessageEmote(Emote emote, int from, int to)
         {
             Source = emote.Source.ToString();
+            Name = emote.Name;
             ID = emote.ID;
             Width = emote.Width;
             Height = emote.Height;
@@ -36,9 +38,10 @@ namespace LukeBot.Twitch
             Ranges.Add(new MessageEmoteRange(from, to));
         }
 
-        public MessageEmote(EmoteSource source, string id, int width, int height, string rangesStr)
+        public MessageEmote(EmoteSource source, string name, string id, int width, int height, string rangesStr)
         {
             Source = source.ToString();
+            Name = name;
             ID = id;
             Width = width;
             Height = height;

@@ -389,7 +389,18 @@ namespace LukeBot.Twitch
             mConnection.Send("NICK " + mName);
             if (!CheckIfLoginSuccessful())
             {
-                throw new InvalidOperationException("Login to Twitch IRC server failed");
+                Logger.Log().Warning("Login to Twitch IRC server failed - retrying in 2 seconds...");
+                mConnection.Close();
+
+                Thread.Sleep(2000);
+                mConnection = new Connection("irc.chat.twitch.tv", 6697, true);
+
+                mConnection.Send("PASS oauth:" + mToken.Get());
+                mConnection.Send("NICK " + mName);
+                if (!CheckIfLoginSuccessful())
+                {
+                    throw new LoginFailedException("Login to Twitch IRC server failed");
+                }
             }
 
             mConnection.Send("CAP REQ :twitch.tv/tags");
@@ -406,8 +417,9 @@ namespace LukeBot.Twitch
             }
             catch (Common.Exception e)
             {
-                Logger.Log().Error("Failed to login to Twitch IRC server: {0}", e.Message);
-                return;
+                Logger.Log().Error("Twitch IRC worker thread exited with error.");
+                e.Print(LogLevel.Error);
+                throw e;
             }
 
             Logger.Log().Info("Listening for response...");

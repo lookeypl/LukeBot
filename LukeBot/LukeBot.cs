@@ -3,6 +3,7 @@ using LukeBot.Twitch;
 using LukeBot.Spotify;
 using LukeBot.UI;
 using LukeBot.CLI;
+using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 using System;
@@ -11,6 +12,8 @@ namespace LukeBot
 {
     class LukeBot
     {
+        private string DEVMODE_FILE = "Data/devmode.lukebot";
+
         private List<UserContext> mUsers;
         private Thread mInterfaceThread;
         private CLI.Interface mCLI;
@@ -38,6 +41,44 @@ namespace LukeBot
                 mInterfaceThread.Join();
         }
 
+        public bool IsInDevMode()
+        {
+            try
+            {
+                if (FileUtils.Exists(DEVMODE_FILE))
+                {
+                    string data = File.ReadAllText(DEVMODE_FILE);
+                    int enabled = 0;
+                    if (!Int32.TryParse(data, out enabled))
+                        return false;
+                    return (enabled != 0);
+                }
+            }
+            catch
+            {
+                // quietly exit
+            }
+
+            return false;
+        }
+
+        public void StartDevmode()
+        {
+            Logger.Log().Warning("ENABLED DEVELOPER MODE");
+
+            Logger.Log().Info("LukeBot modules starting...");
+            mUsers.Add(new UserContext("Dev"));
+
+
+            Logger.Log().Info("Giving control to CLI");
+            mCLI.MainLoop();
+
+            Logger.Log().Info("Stopping modules...");
+            mUsers[0].RequestModuleShutdown();
+            mUsers[0].WaitForModulesShutdown();
+            mUsers = null;
+        }
+
         public void Run(string[] args)
         {
             Console.CancelKeyPress += OnCancelKeyPress;
@@ -47,6 +88,14 @@ namespace LukeBot
 
             Logger.Log().Info("Initializing Core systems...");
             Core.Systems.Initialize();
+
+            if (IsInDevMode())
+            {
+                StartDevmode();
+                Logger.Log().Info("Core systems teardown...");
+                Core.Systems.Teardown();
+                return;
+            }
 
             Logger.Log().Info("LukeBot UI starting...");
             mInterfaceThread.Start();

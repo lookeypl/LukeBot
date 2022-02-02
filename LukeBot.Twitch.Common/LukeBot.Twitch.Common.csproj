@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -22,16 +22,5 @@
     <OutputPath>$(SolutionDir)Bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)Obj\$(MSBuildProjectName)\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\LukeBot.Auth\LukeBot.Auth.csproj" />
-    <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
-    <ProjectReference Include="..\LukeBot.Twitch.Common\LukeBot.Twitch.Common.csproj" />
-    <ProjectReference Include="..\LukeBot.Core.Events\LukeBot.Core.Events.csproj" />
-  </ItemGroup>
 
 </Project>

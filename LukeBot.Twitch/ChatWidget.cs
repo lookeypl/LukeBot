@@ -2,45 +2,46 @@
 using System.Text.Json;
 using LukeBot.Common;
 using LukeBot.Core;
+using LukeBot.Core.Events;
 
 
 namespace LukeBot.Twitch
 {
     class ChatWidget: IWidget
     {
-        TwitchIRC mIRC;
         ConnectionPort mPort;
         WebSocketServer mServer;
 
-        private void OnMessage(object o, TwitchIRCMessage args)
+        private void OnMessage(object o, EventArgsBase args)
         {
+            TwitchChatMessageArgs a = (TwitchChatMessageArgs)args;
             if (mServer.Running)
-                mServer.Send(JsonSerializer.Serialize(args));
+                mServer.Send(JsonSerializer.Serialize(a));
         }
 
-        private void OnClearChat(object o, TwitchIRCClearChat args)
+        private void OnClearChat(object o, EventArgsBase args)
         {
+            TwitchChatUserClearArgs a = (TwitchChatUserClearArgs)args;
             if (mServer.Running)
-                mServer.Send(JsonSerializer.Serialize(args));
+                mServer.Send(JsonSerializer.Serialize(a));
         }
 
-        private void OnClearMsg(object o, TwitchIRCClearMsg args)
+        private void OnClearMsg(object o, EventArgsBase args)
         {
+            TwitchChatMessageClearArgs a = (TwitchChatMessageClearArgs)args;
             if (mServer.Running)
-                mServer.Send(JsonSerializer.Serialize(args));
+                mServer.Send(JsonSerializer.Serialize(a));
         }
 
-        public ChatWidget(TwitchIRC IRC)
+        public ChatWidget()
             : base()
         {
-            mIRC = IRC;
-
             mPort = Systems.Connection.AcquirePort();
             Logger.Log().Debug("Widget will have port {0}", mPort.Value);
 
-            mIRC.MessageEvent += OnMessage;
-            mIRC.ClearChatEvent += OnClearChat;
-            mIRC.ClearMsgEvent += OnClearMsg;
+            Core.Systems.Event.TwitchChatMessage += OnMessage;
+            Core.Systems.Event.TwitchChatUserClear += OnClearChat;
+            Core.Systems.Event.TwitchChatMessageClear += OnClearMsg;
 
             string serverIP = Utils.GetConfigServerIP();
             AddToHead(string.Format("<meta name=\"serveraddress\" content=\"{0}\">", serverIP + ":" + mPort.Value));

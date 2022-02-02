@@ -4,46 +4,46 @@ using System.Threading;
 using System.Text.Json;
 using LukeBot.Common;
 using LukeBot.Core;
+using LukeBot.Core.Events;
+using LukeBot.Spotify.Common;
 
 
 namespace LukeBot.Spotify
 {
     class NowPlayingWidget: IWidget
     {
-        NowPlaying mEngine;
         ConnectionPort mPort;
-        NowPlaying.StateUpdateArgs mState;
-        NowPlaying.TrackChangedArgs mCurrentTrack;
+        SpotifyMusicStateUpdateArgs mState;
+        SpotifyMusicTrackChangedArgs mCurrentTrack;
         WebSocketServer mServer;
         Thread mRecvThread;
         volatile bool mDone = false;
 
-        private void OnStateUpdate(object o, NowPlaying.StateUpdateArgs args)
+        private void OnStateUpdate(object o, EventArgsBase args)
         {
-            mState = args;
+            SpotifyMusicStateUpdateArgs a = (SpotifyMusicStateUpdateArgs)args;
+
+            mState = a;
             if (mServer.Running)
-                mServer.Send(JsonSerializer.Serialize(args));
+                mServer.Send(JsonSerializer.Serialize(a));
         }
 
-        private void OnTrackChanged(object o, NowPlaying.TrackChangedArgs args)
+        private void OnTrackChanged(object o, EventArgsBase args)
         {
-            mCurrentTrack = args;
+            SpotifyMusicTrackChangedArgs a = (SpotifyMusicTrackChangedArgs)args;
+
+            mCurrentTrack = a;
             if (mServer.Running)
-                mServer.Send(JsonSerializer.Serialize(args));
+                mServer.Send(JsonSerializer.Serialize(a));
         }
 
-        public NowPlayingWidget(NowPlaying engine, string widgetID)
+        public NowPlayingWidget(string widgetID)
             : base()
         {
-            mEngine = engine;
-
             mPort = Systems.Connection.AcquirePort();
             Logger.Log().Debug("Widget will have port {0}", mPort.Value);
 
-            mEngine.TrackChanged += OnTrackChanged;
-            mEngine.StateUpdate += OnStateUpdate;
-
-            string serverIP = Utils.GetConfigServerIP();
+            string serverIP = LukeBot.Common.Utils.GetConfigServerIP();
             AddToHead(string.Format("<meta name=\"serveraddress\" content=\"{0}\">", serverIP + ":" + mPort.Value));
 
             mServer = new WebSocketServer(serverIP, mPort.Value);
@@ -53,6 +53,9 @@ namespace LukeBot.Spotify
 
             mState = null;
             mCurrentTrack = null;
+
+            Systems.Event.SpotifyMusicStateUpdate += OnStateUpdate;
+            Systems.Event.SpotifyMusicTrackChanged += OnTrackChanged;
         }
 
         ~NowPlayingWidget()
@@ -66,7 +69,7 @@ namespace LukeBot.Spotify
             mServer.Start();
             mServer.AwaitConnection();
 
-            if (mState != null && mState.State != NowPlaying.State.Unloaded)
+            if (mState != null && mState.State != PlaybackState.Unloaded)
             {
                 // Push a state update to "pre-refresh" the widget
                 OnTrackChanged(null, mCurrentTrack);

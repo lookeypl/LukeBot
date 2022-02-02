@@ -1,7 +1,7 @@
 using LukeBot.Common;
 
 
-namespace LukeBot.Core
+namespace LukeBot.Auth
 {
     public class PromiseRejectedException: Exception
     {

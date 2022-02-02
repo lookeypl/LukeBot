@@ -6,118 +6,12 @@ using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 using System.Diagnostics;
+using LukeBot.Twitch.Common;
+using LukeBot.Core.Events;
 
 
 namespace LukeBot.Twitch
 {
-    public struct TwitchIRCMessage
-    {
-        public string Type { get; private set; }
-        public string MessageID { get; private set; }
-        public string UserID { get; set; }
-        public string Color { get; set; }
-        public List<MessageEmote> Emotes { get; private set; }
-        public string Nick { get; set; }
-        public string DisplayName { get; set; }
-        public string Message { get; set; }
-
-        public TwitchIRCMessage(string msgID)
-        {
-            Type = "TwitchIRCMessage";
-            MessageID = msgID;
-            UserID = "";
-            Color = "#dddddd";
-            Emotes = new List<MessageEmote>();
-            Nick = "";
-            DisplayName = "";
-            Message = "";
-        }
-
-        private string GetEmoteName(string msg, string range)
-        {
-            int dash = range.IndexOf('-');
-            int from = Int32.Parse(range.Substring(0, dash));
-            int count = Int32.Parse(range.Substring(dash + 1)) - from + 1;
-            return msg.Substring(from, count);
-        }
-
-        public void ParseEmotesString(string msg, string emotesStr)
-        {
-            if (emotesStr.Length == 0)
-                return;
-
-            string[] emotes = emotesStr.Split('/');
-            foreach (string e in emotes)
-            {
-                int separatorIdx = e.IndexOf(':');
-                string ranges = e.Substring(separatorIdx + 1);
-                int firstRangeIdx = ranges.IndexOf(',');
-                string name;
-                if (firstRangeIdx == -1)
-                    name = GetEmoteName(msg, ranges);
-                else
-                    name = GetEmoteName(msg, ranges.Substring(0, firstRangeIdx));
-
-                Emotes.Add(new MessageEmote(EmoteSource.Twitch, name, e.Substring(0, separatorIdx), 32, 32, e.Substring(separatorIdx + 1)));
-            }
-        }
-
-        public void AddExternalEmotes(List<MessageEmote> emotes)
-        {
-            List<MessageEmote> filteredEmotes = new List<MessageEmote>(emotes.Count);
-            foreach (MessageEmote e in emotes)
-            {
-                if (Emotes.Exists(x => x.Name == e.Name))
-                {
-                    Logger.Log().Debug("Removing external emote {0} from message, duplicated by sub emotes", e.Name);
-                    continue;
-                }
-
-                filteredEmotes.Add(e);
-            }
-
-            Emotes.AddRange(filteredEmotes);
-        }
-    }
-
-    public struct TwitchIRCClearChat
-    {
-        public string Type { get; private set; }
-        public string Nick { get; private set; }
-
-        public TwitchIRCClearChat(string nick)
-        {
-            Type = "TwitchIRCClearChat";
-            Nick = nick;
-        }
-    }
-
-    public struct TwitchIRCClearMsg
-    {
-        public string Type { get; private set; }
-        public string Message { get; private set; }
-        public string MessageID { get; set; }
-
-        public TwitchIRCClearMsg(string message)
-        {
-            Type = "TwitchIRCClearMsg";
-            Message = message;
-            MessageID = "";
-        }
-    }
-
-    public struct TwitchIRCUserNotice
-    {
-        public string Type { get; private set; }
-        public string NoticeType { get; private set; }
-
-        public TwitchIRCUserNotice(string noticeType)
-        {
-            Type = "TwitchIRCUserNotice";
-            NoticeType = noticeType;
-        }
-    }
-
     public class TwitchIRC: IEventPublisher
     {
         private string mName = "lukeboto";
@@ -126,38 +20,16 @@ namespace LukeBot.Twitch
         private Dictionary<string, IRCChannel> mChannels;
         private bool mTagsEnabled = false;
         private EmoteProvider mExternalEmotes;
+        private EventCallback mMessageEventCallback;
+        private EventCallback mMessageClearEventCallback;
+        private EventCallback mUserClearEventCallback;
 
         private bool mRunning = false;
         private AutoResetEvent mLoggedInEvent;
         private int mMsgIDCounter = 0; // backup for when we don't have metadata
-        public EventHandler<TwitchIRCMessage> MessageEvent;
-        public EventHandler<TwitchIRCClearChat> ClearChatEvent;
-        public EventHandler<TwitchIRCClearMsg> ClearMsgEvent;
-        public EventHandler<TwitchIRCUserNotice> UserNoticeEvent;
 
         private Thread mWorker;
         private Mutex mChannelsMutex;
-
-        private void OnMessage(TwitchIRCMessage args)
-        {
-            EventHandler<TwitchIRCMessage> handler = MessageEvent;
-            if (handler != null)
-                handler(this, args);
-        }
-
-        private void OnClearChat(TwitchIRCClearChat args)
-        {
-            EventHandler<TwitchIRCClearChat> handler = ClearChatEvent;
-            if (handler != null)
-                handler(this, args);
-        }
-
-        private void OnClearMsg(TwitchIRCClearMsg args)
-        {
-            EventHandler<TwitchIRCClearMsg> handler = ClearMsgEvent;
-            if (handler != null)
-                handler(this, args);
-        }
 
         void ProcessReply(Message m)
         {
@@ -197,7 +69,7 @@ namespace LukeBot.Twitch
             if (!m.Tags.TryGetValue("id", out msgID))
                 msgID = String.Format("{0}", mMsgIDCounter++);
 
-            TwitchIRCMessage message = new TwitchIRCMessage(msgID);
+            TwitchChatMessageArgs message = new TwitchChatMessageArgs(msgID);
             message.Nick = m.User;
             message.Message = chatMsg;
 
@@ -223,7 +95,7 @@ namespace LukeBot.Twitch
 
             message.AddExternalEmotes(mExternalEmotes.ParseEmotes(message.Message));
 
-            OnMessage(message);
+            mMessageEventCallback.PublishEvent(message);
 
             if (chatMsg[0] != '!')
                 return;
@@ -242,7 +114,7 @@ namespace LukeBot.Twitch
                 Logger.Log().Debug("Processing command {0}", cmd);
                 response = mChannels[m.Channel].ProcessMessage(cmd, chatMsgTokens);
             }
-            catch (Common.Exception e)
+            catch (LukeBot.Common.Exception e)
             {
                 Logger.Log().Error("Failed to process command: {0}", e.Message);
                 mChannelsMutex.ReleaseMutex();
@@ -259,8 +131,8 @@ namespace LukeBot.Twitch
         {
             string msg = m.Params[m.Params.Count - 1];
             Logger.Log().Warning("CLEARCHAT ({0} tags) #{1} :{2}", m.Tags.Count, m.Channel, msg);
-            TwitchIRCClearChat message = new TwitchIRCClearChat(msg);
-            OnClearChat(message);
+            TwitchChatUserClearArgs message = new TwitchChatUserClearArgs(msg);
+            mUserClearEventCallback.PublishEvent(message);
         }
 
         void ProcessCLEARMSG(Message m)
@@ -268,13 +140,13 @@ namespace LukeBot.Twitch
             string msg = m.Params[m.Params.Count - 1];
             Logger.Log().Warning("CLEARMSG ({0} tags) #{1} :{2}", m.Tags.Count, m.Channel, msg);
 
-            TwitchIRCClearMsg message = new TwitchIRCClearMsg(msg);
+            TwitchChatMessageClearArgs message = new TwitchChatMessageClearArgs(msg);
 
             string msgID;
             if (m.Tags.TryGetValue("target-msg-id", out msgID))
                 message.MessageID = msgID;
 
-            OnClearMsg(message);
+            mMessageClearEventCallback.PublishEvent(message);
         }
 
         void ProcessCAP(Message m)
@@ -415,7 +287,7 @@ namespace LukeBot.Twitch
                 Login();
                 mRunning = true;
             }
-            catch (Common.Exception e)
+            catch (LukeBot.Common.Exception e)
             {
                 Logger.Log().Error("Twitch IRC worker thread exited with error.");
                 e.Print(LogLevel.Error);
@@ -448,6 +320,29 @@ namespace LukeBot.Twitch
             mChannels = new Dictionary<string, IRCChannel>();
             mToken = token;
             mExternalEmotes = new EmoteProvider();
+
+            List<EventCallback> events = Core.Systems.Event.RegisterEventPublisher(
+                this, Core.Events.Type.TwitchChatMessage | Core.Events.Type.TwitchChatMessageClear | Core.Events.Type.TwitchChatUserClear
+            );
+
+            foreach (EventCallback e in events)
+            {
+                switch (e.type)
+                {
+                case Core.Events.Type.TwitchChatMessage:
+                    mMessageEventCallback = e;
+                    break;
+                case Core.Events.Type.TwitchChatMessageClear:
+                    mMessageClearEventCallback = e;
+                    break;
+                case Core.Events.Type.TwitchChatUserClear:
+                    mUserClearEventCallback = e;
+                    break;
+                default:
+                    Logger.Log().Warning("Received unknown event type from Event system");
+                    break;
+                }
+            }
 
             Logger.Log().Info("Twitch IRC module initialized");
         }

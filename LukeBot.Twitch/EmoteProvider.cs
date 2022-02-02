@@ -1,9 +1,9 @@
 using System.Collections.Generic;
+using LukeBot.Twitch.Common;
 
 
 namespace LukeBot.Twitch
 {
-
     public class EmoteProvider
     {
         private List<IEmoteSource> mEmoteSources;

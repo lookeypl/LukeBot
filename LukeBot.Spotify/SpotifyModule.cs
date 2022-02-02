@@ -92,14 +92,14 @@ namespace LukeBot.Spotify
             Login();
 
             mNowPlaying = new NowPlaying(mToken);
-            mNowPlayingTextFile = new NowPlayingTextFile(mNowPlaying,
+            mNowPlayingTextFile = new NowPlayingTextFile(
                 "Outputs/" + Constants.SERVICE_NAME + "/nowplaying_artist.txt",
                 "Outputs/" + Constants.SERVICE_NAME + "/nowplaying_title.txt"
             );
 
             // TODO Temporary
-            mWidgets.Add(new NowPlayingWidget(mNowPlaying, "BIG-NOW-PLAYING-WIDGET"));
-            mWidgets.Add(new NowPlayingWidget(mNowPlaying, "SMALL-NOW-PLAYING-WIDGET"));
+            mWidgets.Add(new NowPlayingWidget("BIG-NOW-PLAYING-WIDGET"));
+            mWidgets.Add(new NowPlayingWidget("SMALL-NOW-PLAYING-WIDGET"));
         }
 
         public void RequestShutdown()

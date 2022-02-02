@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using LukeBot.Common;
+using LukeBot.Core.Events;
 
 
 namespace LukeBot.Core
@@ -11,71 +12,14 @@ namespace LukeBot.Core
     {
     }
 
-    [Flags]
-    public enum EventType
-    {
-        None = 0,
-        TwitchChatMessage = 0x1,
-        TwitchChatMessageClear = 0x2,
-        TwitchChatUserClear = 0x4,
-        MusicStateUpdate = 0x8,
-        MusicTrackChanged = 0x10,
-        TwitchChannelPointsRedemption = 0x20,
-        TwitchSubscription = 0x40,
-        TwitchBitsCheer = 0x80,
-    }
-
-    public class EventArgsBase
-    {
-        public EventType eventType { get; private set; }
-
-        public EventArgsBase(EventType type)
-        {
-            eventType = type;
-        }
-    }
-
-    public class TwitchChatMessageArgs: EventArgsBase
-    {
-        public string user { get; private set; }
-        public string message { get; private set; }
-
-        public TwitchChatMessageArgs(string u, string m)
-            : base(EventType.TwitchChatMessage)
-        {
-            user = u;
-            message = m;
-        }
-    }
-
-    public class TwitchChatMessageClearArgs: EventArgsBase
-    {
-        public TwitchChatMessageClearArgs()
-            : base(EventType.TwitchChatMessageClear)
-        {
-        }
-    }
-
-    public class TwitchChannelPointsRedemptionArgs: EventArgsBase
-    {
-        public string name { get; set; }
-        public string user { get; set; }
-        public int points { get; set; }
-
-        public TwitchChannelPointsRedemptionArgs()
-            : base(EventType.TwitchChannelPointsRedemption)
-        {
-        }
-    }
-
     public delegate void PublishEventDelegate(EventArgsBase args);
 
     public struct EventCallback
     {
-        public EventType type { get; private set; }
+        public Events.Type type { get; private set; }
         public PublishEventDelegate PublishEvent { get; private set; }
 
-        public EventCallback(EventType t, PublishEventDelegate pe)
+        public EventCallback(Events.Type t, PublishEventDelegate pe)
         {
             type = t;
             PublishEvent = pe;
@@ -86,13 +30,16 @@ namespace LukeBot.Core
     {
         public event EventHandler<EventArgsBase> TwitchChatMessage;
         public event EventHandler<EventArgsBase> TwitchChatMessageClear;
+        public event EventHandler<EventArgsBase> TwitchChatUserClear;
+        public event EventHandler<EventArgsBase> SpotifyMusicStateUpdate;
+        public event EventHandler<EventArgsBase> SpotifyMusicTrackChanged;
         public event EventHandler<EventArgsBase> TwitchChannelPointsRedemption;
+        public event EventHandler<EventArgsBase> TwitchSubscription;
+        public event EventHandler<EventArgsBase> TwitchBitsCheer;
 
         private List<IEventPublisher> mPublishers;
         private Dictionary<string, Func<EventSystem, EventHandler<EventArgsBase>>> mEvents; // maps EventHandler's generic type (args struct) name to EventInfo
 
-
-        //private
 
         private EventHandler<EventArgsBase> GetHandler(string name)
         {
@@ -112,16 +59,16 @@ namespace LukeBot.Core
             }
         }
 
-        private EventCallback CreateEventCallback(EventType type)
+        private EventCallback CreateEventCallback(Events.Type type)
         {
-            Type argsBaseType = typeof(EventArgsBase);
-            Type argsType = Type.GetType("LukeBot.Core." + type.ToString() + "Args");
+            System.Type argsBaseType = typeof(EventArgsBase);
+            System.Type argsType = EventUtils.GetEventTypeArgs(type.ToString());
             if (argsType == null)
             {
                 throw new EventTypeNotFoundException("Could not acquire arguments for event type: {0}", type);
             }
 
-            MethodInfo eventMethod = typeof(EventSystem).GetMethod(nameof(EventSystem.OnEvent), 1, new Type[] { argsBaseType }).MakeGenericMethod(argsType);
+            MethodInfo eventMethod = typeof(EventSystem).GetMethod(nameof(EventSystem.OnEvent), 1, new System.Type[] { argsBaseType }).MakeGenericMethod(argsType);
             return new EventCallback(type, (PublishEventDelegate)Delegate.CreateDelegate(typeof(PublishEventDelegate), this, eventMethod));
         }
 
@@ -133,7 +80,12 @@ namespace LukeBot.Core
             mEvents = new Dictionary<string, Func<EventSystem, EventHandler<EventArgsBase>>>();
             mEvents.Add("TwitchChatMessageArgs", x => x.TwitchChatMessage);
             mEvents.Add("TwitchChatMessageClearArgs", x => x.TwitchChatMessageClear);
+            mEvents.Add("TwitchChatUserClearArgs", x => x.TwitchChatUserClear);
+            mEvents.Add("SpotifyMusicStateUpdateArgs", x => x.SpotifyMusicStateUpdate);
+            mEvents.Add("SpotifyMusicTrackChangedArgs", x => x.SpotifyMusicTrackChanged);
             mEvents.Add("TwitchChannelPointsRedemptionArgs", x => x.TwitchChannelPointsRedemption);
+            mEvents.Add("TwitchSubscriptionArgs", x => x.TwitchSubscription);
+            mEvents.Add("TwitchBitsCheerArgs", x => x.TwitchBitsCheer);
         }
 
         ~EventSystem()
@@ -143,15 +95,15 @@ namespace LukeBot.Core
         // Register an Event Publisher.
         // Returns a list of callbacks which should be called to emit an event + for what event type it is for.
         // Returned List will have as many callbacks as there were EventType's provided in @p type
-        public List<EventCallback> RegisterEventPublisher(IEventPublisher publisher, EventType type)
+        public List<EventCallback> RegisterEventPublisher(IEventPublisher publisher, Events.Type type)
         {
             mPublishers.Add(publisher);
 
             List<EventCallback> callbackList = new List<EventCallback>();
 
-            foreach (EventType t in Enum.GetValues(typeof(EventType)))
+            foreach (Events.Type t in Enum.GetValues(typeof(Events.Type)))
             {
-                if ((t & type) != EventType.None)
+                if ((t & type) != Events.Type.None)
                 {
                     callbackList.Add(CreateEventCallback(t));
                 }

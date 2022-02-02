@@ -47,6 +47,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{0EA88F14
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpotifyManager", "Tools\SpotifyManager\SpotifyManager.csproj", "{1FBF5DE7-BCAD-49C2-B3D1-CDEB6004A6F3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Twitch.Common", "LukeBot.Twitch.Common\LukeBot.Twitch.Common.csproj", "{1BB0DC54-42CF-46FD-BE38-FB6B7C8D8FF1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Spotify.Common", "LukeBot.Spotify.Common\LukeBot.Spotify.Common.csproj", "{283EE86E-47C6-4248-BC2D-BA185CF37A80}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Core.Events", "LukeBot.Core.Events\LukeBot.Core.Events.csproj", "{5A13C2EA-88E6-4691-986F-57C337DE1EFF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -108,6 +114,24 @@ Global
 		{1FBF5DE7-BCAD-49C2-B3D1-CDEB6004A6F3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1FBF5DE7-BCAD-49C2-B3D1-CDEB6004A6F3}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
 		{1FBF5DE7-BCAD-49C2-B3D1-CDEB6004A6F3}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
+		{1BB0DC54-42CF-46FD-BE38-FB6B7C8D8FF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BB0DC54-42CF-46FD-BE38-FB6B7C8D8FF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BB0DC54-42CF-46FD-BE38-FB6B7C8D8FF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BB0DC54-42CF-46FD-BE38-FB6B7C8D8FF1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BB0DC54-42CF-46FD-BE38-FB6B7C8D8FF1}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{1BB0DC54-42CF-46FD-BE38-FB6B7C8D8FF1}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
+		{283EE86E-47C6-4248-BC2D-BA185CF37A80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{283EE86E-47C6-4248-BC2D-BA185CF37A80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{283EE86E-47C6-4248-BC2D-BA185CF37A80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{283EE86E-47C6-4248-BC2D-BA185CF37A80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{283EE86E-47C6-4248-BC2D-BA185CF37A80}.SecureDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{283EE86E-47C6-4248-BC2D-BA185CF37A80}.SecureDebug|Any CPU.Build.0 = Debug|Any CPU
+		{5A13C2EA-88E6-4691-986F-57C337DE1EFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A13C2EA-88E6-4691-986F-57C337DE1EFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A13C2EA-88E6-4691-986F-57C337DE1EFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A13C2EA-88E6-4691-986F-57C337DE1EFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A13C2EA-88E6-4691-986F-57C337DE1EFF}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{5A13C2EA-88E6-4691-986F-57C337DE1EFF}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

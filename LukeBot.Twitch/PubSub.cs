@@ -7,28 +7,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using LukeBot.Common;
 using LukeBot.Auth;
+using LukeBot.Core;
+using LukeBot.Core.Events;
 using Newtonsoft.Json;
 
 
 namespace LukeBot.Twitch
 {
-    public struct ChannelPointsEventArgs
-    {
-        public string Type { get; private set; }
-        public string User { get; private set; }
-        public string DisplayName { get; private set; }
-        public string Title { get; private set; }
-
-        public ChannelPointsEventArgs(string user, string displayName, string title)
-        {
-            Type = "ChannelPointsEvent";
-            User = user;
-            DisplayName = displayName;
-            Title = title;
-        }
-    }
-
-    class PubSub
+    class PubSub: IEventPublisher
     {
         private struct PubSubReceiveStatus
         {
@@ -77,15 +63,7 @@ namespace LukeBot.Twitch
         private Mutex mSendQueueMutex;
         private System.Timers.Timer mPingPongTimer;
         private bool mDone;
-
-        public event EventHandler<ChannelPointsEventArgs> ChannelPointsEvent;
-
-        public void OnChannelPointsEvent(ChannelPointsEventArgs args)
-        {
-            EventHandler<ChannelPointsEventArgs> handler = ChannelPointsEvent;
-            if (handler != null)
-                handler(this, args);
-        }
+        private EventCallback mChannelPointsRedemptionCallback;
 
         private async Task SocketSend<T>(T obj)
         {
@@ -150,8 +128,8 @@ namespace LukeBot.Twitch
             {
             case "channel-points-channel-v1":
                 ChannelPointsMessage cpMsg = JsonConvert.DeserializeObject<ChannelPointsMessage>(data.message);
-                OnChannelPointsEvent(
-                    new ChannelPointsEventArgs(
+                mChannelPointsRedemptionCallback.PublishEvent(
+                    new TwitchChannelPointsRedemptionArgs(
                         cpMsg.data.redemption.user.login,
                         cpMsg.data.redemption.user.display_name,
                         cpMsg.data.redemption.reward.title
@@ -238,6 +216,23 @@ namespace LukeBot.Twitch
             mPingPongTimer.Interval = 5 * 60 * 1000;
             mPingPongTimer.Elapsed += OnPingPongTimerEvent;
             mSendThread = new Thread(SendThreadMain);
+
+            List<EventCallback> events = Systems.Event.RegisterEventPublisher(
+                this, Core.Events.Type.TwitchChannelPointsRedemption
+            );
+
+            foreach (EventCallback e in events)
+            {
+                switch (e.type)
+                {
+                case Core.Events.Type.TwitchChannelPointsRedemption:
+                    mChannelPointsRedemptionCallback = e;
+                    break;
+                default:
+                    Logger.Log().Warning("Received unknown event type from Event system");
+                    break;
+                }
+            }
         }
 
         ~PubSub()

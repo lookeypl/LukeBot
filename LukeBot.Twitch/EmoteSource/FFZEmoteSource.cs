@@ -3,6 +3,7 @@ using System.Net;
 using Newtonsoft.Json.Linq;
 using LukeBot.Common;
 using LukeBot.Auth;
+using LukeBot.Twitch.Common;
 
 
 namespace LukeBot.Twitch

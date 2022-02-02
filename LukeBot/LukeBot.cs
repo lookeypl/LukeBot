@@ -66,12 +66,38 @@ namespace LukeBot
         {
             Logger.Log().Warning("ENABLED DEVELOPER MODE");
 
-            Logger.Log().Info("LukeBot modules starting...");
-            mUsers.Add(new UserContext("Dev"));
+            try
+            {
+                Logger.Log().Info("LukeBot UI starting...");
+                mInterfaceThread.Start();
 
+                Logger.Log().Info("LukeBot modules starting...");
+                mUsers.Add(new UserContext("Dev"));
 
-            Logger.Log().Info("Giving control to CLI");
-            mCLI.MainLoop();
+                TwitchModule twitch = new TwitchModule();
+                mUsers[0].AddModule(twitch);
+                //mUsers[0].AddModule(new SpotifyModule());
+                mUsers[0].RunModules();
+
+                twitch.AwaitIRCLoggedIn(120 * 1000);
+                twitch.JoinChannel("lookey");
+
+                Logger.Log().Info("Giving control to CLI");
+                mCLI.MainLoop();
+            }
+            catch (Common.Exception e)
+            {
+                e.Print(LogLevel.Error);
+            }
+            catch (System.Exception e)
+            {
+                Logger.Log().Error("Exception caught: {0}", e.Message);
+                Logger.Log().Error("Backtrace:\n{0}", e.StackTrace);
+            }
+
+            Logger.Log().Info("Stopping UI...");
+            mUI.Stop();
+            mInterfaceThread.Join();
 
             Logger.Log().Info("Stopping modules...");
             mUsers[0].RequestModuleShutdown();
@@ -143,6 +169,7 @@ namespace LukeBot
             catch (System.Exception e)
             {
                 Logger.Log().Error("Exception caught: {0}", e.Message);
+                Logger.Log().Error("Backtrace:\n{0}", e.StackTrace);
             }
 
             mUI.Stop();

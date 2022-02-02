@@ -1,6 +1,10 @@
 ﻿using System;
 using System.IO;
 using LukeBot.Common;
+using LukeBot.Spotify.Common;
+using LukeBot.Core;
+using LukeBot.Core.Events;
+
 
 namespace LukeBot.Spotify
 {
@@ -9,16 +13,16 @@ namespace LukeBot.Spotify
         private string mArtistFilePath;
         private string mTitleFilePath;
         private bool mNeedsUpdate;
-        private NowPlaying.TrackChangedArgs mCurrentTrack;
+        private SpotifyMusicTrackChangedArgs mCurrentTrack;
 
-        public NowPlayingTextFile(NowPlaying engine, string artistPath, string titlePath)
+        public NowPlayingTextFile(string artistPath, string titlePath)
         {
             mArtistFilePath = artistPath;
             mTitleFilePath = titlePath;
             mNeedsUpdate = false;
 
-            engine.TrackChanged += OnTrackChanged;
-            engine.StateUpdate += OnStateUpdate;
+            Systems.Event.SpotifyMusicStateUpdate += OnStateUpdate;
+            Systems.Event.SpotifyMusicTrackChanged += OnTrackChanged;
         }
 
         ~NowPlayingTextFile()
@@ -46,11 +50,13 @@ namespace LukeBot.Spotify
             File.Open(path, FileMode.Create).Close();
         }
 
-        private void OnTrackChanged(object o, NowPlaying.TrackChangedArgs args)
+        private void OnTrackChanged(object o, EventArgsBase args)
         {
+            SpotifyMusicTrackChangedArgs a = (SpotifyMusicTrackChangedArgs)args;
+
             try
             {
-                mCurrentTrack = args;
+                mCurrentTrack = a;
                 mNeedsUpdate = true;
             }
             catch (System.Exception e)
@@ -59,21 +65,23 @@ namespace LukeBot.Spotify
             }
         }
 
-        private void OnStateUpdate(object o, NowPlaying.StateUpdateArgs args)
+        private void OnStateUpdate(object o, EventArgsBase args)
         {
+            SpotifyMusicStateUpdateArgs a = (SpotifyMusicStateUpdateArgs)args;
+
             try
             {
-                switch (args.State)
+                switch (a.State)
                 {
-                case NowPlaying.State.Unloaded:
-                case NowPlaying.State.Stopped:
+                case PlaybackState.Unloaded:
+                case PlaybackState.Stopped:
                     Logger.Log().Debug("Playback stopped/unloaded - clearing files");
                     // Open files with Create mode to clear them
                     ClearFile(mArtistFilePath);
                     ClearFile(mTitleFilePath);
                     mNeedsUpdate = true;
                     break;
-                case NowPlaying.State.Playing:
+                case PlaybackState.Playing:
                     if (mNeedsUpdate)
                     {
                         Logger.Log().Debug("Playing - updating with {0}", mCurrentTrack);

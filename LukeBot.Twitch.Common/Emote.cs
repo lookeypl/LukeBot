@@ -1,19 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LukeBot.Twitch
+﻿namespace LukeBot.Twitch.Common
 {
-    public enum EmoteSource
-    {
-        Twitch,
-        FFZ,
-        BTTV,
-        SevenTV
-    }
-
     public class Emote
     {
         public EmoteSource Source { get; private set; }

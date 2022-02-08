@@ -16,6 +16,13 @@ namespace LukeBot.Twitch
 {
     class PubSub: IEventPublisher
     {
+        private const string PUBSUB_MSG_TYPE_MESSAGE = "MESSAGE";
+        private const string PUBSUB_MSG_TYPE_RESPONSE = "RESPONSE";
+        private const string PUBSUB_MSG_TYPE_LISTEN = "LISTEN";
+        private const string PUBSUB_MSG_TYPE_PING = "PING";
+
+        private const string PUBSUB_CHANNEL_POINTS_TOPIC = "channel-points-channel-v1";
+
         private struct PubSubReceiveStatus
         {
             public bool closed { get; set; }
@@ -104,10 +111,10 @@ namespace LukeBot.Twitch
             PubSubMessage baseMsg = JsonConvert.DeserializeObject<PubSubMessage>(recvMsgString);
             switch (baseMsg.type)
             {
-            case "RESPONSE":
+            case PUBSUB_MSG_TYPE_RESPONSE:
                 result.obj = JsonConvert.DeserializeObject<PubSubResponse>(recvMsgString);
                 break;
-            case "MESSAGE":
+            case PUBSUB_MSG_TYPE_MESSAGE:
                 result.obj = JsonConvert.DeserializeObject<PubSubTopicMessage>(
                     recvMsgString, new PubSubMessageDataCreationConverter()
                 );
@@ -120,21 +127,26 @@ namespace LukeBot.Twitch
             return result;
         }
 
+        private void HandleChannelPointsEvent(string message)
+        {
+            ChannelPointsMessage cpMsg = JsonConvert.DeserializeObject<ChannelPointsMessage>(message);
+            mChannelPointsRedemptionCallback.PublishEvent(
+                new TwitchChannelPointsRedemptionArgs(
+                    cpMsg.data.redemption.user.login,
+                    cpMsg.data.redemption.user.display_name,
+                    cpMsg.data.redemption.reward.title
+                )
+            );
+        }
+
         private void ProcessReceivedMessageData(PubSubReceivedMessageData data)
         {
             Logger.Log().Debug("  Message topic: {0}", data.topic);
             string[] topic = data.topic.Split('.');
             switch (topic[0])
             {
-            case "channel-points-channel-v1":
-                ChannelPointsMessage cpMsg = JsonConvert.DeserializeObject<ChannelPointsMessage>(data.message);
-                mChannelPointsRedemptionCallback.PublishEvent(
-                    new TwitchChannelPointsRedemptionArgs(
-                        cpMsg.data.redemption.user.login,
-                        cpMsg.data.redemption.user.display_name,
-                        cpMsg.data.redemption.reward.title
-                    )
-                );
+            case PUBSUB_CHANNEL_POINTS_TOPIC:
+                HandleChannelPointsEvent(data.message);
                 break;
             default:
                 Logger.Log().Warning("Skipping unsupported PubSub topic: {0}", topic[0]);
@@ -156,7 +168,7 @@ namespace LukeBot.Twitch
 
                 switch (m.type)
                 {
-                case "MESSAGE":
+                case PUBSUB_MSG_TYPE_MESSAGE:
                     PubSubTopicMessage tm = (PubSubTopicMessage)m;
                     PubSubReceivedMessageData rmData = (PubSubReceivedMessageData)tm.data;
                     ProcessReceivedMessageData(rmData);
@@ -198,7 +210,7 @@ namespace LukeBot.Twitch
 
         private void OnPingPongTimerEvent(Object o, ElapsedEventArgs e)
         {
-            Send(new PubSubMessage("PING"));
+            Send(new PubSubMessage(PUBSUB_MSG_TYPE_PING));
         }
 
         public PubSub(Token token)
@@ -248,9 +260,9 @@ namespace LukeBot.Twitch
             }
 
             PubSubCommand command = new PubSubCommand(
-                "LISTEN",
+                PUBSUB_MSG_TYPE_LISTEN,
                 new PubSubListenCommandData(
-                    "channel-points-channel-v1." + user.data[0].id,
+                    PUBSUB_CHANNEL_POINTS_TOPIC + '.' + user.data[0].id,
                     mToken.Get()
                 )
             );
@@ -263,7 +275,7 @@ namespace LukeBot.Twitch
                 return;
             }
 
-            if (r.obj.type != "RESPONSE")
+            if (r.obj.type != PUBSUB_MSG_TYPE_RESPONSE)
             {
                 Logger.Log().Error("Invalid response type received");
                 await mSocket.CloseAsync(WebSocketCloseStatus.Empty, "", cancelToken);

@@ -82,6 +82,8 @@ namespace LukeBot
                 twitch.AwaitIRCLoggedIn(120 * 1000);
                 twitch.JoinChannel("lookey");
 
+                twitch.AddCommandToChannel("lookey", "so", new Twitch.Command.Shoutout());
+
                 Logger.Log().Info("Giving control to CLI");
                 mCLI.MainLoop();
             }

@@ -7,7 +7,7 @@ using LukeBot.Common;
 using LukeBot.Core;
 
 
-namespace LukeBot.Auth
+namespace LukeBot.API
 {
     class AuthorizationCodeFlow: Flow
     {

@@ -19,7 +19,7 @@ namespace LukeBot.Spotify
         }
     };
 
-    public class DataDetailedAlbum: Auth.Response
+    public class DataDetailedAlbum: API.Response
     {
         public List<DataCopyright> copyrights { get; set; }
     }

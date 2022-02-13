@@ -1,6 +1,6 @@
 using LukeBot.Common;
 
-namespace LukeBot.Auth
+namespace LukeBot.API
 {
     public class SpotifyToken: Token
     {

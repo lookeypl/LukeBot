@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace LukeBot.Auth
+namespace LukeBot.API
 {
     abstract class Flow
     {

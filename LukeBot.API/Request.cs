@@ -10,7 +10,7 @@ using LukeBot.Common;
 
 
 // TODO this probably should be moved to separate DLL like LukeBot.Network
-namespace LukeBot.Auth
+namespace LukeBot.API
 {
     public class Request
     {

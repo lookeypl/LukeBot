@@ -5,7 +5,7 @@ using System.Threading;
 using LukeBot.Common;
 
 
-namespace LukeBot.Auth
+namespace LukeBot.API
 {
     public enum AuthFlow
     {

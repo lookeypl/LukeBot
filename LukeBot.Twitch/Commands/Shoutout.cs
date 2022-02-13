@@ -1,5 +1,5 @@
 ﻿using LukeBot.Common;
-using LukeBot.Auth;
+using LukeBot.API;
 
 
 namespace LukeBot.Twitch.Command

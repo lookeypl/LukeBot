@@ -1,5 +1,5 @@
 ﻿using LukeBot.Common;
-using LukeBot.Auth;
+using LukeBot.API;
 using LukeBot.Core;
 using System;
 using System.IO;

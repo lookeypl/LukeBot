@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 using LukeBot.Common;
-using LukeBot.Auth;
+using LukeBot.API;
 using LukeBot.Twitch.Common;
 using Newtonsoft.Json;
 

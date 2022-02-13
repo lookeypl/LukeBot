@@ -24,7 +24,7 @@ namespace LukeBot.Spotify
         public string name { get; set; }
     };
 
-    public class Data: Auth.Response
+    public class Data: API.Response
     {
         public DataItem item { get; set; }
         public bool is_playing { get; set; }

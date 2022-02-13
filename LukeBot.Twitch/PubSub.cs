@@ -6,7 +6,7 @@ using System.Timers;
 using System.Threading;
 using System.Threading.Tasks;
 using LukeBot.Common;
-using LukeBot.Auth;
+using LukeBot.API;
 using LukeBot.Core;
 using LukeBot.Core.Events;
 using Newtonsoft.Json;

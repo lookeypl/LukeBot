@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LukeBot.Auth\LukeBot.Auth.csproj" />
+    <ProjectReference Include="..\LukeBot.API\LukeBot.API.csproj" />
     <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
   </ItemGroup>
 

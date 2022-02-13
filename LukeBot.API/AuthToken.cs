@@ -1,6 +1,6 @@
 ﻿using LukeBot.Common;
 
-namespace LukeBot.Auth
+namespace LukeBot.API
 {
     class AuthToken: PromiseData
     {

@@ -4,7 +4,7 @@ using System.Threading;
 using System.Collections.Generic;
 
 
-namespace LukeBot.Auth
+namespace LukeBot.API
 {
     public class AuthManager
     {

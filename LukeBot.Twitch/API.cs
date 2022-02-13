@@ -1,7 +1,7 @@
 using System.Net;
 using System.Collections.Generic;
 using LukeBot.Common;
-using LukeBot.Auth;
+using LukeBot.API;
 
 
 namespace LukeBot.Twitch
@@ -28,7 +28,7 @@ namespace LukeBot.Twitch
             public string created_at { get; set; }
         }
 
-        public class GetUserResponse: Auth.Response
+        public class GetUserResponse: LukeBot.API.Response
         {
             public List<GetUserData> data { get; set; }
         }
@@ -44,7 +44,7 @@ namespace LukeBot.Twitch
             public int delay { get; set; }
         }
 
-        public class GetChannelInformationResponse: Auth.Response
+        public class GetChannelInformationResponse: LukeBot.API.Response
         {
             public List<GetChannelInformationData> data { get; set; }
         }

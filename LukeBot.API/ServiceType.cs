@@ -1,4 +1,4 @@
-﻿namespace LukeBot.Auth
+﻿namespace LukeBot.API
 {
     public enum ServiceType: uint
     {

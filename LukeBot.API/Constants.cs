@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LukeBot.Auth
+namespace LukeBot.API
 {
     class Constants
     {

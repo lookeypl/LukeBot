@@ -3,7 +3,7 @@ using System.Net;
 using System.Threading;
 using System.Collections.Generic;
 using LukeBot.Common;
-using LukeBot.Auth;
+using LukeBot.API;
 using LukeBot.Spotify.Common;
 using LukeBot.Core;
 using LukeBot.Core.Events;

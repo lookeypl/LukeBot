@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using LukeBot.Common;
 
 
-namespace LukeBot.Auth
+namespace LukeBot.API
 {
     // ClientCredentialsFlow relies purely on submitting a POST request
     // and receiving a token in return. It does not tie its user to any

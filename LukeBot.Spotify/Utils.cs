@@ -1,13 +1,14 @@
 using System.Net;
 using LukeBot.Spotify.Common;
 using LukeBot.Core.Events;
+using LukeBot.API;
 
 
 namespace LukeBot.Spotify
 {
     public class Utils
     {
-        public static SpotifyMusicTrackChangedArgs DataItemToTrackChangedArgs(DataItem item)
+        public static SpotifyMusicTrackChangedArgs DataItemToTrackChangedArgs(API.Spotify.PlaybackStateItem item)
         {
             float duration = item.duration_ms / 1000.0f; // convert to seconds
             string title = item.name;
@@ -21,7 +22,7 @@ namespace LukeBot.Spotify
             string label = "";
             bool labelFilled = false;
             // try looking for publisher (type "P")
-            foreach (DataCopyright c in item.album.copyrights)
+            foreach (API.Spotify.AlbumCopyright c in item.album.copyrights)
             {
                 if (c.type == "P")
                 {
@@ -34,7 +35,7 @@ namespace LukeBot.Spotify
             // if failed - try looking for copyright (type "C")
             if (!labelFilled)
             {
-                foreach (DataCopyright c in item.album.copyrights)
+                foreach (API.Spotify.AlbumCopyright c in item.album.copyrights)
                 {
                     if (c.type == "C")
                     {
@@ -56,20 +57,20 @@ namespace LukeBot.Spotify
             return ret;
         }
 
-        public static SpotifyMusicStateUpdateArgs DataToStateUpdateArgs(Data data)
+        public static SpotifyMusicStateUpdateArgs DataToStateUpdateArgs(API.Spotify.PlaybackState data)
         {
             float progress;
-            PlaybackState state;
+            PlayerState state;
 
             if (data.code == HttpStatusCode.NoContent)
             {
                 progress = 0.0f;
-                state = PlaybackState.Unloaded;
+                state = PlayerState.Unloaded;
             }
             else
             {
                 progress = data.progress_ms / 1000.0f; // conversion from ms to s
-                state = data.is_playing ? PlaybackState.Playing : PlaybackState.Stopped;
+                state = data.is_playing ? PlayerState.Playing : PlayerState.Stopped;
             }
 
             SpotifyMusicStateUpdateArgs ret = new SpotifyMusicStateUpdateArgs(state, progress);

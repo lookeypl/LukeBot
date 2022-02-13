@@ -13,14 +13,14 @@ namespace LukeBot.Twitch
         private Token mUserToken;
         private TwitchIRC mIRC;
         private PubSub mPubSub;
-        private API.GetUserResponse mBotData;
-        private API.GetUserResponse mUserData;
+        private API.Twitch.GetUserResponse mBotData;
+        private API.Twitch.GetUserResponse mUserData;
         private ChatWidget mChatWidget;
         private AlertsWidget mAlertsWidget;
 
         private bool IsLoginSuccessful(Token token)
         {
-            API.GetUserResponse data = API.GetUser(token);
+            API.Twitch.GetUserResponse data = API.Twitch.GetUser(token);
             if (data.code == HttpStatusCode.OK)
             {
                 Logger.Log().Debug("Twitch login successful");
@@ -48,22 +48,10 @@ namespace LukeBot.Twitch
 
             if (!IsLoginSuccessful(mToken))
             {
-                if (tokenFromFile)
-                {
-                    mToken.Refresh();
-                    if (!IsLoginSuccessful(mToken))
-                    {
-                        mToken.Remove();
-                        throw new InvalidOperationException(
-                            "Failed to refresh Twitch OAuth Token. Token has been removed, restart to re-login and request a fresh OAuth token"
-                        );
-                    }
-                }
-                else
-                    throw new InvalidOperationException("Failed to login to Twitch");
+                throw new InvalidOperationException("Failed to login to Twitch");
             }
 
-            mBotData = API.GetUser(mToken);
+            mBotData = API.Twitch.GetUser(mToken);
 
             mIRC = new TwitchIRC(mToken);
             mChatWidget = new ChatWidget();
@@ -73,7 +61,7 @@ namespace LukeBot.Twitch
         public void JoinChannel(string channel)
         {
             Logger.Log().Debug("Joining channel {0}", channel);
-            mUserData = API.GetUser(mToken, channel);
+            mUserData = API.Twitch.GetUser(mToken, channel);
 
             mIRC.JoinChannel(mUserData);
 
@@ -86,19 +74,7 @@ namespace LukeBot.Twitch
 
             if (!IsLoginSuccessful(mUserToken))
             {
-                if (tokenFromFile)
-                {
-                    mUserToken.Refresh();
-                    if (!IsLoginSuccessful(mUserToken))
-                    {
-                        mUserToken.Remove();
-                        throw new InvalidOperationException(
-                            "Failed to refresh Twitch OAuth Token. Token has been removed, restart to re-login and request a fresh OAuth token"
-                        );
-                    }
-                }
-                else
-                    throw new InvalidOperationException("Failed to login to Twitch");
+                throw new InvalidOperationException("Failed to login to Twitch");
             }
 
             mPubSub = new PubSub(mUserToken);

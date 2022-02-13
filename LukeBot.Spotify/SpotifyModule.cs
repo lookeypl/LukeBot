@@ -11,34 +11,28 @@ namespace LukeBot.Spotify
 {
     public class SpotifyModule : IModule
     {
-        private readonly string GET_PROFILE_URI = "https://api.spotify.com/v1/me";
-
         private Token mToken;
+        private API.Spotify.UserProfile mProfile;
         private NowPlaying mNowPlaying;
         private NowPlayingTextFile mNowPlayingTextFile;
 
         private List<IWidget> mWidgets;
 
-        private class UserEmailResponse: Response
-        {
-            public string email { get; set; }
-        };
-
         bool CheckIfLoginSuccessful()
         {
-            UserEmailResponse testResponse = Request.Get<UserEmailResponse>(GET_PROFILE_URI, mToken, null);
-            if (testResponse.code == HttpStatusCode.OK)
+            mProfile = API.Spotify.GetCurrentUserProfile(mToken);
+            if (mProfile.code == HttpStatusCode.OK)
             {
                 Logger.Log().Debug("Spotify login successful");
                 return true;
             }
-            else if (testResponse.code == HttpStatusCode.Unauthorized)
+            else if (mProfile.code == HttpStatusCode.Unauthorized)
             {
                 Logger.Log().Error("Failed to login to Spotify - Unauthorized");
                 return false;
             }
             else
-                throw new LoginFailedException("Failed to login to Spotify service: " + testResponse.code.ToString());
+                throw new LoginFailedException("Failed to login to Spotify service: " + mProfile.code.ToString());
         }
 
         void Login()
@@ -53,19 +47,7 @@ namespace LukeBot.Spotify
 
             if (!CheckIfLoginSuccessful())
             {
-                if (tokenFromFile)
-                {
-                    mToken.Refresh();
-                    if (!CheckIfLoginSuccessful())
-                    {
-                        mToken.Remove();
-                        throw new InvalidOperationException(
-                            "Failed to refresh Spotify OAuth Token. Token has been removed, restart to re-login and request a fresh OAuth token"
-                        );
-                    }
-                }
-                else
-                    throw new InvalidOperationException("Failed to login to Spotify");
+                throw new InvalidOperationException("Failed to login to Spotify");
             }
         }
 

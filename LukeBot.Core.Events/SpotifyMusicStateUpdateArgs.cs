@@ -8,17 +8,17 @@ namespace LukeBot.Core.Events
     {
         private const string NOW_PLAYING_STATE_UPDATE_TYPE_STR = "NowPlayingStateUpdate";
 
-        public PlaybackState State { get; private set; }
+        public PlayerState State { get; private set; }
         public float Progress { get; private set; }
 
         public SpotifyMusicStateUpdateArgs()
             : base(Events.Type.SpotifyMusicStateUpdate, NOW_PLAYING_STATE_UPDATE_TYPE_STR)
         {
-            State = PlaybackState.Unloaded;
+            State = PlayerState.Unloaded;
             Progress = 0.0f;
         }
 
-        public SpotifyMusicStateUpdateArgs(PlaybackState state, float progress)
+        public SpotifyMusicStateUpdateArgs(PlayerState state, float progress)
             : base(Events.Type.SpotifyMusicStateUpdate, NOW_PLAYING_STATE_UPDATE_TYPE_STR)
         {
             State = state;

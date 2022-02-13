@@ -15,13 +15,13 @@ namespace LukeBot.Twitch.Command
                 return "Name to shoutout not provided! Pls provide one :(";
             }
 
-            API.GetUserData userData;
-            API.GetChannelInformationData channelData;
+            API.Twitch.GetUserData userData;
+            API.Twitch.GetChannelInformationData channelData;
 
             try
             {
                 Token t = AuthManager.Instance.GetToken(ServiceType.Twitch, "lukebot");
-                API.GetUserResponse userDataResponse = API.GetUser(t, args[1]);
+                API.Twitch.GetUserResponse userDataResponse = API.Twitch.GetUser(t, args[1]);
                 if (userDataResponse.data == null || userDataResponse.data.Count == 0)
                 {
                     throw new System.IndexOutOfRangeException("User data came back empty/invalid");
@@ -29,7 +29,7 @@ namespace LukeBot.Twitch.Command
 
                 userData = userDataResponse.data[0];
 
-                API.GetChannelInformationResponse channelDataResponse = API.GetChannelInformation(t, userDataResponse.data[0].id);
+                API.Twitch.GetChannelInformationResponse channelDataResponse = API.Twitch.GetChannelInformation(t, userDataResponse.data[0].id);
                 if (channelDataResponse.data == null || channelDataResponse.data.Count == 0)
                 {
                     throw new System.IndexOutOfRangeException("Channel data came back empty/invalid");

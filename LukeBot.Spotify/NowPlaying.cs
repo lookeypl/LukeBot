@@ -15,14 +15,14 @@ namespace LukeBot.Spotify
     {
         private readonly int DEFAULT_EVENT_TIMEOUT = 5 * 1000; // 5 seconds
         private readonly int EXTRA_EVENT_TIMEOUT = 2000; // see FetchData() for details
-        private readonly string REQUEST_URI = "https://api.spotify.com/v1/me/player";
+
 
         private Token mToken;
         private Thread mThread;
         private Mutex mDataAccessMutex;
         private ManualResetEvent mShutdownEvent;
-        private Data mCurrentData;
-        private SpotifyMusicStateUpdateArgs mCurrentState;
+        private API.Spotify.PlaybackState mCurrentPlaybackState;
+        private SpotifyMusicStateUpdateArgs mCurrentStateUpdate;
         private int mEventTimeout;
         private bool mChangeExpected;
         private EventCallback mTrackChangedCallback;
@@ -36,7 +36,8 @@ namespace LukeBot.Spotify
             mShutdownEvent = new ManualResetEvent(false);
             mEventTimeout = DEFAULT_EVENT_TIMEOUT;
             mChangeExpected = false;
-            mCurrentState = new SpotifyMusicStateUpdateArgs();
+            mCurrentPlaybackState = null;
+            mCurrentStateUpdate = new SpotifyMusicStateUpdateArgs();
 
             List<EventCallback> events = Systems.Event.RegisterEventPublisher(
                 this, Core.Events.Type.SpotifyMusicStateUpdate | Core.Events.Type.SpotifyMusicTrackChanged
@@ -65,18 +66,12 @@ namespace LukeBot.Spotify
 
         void FetchData()
         {
-            Data data = Request.Get<Data>(REQUEST_URI, mToken, null);
-            if (data.code == HttpStatusCode.Unauthorized)
-            {
-                Logger.Log().Debug("OAuth token expired - refreshing...");
-                mToken.Refresh();
-                data = Request.Get<Data>(REQUEST_URI, mToken, null);
-            }
+            API.Spotify.PlaybackState state = API.Spotify.GetPlaybackState(mToken);
 
-            if (data.code != HttpStatusCode.OK)
+            if (state.code != HttpStatusCode.OK)
             {
-                if (data.code != HttpStatusCode.NoContent)
-                    Logger.Log().Error("Failed to fetch Now Playing data: {0}", data.code);
+                if (state.code != HttpStatusCode.NoContent)
+                    Logger.Log().Error("Failed to fetch Now Playing playback state: {0}", state.code);
 
                 mEventTimeout = DEFAULT_EVENT_TIMEOUT;
                 mChangeExpected = false;
@@ -84,7 +79,7 @@ namespace LukeBot.Spotify
                 return;
             }
 
-            if (data.item == null)
+            if (state.item == null)
             {
                 Logger.Log().Warning("No track item received");
                 return;
@@ -93,25 +88,25 @@ namespace LukeBot.Spotify
             mDataAccessMutex.WaitOne();
 
             // Track change
-            if ((mCurrentData == null) || (data.item.id != mCurrentData.item.id))
+            if ((mCurrentPlaybackState == null) || (state.item.id != mCurrentPlaybackState.item.id))
             {
                 // Spotify doesn't provide copyright holder info (aka label info) with
                 // currently played track API call. For that reason we will fetch the info
                 // separately from album details and copy it to our "data" object for
                 // further reference. Shallow copy should be ok.
-                DataDetailedAlbum album = Request.Get<DataDetailedAlbum>(data.item.album.href, mToken, null);
-                data.item.album.copyrights = album.copyrights;
+                API.Spotify.Album album = API.Spotify.GetAlbum(mToken, state.item.album.id);
+                state.item.album.copyrights = album.copyrights;
 
-                mCurrentData = data;
+                mCurrentPlaybackState = state;
                 mChangeExpected = false;
-                mTrackChangedCallback.PublishEvent(Utils.DataItemToTrackChangedArgs(mCurrentData.item));
+                mTrackChangedCallback.PublishEvent(Utils.DataItemToTrackChangedArgs(mCurrentPlaybackState.item));
             }
 
-            // State read - mCurrentData is valid at this point
-            SpotifyMusicStateUpdateArgs state = Utils.DataToStateUpdateArgs(data);
+            // State read - must reach for fetched "state" to get correct playback info
+            SpotifyMusicStateUpdateArgs stateUpdate = Utils.DataToStateUpdateArgs(state);
 
             // Update internal logic according to state
-            if (state.State == Common.PlaybackState.Playing)
+            if (stateUpdate.State == PlayerState.Playing)
             {
                 if (mChangeExpected)
                 {
@@ -121,7 +116,7 @@ namespace LukeBot.Spotify
                 }
                 else
                 {
-                    int trackLeftMs = mCurrentData.item.duration_ms - mCurrentData.progress_ms;
+                    int trackLeftMs = mCurrentPlaybackState.item.duration_ms - mCurrentPlaybackState.progress_ms;
                     if (trackLeftMs < DEFAULT_EVENT_TIMEOUT)
                     {
                         // We are close to switch to new track.
@@ -146,10 +141,10 @@ namespace LukeBot.Spotify
                 mChangeExpected = false;
             }
 
-            if (state != mCurrentState)
+            if (stateUpdate != mCurrentStateUpdate)
             {
-                mCurrentState = state;
-                mStateUpdateCallback.PublishEvent(state);
+                mCurrentStateUpdate = stateUpdate;
+                mStateUpdateCallback.PublishEvent(stateUpdate);
             }
 
             mDataAccessMutex.ReleaseMutex();
@@ -193,10 +188,10 @@ namespace LukeBot.Spotify
             mThread.Join();
         }
 
-        public Data GetData()
+        public API.Spotify.PlaybackState GetPlaybackState()
         {
             mDataAccessMutex.WaitOne();
-            Data data = mCurrentData;
+            API.Spotify.PlaybackState data = mCurrentPlaybackState;
             mDataAccessMutex.ReleaseMutex();
             return data;
         }

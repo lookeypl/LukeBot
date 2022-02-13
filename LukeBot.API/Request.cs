@@ -9,22 +9,24 @@ using Newtonsoft.Json;
 using LukeBot.Common;
 
 
-// TODO this probably should be moved to separate DLL like LukeBot.Network
 namespace LukeBot.API
 {
     public class Request
     {
-        public static TResp Get<TResp>(string uri, Token token, Dictionary<string, string> query) where TResp: Response, new()
-        {
-            HttpClient client = new HttpClient();
+        private const int RESPONSE_WAIT_TIMEOUT = 30 * 1000; // ms
 
+        private static HttpRequestMessage FormRequestMessage(string uri, Token token, Dictionary<string, string> uriQuery, Dictionary<string, string> contentQuery)
+        {
             UriBuilder builder = new UriBuilder(uri);
-            if (query != null && query.Count > 0)
+            if (uriQuery != null && uriQuery.Count > 0)
             {
-                builder.Query += string.Join("&", query.Select(x => x.Key + "=" + x.Value).ToArray());
+                builder.Query += string.Join("&", uriQuery.Select(x => x.Key + "=" + x.Value).ToArray());
             }
 
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, builder.ToString());
+
+            if (contentQuery != null && contentQuery.Count > 0)
+                request.Content = new FormUrlEncodedContent(contentQuery);
 
             if (token != null)
             {
@@ -34,10 +36,39 @@ namespace LukeBot.API
 
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            Task<HttpResponseMessage> responseTask = client.SendAsync(request);
-            responseTask.Wait(30 * 1000);
+            return request;
+        }
+
+        private static HttpResponseMessage Send(string uri, Token token, Dictionary<string, string> uriQuery, Dictionary<string, string> contentQuery)
+        {
+            HttpClient client = new HttpClient();
+            Task<HttpResponseMessage> responseTask = client.SendAsync(FormRequestMessage(uri, token, uriQuery, contentQuery));
+            responseTask.Wait(RESPONSE_WAIT_TIMEOUT);
             HttpResponseMessage response = responseTask.Result;
 
+            // refresh token and retry if we got unauthorized
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                token.Refresh();
+
+                // recreate HttpClient to avoid re-send protection triggering
+                client = new HttpClient();
+
+                responseTask = client.SendAsync(FormRequestMessage(uri, token, uriQuery, contentQuery));
+                responseTask.Wait(RESPONSE_WAIT_TIMEOUT);
+                response = responseTask.Result;
+            }
+
+            return response;
+        }
+
+        public static TResp Get<TResp>(string uri,
+                                       Token token = null,
+                                       Dictionary<string, string> uriQuery = null,
+                                       Dictionary<string, string> contentQuery = null)
+                                       where TResp: Response, new()
+        {
+            HttpResponseMessage response = Send(uri, token, uriQuery, contentQuery);
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 TResp r = new TResp();
@@ -50,26 +81,12 @@ namespace LukeBot.API
             return JsonConvert.DeserializeObject<TResp>(retContentStrTask.Result);
         }
 
-        public static ResponseJObject GetJObject(string uri, Token token, Dictionary<string, string> query)
+        public static ResponseJObject GetJObject(string uri,
+                                                 Token token = null,
+                                                 Dictionary<string, string> uriQuery = null,
+                                                 Dictionary<string, string> contentQuery = null)
         {
-            HttpClient client = new HttpClient();
-
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, uri);
-            if (query != null && query.Count > 0)
-                request.Content = new FormUrlEncodedContent(query);
-
-            if (token != null)
-            {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Get());
-                request.Headers.Add("Client-Id", token.ClientID);
-            }
-
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            Task<HttpResponseMessage> responseTask = client.SendAsync(request);
-            responseTask.Wait(30 * 1000);
-            HttpResponseMessage response = responseTask.Result;
-
+            HttpResponseMessage response = Send(uri, token, uriQuery, contentQuery);
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 return new ResponseJObject(response.StatusCode);
@@ -80,27 +97,12 @@ namespace LukeBot.API
             return new ResponseJObject(response.StatusCode, retContentStrTask.Result);
         }
 
-        public static ResponseJArray GetJArray(string uri, Token token, Dictionary<string, string> query)
+        public static ResponseJArray GetJArray(string uri,
+                                               Token token = null,
+                                               Dictionary<string, string> uriQuery = null,
+                                               Dictionary<string, string> contentQuery = null)
         {
-            // TODO de-duplicate HttpRequest-related code
-            HttpClient client = new HttpClient();
-
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, uri);
-            if (query != null && query.Count > 0)
-                request.Content = new FormUrlEncodedContent(query);
-
-            if (token != null)
-            {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Get());
-                request.Headers.Add("Client-Id", token.ClientID);
-            }
-
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            Task<HttpResponseMessage> responseTask = client.SendAsync(request);
-            responseTask.Wait(30 * 1000);
-            HttpResponseMessage response = responseTask.Result;
-
+            HttpResponseMessage response = Send(uri, token, uriQuery, contentQuery);
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 return new ResponseJArray(response.StatusCode);

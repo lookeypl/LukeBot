@@ -1,13 +1,9 @@
-using System.Net;
 using System.Collections.Generic;
-using LukeBot.Common;
-using LukeBot.API;
 
 
-namespace LukeBot.Twitch
+namespace LukeBot.API
 {
-
-    public class API
+    public class Twitch
     {
         private const string API_URI = "https://api.twitch.tv/helix/";
         private const string GET_USERS_API_URI = API_URI + "users";
@@ -28,7 +24,7 @@ namespace LukeBot.Twitch
             public string created_at { get; set; }
         }
 
-        public class GetUserResponse: LukeBot.API.Response
+        public class GetUserResponse: Response
         {
             public List<GetUserData> data { get; set; }
         }
@@ -44,7 +40,7 @@ namespace LukeBot.Twitch
             public int delay { get; set; }
         }
 
-        public class GetChannelInformationResponse: LukeBot.API.Response
+        public class GetChannelInformationResponse: Response
         {
             public List<GetChannelInformationData> data { get; set; }
         }
@@ -54,14 +50,14 @@ namespace LukeBot.Twitch
         // based on provided Token.
         public static GetUserResponse GetUser(Token token, string login = "")
         {
-            Dictionary<string, string> query = null;
+            Dictionary<string, string> uriQuery = null;
             if (login.Length > 0)
             {
-                query = new Dictionary<string, string>();
-                query.Add("login", login);
+                uriQuery = new Dictionary<string, string>();
+                uriQuery.Add("login", login);
             }
 
-            return Request.Get<GetUserResponse>(GET_USERS_API_URI, token, query);
+            return Request.Get<GetUserResponse>(GET_USERS_API_URI, token, uriQuery);
         }
 
         public static GetChannelInformationResponse GetChannelInformation(Token token, string id)
@@ -69,11 +65,10 @@ namespace LukeBot.Twitch
             if (id.Length == 0)
                 throw new System.ArgumentException("Broadcaster ID has to be provided");
 
-            Dictionary<string, string> query = new Dictionary<string, string>();
-            query.Add("broadcaster_id", id);
+            Dictionary<string, string> uriQuery = new Dictionary<string, string>();
+            uriQuery.Add("broadcaster_id", id);
 
-            return Request.Get<GetChannelInformationResponse>(GET_CHANNEL_INFORMATION_API_URI, token, query);
+            return Request.Get<GetChannelInformationResponse>(GET_CHANNEL_INFORMATION_API_URI, token, uriQuery);
         }
     }
-
 }

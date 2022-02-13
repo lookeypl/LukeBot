@@ -353,7 +353,7 @@ namespace LukeBot.Twitch
             WaitForShutdown();
         }
 
-        public void JoinChannel(API.GetUserResponse user)
+        public void JoinChannel(API.Twitch.GetUserResponse user)
         {
             mChannelsMutex.WaitOne();
 

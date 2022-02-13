@@ -73,15 +73,15 @@ namespace LukeBot.Spotify
             {
                 switch (a.State)
                 {
-                case PlaybackState.Unloaded:
-                case PlaybackState.Stopped:
+                case PlayerState.Unloaded:
+                case PlayerState.Stopped:
                     Logger.Log().Debug("Playback stopped/unloaded - clearing files");
                     // Open files with Create mode to clear them
                     ClearFile(mArtistFilePath);
                     ClearFile(mTitleFilePath);
                     mNeedsUpdate = true;
                     break;
-                case PlaybackState.Playing:
+                case PlayerState.Playing:
                     if (mNeedsUpdate)
                     {
                         Logger.Log().Debug("Playing - updating with {0}", mCurrentTrack);

@@ -251,7 +251,7 @@ namespace LukeBot.Twitch
         {
         }
 
-        public async void Listen(API.GetUserResponse user)
+        public async void Listen(API.Twitch.GetUserResponse user)
         {
             CancellationToken cancelToken = new CancellationToken();
             if (mSocket.State == WebSocketState.None)

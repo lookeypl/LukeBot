@@ -1,6 +1,6 @@
 namespace LukeBot.Spotify.Common
 {
-    public enum PlaybackState
+    public enum PlayerState
     {
         Unloaded = 0,
         Stopped,

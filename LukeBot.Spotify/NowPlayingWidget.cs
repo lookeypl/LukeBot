@@ -69,7 +69,7 @@ namespace LukeBot.Spotify
             mServer.Start();
             mServer.AwaitConnection();
 
-            if (mState != null && mState.State != PlaybackState.Unloaded)
+            if (mState != null && mState.State != PlayerState.Unloaded)
             {
                 // Push a state update to "pre-refresh" the widget
                 OnTrackChanged(null, mCurrentTrack);

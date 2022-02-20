@@ -1,8 +1,6 @@
 ﻿using LukeBot.Common;
 using LukeBot.Twitch;
 using LukeBot.Spotify;
-using LukeBot.UI;
-using LukeBot.CLI;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading;
@@ -15,9 +13,7 @@ namespace LukeBot
         private string DEVMODE_FILE = "Data/devmode.lukebot";
 
         private List<UserContext> mUsers;
-        private Thread mInterfaceThread;
         private CLI.Interface mCLI;
-        private UI.Interface mUI;
 
         void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
         {
@@ -31,14 +27,13 @@ namespace LukeBot
         {
             mUsers = new List<UserContext>();
             mCLI = new CLI.Interface();
-            mUI = new UI.Interface();
-            mInterfaceThread = new Thread(new ThreadStart(mUI.Run));
+            //mInterfaceThread = new Thread(new ThreadStart(mUI.Run));
         }
 
         ~LukeBot()
         {
-            if (mInterfaceThread != null)
-                mInterfaceThread.Join();
+            //if (mInterfaceThread != null)
+            //    mInterfaceThread.Join();
         }
 
         public bool IsInDevMode()
@@ -68,8 +63,8 @@ namespace LukeBot
 
             try
             {
-                Logger.Log().Info("LukeBot UI starting...");
-                mInterfaceThread.Start();
+                //Logger.Log().Info("LukeBot UI starting...");
+                //mInterfaceThread.Start();
 
                 Logger.Log().Info("LukeBot modules starting...");
                 mUsers.Add(new UserContext("Dev"));
@@ -97,9 +92,9 @@ namespace LukeBot
                 Logger.Log().Error("Backtrace:\n{0}", e.StackTrace);
             }
 
-            Logger.Log().Info("Stopping UI...");
-            mUI.Stop();
-            mInterfaceThread.Join();
+            //Logger.Log().Info("Stopping UI...");
+            //mUI.Stop();
+            //mInterfaceThread.Join();
 
             Logger.Log().Info("Stopping modules...");
             mUsers[0].RequestModuleShutdown();
@@ -125,8 +120,8 @@ namespace LukeBot
                 return;
             }
 
-            Logger.Log().Info("LukeBot UI starting...");
-            mInterfaceThread.Start();
+            //Logger.Log().Info("LukeBot UI starting...");
+            //mInterfaceThread.Start();
 
             Logger.Log().Info("LukeBot modules starting...");
             mUsers.Add(new UserContext("Lookey"));
@@ -174,10 +169,10 @@ namespace LukeBot
                 Logger.Log().Error("Backtrace:\n{0}", e.StackTrace);
             }
 
-            mUI.Stop();
-            mInterfaceThread.Join();
+            //mUI.Stop();
+            //mInterfaceThread.Join();
 
-            Logger.Log().Info("UI stopped. Stopping modules...");
+            Logger.Log().Info("Stopping modules...");
             mUsers[0].RequestModuleShutdown();
             mUsers[0].WaitForModulesShutdown();
             mUsers = null;

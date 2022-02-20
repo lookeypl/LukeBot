@@ -11,13 +11,13 @@ using LukeBot.API;
 using LukeBot.Core;
 
 
-namespace LukeBot.UI
+namespace LukeBot.Endpoint
 {
     public class Startup
     {
         async Task LoadPage(string page, HttpContext context)
         {
-            StreamReader reader = File.OpenText("LukeBot.UI/Pages/" + page);
+            StreamReader reader = File.OpenText("LukeBot.Endpoint/Pages/" + page);
             string p = reader.ReadToEnd();
             reader.Close();
             await context.Response.WriteAsync(p);

@@ -1,7 +1,7 @@
 using System.Threading;
 using Microsoft.Extensions.Hosting;
 
-namespace LukeBot.UI
+namespace LukeBot.Endpoint
 {
     class HostApplicationLifetime : IHostApplicationLifetime
     {

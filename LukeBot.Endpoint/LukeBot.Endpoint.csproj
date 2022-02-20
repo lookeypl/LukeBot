@@ -25,7 +25,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Pages\css\" />
+    <Folder Include="Pages/css/" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,8 +33,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LukeBot.API\LukeBot.API.csproj" />
-    <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
+    <ProjectReference Include="../LukeBot.API/LukeBot.API.csproj" />
+    <ProjectReference Include="../LukeBot.Common/LukeBot.Common.csproj" />
   </ItemGroup>
 
 </Project>

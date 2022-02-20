@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using LukeBot.Common;
 
-namespace LukeBot.UI
+namespace LukeBot.Endpoint
 {
     class UsersResponse: ResponseBase
     {

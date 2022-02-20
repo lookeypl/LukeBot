@@ -1,4 +1,4 @@
-namespace LukeBot.UI
+namespace LukeBot.Endpoint
 {
     class ResponseBase
     {

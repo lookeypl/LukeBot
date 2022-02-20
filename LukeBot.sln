@@ -27,7 +27,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Twitch", "LukeBot.T
 		{93D23CA9-0CBA-4025-8DA9-103283B3887A} = {93D23CA9-0CBA-4025-8DA9-103283B3887A}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.UI", "LukeBot.UI\LukeBot.UI.csproj", "{20E971C2-B196-417D-A6FE-DC2831B76B24}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Endpoint", "LukeBot.Endpoint\LukeBot.Endpoint.csproj", "{20E971C2-B196-417D-A6FE-DC2831B76B24}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Spotify", "LukeBot.Spotify\LukeBot.Spotify.csproj", "{4C3B92FE-CEC2-4321-B1D5-8533255D99DA}"
 	ProjectSection(ProjectDependencies) = postProject

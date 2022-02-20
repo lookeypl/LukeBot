@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using LukeBot.Common;
 
-namespace LukeBot.Common
+
+namespace LukeBot.Widget
 {
     public abstract class IWidget
     {

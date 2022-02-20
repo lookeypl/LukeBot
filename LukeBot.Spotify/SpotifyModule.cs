@@ -16,7 +16,6 @@ namespace LukeBot.Spotify
         private NowPlaying mNowPlaying;
         private NowPlayingTextFile mNowPlayingTextFile;
 
-        private List<IWidget> mWidgets;
 
         bool CheckIfLoginSuccessful()
         {
@@ -53,7 +52,6 @@ namespace LukeBot.Spotify
 
         public SpotifyModule()
         {
-            mWidgets = new List<IWidget>();
             Systems.Communication.Register(Constants.SERVICE_NAME);
             string storagePath = "Outputs/" + Constants.SERVICE_NAME;
             if (!Directory.Exists(storagePath))
@@ -64,9 +62,6 @@ namespace LukeBot.Spotify
         {
             mNowPlayingTextFile = null;
             mNowPlaying = null;
-
-            foreach (IWidget w in mWidgets)
-                Systems.Widget.Unregister(w);
         }
 
         public void Init()
@@ -80,16 +75,14 @@ namespace LukeBot.Spotify
             );
 
             // TODO Temporary
-            mWidgets.Add(new NowPlayingWidget("BIG-NOW-PLAYING-WIDGET"));
-            mWidgets.Add(new NowPlayingWidget("SMALL-NOW-PLAYING-WIDGET"));
+            //mWidgets.Add(new NowPlayingWidget("BIG-NOW-PLAYING-WIDGET"));
+            //mWidgets.Add(new NowPlayingWidget("SMALL-NOW-PLAYING-WIDGET"));
         }
 
         public void RequestShutdown()
         {
             mNowPlaying.RequestShutdown();
             mNowPlayingTextFile.Cleanup();
-            foreach (IWidget w in mWidgets)
-                w.RequestShutdown();
         }
 
         public void Run()
@@ -100,8 +93,6 @@ namespace LukeBot.Spotify
         public void WaitForShutdown()
         {
             mNowPlaying.Wait();
-            foreach (IWidget w in mWidgets)
-                w.WaitForShutdown();
         }
     }
 }

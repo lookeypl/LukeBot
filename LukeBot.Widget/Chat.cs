@@ -5,9 +5,9 @@ using LukeBot.Core;
 using LukeBot.Core.Events;
 
 
-namespace LukeBot.Twitch
+namespace LukeBot.Widget
 {
-    class ChatWidget: IWidget
+    class Chat: IWidget
     {
         ConnectionPort mPort;
         WebSocketServer mServer;
@@ -33,7 +33,7 @@ namespace LukeBot.Twitch
                 mServer.Send(JsonSerializer.Serialize(a));
         }
 
-        public ChatWidget()
+        public Chat()
             : base()
         {
             mPort = Systems.Connection.AcquirePort();
@@ -48,11 +48,11 @@ namespace LukeBot.Twitch
 
             mServer = new WebSocketServer(serverIP, mPort.Value);
 
-            Systems.Widget.Register(this, "TEST-CHAT-WIDGET");
+            //Systems.Widget.Register(this, "TEST-CHAT-WIDGET");
             Logger.Log().Secure("Registered Chat widget at link http://{0}/widget/{1}; WS port {2}", serverIP, ID, mPort.Value);
         }
 
-        ~ChatWidget()
+        ~Chat()
         {
         }
 

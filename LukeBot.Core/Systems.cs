@@ -7,7 +7,7 @@ namespace LukeBot.Core
         static private CommunicationSystem mCommunicationSystem;
         static private ConnectionSystem mConnectionSystem;
         static private EventSystem mEventSystem;
-        static private WidgetSystem mWidgetSystem;
+        //static private WidgetSystem mWidgetSystem;
         static private bool mInitialized;
 
         static public CommunicationSystem Communication
@@ -34,13 +34,13 @@ namespace LukeBot.Core
             }
         }
 
-        static public WidgetSystem Widget
-        {
-            get
-            {
-                return mWidgetSystem;
-            }
-        }
+        //static public WidgetSystem Widget
+        //{
+        //    get
+        //    {
+        //        return mWidgetSystem;
+        //    }
+        //}
 
         static public void Initialize()
         {
@@ -51,7 +51,7 @@ namespace LukeBot.Core
 
             mCommunicationSystem = new CommunicationSystem();
             mConnectionSystem = new ConnectionSystem(50000, 65535);
-            mWidgetSystem = new WidgetSystem();
+            //mWidgetSystem = new WidgetSystem();
             mInitialized = true;
         }
 
@@ -59,7 +59,7 @@ namespace LukeBot.Core
         {
             mCommunicationSystem = null;
             mConnectionSystem = null;
-            mWidgetSystem = null;
+            //mWidgetSystem = null;
             mInitialized = false;
         }
     }

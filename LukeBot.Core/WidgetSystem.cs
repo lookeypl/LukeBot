@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 using System.Collections.Generic;
 using System.Threading;
 using LukeBot.Common;
@@ -54,4 +54,4 @@ namespace LukeBot.Core
                 Logger.Log().Warning("Cannot remove widget of ID {0} - not registered", widget.ID);
         }
     }
-}
+}*/

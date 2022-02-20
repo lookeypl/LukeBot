@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <Configurations>Debug;Release;SecureDebug</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <OutputPath>$(SolutionDir)Bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>$(SolutionDir)Obj\$(MSBuildProjectName)\$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SecureDebug|AnyCPU'">
+    <DefineConstants>DEBUG;TRACE;ENABLE_SECURE_LOGS</DefineConstants>
+    <OutputPath>$(SolutionDir)Bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>$(SolutionDir)Obj\$(MSBuildProjectName)\$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE</DefineConstants>
+    <OutputPath>$(SolutionDir)Bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>$(SolutionDir)Obj\$(MSBuildProjectName)\$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LukeBot.Core\LukeBot.Core.csproj" />
+    <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
+    <ProjectReference Include="..\LukeBot.Core.Events\LukeBot.Core.Events.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -8,9 +8,9 @@ using LukeBot.Core.Events;
 using LukeBot.Spotify.Common;
 
 
-namespace LukeBot.Spotify
+namespace LukeBot.Widget
 {
-    class NowPlayingWidget: IWidget
+    class NowPlaying: IWidget
     {
         ConnectionPort mPort;
         SpotifyMusicStateUpdateArgs mState;
@@ -37,7 +37,7 @@ namespace LukeBot.Spotify
                 mServer.Send(JsonSerializer.Serialize(a));
         }
 
-        public NowPlayingWidget(string widgetID)
+        public NowPlaying(string widgetID)
             : base()
         {
             mPort = Systems.Connection.AcquirePort();
@@ -48,7 +48,7 @@ namespace LukeBot.Spotify
 
             mServer = new WebSocketServer(serverIP, mPort.Value);
 
-            Systems.Widget.Register(this, widgetID);
+            //Systems.Widget.Register(this, widgetID);
             Logger.Log().Secure("Registered Chat widget at link http://{0}/widget/{1}; WS port {2}", serverIP, ID, mPort.Value);
 
             mState = null;
@@ -58,7 +58,7 @@ namespace LukeBot.Spotify
             Systems.Event.SpotifyMusicTrackChanged += OnTrackChanged;
         }
 
-        ~NowPlayingWidget()
+        ~NowPlaying()
         {
         }
 

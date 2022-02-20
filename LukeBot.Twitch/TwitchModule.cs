@@ -15,8 +15,7 @@ namespace LukeBot.Twitch
         private PubSub mPubSub;
         private API.Twitch.GetUserResponse mBotData;
         private API.Twitch.GetUserResponse mUserData;
-        private ChatWidget mChatWidget;
-        private AlertsWidget mAlertsWidget;
+
 
         private bool IsLoginSuccessful(Token token)
         {
@@ -54,7 +53,7 @@ namespace LukeBot.Twitch
             mBotData = API.Twitch.GetUser(mToken);
 
             mIRC = new TwitchIRC(mToken);
-            mChatWidget = new ChatWidget();
+            //mChatWidget = new ChatWidget();
         }
 
         // TEMPORARY
@@ -80,7 +79,7 @@ namespace LukeBot.Twitch
             mPubSub = new PubSub(mUserToken);
             mPubSub.Listen(mUserData);
 
-            mAlertsWidget = new AlertsWidget();
+            //mAlertsWidget = new AlertsWidget();
 
             Logger.Log().Secure("Joined channel twitch ID: {0}", mUserData.data[0].id);
         }
@@ -113,16 +112,12 @@ namespace LukeBot.Twitch
         {
             if (mIRC != null) mIRC.RequestShutdown();
             if (mPubSub != null) mPubSub.RequestShutdown();
-            if (mChatWidget != null) mChatWidget.RequestShutdown();
-            if (mAlertsWidget != null) mAlertsWidget.RequestShutdown();
         }
 
         public void WaitForShutdown()
         {
             if (mIRC != null) mIRC.WaitForShutdown();
             if (mPubSub != null) mPubSub.WaitForShutdown();
-            if (mChatWidget != null) mChatWidget.WaitForShutdown();
-            if (mAlertsWidget != null) mAlertsWidget.WaitForShutdown();
         }
     }
 }

@@ -102,7 +102,7 @@ namespace LukeBot.UI
         async Task HandleWidgetCallback(string widgetUUID, HttpContext context)
         {
             Logger.Log().Debug("Handling {0}", widgetUUID);
-            await context.Response.WriteAsync(Systems.Widget.GetWidgetPage(widgetUUID));
+            await context.Response.WriteAsync("OUT OF ORDER - MAINTENANCE"/*Systems.Widget.GetWidgetPage(widgetUUID)*/);
         }
 
         public void ConfigureServices(IServiceCollection services)

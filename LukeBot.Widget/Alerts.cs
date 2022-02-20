@@ -1,13 +1,13 @@
 ﻿using System.IO;
-using LukeBot.Common;
 using Newtonsoft.Json;
+using LukeBot.Common;
 using LukeBot.Core;
 using LukeBot.Core.Events;
 
 
-namespace LukeBot.Twitch
+namespace LukeBot.Widget
 {
-    class AlertsWidget: IWidget
+    class Alerts: IWidget
     {
         ConnectionPort mPort;
         WebSocketServer mServer;
@@ -24,7 +24,7 @@ namespace LukeBot.Twitch
             }
         }
 
-        public AlertsWidget()
+        public Alerts()
             : base()
         {
             mPort = Systems.Connection.AcquirePort();
@@ -37,11 +37,11 @@ namespace LukeBot.Twitch
 
             mServer = new WebSocketServer(serverIP, mPort.Value);
 
-            Systems.Widget.Register(this, "TEST-ALERTS-WIDGET");
+            //Systems.Widget.Register(this, "TEST-ALERTS-WIDGET");
             Logger.Log().Secure("Registered Alerts widget at link http://{0}/widget/{1}; WS port {2}", serverIP, ID, mPort.Value);
         }
 
-        ~AlertsWidget()
+        ~Alerts()
         {
         }
 

@@ -101,7 +101,8 @@ namespace LukeBot.Endpoint
 
         async Task HandleWidgetCallback(string widgetUUID, HttpContext context)
         {
-            Logger.Log().Debug("Handling {0}", widgetUUID);
+            Logger.Log().Debug("Widget requested - handling {0}", widgetUUID);
+
             await context.Response.WriteAsync("OUT OF ORDER - MAINTENANCE"/*Systems.Widget.GetWidgetPage(widgetUUID)*/);
         }
 

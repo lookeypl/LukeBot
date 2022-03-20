@@ -35,6 +35,7 @@
   <ItemGroup>
     <ProjectReference Include="../LukeBot.API/LukeBot.API.csproj" />
     <ProjectReference Include="../LukeBot.Common/LukeBot.Common.csproj" />
+    <ProjectReference Include="..\LukeBot.Core\LukeBot.Core.csproj" />
   </ItemGroup>
 
 </Project>

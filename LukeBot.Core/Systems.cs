@@ -7,6 +7,7 @@ namespace LukeBot.Core
         static private CommunicationSystem mCommunicationSystem;
         static private ConnectionSystem mConnectionSystem;
         static private EventSystem mEventSystem;
+        static private IntercomSystem mIntercomSystem;
         //static private WidgetSystem mWidgetSystem;
         static private bool mInitialized;
 
@@ -34,6 +35,14 @@ namespace LukeBot.Core
             }
         }
 
+        static public IntercomSystem Intercom
+        {
+            get
+            {
+                return mIntercomSystem;
+            }
+        }
+
         //static public WidgetSystem Widget
         //{
         //    get
@@ -50,6 +59,7 @@ namespace LukeBot.Core
             mEventSystem = new EventSystem();
 
             mCommunicationSystem = new CommunicationSystem();
+            mIntercomSystem = new IntercomSystem();
             mConnectionSystem = new ConnectionSystem(50000, 65535);
             //mWidgetSystem = new WidgetSystem();
             mInitialized = true;
@@ -58,8 +68,12 @@ namespace LukeBot.Core
         static public void Teardown()
         {
             mCommunicationSystem = null;
+            mIntercomSystem = null;
             mConnectionSystem = null;
             //mWidgetSystem = null;
+
+            mEventSystem = null;
+
             mInitialized = false;
         }
     }

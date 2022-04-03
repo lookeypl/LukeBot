@@ -46,13 +46,13 @@ namespace LukeBot.Core
             mWaitEvent.WaitOne(timeoutMs);
         }
 
-        internal void SignalSuccess()
+        public void SignalSuccess()
         {
             Status = IntercomMessageStatus.SUCCESS;
             mWaitEvent.Set();
         }
 
-        internal void SignalError(string reason)
+        public void SignalError(string reason)
         {
             Status = IntercomMessageStatus.ERROR;
             ErrorReason = reason;
@@ -90,6 +90,11 @@ namespace LukeBot.Core
     {
         public Dictionary<string, IntercomEndpointInfo> mIntercomEndpoints;
 
+        public IntercomSystem()
+        {
+            mIntercomEndpoints = new Dictionary<string, IntercomEndpointInfo>();
+        }
+
         public void Register(string message, IntercomEndpointInfo info)
         {
             mIntercomEndpoints.Add(message, info);
@@ -115,8 +120,9 @@ namespace LukeBot.Core
                 return r;
             }
 
-            TResp resp = endpointInfo.mResponseAllocator(message);
-            return new TResp();
+            IntercomResponseBase resp = endpointInfo.mResponseAllocator(message);
+            endpointDelegate(message, ref resp);
+            return (TResp)resp;
         }
     };
 }

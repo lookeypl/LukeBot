@@ -1,22 +1,23 @@
-﻿/*using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using LukeBot.Common;
 
-namespace LukeBot.Core
+
+namespace LukeBot.Widget
 {
-    public class WidgetSystem
+    public class Manager
     {
         private Dictionary<string, IWidget> mWidgets = new Dictionary<string, IWidget>();
 
         private Mutex mMutex;
 
-        public WidgetSystem()
+        public Manager()
         {
             mMutex = new Mutex();
         }
 
-        ~WidgetSystem()
+        ~Manager()
         {
         }
 
@@ -54,4 +55,4 @@ namespace LukeBot.Core
                 Logger.Log().Warning("Cannot remove widget of ID {0} - not registered", widget.ID);
         }
     }
-}*/
+}

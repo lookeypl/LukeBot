@@ -35,7 +35,7 @@ namespace LukeBot.Twitch
         public PubSubCommand(string cmdType, PubSubMessageData cmdData)
             : base(cmdType)
         {
-            using (RandomNumberGenerator rng = new RNGCryptoServiceProvider())
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
             {
                 byte[] nonceData = new byte[32];
                 rng.GetBytes(nonceData);

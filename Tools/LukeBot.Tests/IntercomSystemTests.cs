@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System;
 using System.Threading;
+using Intercom = LukeBot.Core.Events.Intercom;
 
 
 namespace LukeBot.Tests
@@ -22,7 +23,7 @@ namespace LukeBot.Tests
         Queue<IntercomServiceTask> mIntercomServiceTaskQueue;
         bool mIntercomServiceDone;
 
-        class IntercomTestEchoMessage: IntercomMessageBase
+        class IntercomTestEchoMessage: Intercom::MessageBase
         {
             int value;
 
@@ -38,7 +39,7 @@ namespace LukeBot.Tests
             }
         };
 
-        class IntercomTestEchoResponse: IntercomResponseBase
+        class IntercomTestEchoResponse: Intercom::ResponseBase
         {
             int value;
 
@@ -77,7 +78,7 @@ namespace LukeBot.Tests
             }
         }
 
-        void IntercomCallback(IntercomMessageBase m, ref IntercomResponseBase r)
+        void IntercomCallback(Intercom::MessageBase m, ref Intercom::ResponseBase r)
         {
             IntercomTestEchoMessage msg = (IntercomTestEchoMessage)m;
             IntercomTestEchoResponse resp = (IntercomTestEchoResponse)r;
@@ -87,7 +88,7 @@ namespace LukeBot.Tests
             mIntercomServiceEvent.Set();
         }
 
-        IntercomResponseBase IntercomRespAllocator(IntercomMessageBase msg)
+        Intercom::ResponseBase IntercomRespAllocator(Intercom::MessageBase msg)
         {
             switch (msg.Message)
             {
@@ -95,14 +96,14 @@ namespace LukeBot.Tests
             }
 
             Debug.Assert(false, "Message should be validated by now - should not happen");
-            return new IntercomResponseBase();
+            return new Intercom::ResponseBase();
         }
 
         public void IntercomServiceThread()
         {
-            IntercomEndpointInfo endpointInfo = new IntercomEndpointInfo(IntercomRespAllocator);
+            Intercom::EndpointInfo endpointInfo = new Intercom::EndpointInfo(INTERCOM_TEST_ENDPOINT, IntercomRespAllocator);
             endpointInfo.AddMessage(INTERCOM_TEST_ECHO_MSG, IntercomCallback);
-            mIntercom.Register(INTERCOM_TEST_ENDPOINT, endpointInfo);
+            mIntercom.Register(endpointInfo);
 
             Console.WriteLine("Service thread: Ready");
             mIntercomServiceReady.Set();
@@ -135,6 +136,8 @@ namespace LukeBot.Tests
 
             Console.WriteLine("Main thread: Starting service thread");
             mIntercomService.Start();
+
+            mIntercomServiceReady.WaitOne();
         }
 
         [TestMethod]
@@ -147,7 +150,7 @@ namespace LukeBot.Tests
 
             Console.WriteLine("Main thread: Requesting response to message");
             IntercomTestEchoResponse resp =
-                mIntercom.Request<IntercomTestEchoMessage, IntercomTestEchoResponse>(INTERCOM_TEST_ENDPOINT, msg);
+                mIntercom.Request<IntercomTestEchoResponse, IntercomTestEchoMessage>(INTERCOM_TEST_ENDPOINT, msg);
 
             Console.WriteLine("Main thread: Awaiting for response");
             resp.Wait();

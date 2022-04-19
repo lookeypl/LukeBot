@@ -9,6 +9,7 @@ using System.Text.Json;
 using LukeBot.Common;
 using LukeBot.API;
 using LukeBot.Core;
+using Intercom = LukeBot.Core.Events.Intercom;
 
 
 namespace LukeBot.Endpoint
@@ -103,7 +104,22 @@ namespace LukeBot.Endpoint
         {
             Logger.Log().Debug("Widget requested - handling {0}", widgetUUID);
 
-            await context.Response.WriteAsync("OUT OF ORDER - MAINTENANCE"/*Systems.Widget.GetWidgetPage(widgetUUID)*/);
+            Intercom::GetWidgetPageMessage msg = new Intercom::GetWidgetPageMessage(widgetUUID);
+            Intercom::GetWidgetPageResponse page =
+                Core.Systems.Intercom.Request<Intercom::GetWidgetPageResponse, Intercom::GetWidgetPageMessage>(
+                    Intercom::Endpoints.WIDGET_MANAGER, msg
+                );
+
+            page.Wait();
+
+            if (page.Status == Intercom.MessageStatus.SUCCESS)
+            {
+                await context.Response.WriteAsync(page.pageContents);
+            }
+            else
+            {
+                await context.Response.WriteAsync("Couldn't load widget: " + page.ErrorReason);
+            }
         }
 
         public void ConfigureServices(IServiceCollection services)

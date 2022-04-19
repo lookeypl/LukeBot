@@ -1,6 +1,4 @@
-﻿
-
-namespace LukeBot.Core
+﻿namespace LukeBot.Core
 {
     public class Systems
     {

@@ -3,7 +3,7 @@ using System.Net;
 using LukeBot.Common;
 using LukeBot.API;
 using LukeBot.Core;
-
+using Widget = LukeBot.Widget;
 
 namespace LukeBot.Twitch
 {
@@ -15,7 +15,6 @@ namespace LukeBot.Twitch
         private PubSub mPubSub;
         private API.Twitch.GetUserResponse mBotData;
         private API.Twitch.GetUserResponse mUserData;
-
 
         private bool IsLoginSuccessful(Token token)
         {

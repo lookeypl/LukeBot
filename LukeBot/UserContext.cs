@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using LukeBot.Common;
-using LukeBot.Twitch;
+using Widget = LukeBot.Widget;
 
 namespace LukeBot
 {
@@ -9,17 +8,24 @@ namespace LukeBot
     {
         private string mUser = null;
         private List<IModule> mModules = null;
+        private Widget::Manager mWidgets = null;
 
         public UserContext(string user)
         {
             mUser = user;
             mModules = new List<IModule>();
+            mWidgets = new Widget::Manager();
             Logger.Log().Info("Registered LukeBot user " + mUser);
         }
 
         public void AddModule(IModule module)
         {
             mModules.Add(module);
+        }
+
+        public string AddWidget(Widget::IWidget widget, string widgetID)
+        {
+            return mWidgets.Register(widget, widgetID);
         }
 
         public void RunModules()
@@ -37,12 +43,16 @@ namespace LukeBot
         {
             foreach (IModule m in mModules)
                 m.RequestShutdown();
+
+            mWidgets.RequestShutdown();
         }
 
         public void WaitForModulesShutdown()
         {
             foreach (IModule m in mModules)
                 m.WaitForShutdown();
+
+            mWidgets.WaitForShutdown();
         }
     }
 }

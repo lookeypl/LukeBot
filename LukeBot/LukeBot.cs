@@ -1,4 +1,5 @@
 ﻿using LukeBot.Common;
+using LukeBot.Endpoint;
 using LukeBot.Twitch;
 using LukeBot.Spotify;
 using System.IO;
@@ -27,13 +28,10 @@ namespace LukeBot
         {
             mUsers = new List<UserContext>();
             mCLI = new CLI.Interface();
-            //mInterfaceThread = new Thread(new ThreadStart(mUI.Run));
         }
 
         ~LukeBot()
         {
-            //if (mInterfaceThread != null)
-            //    mInterfaceThread.Join();
         }
 
         public bool IsInDevMode()
@@ -61,23 +59,28 @@ namespace LukeBot
         {
             Logger.Log().Warning("ENABLED DEVELOPER MODE");
 
+            Logger.Log().Info("Starting web endpoint...");
+            Endpoint.Endpoint.StartThread();
+
             try
             {
-                //Logger.Log().Info("LukeBot UI starting...");
-                //mInterfaceThread.Start();
-
                 Logger.Log().Info("LukeBot modules starting...");
-                mUsers.Add(new UserContext("Dev"));
+                UserContext devUser = new UserContext("Dev");
+                mUsers.Add(devUser);
 
                 TwitchModule twitch = new TwitchModule();
                 mUsers[0].AddModule(twitch);
-                //mUsers[0].AddModule(new SpotifyModule());
+                mUsers[0].AddModule(new SpotifyModule());
                 mUsers[0].RunModules();
 
                 twitch.AwaitIRCLoggedIn(120 * 1000);
                 twitch.JoinChannel("lookey");
 
                 twitch.AddCommandToChannel("lookey", "so", new Twitch.Command.Shoutout());
+
+                devUser.AddWidget(new Widget.Chat(), "TEST-CHAT-WIDGET");
+                devUser.AddWidget(new Widget.NowPlaying(), "BIG-NOW-PLAYING-WIDGET");
+                devUser.AddWidget(new Widget.NowPlaying(), "SMALL-NOW-PLAYING-WIDGET");
 
                 Logger.Log().Info("Giving control to CLI");
                 mCLI.MainLoop();
@@ -92,14 +95,13 @@ namespace LukeBot
                 Logger.Log().Error("Backtrace:\n{0}", e.StackTrace);
             }
 
-            //Logger.Log().Info("Stopping UI...");
-            //mUI.Stop();
-            //mInterfaceThread.Join();
-
             Logger.Log().Info("Stopping modules...");
             mUsers[0].RequestModuleShutdown();
             mUsers[0].WaitForModulesShutdown();
             mUsers = null;
+
+            Logger.Log().Info("Stopping web endpoint...");
+            Endpoint.Endpoint.StopThread();
         }
 
         public void Run(string[] args)
@@ -119,9 +121,6 @@ namespace LukeBot
                 Core.Systems.Teardown();
                 return;
             }
-
-            //Logger.Log().Info("LukeBot UI starting...");
-            //mInterfaceThread.Start();
 
             Logger.Log().Info("LukeBot modules starting...");
             mUsers.Add(new UserContext("Lookey"));
@@ -169,13 +168,13 @@ namespace LukeBot
                 Logger.Log().Error("Backtrace:\n{0}", e.StackTrace);
             }
 
-            //mUI.Stop();
-            //mInterfaceThread.Join();
-
             Logger.Log().Info("Stopping modules...");
             mUsers[0].RequestModuleShutdown();
             mUsers[0].WaitForModulesShutdown();
             mUsers = null;
+
+            Logger.Log().Info("Stopping web endpoint...");
+            Endpoint.Endpoint.StopThread();
 
             Logger.Log().Info("Core systems teardown...");
             Core.Systems.Teardown();

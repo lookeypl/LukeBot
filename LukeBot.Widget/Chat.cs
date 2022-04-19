@@ -7,7 +7,7 @@ using LukeBot.Core.Events;
 
 namespace LukeBot.Widget
 {
-    class Chat: IWidget
+    public class Chat: IWidget
     {
         ConnectionPort mPort;
         WebSocketServer mServer;
@@ -47,9 +47,6 @@ namespace LukeBot.Widget
             AddToHead(string.Format("<meta name=\"serveraddress\" content=\"{0}\">", serverIP + ":" + mPort.Value));
 
             mServer = new WebSocketServer(serverIP, mPort.Value);
-
-            //Systems.Widget.Register(this, "TEST-CHAT-WIDGET");
-            Logger.Log().Secure("Registered Chat widget at link http://{0}/widget/{1}; WS port {2}", serverIP, ID, mPort.Value);
         }
 
         ~Chat()
@@ -64,7 +61,7 @@ namespace LukeBot.Widget
                 mServer.WaitForShutdown();
             }
 
-            StreamReader reader = File.OpenText("LukeBot.Twitch/Widgets/Chat.html");
+            StreamReader reader = File.OpenText("LukeBot.Widget/Widgets/Chat.html");
             string p = reader.ReadToEnd();
             reader.Close();
 

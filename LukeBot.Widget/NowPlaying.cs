@@ -10,7 +10,7 @@ using LukeBot.Spotify.Common;
 
 namespace LukeBot.Widget
 {
-    class NowPlaying: IWidget
+    public class NowPlaying: IWidget
     {
         ConnectionPort mPort;
         SpotifyMusicStateUpdateArgs mState;
@@ -37,7 +37,7 @@ namespace LukeBot.Widget
                 mServer.Send(JsonSerializer.Serialize(a));
         }
 
-        public NowPlaying(string widgetID)
+        public NowPlaying()
             : base()
         {
             mPort = Systems.Connection.AcquirePort();
@@ -47,9 +47,6 @@ namespace LukeBot.Widget
             AddToHead(string.Format("<meta name=\"serveraddress\" content=\"{0}\">", serverIP + ":" + mPort.Value));
 
             mServer = new WebSocketServer(serverIP, mPort.Value);
-
-            //Systems.Widget.Register(this, widgetID);
-            Logger.Log().Secure("Registered Chat widget at link http://{0}/widget/{1}; WS port {2}", serverIP, ID, mPort.Value);
 
             mState = null;
             mCurrentTrack = null;
@@ -103,7 +100,7 @@ namespace LukeBot.Widget
                 mRecvThread.Join();
             }
 
-            StreamReader reader = File.OpenText("LukeBot.Spotify/Widgets/NowPlaying.html");
+            StreamReader reader = File.OpenText("LukeBot.Widget/Widgets/NowPlaying.html");
             string p = reader.ReadToEnd();
             reader.Close();
 

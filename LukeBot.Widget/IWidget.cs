@@ -10,7 +10,7 @@ namespace LukeBot.Widget
 {
     public abstract class IWidget
     {
-        public string ID { get; set; }
+        public string ID { get; private set; }
         private List<string> mHead;
 
         protected abstract string GetWidgetCode();
@@ -43,6 +43,11 @@ namespace LukeBot.Widget
             page += "</body></html>";
 
             return page;
+        }
+
+        internal void SetID(string id)
+        {
+            ID = id;
         }
     }
 }

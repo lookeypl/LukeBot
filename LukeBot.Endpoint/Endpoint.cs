@@ -1,18 +1,36 @@
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using System.Threading;
 
 
 namespace LukeBot.Endpoint
 {
-    public class Interface
+    public class Endpoint
     {
+        private static Endpoint mEndpoint = null;
+        private static Thread mEndpointThread = null;
         IWebHost mHost = null;
 
-        public static void ThreadMain()
+        private static void ThreadMain()
         {
-            Interface iface = new Interface();
-            iface.Run();
+            mEndpoint = new Endpoint();
+            mEndpoint.Run();
+        }
+
+        public static void StartThread()
+        {
+            mEndpointThread = new Thread(ThreadMain);
+            mEndpointThread.Start();
+        }
+
+        public static void StopThread()
+        {
+            if (mEndpoint != null)
+                mEndpoint.Stop();
+
+            if (mEndpointThread != null)
+                mEndpointThread.Join();
         }
 
         public void Run()

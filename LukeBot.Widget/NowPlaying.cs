@@ -87,6 +87,9 @@ namespace LukeBot.Widget
                 }
             }
 
+            mServer.RequestShutdown();
+            mServer.WaitForShutdown();
+
             Logger.Log().Debug("NowPlaying Widget server thread closed");
         }
 

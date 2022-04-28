@@ -1,0 +1,35 @@
+<script>
+    const metadata = document.getElementsByTagName('meta');
+    function getMeta(name) {
+        for (let i = 0; i < metadata.length; ++i) {
+            if (metadata[i].getAttribute('name') === name) {
+                return metadata[i].getAttribute('content');
+            }
+        }
+        return '';
+    }
+
+    const serverAddress = getMeta('serveraddress');
+    console.log(serverAddress);
+
+    let socket = new WebSocket("ws://" + serverAddress);
+    socket.onopen = function (e) {
+        console.log(`Connected to server at ${serverAddress}`);
+    }
+
+    socket.onclose = function (event) {
+        if (event.wasClean) {
+            console.log(`Connection closed cleanly`);
+        } else {
+            console.log(`Connection died: ${event.code} (${event.reason})`);
+        }
+    }
+
+    socket.onerror = function (error) {
+        console.log(`Error: ${error.message}`);
+    }
+
+    socket.onmessage = function (event) {
+        socket.send(event.data);
+    }
+</script>

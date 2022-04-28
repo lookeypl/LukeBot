@@ -9,67 +9,22 @@ namespace LukeBot.Widget
 {
     public class Alerts: IWidget
     {
-        ConnectionPort mPort;
-        WebSocketServer mServer;
-
-
         public void OnChannelPointsEvent(object o, EventArgsBase args)
         {
-            if (mServer.Running)
-            {
-                TwitchChannelPointsRedemptionArgs a = (TwitchChannelPointsRedemptionArgs)args;
-                string msg = JsonConvert.SerializeObject(a);
-                Logger.Log().Debug("{0}", msg);
-                mServer.Send(msg);
-            }
+            TwitchChannelPointsRedemptionArgs a = (TwitchChannelPointsRedemptionArgs)args;
+            string msg = JsonConvert.SerializeObject(a);
+            Logger.Log().Debug("{0}", msg);
+            SendToWSAsync(msg);
         }
 
         public Alerts()
-            : base()
+            : base("LukeBot.Widget/Widgets/Alerts.html")
         {
-            mPort = Systems.Connection.AcquirePort();
-            Logger.Log().Debug("Widget will have port {0}", mPort.Value);
-
             Systems.Event.TwitchChannelPointsRedemption += OnChannelPointsEvent;
-
-            string serverIP = Utils.GetConfigServerIP();
-            AddToHead(string.Format("<meta name=\"serveraddress\" content=\"{0}\">", serverIP + ":" + mPort.Value));
-
-            mServer = new WebSocketServer(serverIP, mPort.Value);
         }
 
         ~Alerts()
         {
-        }
-
-        protected override string GetWidgetCode()
-        {
-            if (mServer.Running)
-            {
-                mServer.RequestShutdown();
-                mServer.WaitForShutdown();
-            }
-
-            StreamReader reader = File.OpenText("LukeBot.Widget/Widgets/Alerts.html");
-            string p = reader.ReadToEnd();
-            reader.Close();
-
-            mServer.Start();
-
-            return p;
-        }
-
-        public override void RequestShutdown()
-        {
-            mServer.RequestShutdown();
-        }
-
-        public override void WaitForShutdown()
-        {
-            if (mServer.Running)
-            {
-                mServer.WaitForShutdown();
-            }
         }
     }
 }

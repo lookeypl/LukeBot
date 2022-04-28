@@ -16,7 +16,8 @@ namespace LukeBot.Common
             Stopped,
             Listening,
             Connecting,
-            Connected
+            Connected,
+            Stopping,
         };
 
         Thread mServerThread;
@@ -27,17 +28,23 @@ namespace LukeBot.Common
         ServerState mState;
         AutoResetEvent mEvent;
         ManualResetEvent mConnectedEvent;
+        Mutex mStateMutex;
         Queue<WebSocketMessage> mRecvMessageQueue;
 
         ServerState State
         {
             get
             {
+                mStateMutex.WaitOne();
+                ServerState s = mState;
+                mStateMutex.ReleaseMutex();
                 return mState;
             }
             set
             {
+                mStateMutex.WaitOne();
                 mState = value;
+                mStateMutex.ReleaseMutex();
 
                 switch (value)
                 {

@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.IO;
+using System.Net.WebSockets;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Text.Json;
 using LukeBot.Common;
@@ -122,6 +124,39 @@ namespace LukeBot.Endpoint
             }
         }
 
+        async Task HandleWidgetWSCallback(string widgetUUID, HttpContext context)
+        {
+            Logger.Log().Debug("Widget WS connection requested - handling {0}", widgetUUID);
+
+            if (!context.WebSockets.IsWebSocketRequest)
+            {
+                Logger.Log().Warning("Connection to WebSocket endpoint is not a WS request! Aborting");
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                return;
+            }
+
+            WebSocket ws = await context.WebSockets.AcceptWebSocketAsync();
+
+            Intercom::AssignWSMessage msg = new Intercom::AssignWSMessage(widgetUUID, ref ws);
+            Intercom::AssignWSResponse resp =
+                Core.Systems.Intercom.Request<Intercom::AssignWSResponse, Intercom::AssignWSMessage>(
+                    Intercom::Endpoints.WIDGET_MANAGER, msg
+                );
+
+            resp.Wait();
+
+            if (resp.Status != Intercom::MessageStatus.SUCCESS)
+            {
+                await ws.CloseAsync(WebSocketCloseStatus.InternalServerError,
+                    string.Format("Failed to forward WS to widget: {0}", resp.ErrorReason),
+                    CancellationToken.None
+                );
+                return;
+            }
+
+            await resp.lifetimeTask;
+        }
+
         public void ConfigureServices(IServiceCollection services)
         {
         }
@@ -133,6 +168,7 @@ namespace LukeBot.Endpoint
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseWebSockets();
             app.UseRouting();
             app.UseEndpoints(endpoints =>
             {
@@ -167,6 +203,10 @@ namespace LukeBot.Endpoint
                 endpoints.MapGet("widget/{widget}", async context => {
                     var widget = context.Request.RouteValues["widget"];
                     await HandleWidgetCallback($"{widget}", context);
+                });
+                endpoints.MapGet("widgetws/{widget}", async context => {
+                    var widget = context.Request.RouteValues["widget"];
+                    await HandleWidgetWSCallback($"{widget}", context);
                 });
             });
         }

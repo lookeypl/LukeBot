@@ -19,6 +19,7 @@ namespace LukeBot.Widget
             switch (msg.Message)
             {
             case Intercom::Messages.GET_WIDGET_PAGE: return new Intercom::GetWidgetPageResponse();
+            case Intercom::Messages.ASSIGN_WS: return new Intercom::AssignWSResponse();
             }
 
             Debug.Assert(false, "Message should be validated by now - should not happen");
@@ -28,11 +29,6 @@ namespace LukeBot.Widget
         public Manager()
         {
             mMutex = new Mutex();
-
-            Intercom::EndpointInfo widgetManagerInfo = new Intercom::EndpointInfo(Intercom::Endpoints.WIDGET_MANAGER, ResponseAllocator);
-            widgetManagerInfo.AddMessage(Intercom::Messages.GET_WIDGET_PAGE, GetWidgetPageDelegate);
-
-            Core.Systems.Intercom.Register(widgetManagerInfo);
         }
 
         ~Manager()
@@ -41,6 +37,11 @@ namespace LukeBot.Widget
 
         public void Init()
         {
+            Intercom::EndpointInfo widgetManagerInfo = new Intercom::EndpointInfo(Intercom::Endpoints.WIDGET_MANAGER, ResponseAllocator);
+            widgetManagerInfo.AddMessage(Intercom::Messages.GET_WIDGET_PAGE, GetWidgetPageDelegate);
+            widgetManagerInfo.AddMessage(Intercom::Messages.ASSIGN_WS, AssignWSDelegate);
+
+            Core.Systems.Intercom.Register(widgetManagerInfo);
         }
 
         public void Run()
@@ -54,19 +55,39 @@ namespace LukeBot.Widget
 
             mMutex.WaitOne();
 
-            if (!mWidgets.ContainsKey(m.widgetID))
+            if (!mWidgets.TryGetValue(m.widgetID, out IWidget widget))
             {
                 mMutex.ReleaseMutex();
                 r.SignalError(String.Format("Widget {0} not found", m.widgetID));
                 return;
             }
 
-            string ret = mWidgets[m.widgetID].GetPage();
+            string ret = widget.GetPage();
 
             mMutex.ReleaseMutex();
 
             r.SetContents(ret);
             r.SignalSuccess();
+        }
+
+        void AssignWSDelegate(Intercom::MessageBase msg, ref Intercom::ResponseBase resp)
+        {
+            Intercom::AssignWSMessage m = (Intercom::AssignWSMessage)msg;
+            Intercom::AssignWSResponse r = (Intercom::AssignWSResponse)resp;
+
+            mMutex.WaitOne();
+
+            if (!mWidgets.TryGetValue(m.widgetID, out IWidget widget))
+            {
+                mMutex.ReleaseMutex();
+                resp.SignalError(String.Format("Widget {0} not found", m.widgetID));
+                return;
+            }
+
+            r.SetLifetimeTask(widget.AcquireWS(ref m.GetWebSocket()));
+
+            mMutex.ReleaseMutex();
+            resp.SignalSuccess();
         }
 
         public string Register(IWidget widget, string ID)

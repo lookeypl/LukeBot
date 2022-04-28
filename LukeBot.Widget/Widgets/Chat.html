@@ -221,7 +221,7 @@
     let msgList = new MessageList();
 
 
-    let socket = new WebSocket("ws://" + serverAddress + "/");
+    let socket = new WebSocket("ws://" + serverAddress);
     socket.onopen = function (e) {
         printDebug(`Connected to server at ${serverAddress}`);
     }
@@ -230,7 +230,7 @@
         if (event.wasClean) {
             printDebug(`Connection closed cleanly`);
         } else {
-            printDebug(`Connection died`);
+            printDebug(`Connection died: ${event.code} (${event.reason})`);
         }
     }
 

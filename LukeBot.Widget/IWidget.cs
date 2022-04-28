@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
+using System.Net.WebSockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using LukeBot.Common;
 
@@ -10,12 +12,97 @@ namespace LukeBot.Widget
 {
     public abstract class IWidget
     {
-        public string ID { get; private set; }
-        private List<string> mHead;
+        private struct WebSocketRecv
+        {
+            public ValueWebSocketReceiveResult result;
+            public string data;
 
-        protected abstract string GetWidgetCode();
-        public abstract void RequestShutdown();
-        public abstract void WaitForShutdown();
+            public WebSocketRecv(ValueWebSocketReceiveResult result, string data)
+            {
+                this.result = result;
+                this.data = data;
+            }
+        };
+
+        public string ID { get; private set; }
+        public string mWidgetFilePath;
+        private List<string> mHead;
+        protected WebSocket mWS;
+        private ManualResetEvent mWSLifetimeEndEvent;
+        private AutoResetEvent mWSRecvAvailableEvent;
+        private Task mWSCloseTask;
+        private Task mWSLifetimeTask;
+        private Thread mWSMessagingThread;
+        private bool mWSThreadDone;
+        private Queue<string> mWSRecvQueue;
+
+        protected event EventHandler OnConnectedEvent;
+
+
+        private void OnConnected()
+        {
+            EventHandler handler = OnConnectedEvent;
+            if (handler != null)
+            {
+                handler(this, null);
+            }
+        }
+
+        private string GetWidgetCode()
+        {
+            if (!File.Exists(mWidgetFilePath))
+                return "Widget code not found!";
+
+            StreamReader reader = File.OpenText(mWidgetFilePath);
+            string p = reader.ReadToEnd();
+            reader.Close();
+
+            return p;
+        }
+
+        private async Task<WebSocketRecv> RecvFromWSInternalAsync()
+        {
+            if (mWS.State != WebSocketState.Open)
+                throw new WebSocketException("Web Socket is closed");
+
+            string ret = "";
+            ValueWebSocketReceiveResult recvResult;
+            do
+            {
+                Memory<byte> buf = new Memory<byte>();
+                recvResult = await mWS.ReceiveAsync(buf, CancellationToken.None);
+                ret += Encoding.UTF8.GetString(buf.ToArray());
+            }
+            while (!recvResult.EndOfMessage);
+
+            return new WebSocketRecv(recvResult, ret);
+        }
+
+        private async void WSRecvThreadMain()
+        {
+            mWSThreadDone = false;
+            while (!mWSThreadDone)
+            {
+                WebSocketRecv recv = await RecvFromWSInternalAsync();
+
+                if (recv.result.MessageType == WebSocketMessageType.Close)
+                {
+                    Logger.Log().Debug("Received close message");
+                    mWSThreadDone = true;
+                    mWSRecvAvailableEvent.Set();
+                    continue;
+                }
+
+                Logger.Log().Debug("Enqueueing message");
+                Logger.Log().Secure(" -> msg = {0}", recv.data);
+                mWSRecvQueue.Enqueue(recv.data);
+                mWSRecvAvailableEvent.Set();
+            }
+
+            CloseWS(WebSocketCloseStatus.NormalClosure);
+            mWSLifetimeEndEvent.Set();
+        }
+
 
         protected void AddToHead(string line)
         {
@@ -23,9 +110,79 @@ namespace LukeBot.Widget
             mHead.Add(line);
         }
 
-        public IWidget()
+        protected void CloseWS(WebSocketCloseStatus status)
         {
+            if (mWS != null && mWS.State == WebSocketState.Open)
+                mWSCloseTask = mWS.CloseAsync(status, null, CancellationToken.None);
+        }
+
+        protected string RecvFromWS()
+        {
+            while (mWSRecvQueue.Count == 0 && mWSThreadDone == false)
+                mWSRecvAvailableEvent.WaitOne();
+
+            if (mWSThreadDone)
+                return "";
+
+            return mWSRecvQueue.Dequeue();
+        }
+
+        protected async void SendToWSAsync(string msg)
+        {
+            if (mWS == null)
+                return; // WebSocket not connected, ignore
+
+            if (mWS.State == WebSocketState.Open)
+            {
+                await mWS.SendAsync(
+                    Encoding.UTF8.GetBytes(msg).AsMemory<byte>(),
+                    WebSocketMessageType.Text,
+                    true,
+                    CancellationToken.None
+                );
+            }
+        }
+
+
+        internal Task AcquireWS(ref WebSocket ws)
+        {
+            if (mWSMessagingThread != null && mWSMessagingThread.IsAlive)
+            {
+                mWSThreadDone = true;
+                CloseWS(WebSocketCloseStatus.NormalClosure);
+                mWSCloseTask.Wait();
+                mWSMessagingThread.Join();
+            }
+
+            mWS = ws;
+            mWSLifetimeTask = Task.Run(() => mWSLifetimeEndEvent.WaitOne());
+
+            mWSMessagingThread = new Thread(WSRecvThreadMain);
+            mWSMessagingThread.Start();
+
+            OnConnected();
+            return mWSLifetimeTask;
+        }
+
+        internal void SetID(string id)
+        {
+            ID = id;
+        }
+
+
+        public IWidget(string widgetFilePath)
+        {
+            mWidgetFilePath = widgetFilePath;
+
+            ID = "";
             mHead = new List<string>();
+            mWS = null;
+            mWSLifetimeEndEvent = new ManualResetEvent(false);
+            mWSRecvAvailableEvent = new AutoResetEvent(false);
+            mWSThreadDone = false;
+            mWSRecvQueue = new Queue<string>();
+            mWSCloseTask = null;
+            mWSLifetimeTask = null;
         }
 
         public string GetPage()
@@ -38,6 +195,8 @@ namespace LukeBot.Widget
                 page += h;
             }
 
+            page += string.Format("<meta name=\"serveraddress\" content=\"{0}\">", Utils.GetConfigServerIP() + "/widgetws/" + ID);
+
             page += "</head><body>";
             page += GetWidgetCode();
             page += "</body></html>";
@@ -45,9 +204,19 @@ namespace LukeBot.Widget
             return page;
         }
 
-        internal void SetID(string id)
+        public virtual void RequestShutdown()
         {
-            ID = id;
+            mWSThreadDone = true;
+            CloseWS(WebSocketCloseStatus.NormalClosure);
+        }
+
+        public virtual async void WaitForShutdown()
+        {
+            if (mWSCloseTask != null)
+                await mWSCloseTask;
+
+            mWSMessagingThread.Join();
+            mWSLifetimeEndEvent.Set();
         }
     }
 }

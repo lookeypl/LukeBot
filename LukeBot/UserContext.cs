@@ -30,6 +30,8 @@ namespace LukeBot
 
         public void RunModules()
         {
+            mWidgets.Init();
+
             Logger.Log().Info("Initializing LukeBot modules");
             foreach (IModule m in mModules)
                 m.Init();

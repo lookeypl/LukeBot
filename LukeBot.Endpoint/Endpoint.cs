@@ -55,7 +55,7 @@ namespace LukeBot.Endpoint
                 {
                     // TODO readd below with certificates
                     //"https://" + IP + "/",
-                    "http://" + IP + ":5000/",
+                    "http://" + IP + "/",
                 };
                 builder.UseUrls(URLs);
             }

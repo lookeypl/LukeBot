@@ -78,9 +78,12 @@ namespace LukeBot
 
                 twitch.AddCommandToChannel("lookey", "so", new Twitch.Command.Shoutout());
 
+                Widget.Echo echo = new Widget.Echo();
+                devUser.AddWidget(echo, "TEST-ECHO");
                 devUser.AddWidget(new Widget.Chat(), "TEST-CHAT-WIDGET");
-                devUser.AddWidget(new Widget.NowPlaying(), "BIG-NOW-PLAYING-WIDGET");
+                //devUser.AddWidget(new Widget.NowPlaying(), "BIG-NOW-PLAYING-WIDGET");
                 devUser.AddWidget(new Widget.NowPlaying(), "SMALL-NOW-PLAYING-WIDGET");
+                devUser.AddWidget(new Widget.Alerts(), "TEST-ALERTS");
 
                 Logger.Log().Info("Giving control to CLI");
                 mCLI.MainLoop();

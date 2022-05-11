@@ -125,6 +125,9 @@ namespace LukeBot
                 return;
             }
 
+            Logger.Log().Info("Starting web endpoint...");
+            Endpoint.Endpoint.StartThread();
+
             Logger.Log().Info("LukeBot modules starting...");
             mUsers.Add(new UserContext("Lookey"));
 
@@ -157,6 +160,10 @@ namespace LukeBot
                 twitch.AddCommandToChannel("lookey", "rando", new Twitch.Command.Print(
                     "Randomizer I'm using is MFOR (Metroid Fusion Open Randomizer) v 0.9.7; you can get it here: https://forum.metroidconstruction.com/index.php/topic,5376.0.html"
                 ));
+
+                mUsers[0].AddWidget(new Widget.Chat(), "TEST-CHAT-WIDGET");
+                mUsers[0].AddWidget(new Widget.NowPlaying(), "BIG-NOW-PLAYING-WIDGET");
+                mUsers[0].AddWidget(new Widget.NowPlaying(), "SMALL-NOW-PLAYING-WIDGET");
 
                 Logger.Log().Info("Giving control to CLI");
                 mCLI.MainLoop();

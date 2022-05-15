@@ -6,18 +6,21 @@
     <Version>0.0.1</Version>
     <NeutralLanguage>en-US</NeutralLanguage>
     <Configurations>Debug;Release;SecureDebug</Configurations>
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)\lukebot.tests.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <OutputPath>$(SolutionDir)Bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)Obj\$(MSBuildProjectName)\$(Configuration)\</IntermediateOutputPath>
+    <ProduceReferenceAssemblyInOutDir>true</ProduceReferenceAssemblyInOutDir>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SecureDebug|AnyCPU'">
     <DefineConstants>DEBUG;TRACE;ENABLE_SECURE_LOGS</DefineConstants>
     <OutputPath>$(SolutionDir)Bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)Obj\$(MSBuildProjectName)\$(Configuration)\</IntermediateOutputPath>
+    <ProduceReferenceAssemblyInOutDir>true</ProduceReferenceAssemblyInOutDir>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

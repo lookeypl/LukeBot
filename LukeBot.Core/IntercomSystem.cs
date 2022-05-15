@@ -46,7 +46,7 @@ namespace LukeBot.Core
 
             Intercom::ResponseBase resp = endpointInfo.mResponseAllocator(message);
             endpointDelegate(message, ref resp);
-            return (TResp)resp;
+            return resp as TResp;
         }
     };
 }

@@ -69,7 +69,7 @@ namespace LukeBot.Core
             }
 
             MethodInfo eventMethod = typeof(EventSystem).GetMethod(nameof(EventSystem.OnEvent), 1, new System.Type[] { argsBaseType }).MakeGenericMethod(argsType);
-            return new EventCallback(type, (PublishEventDelegate)Delegate.CreateDelegate(typeof(PublishEventDelegate), this, eventMethod));
+            return new EventCallback(type, Delegate.CreateDelegate(typeof(PublishEventDelegate), this, eventMethod) as PublishEventDelegate);
         }
 
 

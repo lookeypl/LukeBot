@@ -37,7 +37,7 @@ namespace LukeBot.Core.Events
 
         public override bool Equals(Object o)
         {
-            SpotifyMusicStateUpdateArgs other = (SpotifyMusicStateUpdateArgs)o;
+            SpotifyMusicStateUpdateArgs other = o as SpotifyMusicStateUpdateArgs;
             return !object.ReferenceEquals(o, null) &&
                 (State == other.State && Progress == other.Progress);
         }

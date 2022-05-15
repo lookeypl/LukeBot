@@ -5,6 +5,7 @@
         static private CommunicationSystem mCommunicationSystem;
         static private EventSystem mEventSystem;
         static private IntercomSystem mIntercomSystem;
+        static private PropertyStore mPropertyStore;
         static private bool mInitialized;
 
         static public CommunicationSystem Communication
@@ -31,10 +32,20 @@
             }
         }
 
+        static public PropertyStore Properties
+        {
+            get
+            {
+                return mPropertyStore;
+            }
+        }
+
         static public void Initialize()
         {
             if (mInitialized)
                 return;
+
+            mPropertyStore = new PropertyStore(Common.Constants.PROPERTY_STORE_FILE);
 
             mEventSystem = new EventSystem();
             mIntercomSystem = new IntercomSystem();

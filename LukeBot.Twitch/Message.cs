@@ -72,8 +72,12 @@ namespace LukeBot.Twitch
             foreach (string t in tagsArray)
             {
                 string[] tArray = t.Split('=');
-                Debug.Assert(tArray.Length == 2, "Invalid amount of elements");
-                tags.Add(tArray[0], tArray[1]);
+                if (tArray.Length == 1)
+                    tags.Add(tArray[0], "");
+                else if (tArray.Length == 2)
+                    tags.Add(tArray[0], tArray[1]);
+                else
+                    throw new InvalidOperationException("Split a key-value tag into more than 2 elements; should not happen");
             }
 
             return tags;
@@ -133,6 +137,8 @@ namespace LukeBot.Twitch
         // Follows RFC 1459 23.1 + IRCv3 Message Tags extension
         public static Message Parse(string msg)
         {
+            Logger.Log().Secure("Parsing IRC message: {0}", msg);
+
             Message m = new Message(msg);
             mState = State.Initial;
             bool firstParam = true;

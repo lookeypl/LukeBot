@@ -89,7 +89,6 @@ namespace LukeBot.Twitch
             string emotes;
             if (m.Tags.TryGetValue("emotes", out emotes))
             {
-                Logger.Log().Debug("Emotes string: {0}", emotes);
                 message.ParseEmotesString(chatMsg, emotes);
             }
 

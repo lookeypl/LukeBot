@@ -84,7 +84,7 @@ namespace LukeBot.Widget
                 return;
             }
 
-            r.SetLifetimeTask(widget.AcquireWS(ref m.GetWebSocket()));
+            r.SetLifetimeTask(widget.AcquireWS(m.GetWebSocket()));
 
             mMutex.ReleaseMutex();
             resp.SignalSuccess();

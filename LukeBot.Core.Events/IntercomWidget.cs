@@ -48,16 +48,16 @@ namespace LukeBot.Core.Events
             public string widgetID { get; private set; }
             public WebSocket ws;
 
-            public AssignWSMessage(string widget, ref WebSocket ws)
+            public AssignWSMessage(string widget, WebSocket ws)
                 : base(Messages.ASSIGN_WS)
             {
                 this.widgetID = widget;
                 this.ws = ws;
             }
 
-            public ref WebSocket GetWebSocket()
+            public WebSocket GetWebSocket()
             {
-                return ref ws;
+                return ws;
             }
         }
 

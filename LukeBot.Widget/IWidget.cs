@@ -30,7 +30,6 @@ namespace LukeBot.Widget
         protected WebSocket mWS;
         private ManualResetEvent mWSLifetimeEndEvent;
         private AutoResetEvent mWSRecvAvailableEvent;
-        private Task mWSCloseTask;
         private Task mWSLifetimeTask;
         private Thread mWSMessagingThread;
         private bool mWSThreadDone;
@@ -100,7 +99,6 @@ namespace LukeBot.Widget
             }
 
             CloseWS(WebSocketCloseStatus.NormalClosure);
-            mWSLifetimeEndEvent.Set();
         }
 
 
@@ -110,10 +108,12 @@ namespace LukeBot.Widget
             mHead.Add(line);
         }
 
-        protected void CloseWS(WebSocketCloseStatus status)
+        protected async void CloseWS(WebSocketCloseStatus status)
         {
             if (mWS != null && mWS.State == WebSocketState.Open)
-                mWSCloseTask = mWS.CloseAsync(status, null, CancellationToken.None);
+                await mWS.CloseAsync(status, null, CancellationToken.None);
+
+            mWSLifetimeEndEvent.Set(); // trigger Kestrel thread to finish the connection
         }
 
         protected string RecvFromWS()
@@ -144,17 +144,17 @@ namespace LukeBot.Widget
         }
 
 
-        internal Task AcquireWS(ref WebSocket ws)
+        internal Task AcquireWS(WebSocket ws)
         {
             if (mWSMessagingThread != null && mWSMessagingThread.IsAlive)
             {
                 mWSThreadDone = true;
                 CloseWS(WebSocketCloseStatus.NormalClosure);
-                mWSCloseTask.Wait();
-                mWSMessagingThread.Join();
+                mWSMessagingThread.Join(); // Join the messaging thread
             }
 
             mWS = ws;
+            mWSLifetimeEndEvent.Reset();
             mWSLifetimeTask = Task.Run(() => mWSLifetimeEndEvent.WaitOne());
 
             mWSMessagingThread = new Thread(WSRecvThreadMain);
@@ -181,7 +181,6 @@ namespace LukeBot.Widget
             mWSRecvAvailableEvent = new AutoResetEvent(false);
             mWSThreadDone = false;
             mWSRecvQueue = new Queue<string>();
-            mWSCloseTask = null;
             mWSLifetimeTask = null;
         }
 
@@ -210,13 +209,9 @@ namespace LukeBot.Widget
             CloseWS(WebSocketCloseStatus.NormalClosure);
         }
 
-        public virtual async void WaitForShutdown()
+        public virtual void WaitForShutdown()
         {
-            if (mWSCloseTask != null)
-                await mWSCloseTask;
-
             mWSMessagingThread.Join();
-            mWSLifetimeEndEvent.Set();
         }
     }
 }

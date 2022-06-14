@@ -135,26 +135,35 @@ namespace LukeBot.Endpoint
                 return;
             }
 
-            WebSocket ws = await context.WebSockets.AcceptWebSocketAsync();
-
-            Intercom::AssignWSMessage msg = new Intercom::AssignWSMessage(widgetUUID, ref ws);
-            Intercom::AssignWSResponse resp =
-                Core.Systems.Intercom.Request<Intercom::AssignWSResponse, Intercom::AssignWSMessage>(
-                    Intercom::Endpoints.WIDGET_MANAGER, msg
-                );
-
-            resp.Wait();
-
-            if (resp.Status != Intercom::MessageStatus.SUCCESS)
+            try
             {
-                await ws.CloseAsync(WebSocketCloseStatus.InternalServerError,
-                    string.Format("Failed to forward WS to widget: {0}", resp.ErrorReason),
-                    CancellationToken.None
-                );
-                return;
-            }
+                WebSocket ws = await context.WebSockets.AcceptWebSocketAsync();
 
-            await resp.lifetimeTask;
+                Intercom::AssignWSMessage msg = new Intercom::AssignWSMessage(widgetUUID, ws);
+                Intercom::AssignWSResponse resp =
+                    Core.Systems.Intercom.Request<Intercom::AssignWSResponse, Intercom::AssignWSMessage>(
+                        Intercom::Endpoints.WIDGET_MANAGER, msg
+                    );
+
+                resp.Wait();
+
+                if (resp.Status != Intercom::MessageStatus.SUCCESS)
+                {
+                    await ws.CloseAsync(WebSocketCloseStatus.InternalServerError,
+                        string.Format("Failed to forward WS to widget: {0}", resp.ErrorReason),
+                        CancellationToken.None
+                    );
+                    return;
+                }
+
+                Logger.Log().Debug("Awaiting lifetime task to keep connection to {0} Widget WS alive", widgetUUID);
+                await resp.lifetimeTask;
+                Logger.Log().Debug("Lifetime task for Widget WS {0} finished", widgetUUID);
+            }
+            catch (Exception e)
+            {
+                Logger.Log().Error("Error while processing WS connection for widgets: {0}", e.Message);
+            }
         }
 
         public void ConfigureServices(IServiceCollection services)

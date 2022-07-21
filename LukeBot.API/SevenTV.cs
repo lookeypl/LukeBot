@@ -37,7 +37,7 @@ namespace LukeBot.API
 
                 foreach (var e in data.array)
                 {
-                    emotes.Add(new Emote((JObject)e));
+                    emotes.Add(new Emote(e as JObject));
                 }
             }
         };

@@ -40,7 +40,7 @@ namespace LukeBot.API
             {
                 foreach (var e in set)
                 {
-                    emotes.Add(new Emote((JObject)e));
+                    emotes.Add(new Emote(e as JObject));
                 }
             }
 
@@ -48,10 +48,10 @@ namespace LukeBot.API
             {
                 EmoteSet set = new EmoteSet();
 
-                JArray defaultSets = (JArray)data.obj["default_sets"];
+                JArray defaultSets = data.obj["default_sets"] as JArray;
                 foreach (string globalSetID in defaultSets)
                 {
-                    set.AddEmotes((JArray)data.obj["sets"][globalSetID]["emoticons"]);
+                    set.AddEmotes(data.obj["sets"][globalSetID]["emoticons"] as JArray);
                 }
 
                 return set;
@@ -62,7 +62,7 @@ namespace LukeBot.API
                 EmoteSet set = new EmoteSet();
 
                 string setID = (string)data.obj["room"]["set"];
-                set.AddEmotes((JArray)data.obj["sets"][setID]["emoticons"]);
+                set.AddEmotes(data.obj["sets"][setID]["emoticons"] as JArray);
 
                 return set;
             }

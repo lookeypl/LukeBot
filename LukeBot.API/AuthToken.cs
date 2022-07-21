@@ -12,7 +12,7 @@ namespace LukeBot.API
 
         public override void Fill(PromiseData data)
         {
-            AuthToken r = (AuthToken)data;
+            AuthToken r = data as AuthToken;
 
             access_token = r.access_token;
             refresh_token = r.refresh_token;

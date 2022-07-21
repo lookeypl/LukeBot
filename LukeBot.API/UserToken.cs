@@ -11,7 +11,7 @@ namespace LukeBot.API
 
         public override void Fill(PromiseData data)
         {
-            UserToken r = (UserToken)data;
+            UserToken r = data as UserToken;
 
             code = r.code;
             //scope = r.scope;

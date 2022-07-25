@@ -5,7 +5,7 @@ using LukeBot.Common;
 
 namespace LukeBot.Core
 {
-    public class PropertyDomain
+    internal class PropertyDomain
     {
         public string mName { get; private set; }
         private Dictionary<string, Property> mProperties;

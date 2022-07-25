@@ -2,6 +2,6 @@ namespace LukeBot.Spotify
 {
     internal class Constants
     {
-        public static readonly string SERVICE_NAME = "spotify";
+        public const string SERVICE_NAME = "spotify";
     }
 }

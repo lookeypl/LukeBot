@@ -8,7 +8,7 @@ namespace LukeBot.API
 {
     class Constants
     {
-        public static readonly string SPOTIFY_SERVICE_NAME = "spotify";
-        public static readonly string TWITCH_SERVICE_NAME = "twitch";
+        public const string SPOTIFY_SERVICE_NAME = "spotify";
+        public const string TWITCH_SERVICE_NAME = "twitch";
     }
 }

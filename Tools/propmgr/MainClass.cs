@@ -41,10 +41,10 @@ public class MainClass
     {
         foreach (Error e in errs)
         {
-            if (e is HelpVerbRequestedError)
+            if (e is HelpVerbRequestedError || e is HelpRequestedError)
                 continue;
 
-            Logger.Log().Error("  {0}", e.ToString());
+            Logger.Log().Error("ERROR: {0}", e.Tag);
         }
     }
 

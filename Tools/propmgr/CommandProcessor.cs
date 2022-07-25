@@ -22,8 +22,15 @@ public class Command
 [Verb("create", HelpText = "Create a new empty Property Store. Overwrites old one if exists.")]
 public class CreateCommand: Command
 {
+    [Option('t', "template",
+        Required = false,
+        Default = "default",
+        HelpText = "Template to use when creating the Store. Available options: default, empty")]
+    public string TemplateType { get; set; }
+
     public CreateCommand()
     {
+        TemplateType = "";
     }
 }
 
@@ -91,8 +98,10 @@ public class CommandProcessor
 
     public void CreatePropertyStore(CreateCommand cmd)
     {
-        Logger.Log().Info("Creating Property Store at {0}", cmd.StoreDir);
+        Logger.Log().Info("Creating Property Store at {0} with template {1}", cmd.StoreDir, cmd.TemplateType);
         PropertyStore store = new PropertyStore(cmd.StoreDir);
+        StoreTemplate template = StoreTemplate.Select(cmd.TemplateType);
+        template.Fill(store);
         store.Save();
     }
 

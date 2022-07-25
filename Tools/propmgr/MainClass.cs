@@ -10,13 +10,7 @@ namespace propmgr;
 
 public class MainClass
 {
-    public static ProgramOptions mOptions = new ProgramOptions();
     static CommandProcessor mProcessor = new CommandProcessor();
-
-    private static void HandleProgramOptions(ProgramOptions opts)
-    {
-        mOptions = opts;
-    }
 
     private static void HandleCreateCommand(CreateCommand cmd)
     {
@@ -60,12 +54,23 @@ public class MainClass
         Logger.SetPreamble(false);
         Logger.SetProjectRootDir(Directory.GetCurrentDirectory());
 
-        Parser.Default.ParseArguments<CreateCommand, AddCommand, RemoveCommand, ModifyCommand, ListCommand>(args)
-            .WithParsed<CreateCommand>(HandleCreateCommand)
-            .WithParsed<AddCommand>(HandleAddCommand)
-            .WithParsed<RemoveCommand>(HandleRemoveCommand)
-            .WithParsed<ModifyCommand>(HandleModifyCommand)
-            .WithParsed<ListCommand>(HandleListCommand)
-            .WithNotParsed(HandleParseError);
+        try
+        {
+            Parser.Default.ParseArguments<CreateCommand, AddCommand, RemoveCommand, ModifyCommand, ListCommand>(args)
+                .WithParsed<CreateCommand>(HandleCreateCommand)
+                .WithParsed<AddCommand>(HandleAddCommand)
+                .WithParsed<RemoveCommand>(HandleRemoveCommand)
+                .WithParsed<ModifyCommand>(HandleModifyCommand)
+                .WithParsed<ListCommand>(HandleListCommand)
+                .WithNotParsed(HandleParseError);
+        }
+        catch (System.IO.FileNotFoundException)
+        {
+            Logger.Log().Error("Property Store file not found.");
+        }
+        catch (System.Exception e)
+        {
+            Logger.Log().Error("Other error: {0}", e.Message);
+        }
     }
 }

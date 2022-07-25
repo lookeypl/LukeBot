@@ -82,73 +82,48 @@ public class ListCommand: Command
 
 public class CommandProcessor
 {
-    private PropertyStore? mStore;
-
-    private bool OpenStore(Command cmd)
+    private PropertyStore OpenStore(Command cmd)
     {
-        try
-        {
-            mStore = new PropertyStore(cmd.StoreDir);
-            mStore.Load();
-        }
-        catch (System.IO.FileNotFoundException)
-        {
-            Logger.Log().Error("Property Store file {0} not found.", cmd.StoreDir);
-            return false;
-        }
-        catch (Exception e)
-        {
-            Logger.Log().Error("Other error: {0}", e.Message);
-            return false;
-        }
-
-        return true;
+        PropertyStore store = new PropertyStore(cmd.StoreDir);
+        store.Load();
+        return store;
     }
 
     public void CreatePropertyStore(CreateCommand cmd)
     {
         Logger.Log().Info("Creating Property Store at {0}", cmd.StoreDir);
-        mStore = new PropertyStore(cmd.StoreDir);
-        mStore.Save();
+        PropertyStore store = new PropertyStore(cmd.StoreDir);
+        store.Save();
     }
 
     public void AddProperty(AddCommand cmd)
     {
         Logger.Log().Info("Adding Property {0} {1} to store {2}", cmd.Type, cmd.Name, cmd.StoreDir);
-        if (!OpenStore(cmd))
-            return;
-        mStore.Add(cmd.Name, Property.Create(cmd.Type, cmd.Value));
-        mStore.Save();
+        PropertyStore store = OpenStore(cmd);
+        store.Add(cmd.Name, Property.Create(cmd.Type, cmd.Value));
+        store.Save();
     }
 
     public void RemoveProperty(RemoveCommand cmd)
     {
         Logger.Log().Info("Removing Property {0} from store {1}", cmd.Name, cmd.StoreDir);
-        if (!OpenStore(cmd))
-            return;
-        mStore.Remove(cmd.Name);
-        mStore.Save();
+        PropertyStore store = OpenStore(cmd);
+        store.Remove(cmd.Name);
+        store.Save();
     }
 
     public void ModifyProperty(ModifyCommand cmd)
     {
         Logger.Log().Info("Modify Property {0} in store {1}", cmd.Name, cmd.StoreDir);
-        if (!OpenStore(cmd))
-            return;
-        mStore.Modify(cmd.Name, cmd.Value);
-        mStore.Save();
+        PropertyStore store = OpenStore(cmd);
+        store.Modify(cmd.Name, cmd.Value);
+        store.Save();
     }
 
     public void ListProperties(ListCommand cmd)
     {
         Logger.Log().Info("List properties in store {0}", cmd.StoreDir);
-        if (!OpenStore(cmd))
-            return;
-        mStore.PrintDebug(LogLevel.Info);
-    }
-
-    public CommandProcessor()
-    {
-        mStore = null;
+        PropertyStore store = OpenStore(cmd);
+        store.PrintDebug(LogLevel.Info);
     }
 }

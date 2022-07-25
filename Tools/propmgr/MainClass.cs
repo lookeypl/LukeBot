@@ -57,6 +57,7 @@ public class MainClass
     public static void Main(string[] args)
     {
         FileUtils.SetUnifiedCWD();
+        Logger.SetPreamble(false);
         Logger.SetProjectRootDir(Directory.GetCurrentDirectory());
 
         Parser.Default.ParseArguments<CreateCommand, AddCommand, RemoveCommand, ModifyCommand, ListCommand>(args)

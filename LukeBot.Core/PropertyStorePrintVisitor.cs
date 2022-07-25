@@ -28,7 +28,7 @@ namespace LukeBot.Core
 
         public void Visit<T>(PropertyType<T> p)
         {
-            Logger.Log().Message(mLogLevel, "     {0}\"{1}\" = {2}", GetCurrentTabs(), p.Name, JsonConvert.SerializeObject(p.Value));
+            Logger.Log().Message(mLogLevel, "{0}\"{1}\" = {2}", GetCurrentTabs(), p.Name, JsonConvert.SerializeObject(p.Value));
         }
 
         public void VisitStart(PropertyDomain pd)
@@ -41,7 +41,7 @@ namespace LukeBot.Core
         public void VisitEnd(PropertyDomain pd)
         {
             mTabCount--;
-            Logger.Log().Message(mLogLevel, "  {0}}}", GetCurrentTabs());
+            Logger.Log().Message(mLogLevel, "{0}}}", GetCurrentTabs());
         }
     }
 }

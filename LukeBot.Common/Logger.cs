@@ -28,6 +28,7 @@ namespace LukeBot.Common
         private Timer mTimer = null;
         private ConsoleColor mDefaultColor;
         private string mProjectRootDir;
+        private bool mAllowPreamble;
 
         public event EventHandler<LogMessageArgs> PreLogMessage;
         public event EventHandler<LogMessageArgs> PostLogMessage;
@@ -51,6 +52,7 @@ namespace LukeBot.Common
             mCultureInfo = new CultureInfo("en-US");
             mTimer = new Timer();
             mProjectRootDir = "";
+            mAllowPreamble = true;
             mTimer.Start();
 
             mDefaultColor = Console.ForegroundColor;
@@ -73,6 +75,11 @@ namespace LukeBot.Common
         public void SetProjectRootDir(string dir)
         {
             mProjectRootDir = dir;
+        }
+
+        public void SetPreamble(bool enable)
+        {
+            mAllowPreamble = enable;
         }
 
         public void LogInternal(LogLevel level, string file, int line, string func, string msg, params object[] args)
@@ -134,7 +141,10 @@ namespace LukeBot.Common
             };
 
             OnPreLogMessage(msgArgs);
-            Console.WriteLine(intro + formatted);
+            if (mAllowPreamble)
+                Console.WriteLine(intro + formatted);
+            else
+                Console.WriteLine(formatted);
             Console.ForegroundColor = mDefaultColor;
             OnPostLogMessage(msgArgs);
         }
@@ -244,6 +254,11 @@ namespace LukeBot.Common
         public static void SetProjectRootDir(string dir)
         {
             LoggerSingleton.Instance.SetProjectRootDir(dir);
+        }
+
+        public static void SetPreamble(bool enabled)
+        {
+            LoggerSingleton.Instance.SetPreamble(enabled);
         }
 
         public static Log Log([CallerFilePath] string file = "", [CallerLineNumber] int line = 0, [CallerMemberName] string func = "")

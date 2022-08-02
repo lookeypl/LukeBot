@@ -107,12 +107,15 @@ namespace LukeBot
             Endpoint.Endpoint.StopThread();
         }
 
-        public void Run(string[] args)
+        public void Run(ProgramOptions opts)
         {
             Console.CancelKeyPress += OnCancelKeyPress;
 
             Logger.Log().Info("LukeBot v0.0.1 starting");
             mCLI = new CLI.Interface();
+
+            Logger.Log().Info("Initializing Properties...");
+            Core.Systems.InitializeProperties(opts.StoreDir);
 
             Logger.Log().Info("Initializing Core systems...");
             Core.Systems.Initialize();

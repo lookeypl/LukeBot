@@ -40,12 +40,19 @@
             }
         }
 
+        static public void InitializeProperties(string storePath)
+        {
+            if (mPropertyStore != null)
+                return;
+
+            mPropertyStore = new PropertyStore(Common.Constants.PROPERTY_STORE_FILE);
+            mPropertyStore.Load();
+        }
+
         static public void Initialize()
         {
             if (mInitialized)
                 return;
-
-            mPropertyStore = new PropertyStore(Common.Constants.PROPERTY_STORE_FILE);
 
             mEventSystem = new EventSystem();
             mIntercomSystem = new IntercomSystem();
@@ -62,6 +69,9 @@
             mEventSystem = null;
 
             mInitialized = false;
+
+            mPropertyStore.Save();
+            mPropertyStore = null;
         }
     }
 }

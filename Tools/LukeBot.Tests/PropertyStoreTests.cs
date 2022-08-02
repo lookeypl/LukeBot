@@ -75,6 +75,30 @@ namespace LukeBot.Tests
         }
 
         [TestMethod]
+        public void PropertyStore_AddGetComplex()
+        {
+            const int TEST_INT = 10;
+            const float TEST_FLOAT = 3.14f;
+            const string TEST_STRING = "I am sped";
+
+            ComplexObj complexSrc = new ComplexObj(TEST_INT, TEST_FLOAT, TEST_STRING);
+            mStore.Add("test.complex", Property.Create<ComplexObj>(complexSrc));
+
+            TestPropertyValue<ComplexObj>("test.complex", complexSrc);
+        }
+
+        [TestMethod]
+        public void PropertyStore_AddGetArrays()
+        {
+
+
+            ComplexObj complexSrc = new ComplexObj(TEST_INT, TEST_FLOAT, TEST_STRING);
+            mStore.Add("test.complex", Property.Create<ComplexObj>(complexSrc));
+
+            TestPropertyValue<ComplexObj>("test.complex", complexSrc);
+        }
+
+        [TestMethod]
         public void PropertyStore_AddExisting()
         {
             mStore.Add("test.a", Property.Create<int>(2));

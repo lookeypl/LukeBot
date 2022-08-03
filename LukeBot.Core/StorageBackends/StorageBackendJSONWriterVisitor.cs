@@ -36,7 +36,7 @@ namespace LukeBot.Core
         {
             Logger.Log().Debug("VisitStart: {0}", pd.mName);
 
-            if (pd.mName == Constants.PROPERTY_DOMAIN_ROOT)
+            if (pd.mName == PropertyStore.PROP_STORE_DOMAIN_ROOT)
             {
                 mRootObject = new JObject();
             }
@@ -49,7 +49,7 @@ namespace LukeBot.Core
             Logger.Log().Debug("VisitEnd: {0}", pd.mName);
 
             JObject o;
-            if (pd.mName == Constants.PROPERTY_DOMAIN_ROOT)
+            if (pd.mName == PropertyStore.PROP_STORE_DOMAIN_ROOT)
             {
                 o = mRootObject;
             }
@@ -62,7 +62,7 @@ namespace LukeBot.Core
             o.Add("type", typeof(PropertyDomain).ToString());
             o.Add("value", mObjectArrays.Pop());
 
-            if (pd.mName != Constants.PROPERTY_DOMAIN_ROOT)
+            if (pd.mName != PropertyStore.PROP_STORE_DOMAIN_ROOT)
             {
                 mObjectArrays.Peek().Add(o);
             }

@@ -46,7 +46,7 @@ namespace LukeBot.Core
             JObject rootObject = (JObject)JToken.ReadFrom(reader);
             reader.Close();
 
-            if (((string)rootObject["name"]) != Constants.PROPERTY_DOMAIN_ROOT ||
+            if (((string)rootObject["name"]) != PropertyStore.PROP_STORE_DOMAIN_ROOT ||
                 ((string)rootObject["type"]) != typeof(PropertyDomain).ToString())
             {
                 throw new PropertyFileInvalidException("Property file doesn't start with a root domain");

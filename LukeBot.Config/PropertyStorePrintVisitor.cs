@@ -2,7 +2,7 @@ using LukeBot.Common;
 using Newtonsoft.Json;
 
 
-namespace LukeBot.Core
+namespace LukeBot.Config
 {
     class PropertyStorePrintVisitor : PropertyStoreVisitor
     {

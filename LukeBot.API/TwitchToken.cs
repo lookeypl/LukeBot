@@ -12,7 +12,7 @@ namespace LukeBot.API
                 "https://id.twitch.tv/oauth2/authorize",
                 "https://id.twitch.tv/oauth2/token",
                 "https://id.twitch.tv/oauth2/revoke",
-                "https://" + Utils.GetConfigServerIP() + "/callback/twitch"
+                "https://" + /* TODO PROPSTORE Utils.GetConfigServerIP() + */"/callback/twitch"
             )
         {
         }

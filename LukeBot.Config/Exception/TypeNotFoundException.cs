@@ -1,4 +1,4 @@
-﻿namespace LukeBot.Core
+﻿namespace LukeBot.Config
 {
     public class TypeNotFoundException: System.Exception
     {

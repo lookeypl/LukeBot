@@ -4,7 +4,7 @@ using System.Text;
 using System.IO;
 using LukeBot.Common;
 
-namespace LukeBot.Core
+namespace LukeBot.Config
 {
     public class PropertyStore
     {

@@ -1,5 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using LukeBot.Core;
+using LukeBot.Config;
 using System;
 
 

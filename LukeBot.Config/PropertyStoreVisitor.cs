@@ -1,4 +1,4 @@
-namespace LukeBot.Core
+namespace LukeBot.Config
 {
     internal interface PropertyStoreVisitor
     {

@@ -1,4 +1,5 @@
 ﻿using LukeBot.Common;
+using LukeBot.Config;
 using LukeBot.Endpoint;
 using LukeBot.Twitch;
 using LukeBot.Spotify;
@@ -115,7 +116,7 @@ namespace LukeBot
             mCLI = new CLI.Interface();
 
             Logger.Log().Info("Initializing Properties...");
-            Core.Systems.InitializeProperties(opts.StoreDir);
+            Conf.Initialize(opts.StoreDir);
 
             Logger.Log().Info("Initializing Core systems...");
             Core.Systems.Initialize();
@@ -125,6 +126,7 @@ namespace LukeBot
                 StartDevmode();
                 Logger.Log().Info("Core systems teardown...");
                 Core.Systems.Teardown();
+                Conf.Teardown();
                 return;
             }
 
@@ -191,6 +193,7 @@ namespace LukeBot
 
             Logger.Log().Info("Core systems teardown...");
             Core.Systems.Teardown();
+            Conf.Teardown();
         }
     }
 }

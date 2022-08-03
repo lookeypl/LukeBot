@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 
-namespace LukeBot.Core
+namespace LukeBot.Config
 {
     public abstract class IStorageBackend
     {

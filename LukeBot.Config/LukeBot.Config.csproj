@@ -1,11 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
-    <StartupObject>LukeBot.MainClass</StartupObject>
     <Version>0.0.1</Version>
-    <NeutralLanguage>en-US</NeutralLanguage>
     <Configurations>Debug;Release;SecureDebug</Configurations>
   </PropertyGroup>
 
@@ -27,17 +24,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LukeBot.CLI\LukeBot.CLI.csproj" />
-    <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
-    <ProjectReference Include="..\LukeBot.Config\LukeBot.Config.csproj" />
-    <ProjectReference Include="..\LukeBot.Endpoint\LukeBot.Endpoint.csproj" />
-    <ProjectReference Include="..\LukeBot.Spotify\LukeBot.Spotify.csproj" />
-    <ProjectReference Include="..\LukeBot.Twitch\LukeBot.Twitch.csproj" />
-    <ProjectReference Include="..\LukeBot.Widget\LukeBot.Widget.csproj" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using LukeBot.Core;
+using LukeBot.Config;
 using LukeBot.Common;
 
 namespace propmgr;

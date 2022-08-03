@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using LukeBot.Common;
-using LukeBot.Core;
+using LukeBot.Config;
 using CommandLine;
 
 namespace propmgr;

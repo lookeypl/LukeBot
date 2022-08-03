@@ -5,7 +5,6 @@
         static private CommunicationSystem mCommunicationSystem;
         static private EventSystem mEventSystem;
         static private IntercomSystem mIntercomSystem;
-        static private PropertyStore mPropertyStore;
         static private bool mInitialized;
 
         static public CommunicationSystem Communication
@@ -32,23 +31,6 @@
             }
         }
 
-        static public PropertyStore Properties
-        {
-            get
-            {
-                return mPropertyStore;
-            }
-        }
-
-        static public void InitializeProperties(string storePath)
-        {
-            if (mPropertyStore != null)
-                return;
-
-            mPropertyStore = new PropertyStore(Common.Constants.PROPERTY_STORE_FILE);
-            mPropertyStore.Load();
-        }
-
         static public void Initialize()
         {
             if (mInitialized)
@@ -69,9 +51,6 @@
             mEventSystem = null;
 
             mInitialized = false;
-
-            mPropertyStore.Save();
-            mPropertyStore = null;
         }
     }
 }

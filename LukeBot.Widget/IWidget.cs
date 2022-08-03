@@ -194,7 +194,7 @@ namespace LukeBot.Widget
                 page += h;
             }
 
-            page += string.Format("<meta name=\"serveraddress\" content=\"{0}\">", Utils.GetConfigServerIP() + "/widgetws/" + ID);
+            page += string.Format("<meta name=\"serveraddress\" content=\"{0}\">", /* TODO PROPSTORE Utils.GetConfigServerIP() + */"/widgetws/" + ID);
 
             page += "</head><body>";
             page += GetWidgetCode();

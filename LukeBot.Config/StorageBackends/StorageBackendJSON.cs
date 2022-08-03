@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 using LukeBot.Common;
 
 
-namespace LukeBot.Core
+namespace LukeBot.Config
 {
     class StorageBackendJSON: IStorageBackend
     {

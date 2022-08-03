@@ -12,7 +12,7 @@ namespace LukeBot.API
                 "https://accounts.spotify.com/authorize",
                 "https://accounts.spotify.com/api/token",
                 "https://accounts.spotify.com/api/revoke",
-                "https://" + Utils.GetConfigServerIP() + "/callback/spotify"
+                "https://" + /* TODO PROPSTORE Utils.GetConfigServerIP() + */"/callback/spotify"
             )
         {
         }

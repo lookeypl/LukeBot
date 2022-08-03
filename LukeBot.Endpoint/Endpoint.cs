@@ -48,7 +48,8 @@ namespace LukeBot.Endpoint
         {
             IWebHostBuilder builder = WebHost.CreateDefaultBuilder();
 
-            string IP = Common.Utils.GetConfigServerIP();
+            // TODO PROPSTORE
+            string IP = ""; //Common.Utils.GetConfigServerIP();
             if (IP != Common.Constants.DEFAULT_SERVER_IP)
             {
                 string[] URLs = new string[]

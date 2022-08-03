@@ -1,4 +1,4 @@
-using LukeBot.Core;
+using LukeBot.Config;
 
 namespace propmgr;
 

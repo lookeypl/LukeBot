@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 using System.Linq;
 
 
-namespace LukeBot.Core
+namespace LukeBot.Config
 {
     public abstract class Property
     {

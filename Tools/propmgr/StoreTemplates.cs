@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using LukeBot.Core;
 using LukeBot.Common;
 
@@ -19,10 +20,11 @@ public class DefaultStoreTemplate: StoreTemplate
     public override void Fill(PropertyStore store)
     {
         store.Add("lukebot.server_ip", Property.Create<string>("127.0.0.1"));
-        store.Add("lukebot.users", Property.Create<Array<string>>("127.0.0.1"));
+        store.Add("lukebot.users", Property.Create<string[]>(new string[] {}));
 
         store.Add("twitch.client_id", Property.Create<string>(""));
         store.Add("twitch.client_secret", Property.Create<string>(""));
+
         store.Add("spotify.client_id", Property.Create<string>(""));
         store.Add("spotify.client_secret", Property.Create<string>(""));
     }

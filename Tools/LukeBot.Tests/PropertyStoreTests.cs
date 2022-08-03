@@ -90,12 +90,10 @@ namespace LukeBot.Tests
         [TestMethod]
         public void PropertyStore_AddGetArrays()
         {
+            string[] arr = new string[] { "I don't know", "what to say" };
+            mStore.Add("test.array", Property.Create<string[]>(arr));
 
-
-            ComplexObj complexSrc = new ComplexObj(TEST_INT, TEST_FLOAT, TEST_STRING);
-            mStore.Add("test.complex", Property.Create<ComplexObj>(complexSrc));
-
-            TestPropertyValue<ComplexObj>("test.complex", complexSrc);
+            TestPropertyValue<string[]>("test.array", arr);
         }
 
         [TestMethod]

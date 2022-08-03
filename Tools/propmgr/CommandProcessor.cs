@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using LukeBot.Common;
 using LukeBot.Core;
 using CommandLine;
@@ -99,6 +101,39 @@ public class CommandProcessor
     public void CreatePropertyStore(CreateCommand cmd)
     {
         Logger.Log().Info("Creating Property Store at {0} with template {1}", cmd.StoreDir, cmd.TemplateType);
+
+        if (FileUtils.Exists(cmd.StoreDir))
+        {
+            Logger.Log().Warning("File {0} already exists. Overwrite? (y/n)", cmd.StoreDir);
+            bool accepted = false;
+
+            string? line = Console.ReadLine();
+
+            if (line == null)
+            {
+                Logger.Log().Info("No option provided");
+                return;
+            }
+
+            if (line.Length == 1 && (line[0] == 'y' || line[0] == 'n'))
+            {
+                accepted = (line[0] == 'y');
+            }
+            else
+            {
+                Logger.Log().Info("Option {0} incorrect - specify 'y' or 'n'", line);
+                return;
+            }
+
+            if (!accepted)
+            {
+                Logger.Log().Info("Aborting.");
+                return;
+            }
+
+            File.Delete(cmd.StoreDir);
+        }
+
         PropertyStore store = new PropertyStore(cmd.StoreDir);
         StoreTemplate template = StoreTemplate.Select(cmd.TemplateType);
         template.Fill(store);

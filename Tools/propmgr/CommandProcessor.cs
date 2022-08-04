@@ -94,7 +94,6 @@ public class CommandProcessor
     private PropertyStore OpenStore(Command cmd)
     {
         PropertyStore store = new PropertyStore(cmd.StoreDir);
-        store.Load();
         return store;
     }
 

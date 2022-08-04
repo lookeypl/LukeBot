@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.IO;
+﻿using System.Collections.Generic;
 using LukeBot.Common;
 
 namespace LukeBot.Config
@@ -10,9 +7,8 @@ namespace LukeBot.Config
     {
         internal const string PROP_STORE_DOMAIN_ROOT = "root";
         private const string PROP_STORE_METADATA_DOMAIN = "store";
-
         private const string PROP_STORE_VERSION_PROP_NAME = "version";
-        private const string PROP_STORE_VERSION_PROP = PROP_STORE_METADATA_DOMAIN + "." + PROP_STORE_VERSION_PROP_NAME;
+        private readonly string PROP_STORE_VERSION_PROP = Utils.FormConfName(PROP_STORE_METADATA_DOMAIN, PROP_STORE_VERSION_PROP_NAME);
         private const int PROP_STORE_FILE_VERSION = 1;
 
         private PropertyDomain mRootDomain;
@@ -30,17 +26,40 @@ namespace LukeBot.Config
             return domainQueue;
         }
 
+        private void Load()
+        {
+            mStorage.Load(this);
+            ValidateMetadata();
+        }
+
         private void FillStoreMetadata()
         {
             Add(PROP_STORE_VERSION_PROP, Property.Create<int>(PROP_STORE_FILE_VERSION));
         }
 
+        private void ValidateMetadata()
+        {
+            // validate if we have supported version of store file loaded
+            int storeVer = Get(PROP_STORE_VERSION_PROP).Get<int>();
+            if (storeVer != PROP_STORE_FILE_VERSION)
+            {
+                throw new PropertyFileInvalidException("Unsupported version of Store loaded: {0}", storeVer);
+            }
+        }
+
         public PropertyStore(string storePath)
         {
             mRootDomain = new PropertyDomain(PROP_STORE_DOMAIN_ROOT);
-            FillStoreMetadata();
-
             mStorage = new StorageBackendJSON(storePath);
+
+            if (FileUtils.Exists(storePath))
+            {
+                Load();
+            }
+            else
+            {
+                FillStoreMetadata();
+            }
         }
 
         ~PropertyStore()
@@ -70,21 +89,6 @@ namespace LukeBot.Config
         public void Remove(string name)
         {
             mRootDomain.Remove(UnwrapName(name));
-        }
-
-        public void Load()
-        {
-            // Clear existing data
-            mRootDomain = new PropertyDomain(PROP_STORE_DOMAIN_ROOT);
-
-            mStorage.Load(this);
-
-            // validate if we have supported version of store file loaded
-            int storeVer = Get(PROP_STORE_VERSION_PROP).Get<int>();
-            if (storeVer != PROP_STORE_FILE_VERSION)
-            {
-                throw new PropertyFileInvalidException("Unsupported version of Store loaded: {0}", storeVer);
-            }
         }
 
         public void Save()

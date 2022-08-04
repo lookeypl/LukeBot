@@ -10,7 +10,6 @@ namespace LukeBot.Config
         public static void Initialize(string storeDir)
         {
             mStore = new PropertyStore(storeDir);
-            mStore.Load();
         }
 
         public static void Add(string name, Property p)
@@ -21,6 +20,11 @@ namespace LukeBot.Config
         public static Property Get(string name)
         {
             return mStore.Get(name);
+        }
+
+        public static T Get<T>(string name)
+        {
+            return mStore.Get(name).Get<T>();
         }
 
         public static void Modify<T>(string name, T value)

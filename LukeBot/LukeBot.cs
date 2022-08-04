@@ -35,6 +35,40 @@ namespace LukeBot
         {
         }
 
+        void LoadUsers()
+        {
+            string[] users = Conf.Get<string[]>("lukebot.users");
+
+            if (users.Length == 0)
+            {
+                Logger.Log().Info("No users found");
+                return;
+            }
+
+            foreach (string user in users)
+            {
+                Logger.Log().Info("Loading LukeBot user " + user);
+                mUsers.Add(new UserContext(user));
+            }
+        }
+
+        void UnloadUsers()
+        {
+            Logger.Log().Info("Unloading users...");
+
+            foreach (UserContext u in mUsers)
+            {
+                u.RequestModuleShutdown();
+            }
+
+            foreach (UserContext u in mUsers)
+            {
+                u.WaitForModulesShutdown();
+            }
+
+            mUsers.Clear();
+        }
+
         public bool IsInDevMode()
         {
             try
@@ -115,12 +149,12 @@ namespace LukeBot
             Logger.Log().Info("LukeBot v0.0.1 starting");
             mCLI = new CLI.Interface();
 
-            Logger.Log().Info("Initializing Properties...");
+            Logger.Log().Info("Loading configuration...");
             Conf.Initialize(opts.StoreDir);
 
             Logger.Log().Info("Initializing Core systems...");
             Core.Systems.Initialize();
-
+/*
             if (IsInDevMode())
             {
                 StartDevmode();
@@ -129,9 +163,6 @@ namespace LukeBot
                 Conf.Teardown();
                 return;
             }
-
-            Logger.Log().Info("Starting web endpoint...");
-            Endpoint.Endpoint.StartThread();
 
             Logger.Log().Info("LukeBot modules starting...");
             mUsers.Add(new UserContext("Lookey"));
@@ -187,6 +218,28 @@ namespace LukeBot
             mUsers[0].RequestModuleShutdown();
             mUsers[0].WaitForModulesShutdown();
             mUsers = null;
+*/
+            try
+            {
+                Logger.Log().Info("Starting web endpoint...");
+                Endpoint.Endpoint.StartThread();
+
+                LoadUsers();
+
+                Logger.Log().Info("Giving control to CLI");
+                mCLI.MainLoop();
+            }
+            catch (Common.Exception e)
+            {
+                e.Print(LogLevel.Error);
+            }
+            catch (System.Exception e)
+            {
+                Logger.Log().Error("Exception caught: {0}", e.Message);
+                Logger.Log().Error("Backtrace:\n{0}", e.StackTrace);
+            }
+
+            UnloadUsers();
 
             Logger.Log().Info("Stopping web endpoint...");
             Endpoint.Endpoint.StopThread();

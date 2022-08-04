@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using LukeBot.Config;
 using System;
+using System.IO;
 
 
 namespace LukeBot.Tests
@@ -40,7 +41,7 @@ namespace LukeBot.Tests
             }
         };
 
-        private const string PROPERTY_STORE_DATA_FILE = "Data/test.store.lukebot";
+        private const string PROPERTY_STORE_TEST_DATA_FILE = "Data/test.store.lukebot";
 
         PropertyStore mStore;
 
@@ -59,7 +60,11 @@ namespace LukeBot.Tests
         public void PropertyStore_TestStartup()
         {
             Console.WriteLine("TestInit");
-            mStore = new PropertyStore(PROPERTY_STORE_DATA_FILE);
+
+            if (File.Exists(PROPERTY_STORE_TEST_DATA_FILE))
+                File.Delete(PROPERTY_STORE_TEST_DATA_FILE);
+
+            mStore = new PropertyStore(PROPERTY_STORE_TEST_DATA_FILE);
         }
 
         [TestMethod]
@@ -191,8 +196,7 @@ namespace LukeBot.Tests
             const float TEST_FLOAT_2 = 1.23456f;
             const string TEST_STRING_2 = "I don't really know what to put in here";
 
-            // create a new store, add some props and save it
-            mStore = new PropertyStore(PROPERTY_STORE_DATA_FILE);
+            // fill our store with some props and save it
             mStore.Add("loadtest.bool", Property.Create<bool>(TEST_BOOL));
             mStore.Add("loadtest.int", Property.Create<int>(TEST_INT));
             mStore.Add("loadtest.nested.float", Property.Create<float>(TEST_FLOAT));
@@ -212,9 +216,7 @@ namespace LukeBot.Tests
             mStore.Save();
 
             // create a new store, load it and check if it has the values correct
-            mStore = new PropertyStore(PROPERTY_STORE_DATA_FILE);
-            mStore.Load();
-
+            mStore = new PropertyStore(PROPERTY_STORE_TEST_DATA_FILE);
             TestPropertyValue<bool>("loadtest.bool", TEST_BOOL);
             TestPropertyValue<int>("loadtest.int", TEST_INT);
             TestPropertyValue<float>("loadtest.nested.float", TEST_FLOAT);
@@ -223,8 +225,8 @@ namespace LukeBot.Tests
             TestPropertyValue<ComplexObj>("other.complex", complexSrc);
         }
 
-        [TestCleanup]
-        public void PropertyStore_TestTeardown()
+        [ClassCleanup]
+        static public void PropertyStore_ClassTeardown()
         {
             Console.WriteLine("Cleanup");
         }

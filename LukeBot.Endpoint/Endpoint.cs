@@ -2,6 +2,7 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using System.Threading;
+using LukeBot.Config;
 
 
 namespace LukeBot.Endpoint
@@ -48,8 +49,7 @@ namespace LukeBot.Endpoint
         {
             IWebHostBuilder builder = WebHost.CreateDefaultBuilder();
 
-            // TODO PROPSTORE
-            string IP = ""; //Common.Utils.GetConfigServerIP();
+            string IP = Conf.Get<string>(Common.Constants.PROP_STORE_SERVER_IP_PROP);
             if (IP != Common.Constants.DEFAULT_SERVER_IP)
             {
                 string[] URLs = new string[]

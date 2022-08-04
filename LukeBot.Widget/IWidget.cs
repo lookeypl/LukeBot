@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using LukeBot.Common;
+using LukeBot.Config;
 
 
 namespace LukeBot.Widget
@@ -194,6 +195,7 @@ namespace LukeBot.Widget
                 page += h;
             }
 
+            string serverIP = Conf.Get<string>(Constants.SERVER_IP_FILE);
             page += string.Format("<meta name=\"serveraddress\" content=\"{0}\">", /* TODO PROPSTORE Utils.GetConfigServerIP() + */"/widgetws/" + ID);
 
             page += "</head><body>";

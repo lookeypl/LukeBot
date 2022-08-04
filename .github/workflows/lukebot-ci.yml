@@ -3,35 +3,41 @@ on:
   push:
     branches: [ $default-branch, devel ]
   pull_request:
-    branches: [ $default-branch ]
+    branches: [ devel ]
 
 jobs:
   linux-build:
     name: Linux Build
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v2
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: 6.0.x
     - name: Restore dependencies
       run: dotnet restore
     - name: Build Release
       run: dotnet build --no-restore -c Release
     - name: Build Debug
       run: dotnet build --no-restore -c Debug
+    - name: Test
+      run: dotnet test LukeBot.sln
 
   windows-build:
     name: Windows Build
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1.0.2
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
       with:
-        vs-version: 16.10
+        dotnet-version: 6.0.x
     - name: Restore
-      run: nuget restore LukeBot.sln
-    - name: Build
-      run: msbuild LukeBot.sln
+      run: dotnet restore LukeBot.sln
+    - name: Build Release
+      run: dotnet build --no-restore -c Release
+    - name: Build Debug
+      run: dotnet build --no-restore -c Debug
+    - name: Test
+      run: dotnet test LukeBot.sln

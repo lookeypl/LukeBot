@@ -50,7 +50,7 @@ namespace LukeBot.Spotify
             if (labelFilled)
                 label = '[' + label + ']';
             else
-                label = "[]";
+                label = " ";
 
             SpotifyMusicTrackChangedArgs ret = new SpotifyMusicTrackChangedArgs(artists, title, label, duration);
 

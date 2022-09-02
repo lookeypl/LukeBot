@@ -33,11 +33,21 @@ namespace LukeBot.API
         public class Album: Response
         {
             public List<AlbumCopyright> copyrights { get; set; }
+
+            public Album()
+            {
+                copyrights = new List<AlbumCopyright>();
+            }
         }
 
         public class PlaybackStateArtists
         {
             public string name { get; set; }
+
+            public PlaybackStateArtists()
+            {
+                name = "";
+            }
         };
 
         public class PlaybackStateAlbum
@@ -45,6 +55,13 @@ namespace LukeBot.API
             public string href { get; set; }
             public string id { get; set; }
             public List<AlbumCopyright> copyrights { get; set; }
+
+            public PlaybackStateAlbum()
+            {
+                href = "";
+                id = "";
+                copyrights = new List<AlbumCopyright>();
+            }
         };
 
         public class PlaybackStateItem
@@ -54,6 +71,15 @@ namespace LukeBot.API
             public int duration_ms { get; set; }
             public string id { get; set; }
             public string name { get; set; }
+
+            public PlaybackStateItem()
+            {
+                artists = new List<PlaybackStateArtists>();
+                album = new PlaybackStateAlbum();
+                duration_ms = 0;
+                id = "";
+                name = "";
+            }
         };
 
         public class PlaybackState: Response

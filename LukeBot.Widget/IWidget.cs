@@ -211,7 +211,8 @@ namespace LukeBot.Widget
 
         public virtual void WaitForShutdown()
         {
-            mWSMessagingThread.Join();
+            if (mWSMessagingThread != null)
+                mWSMessagingThread.Join();
         }
     }
 }

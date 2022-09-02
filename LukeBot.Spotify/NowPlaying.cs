@@ -99,6 +99,7 @@ namespace LukeBot.Spotify
 
                 mCurrentPlaybackState = state;
                 mChangeExpected = false;
+                Logger.Log().Debug("{0}", mCurrentPlaybackState.ToString());
                 mTrackChangedCallback.PublishEvent(Utils.DataItemToTrackChangedArgs(mCurrentPlaybackState.item));
             }
 
@@ -168,7 +169,8 @@ namespace LukeBot.Spotify
                 }
                 catch (System.Exception e)
                 {
-                    Logger.Log().Warning("Caught exception while fetching data: {0}. Ignoring and continuing anyway...", e.Message);
+                    Logger.Log().Warning("Caught exception while fetching data: {0}\n{1}", e.Message, e.StackTrace);
+                    Logger.Log().Warning("Ignoring and continuing anyway...");
                 }
             }
         }

@@ -64,21 +64,42 @@ namespace LukeBot.Config
 
         ~PropertyStore()
         {
-            Save();
+            mRootDomain = null;
+            mStorage = null;
         }
 
+        // Add a new property to the Store.
         // Takes full name in form of ex. "doma.domb.name", unwraps it and adds value to the store.
-        // If value exists, returns false.
+        // If adding fails (ex. value exists) throws an appropriate Exception.
         public void Add(string name, Property v)
         {
             mRootDomain.Add(UnwrapName(name), v);
         }
 
+        // Get a Property from the Store.
         // Takes full name in form of ex. "doma.domb.name", unwraps it and returns value if found
-        // If not found, empty property is returned
+        // If not found, or any other error occurs, an appropriate Exception is thrown.
         public Property Get(string name)
         {
             return mRootDomain.Get(UnwrapName(name));
+        }
+
+        // Exception-less check if given Property or PropertyDomain exist.
+        // Takes full name in form of ex. "doma.domb.name", unwraps it and returns value if found
+        // If property is found (even if it's a domain containing more properties) returns true.
+        // Otherwise returns false. Does not throw any Exception.
+        public bool Exists(string name)
+        {
+            return mRootDomain.Exists(UnwrapName(name));
+        }
+
+        // Exception-less check if given Property exists and is of specific type.
+        // Takes full name in form of ex. "doma.domb.name", unwraps it and returns value if found
+        // If property is found (even if it's a domain containing more properties) returns true.
+        // Otherwise returns false. Does not throw any Exception.
+        public bool Exists<T>(string name)
+        {
+            return mRootDomain.Exists<T>(UnwrapName(name));
         }
 
         public void Modify<T>(string name, T value)
@@ -99,6 +120,12 @@ namespace LukeBot.Config
         public void PrintDebug(LogLevel level)
         {
             Traverse(new PropertyStorePrintVisitor(level));
+        }
+
+        public void Clear()
+        {
+            mRootDomain = new PropertyDomain(PROP_STORE_DOMAIN_ROOT);
+            FillStoreMetadata();
         }
 
         internal void Traverse(PropertyStoreVisitor v)

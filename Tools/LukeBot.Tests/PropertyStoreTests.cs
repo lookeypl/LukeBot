@@ -42,8 +42,10 @@ namespace LukeBot.Tests
         };
 
         private const string PROPERTY_STORE_TEST_DATA_FILE = "Data/test.store.lukebot";
+        private const string PROPERTY_STORE_TEST_DATA_FILE_HEAD = "Data/test.store.";
+        private const string PROPERTY_STORE_TEST_DATA_FILE_TAIL = ".lukebot";
 
-        PropertyStore mStore;
+        PropertyStore mStore = new PropertyStore(PROPERTY_STORE_TEST_DATA_FILE);
 
         private void TestPropertyValue<T>(string name, T val)
         {
@@ -61,10 +63,7 @@ namespace LukeBot.Tests
         {
             Console.WriteLine("TestInit");
 
-            if (File.Exists(PROPERTY_STORE_TEST_DATA_FILE))
-                File.Delete(PROPERTY_STORE_TEST_DATA_FILE);
-
-            mStore = new PropertyStore(PROPERTY_STORE_TEST_DATA_FILE);
+            mStore.Clear();
         }
 
         [TestMethod]
@@ -223,6 +222,106 @@ namespace LukeBot.Tests
             TestPropertyValue<string>("loadtest.nested.string", TEST_STRING);
             TestPropertyValue<int>("other.simple", TEST_INT_2);
             TestPropertyValue<ComplexObj>("other.complex", complexSrc);
+        }
+
+        [TestMethod]
+        public void PropertyStore_Exists()
+        {
+            mStore.Add("test.bool", Property.Create<bool>(true));
+            mStore.Add("test.int", Property.Create<int>(1));
+            mStore.Add("test.nested.float", Property.Create<float>(3.0f));
+            mStore.Add("test.nested.string", Property.Create<string>("abcd"));
+            mStore.Add("test.nested.domain.int", Property.Create<int>(3));
+            mStore.Add("test.nested.domain.float", Property.Create<float>(6.21f));
+
+            // check if all properties exist
+            Assert.IsTrue(mStore.Exists("test.bool"));
+            Assert.IsTrue(mStore.Exists("test.int"));
+            Assert.IsTrue(mStore.Exists("test.nested.float"));
+            Assert.IsTrue(mStore.Exists("test.nested.string"));
+            Assert.IsTrue(mStore.Exists("test.nested.domain.int"));
+            Assert.IsTrue(mStore.Exists("test.nested.domain.float"));
+
+            // check if domains exist
+            Assert.IsTrue(mStore.Exists("test"));
+            Assert.IsTrue(mStore.Exists("test.nested"));
+            Assert.IsTrue(mStore.Exists("test.nested.domain"));
+
+            // check if invalid inputs return false
+            Assert.IsFalse(mStore.Exists("testabcd"));
+            Assert.IsFalse(mStore.Exists("test.float"));
+            Assert.IsFalse(mStore.Exists("test.string"));
+            Assert.IsFalse(mStore.Exists("test.nested.bool"));
+            Assert.IsFalse(mStore.Exists("test.nested.int"));
+            Assert.IsFalse(mStore.Exists("test.nested.domain.bool"));
+            Assert.IsFalse(mStore.Exists("test.nested.domain.string"));
+        }
+
+        [TestMethod]
+        public void PropertyStore_ExistsTyped()
+        {
+            mStore.Add("test.bool", Property.Create<bool>(true));
+            mStore.Add("test.int", Property.Create<int>(1));
+            mStore.Add("test.nested.float", Property.Create<float>(3.0f));
+            mStore.Add("test.nested.string", Property.Create<string>("abcd"));
+            mStore.Add("test.nested.domain.int", Property.Create<int>(3));
+            mStore.Add("test.nested.domain.float", Property.Create<float>(6.21f));
+
+            // check if all properties exist
+            Assert.IsTrue(mStore.Exists<bool>("test.bool"));
+            Assert.IsTrue(mStore.Exists<int>("test.int"));
+            Assert.IsTrue(mStore.Exists<float>("test.nested.float"));
+            Assert.IsTrue(mStore.Exists<string>("test.nested.string"));
+            Assert.IsTrue(mStore.Exists<int>("test.nested.domain.int"));
+            Assert.IsTrue(mStore.Exists<float>("test.nested.domain.float"));
+
+            // check if invalid inputs return false
+            Assert.IsFalse(mStore.Exists<float>("test.float"));
+            Assert.IsFalse(mStore.Exists<string>("test.string"));
+            Assert.IsFalse(mStore.Exists<bool>("test.nested.bool"));
+            Assert.IsFalse(mStore.Exists<int>("test.nested.int"));
+            Assert.IsFalse(mStore.Exists<bool>("test.nested.domain.bool"));
+            Assert.IsFalse(mStore.Exists<string>("test.nested.domain.string"));
+
+            // check if valid entries with incorrect types return false
+            Assert.IsFalse(mStore.Exists<float>("test.bool"));
+            Assert.IsFalse(mStore.Exists<string>("test.int"));
+            Assert.IsFalse(mStore.Exists<bool>("test.nested.float"));
+            Assert.IsFalse(mStore.Exists<int>("test.nested.string"));
+            Assert.IsFalse(mStore.Exists<bool>("test.nested.domain.int"));
+            Assert.IsFalse(mStore.Exists<string>("test.nested.domain.float"));
+        }
+
+        [TestMethod]
+        public void PropertyStore_Clear()
+        {
+            // Add some data
+            mStore.Add("test.bool", Property.Create<bool>(true));
+            mStore.Add("test.int", Property.Create<int>(1));
+            mStore.Add("test.nested.float", Property.Create<float>(3.0f));
+            mStore.Add("test.nested.string", Property.Create<string>("abcd"));
+
+            TestPropertyValue<bool>("test.bool", true);
+            TestPropertyValue<int>("test.int", 1);
+            TestPropertyValue<float>("test.nested.float", 3.0f);
+            TestPropertyValue<string>("test.nested.string", "abcd");
+
+            // Clear store, check if data exists (it shouldn't)
+            mStore.Clear();
+
+            Assert.IsFalse(mStore.Exists<bool>("test.bool"));
+            Assert.IsFalse(mStore.Exists<int>("test.int"));
+            Assert.IsFalse(mStore.Exists<float>("test.nested.float"));
+            Assert.IsFalse(mStore.Exists<string>("test.nested.string"));
+        }
+
+        [TestCleanup]
+        public void PropertyStore_Cleanup()
+        {
+            Console.WriteLine("TestCleanup");
+
+            if (File.Exists(PROPERTY_STORE_TEST_DATA_FILE))
+                File.Delete(PROPERTY_STORE_TEST_DATA_FILE);
         }
 
         [ClassCleanup]

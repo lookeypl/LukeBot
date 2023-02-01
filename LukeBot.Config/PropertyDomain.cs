@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using LukeBot.Common;
+using System;
 
 
 namespace LukeBot.Config
@@ -16,6 +17,14 @@ namespace LukeBot.Config
             mName = name;
             mProperties = new Dictionary<string, Property>();
             mMutex = new Mutex();
+        }
+
+        ~PropertyDomain()
+        {
+            mName = null;
+            mProperties.Clear();
+            mProperties = null;
+            mMutex = null;
         }
 
         // throws error if property already exists
@@ -52,6 +61,54 @@ namespace LukeBot.Config
 
             PropertyDomain domain = prop.Get<PropertyDomain>();
             domain.Add(path, p);
+        }
+
+        public bool Exists(Queue<string> path)
+        {
+            string name = path.Dequeue();
+
+            Property p;
+
+            if (!mProperties.TryGetValue(name, out p))
+            {
+                return false;
+            }
+
+            if (path.Count == 0)
+            {
+                return true;
+            }
+
+            if (p.IsType(typeof(PropertyDomain)))
+            {
+                return p.Get<PropertyDomain>().Exists(path);
+            }
+
+            return false;
+        }
+
+        public bool Exists<T>(Queue<string> path)
+        {
+            string name = path.Dequeue();
+
+            Property p;
+
+            if (!mProperties.TryGetValue(name, out p))
+            {
+                return false;
+            }
+
+            if (path.Count == 0)
+            {
+                return p.IsType(typeof(T));
+            }
+
+            if (p.IsType(typeof(PropertyDomain)))
+            {
+                return p.Get<PropertyDomain>().Exists<T>(path);
+            }
+
+            return false;
         }
 
         public Property Get(Queue<string> path)

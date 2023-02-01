@@ -43,6 +43,7 @@ namespace LukeBot.Config
             Logger.Log().Debug("Loading storage file {0}", mPath);
 
             JsonReader reader = new JsonTextReader(new StreamReader(mPath));
+            reader.CloseInput = true;
             JObject rootObject = (JObject)JToken.ReadFrom(reader);
             reader.Close();
 
@@ -66,6 +67,9 @@ namespace LukeBot.Config
             store.Traverse(visitor);
 
             JsonTextWriter writer = new JsonTextWriter(new StreamWriter(mPath));
+            writer.AutoCompleteOnClose = true;
+            writer.CloseOutput = true;
+
             visitor.GetRootJObject().WriteTo(writer);
             writer.Close();
         }

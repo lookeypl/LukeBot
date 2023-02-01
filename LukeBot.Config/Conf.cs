@@ -17,6 +17,16 @@ namespace LukeBot.Config
             mStore.Add(name, p);
         }
 
+        public static bool Exists(string name)
+        {
+            return mStore.Exists(name);
+        }
+
+        public static bool Exists<T>(string name)
+        {
+            return mStore.Exists<T>(name);
+        }
+
         public static Property Get(string name)
         {
             return mStore.Get(name);

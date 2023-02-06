@@ -15,6 +15,7 @@ namespace LukeBot
         private string DEVMODE_FILE = "Data/devmode.lukebot";
 
         private List<UserContext> mUsers;
+        private TwitchMainModule mTwitch;
         private CLI.Interface mCLI;
 
         void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
@@ -49,6 +50,12 @@ namespace LukeBot
             {
                 Logger.Log().Info("Loading LukeBot user " + user);
                 mUsers.Add(new UserContext(user));
+            }
+
+            foreach (UserContext u in mUsers)
+            {
+                Logger.Log().Info("Running modules for User " + u.Username);
+                u.RunModules();
             }
         }
 
@@ -94,7 +101,7 @@ namespace LukeBot
         {
             Logger.Log().Warning("ENABLED DEVELOPER MODE");
 
-            Logger.Log().Info("Starting web endpoint...");
+            /*Logger.Log().Info("Starting web endpoint...");
             Endpoint.Endpoint.StartThread();
 
             try
@@ -103,7 +110,7 @@ namespace LukeBot
                 UserContext devUser = new UserContext("Dev");
                 mUsers.Add(devUser);
 
-                TwitchModule twitch = new TwitchModule();
+                TwitchMainModule twitch = new TwitchMainModule();
                 mUsers[0].AddModule(twitch);
                 mUsers[0].AddModule(new SpotifyModule());
                 mUsers[0].RunModules();
@@ -139,7 +146,7 @@ namespace LukeBot
             mUsers = null;
 
             Logger.Log().Info("Stopping web endpoint...");
-            Endpoint.Endpoint.StopThread();
+            Endpoint.Endpoint.StopThread();*/
         }
 
         public void Run(ProgramOptions opts)
@@ -224,6 +231,11 @@ namespace LukeBot
                 Logger.Log().Info("Starting web endpoint...");
                 Endpoint.Endpoint.StartThread();
 
+                Logger.Log().Info("Initializing global Twitch settings...");
+                mTwitch = new TwitchMainModule();
+                mTwitch.Init();
+                mTwitch.Run();
+
                 LoadUsers();
 
                 Logger.Log().Info("Giving control to CLI");
@@ -240,6 +252,9 @@ namespace LukeBot
             }
 
             UnloadUsers();
+
+            mTwitch.RequestShutdown();
+            mTwitch.WaitForShutdown();
 
             Logger.Log().Info("Stopping web endpoint...");
             Endpoint.Endpoint.StopThread();

@@ -5,12 +5,14 @@ using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.API;
 using LukeBot.Core;
+using LukeBot.Config;
 
 
 namespace LukeBot.Spotify
 {
     public class SpotifyModule : IModule
     {
+        private string mLBUser;
         private Token mToken;
         private API.Spotify.UserProfile mProfile;
         private NowPlaying mNowPlaying;
@@ -34,10 +36,10 @@ namespace LukeBot.Spotify
                 throw new LoginFailedException("Failed to login to Spotify service: " + mProfile.code.ToString());
         }
 
-        void Login()
+        void Login(string username)
         {
             string scope = "user-read-currently-playing user-read-playback-state user-read-email";
-            mToken = AuthManager.Instance.GetToken(ServiceType.Spotify, "lookey");
+            mToken = AuthManager.Instance.GetToken(ServiceType.Spotify, username);
 
             bool tokenFromFile = mToken.Loaded;
 
@@ -50,12 +52,20 @@ namespace LukeBot.Spotify
             }
         }
 
-        public SpotifyModule()
+        public SpotifyModule(string lbUser)
         {
+            mLBUser = lbUser;
+
             Systems.Communication.Register(Constants.SERVICE_NAME);
             string storagePath = "Outputs/" + Constants.SERVICE_NAME;
             if (!Directory.Exists(storagePath))
                 Directory.CreateDirectory(storagePath);
+
+            string spotifyUsername = Conf.Get<string>(
+                LukeBot.Common.Utils.FormConfName(LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN, mLBUser, Constants.PROP_STORE_SPOTIFY_DOMAIN, Constants.PROP_STORE_SPOTIFY_LOGIN)
+            );
+
+            Login(spotifyUsername);
         }
 
         ~SpotifyModule()
@@ -66,12 +76,10 @@ namespace LukeBot.Spotify
 
         public void Init()
         {
-            Login();
-
             mNowPlaying = new NowPlaying(mToken);
             mNowPlayingTextFile = new NowPlayingTextFile(
-                "Outputs/" + Constants.SERVICE_NAME + "/nowplaying_artist.txt",
-                "Outputs/" + Constants.SERVICE_NAME + "/nowplaying_title.txt"
+                "Outputs/" + Constants.SERVICE_NAME + "/" + mLBUser + "/nowplaying_artist.txt",
+                "Outputs/" + Constants.SERVICE_NAME + "/" + mLBUser +  "/nowplaying_title.txt"
             );
         }
 

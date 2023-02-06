@@ -1,18 +1,19 @@
-using LukeBot.Common;
+using LukeBot.Config;
+
 
 namespace LukeBot.API
 {
     public class TwitchToken: Token
     {
-        public TwitchToken(AuthFlow flow, string tokenId)
+        public TwitchToken(AuthFlow flow, string userId)
             : base(
                 Constants.TWITCH_SERVICE_NAME,
-                tokenId,
+                userId,
                 flow,
                 "https://id.twitch.tv/oauth2/authorize",
                 "https://id.twitch.tv/oauth2/token",
                 "https://id.twitch.tv/oauth2/revoke",
-                "https://" + /* TODO PROPSTORE Utils.GetConfigServerIP() + */"/callback/twitch"
+                "https://" + Conf.Get<string>(Common.Constants.PROP_STORE_SERVER_IP_PROP) + "/callback/twitch"
             )
         {
         }

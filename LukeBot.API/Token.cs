@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 using LukeBot.Common;
+using LukeBot.Config;
 
 
 namespace LukeBot.API
@@ -29,53 +30,44 @@ namespace LukeBot.API
             }
         }
 
-        private void ImportFromFile()
+        private void ImportFromConfig()
         {
-            StreamReader fileStream = File.OpenText(mTokenPath);
-            mToken = JsonSerializer.Deserialize<AuthToken>(fileStream.ReadToEnd());
-            fileStream.Close();
+            mToken = Conf.Get<AuthToken>(mTokenPath);
             Loaded = true;
         }
 
-        private void ExportToFile()
+        private void ExportToConfig()
         {
-            if (mToken == null)
-                throw new InvalidTokenException("Token is not acquired");
+            if (Conf.Exists(mTokenPath))
+                Conf.Remove(mTokenPath);
 
-            if (File.Exists(mTokenPath))
-                File.Delete(mTokenPath);
-
-            FileStream file = File.OpenWrite(mTokenPath);
-            StreamWriter writer = new StreamWriter(file);
-            writer.Write(JsonSerializer.Serialize(mToken));
-            writer.Close();
-            file.Close();
-            Loaded = true;
+            Conf.Add(mTokenPath, Property.Create<AuthToken>(mToken));
+            Conf.Save();
         }
 
-        public Token(string service, string tokenId, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)
+        public Token(string service, string userId, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)
         {
-            string idPath = "Data/" + service + ".client_id.lukebot";
-            string secretPath = "Data/" + service + ".client_secret.lukebot";
-
             switch (flow)
             {
             case AuthFlow.AuthorizationCode:
-                mFlow = new AuthorizationCodeFlow(service, idPath, secretPath, authURL, refreshURL, revokeURL, callbackURL);
+                mFlow = new AuthorizationCodeFlow(service, authURL, refreshURL, revokeURL, callbackURL);
                 break;
             case AuthFlow.ClientCredentials:
-                mFlow = new ClientCredentialsFlow(service, idPath, secretPath, authURL, refreshURL, revokeURL);
+                mFlow = new ClientCredentialsFlow(service, authURL, refreshURL, revokeURL);
                 break;
             default:
                 throw new ArgumentOutOfRangeException("Invalid AuthFlow mode: {0}" + flow.ToString());
             }
 
-            mTokenPath = "Data/" + service + "." + tokenId + ".token.lukebot";
             mMutex = new Mutex();
 
-            if (FileUtils.Exists(mTokenPath)) {
-                Logger.Log().Debug("Found token {0}, importing", mTokenPath);
-                ImportFromFile();
+            mTokenPath = Utils.FormConfName(
+                Common.Constants.PROP_STORE_USER_DOMAIN, userId, service, Common.Constants.PROP_STORE_TOKEN_PROP
+            );
+
+            if (Conf.Exists(mTokenPath)) {
+                Logger.Log().Debug("Found token at config {0}", mTokenPath);
+                ImportFromConfig();
             }
         }
 
@@ -101,7 +93,7 @@ namespace LukeBot.API
             mMutex.WaitOne();
 
             mToken = mFlow.Request(scope);
-            ExportToFile();
+            ExportToConfig();
 
             string ret = mToken.access_token;
             mMutex.ReleaseMutex();
@@ -114,7 +106,7 @@ namespace LukeBot.API
             mMutex.WaitOne();
 
             if (mToken == null)
-                throw new InvalidTokenException("Token is not acquired");
+                throw new InvalidTokenException("Token has not been acquired yet");
 
             AuthToken oldToken = mToken;
             mToken = mFlow.Refresh(mToken);
@@ -123,7 +115,7 @@ namespace LukeBot.API
             if (mToken.refresh_token == null)
                 mToken.refresh_token = oldToken.refresh_token;
 
-            ExportToFile();
+            ExportToConfig();
 
             string ret = mToken.access_token;
             mMutex.ReleaseMutex();
@@ -136,7 +128,7 @@ namespace LukeBot.API
             mMutex.WaitOne();
 
             if (Loaded) {
-                File.Delete(mTokenPath);
+                Conf.Remove(mTokenPath);
                 mFlow.Revoke(mToken);
                 mToken = null;
                 Loaded = false;

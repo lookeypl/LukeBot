@@ -129,6 +129,15 @@ namespace LukeBot.Config
                     throw new PropertyNotFoundException("Requested property {0} is a domain", name);
                 }
 
+                if (p.IsType(typeof(LazyProperty)))
+                {
+                    // this was loaded earlier but we couldn't create a Property out of it, possibly
+                    // because required Assembly was not yet loaded. Retry creating the property.
+                    p = Property.CreateFromLazyProperty(p.Get<LazyProperty>());
+                    mProperties.Remove(name);
+                    mProperties.Add(name, p);
+                }
+
                 return p;
             }
 

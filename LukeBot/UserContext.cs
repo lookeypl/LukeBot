@@ -11,14 +11,23 @@ namespace LukeBot
 {
     class UserContext
     {
-        private const string PROP_STORE_USER_DOMAIN = "user";
+        public string Username { get; private set; }
+
         private const string PROP_STORE_MODULES_DOMAIN = "modules";
         private const string PROP_STORE_WIDGETS_DOMAIN = "widgets";
 
-        private readonly Dictionary<string, Func<IModule>> mModuleAllocators = new Dictionary<string, Func<IModule>>();
-        private readonly Dictionary<string, Func<Widget::IWidget>> mWidgetAllocators = new Dictionary<string, Func<Widget::IWidget>>();
+        private readonly Dictionary<string, Func<string, IModule>> mModuleAllocators = new Dictionary<string, Func<string, IModule>>
+        {
+            {"spotify", (string user) => new SpotifyModule(user)},
+        };
+        private readonly Dictionary<string, Func<Widget::IWidget>> mWidgetAllocators = new Dictionary<string, Func<Widget::IWidget>>
+        {
+            {"alerts", () => new Widget::Alerts()},
+            {"chat", () => new Widget::Chat()},
+            {"echo", () => new Widget::Echo()},
+            {"nowplaying", () => new Widget::NowPlaying()},
+        };
 
-        private string mUser = null;
         private List<IModule> mModules = null;
         private Widget::Manager mWidgets = null;
 
@@ -35,56 +44,70 @@ namespace LukeBot
 
         public UserContext(string user)
         {
-            mUser = user;
+            Username = user;
             mModules = new List<IModule>();
             mWidgets = new Widget::Manager();
 
-            mModuleAllocators.Add("twitch", () => new TwitchModule());
-            mModuleAllocators.Add("spotify", () => new SpotifyModule());
-
-            mWidgetAllocators.Add("alerts", () => new Widget::Alerts());
-            mWidgetAllocators.Add("chat", () => new Widget::Chat());
-            mWidgetAllocators.Add("echo", () => new Widget::Echo());
-            mWidgetAllocators.Add("nowplaying", () => new Widget::NowPlaying());
-
-            Logger.Log().Info("Loading required modules for user {0}", mUser);
+            Logger.Log().Info("Loading required modules for user {0}", Username);
 
             string[] usedModules = Conf.Get<string[]>(
-                Common.Utils.FormConfName(PROP_STORE_USER_DOMAIN, mUser, PROP_STORE_MODULES_DOMAIN)
+                Common.Utils.FormConfName(Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_MODULES_DOMAIN)
             );
             WidgetDesc[] usedWidgets = Conf.Get<WidgetDesc[]>(
-                Common.Utils.FormConfName(PROP_STORE_USER_DOMAIN, mUser, PROP_STORE_WIDGETS_DOMAIN)
+                Common.Utils.FormConfName(Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_WIDGETS_DOMAIN)
             );
 
             foreach (string m in usedModules)
             {
-                CreateModule(m);
+                LoadModule(m, Username);
             }
 
             foreach (WidgetDesc w in usedWidgets)
             {
-                CreateWidget(w);
+                LoadWidget(w);
             }
 
-            Logger.Log().Info("Created LukeBot user {0}", mUser);
+            Logger.Log().Info("Created LukeBot user {0}", Username);
         }
 
-        private void CreateModule(string moduleType)
+        private void LoadModule(string moduleType, string lbUser)
         {
-            AddModule(mModuleAllocators[moduleType]());
+            try
+            {
+                AddModule(mModuleAllocators[moduleType](lbUser));
+            }
+            catch (Common.Exception e)
+            {
+                Logger.Log().Error(String.Format("Failed to initialize module {0} for user {1}: {2}",
+                    moduleType, Username, e.Message));
+                Logger.Log().Error(String.Format("Module {0} for user {1} will be skipped",
+                    moduleType, Username));
+            }
         }
 
-        private string CreateWidget(WidgetDesc desc)
+        private string LoadWidget(WidgetDesc desc)
         {
             return AddWidget(mWidgetAllocators[desc.widgetType](), desc.widgetID);
         }
 
-        public void AddModule(IModule module)
+        // Create a new Module associated with this User.
+        public void CreateModule(string moduleType)
+        {
+            // TODO
+        }
+
+        // Create a new Widget used by this user
+        public void CreateWidget(string moduleType)
+        {
+            // TODO
+        }
+
+        private void AddModule(IModule module)
         {
             mModules.Add(module);
         }
 
-        public string AddWidget(Widget::IWidget widget, string widgetID)
+        private string AddWidget(Widget::IWidget widget, string widgetID)
         {
             return mWidgets.Register(widget, widgetID);
         }
@@ -93,11 +116,11 @@ namespace LukeBot
         {
             mWidgets.Init();
 
-            Logger.Log().Info("Initializing LukeBot modules for user {0}", mUser);
+            Logger.Log().Info("Initializing LukeBot modules for user {0}", Username);
             foreach (IModule m in mModules)
                 m.Init();
 
-            Logger.Log().Info("Running LukeBot modules for user {0}", mUser);
+            Logger.Log().Info("Running LukeBot modules for user {0}", Username);
             foreach (IModule m in mModules)
                 m.Run();
         }

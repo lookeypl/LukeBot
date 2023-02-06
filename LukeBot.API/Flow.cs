@@ -1,9 +1,14 @@
 ﻿using System.IO;
+using LukeBot.Common;
+using LukeBot.Config;
 
 namespace LukeBot.API
 {
     abstract class Flow
     {
+        private readonly string CLIENT_ID_PROP_NAME = "client_id";
+        private readonly string CLIENT_SECRET_PROP_NAME = "client_secret";
+
         protected string mService;
         protected string mClientID;
         protected string mClientSecret;
@@ -19,20 +24,30 @@ namespace LukeBot.API
             }
         }
 
-        private string ReadFromFile(string path)
+        private string ReadFromConfig(string type)
         {
-            StreamReader fileStream = File.OpenText(path);
-            return fileStream.ReadLine();
+            string configPath = Utils.FormConfName(mService, type);
+            return Conf.Get<string>(configPath);
         }
 
-        protected Flow(string service, string idPath, string secretPath, string authURL, string tokenURL, string revokeURL)
+        protected Flow(string service, string authURL, string tokenURL, string revokeURL)
         {
             mService = service;
-            mClientID = ReadFromFile(idPath);
-            mClientSecret = ReadFromFile(secretPath);
             mAuthURL = authURL;
             mTokenURL = tokenURL;
             mRevokeURL = revokeURL;
+
+            mClientID = ReadFromConfig(CLIENT_ID_PROP_NAME);
+            if (mClientID == Common.Constants.DEFAULT_CLIENT_ID_NAME)
+            {
+                throw new InvalidClientDataException("Client ID for {0} not set in Property Store", mService);
+            }
+
+            mClientSecret = ReadFromConfig(CLIENT_SECRET_PROP_NAME);
+            if (mClientSecret == Common.Constants.DEFAULT_CLIENT_SECRET_NAME)
+            {
+                throw new InvalidClientDataException("Client secret for {0} not set in Property Store", mService);
+            }
         }
 
         public abstract AuthToken Request(string scope);

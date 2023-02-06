@@ -20,12 +20,13 @@ public class DefaultStoreTemplate: StoreTemplate
     public override void Fill(PropertyStore store)
     {
         store.Add("lukebot.server_ip", Property.Create<string>("127.0.0.1"));
-        store.Add("lukebot.users", Property.Create<string[]>(new string[] {}));
+        store.Add("lukebot.users", Property.Create<string[]>(new string[] { "admin" }));
 
-        store.Add("twitch.client_id", Property.Create<string>(""));
-        store.Add("twitch.client_secret", Property.Create<string>(""));
+        store.Add("twitch.login", Property.Create<string>(Constants.DEFAULT_LOGIN_NAME));
+        store.Add("twitch.client_id", Property.Create<string>(Constants.DEFAULT_CLIENT_ID_NAME));
+        store.Add("twitch.client_secret", Property.Create<string>(Constants.DEFAULT_CLIENT_SECRET_NAME));
 
-        store.Add("spotify.client_id", Property.Create<string>(""));
-        store.Add("spotify.client_secret", Property.Create<string>(""));
+        store.Add("spotify.client_id", Property.Create<string>(Constants.DEFAULT_CLIENT_ID_NAME));
+        store.Add("spotify.client_secret", Property.Create<string>(Constants.DEFAULT_CLIENT_SECRET_NAME));
     }
 }

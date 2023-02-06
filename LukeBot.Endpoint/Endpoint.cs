@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 using System.Threading;
+using LukeBot.Common;
 using LukeBot.Config;
 
 
@@ -11,7 +13,7 @@ namespace LukeBot.Endpoint
     {
         private static Endpoint mEndpoint = null;
         private static Thread mEndpointThread = null;
-        IWebHost mHost = null;
+        private IWebHost mHost = null;
 
         private static void ThreadMain()
         {
@@ -42,7 +44,8 @@ namespace LukeBot.Endpoint
 
         public async void Stop()
         {
-            await mHost.StopAsync();
+            if (mHost != null)
+                await mHost.StopAsync();
         }
 
         public IWebHostBuilder CreateHostBuilder()
@@ -57,7 +60,10 @@ namespace LukeBot.Endpoint
                     // TODO readd below with certificates
                     //"https://" + IP + "/",
                     "http://" + IP + "/",
+                    //"https://localhost:5001/",
+                    "http://localhost:5000/",
                 };
+                Logger.Log().Debug("Using host IP " + IP);
                 builder.UseUrls(URLs);
             }
 

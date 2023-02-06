@@ -9,12 +9,24 @@ namespace LukeBot.Config
 {
     public abstract class Property
     {
+        private bool mNeedsLoad;
+
         public string Name { get; private set; }
         public System.Type Type { get; private set; }
+
+        static private Type FindValueType(string typeName)
+        {
+            // more exhaustive search across all currently loaded assemblies
+            return AppDomain.CurrentDomain.GetAssemblies()
+                .Where(a => !a.IsDynamic)
+                .SelectMany(a => a.GetTypes())
+                .FirstOrDefault(t => t.FullName.Equals(typeName));
+        }
 
         protected Property(System.Type type)
         {
             Type = type;
+            mNeedsLoad = false;
         }
 
         public bool IsType(System.Type t)
@@ -48,19 +60,33 @@ namespace LukeBot.Config
             Type valType = Type.GetType(type);
             if (valType == null)
             {
-                // more exhaustive search across all assemblies
-                valType = AppDomain.CurrentDomain.GetAssemblies()
-                    .Where(a => !a.IsDynamic)
-                    .SelectMany(a => a.GetTypes())
-                    .FirstOrDefault(t => t.FullName.Equals(type));
+                valType = FindValueType(type);
 
                 if (valType == null)
-                    throw new TypeNotFoundException("Couldn't create Property of type {0}", type);
+                {
+                    Logger.Log().Warning("Couldn't locate value type {0}. Property will be lazily loaded on next Get call", type);
+                    return new PropertyType<LazyProperty>(new LazyProperty(type, serializedVal)) as Property;
+                }
             }
 
             Logger.Log().Debug("Deserializing object {0} to type {1}", serializedVal, valType);
             dynamic jObj = JsonConvert.DeserializeObject(serializedVal, valType);
             Type propType = typeof(PropertyType<>).MakeGenericType(valType);
+            return Activator.CreateInstance(propType, new object[] {jObj} ) as Property;
+        }
+
+        static internal Property CreateFromLazyProperty(LazyProperty p)
+        {
+            Type t = FindValueType(p.mTypeStr);
+
+            if (t == null)
+            {
+                throw new PropertyTypeInvalidException("Property type {0} is invalid", p.mTypeStr);
+            }
+
+            Logger.Log().Debug("Deserializing object {0} to type {1}", p.mSerializedVal, t);
+            dynamic jObj = JsonConvert.DeserializeObject(p.mSerializedVal, t);
+            Type propType = typeof(PropertyType<>).MakeGenericType(t);
             return Activator.CreateInstance(propType, new object[] {jObj} ) as Property;
         }
 

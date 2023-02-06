@@ -189,9 +189,9 @@ namespace LukeBot.API
             }
         }
 
-        public AuthorizationCodeFlow(string service, string idPath, string secretPath,
-                                     string authURL, string refreshURL, string revokeURL, string callbackURL)
-            : base(service, idPath, secretPath, authURL, refreshURL, revokeURL)
+        public AuthorizationCodeFlow(string service, string authURL, string refreshURL,
+                                     string revokeURL, string callbackURL)
+            : base(service, authURL, refreshURL, revokeURL)
         {
             mCallbackURL = callbackURL;
         }

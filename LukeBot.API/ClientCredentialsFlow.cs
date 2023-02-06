@@ -93,9 +93,8 @@ namespace LukeBot.API
         }
 
 
-        public ClientCredentialsFlow(string service, string idPath, string secretPath,
-                                     string authURL, string refreshURL, string revokeURL)
-            : base(service, idPath, secretPath, authURL, refreshURL, revokeURL)
+        public ClientCredentialsFlow(string service, string authURL, string refreshURL, string revokeURL)
+            : base(service, authURL, refreshURL, revokeURL)
         {
         }
     }

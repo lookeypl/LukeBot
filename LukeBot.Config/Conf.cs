@@ -47,6 +47,11 @@ namespace LukeBot.Config
             mStore.Remove(name);
         }
 
+        public static void Save()
+        {
+            mStore.Save();
+        }
+
         public static void PrintDebug(LogLevel level)
         {
             mStore.PrintDebug(level);
@@ -54,7 +59,7 @@ namespace LukeBot.Config
 
         public static void Teardown()
         {
-            mStore.Save();
+            Save();
             mStore = null;
         }
     }

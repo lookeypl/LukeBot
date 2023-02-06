@@ -42,8 +42,6 @@ namespace LukeBot.Tests
         };
 
         private const string PROPERTY_STORE_TEST_DATA_FILE = "Data/test.store.lukebot";
-        private const string PROPERTY_STORE_TEST_DATA_FILE_HEAD = "Data/test.store.";
-        private const string PROPERTY_STORE_TEST_DATA_FILE_TAIL = ".lukebot";
 
         PropertyStore mStore = new PropertyStore(PROPERTY_STORE_TEST_DATA_FILE);
 

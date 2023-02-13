@@ -42,10 +42,6 @@ namespace LukeBot.Twitch
 
         // IModule overrides
 
-        public void Init()
-        {
-        }
-
         public void Run()
         {
         }

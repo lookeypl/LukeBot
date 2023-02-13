@@ -9,8 +9,6 @@ namespace LukeBot.Config
 {
     public abstract class Property
     {
-        private bool mNeedsLoad;
-
         public string Name { get; private set; }
         public System.Type Type { get; private set; }
 
@@ -23,10 +21,18 @@ namespace LukeBot.Config
                 .FirstOrDefault(t => t.FullName.Equals(typeName));
         }
 
+        static private Property AllocateProperty(Type t, string val)
+        {
+            Logger.Log().Debug("Deserializing object {0} to type {1}", val, t);
+
+            dynamic jObj = JsonConvert.DeserializeObject(val, t);
+            Type propType = typeof(PropertyType<>).MakeGenericType(t);
+            return Activator.CreateInstance(propType, new object[] {jObj} ) as Property;
+        }
+
         protected Property(System.Type type)
         {
             Type = type;
-            mNeedsLoad = false;
         }
 
         public bool IsType(System.Type t)
@@ -69,25 +75,18 @@ namespace LukeBot.Config
                 }
             }
 
-            Logger.Log().Debug("Deserializing object {0} to type {1}", serializedVal, valType);
-            dynamic jObj = JsonConvert.DeserializeObject(serializedVal, valType);
-            Type propType = typeof(PropertyType<>).MakeGenericType(valType);
-            return Activator.CreateInstance(propType, new object[] {jObj} ) as Property;
+            return AllocateProperty(valType, serializedVal);
         }
 
         static internal Property CreateFromLazyProperty(LazyProperty p)
         {
             Type t = FindValueType(p.mTypeStr);
-
             if (t == null)
             {
                 throw new PropertyTypeInvalidException("Property type {0} is invalid", p.mTypeStr);
             }
 
-            Logger.Log().Debug("Deserializing object {0} to type {1}", p.mSerializedVal, t);
-            dynamic jObj = JsonConvert.DeserializeObject(p.mSerializedVal, t);
-            Type propType = typeof(PropertyType<>).MakeGenericType(t);
-            return Activator.CreateInstance(propType, new object[] {jObj} ) as Property;
+            return AllocateProperty(t, p.mSerializedVal);
         }
 
         internal void SetName(string name)

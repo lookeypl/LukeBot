@@ -5,8 +5,6 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading;
-using System.Diagnostics;
-using LukeBot.Twitch.Common;
 using LukeBot.Core.Events;
 
 
@@ -14,9 +12,9 @@ namespace LukeBot.Twitch
 {
     public class TwitchIRC: IEventPublisher
     {
-        private string mName = "lukeboto";
-        private Connection mConnection = null;
+        private string mName;
         private Token mToken;
+        private IRCClient mIRCClient = null;
         private Dictionary<string, IRCChannel> mChannels;
         private bool mTagsEnabled = false;
         private EmoteProvider mExternalEmotes;
@@ -31,7 +29,7 @@ namespace LukeBot.Twitch
         private Thread mWorker;
         private Mutex mChannelsMutex;
 
-        void ProcessReply(Message m)
+        void ProcessReply(IRCMessage m)
         {
             switch (m.Reply)
             {
@@ -39,34 +37,34 @@ namespace LukeBot.Twitch
             case IRCReply.RPL_TWITCH_WELCOME2:
             case IRCReply.RPL_TWITCH_WELCOME3:
             case IRCReply.RPL_TWITCH_WELCOME4:
-                Logger.Log().Info("Welcome msg: {0}", m.ParamsString);
+                Logger.Log().Info("Welcome msg: {0}", m.GetTrailingParam());
                 break;
             case IRCReply.RPL_MOTDSTART:
                 Logger.Log().Info("Server's Message of the Day:");
-                Logger.Log().Info("  {0}", m.ParamsString);
+                Logger.Log().Info("  {0}", m.GetTrailingParam());
                 break;
             case IRCReply.RPL_MOTD:
-                Logger.Log().Info("  {0}", m.ParamsString);
+                Logger.Log().Info("  {0}", m.GetTrailingParam());
                 break;
             case IRCReply.RPL_ENDOFMOTD:
-                Logger.Log().Info("  {0}", m.ParamsString);
+                Logger.Log().Info("  {0}", m.GetTrailingParam());
                 Logger.Log().Info("End of Message of the Day");
                 mLoggedInEvent.Set();
                 break;
             default:
-                Logger.Log().Info("Reply {0} ({1}): {2}", (int)m.Reply, m.Reply.ToString(), m.ParamsString);
+                Logger.Log().Info("Reply {0} ({1}): {2}", (int)m.Reply, m.Reply.ToString(), m.GetTrailingParam());
                 break;
             }
         }
 
-        void ProcessPRIVMSG(Message m)
+        void ProcessPRIVMSG(IRCMessage m)
         {
-            string chatMsg = m.Params[m.Params.Count - 1];
-            Logger.Log().Info("({0} tags) #{1} {2}: {3}", m.Tags.Count, m.Channel, m.User, chatMsg);
+            string chatMsg = m.GetTrailingParam();
+            Logger.Log().Info("({0} tags) #{1} {2}: {3}", m.GetTagCount(), m.Channel, m.User, chatMsg);
 
             // Message related tags pulled from metadata (if available)
             string msgID;
-            if (!m.Tags.TryGetValue("id", out msgID))
+            if (!m.GetTag("id", out msgID))
                 msgID = String.Format("{0}", mMsgIDCounter++);
 
             TwitchChatMessageArgs message = new TwitchChatMessageArgs(msgID);
@@ -74,20 +72,20 @@ namespace LukeBot.Twitch
             message.Message = chatMsg;
 
             string userID;
-            if (m.Tags.TryGetValue("user-id", out userID))
+            if (m.GetTag("user-id", out userID))
                 message.UserID = userID;
 
             string color;
-            if (m.Tags.TryGetValue("color", out color))
+            if (m.GetTag("color", out color))
                 message.Color = color;
 
             string displayName;
-            if (m.Tags.TryGetValue("display-name", out displayName))
+            if (m.GetTag("display-name", out displayName))
                 message.DisplayName = displayName;
 
             // Twitch global/sub emotes - taken from IRC tags
             string emotes;
-            if (m.Tags.TryGetValue("emotes", out emotes))
+            if (m.GetTag("emotes", out emotes))
             {
                 message.ParseEmotesString(chatMsg, emotes);
             }
@@ -123,50 +121,50 @@ namespace LukeBot.Twitch
             mChannelsMutex.ReleaseMutex();
 
             if (response.Length > 0)
-                mConnection.Send(String.Format("PRIVMSG #{0} :{1}", m.Channel, response));
+                mIRCClient.Send(IRCMessage.PRIVMSG(m.Channel, response));
         }
 
-        void ProcessCLEARCHAT(Message m)
+        void ProcessCLEARCHAT(IRCMessage m)
         {
-            string msg = m.Params[m.Params.Count - 1];
-            Logger.Log().Warning("CLEARCHAT ({0} tags) #{1} :{2}", m.Tags.Count, m.Channel, msg);
+            string msg = m.GetTrailingParam();
+            Logger.Log().Warning("CLEARCHAT ({0} tags) #{1} :{2}", m.GetTagCount(), m.Channel, msg);
             TwitchChatUserClearArgs message = new TwitchChatUserClearArgs(msg);
             mUserClearEventCallback.PublishEvent(message);
         }
 
-        void ProcessCLEARMSG(Message m)
+        void ProcessCLEARMSG(IRCMessage m)
         {
-            string msg = m.Params[m.Params.Count - 1];
-            Logger.Log().Warning("CLEARMSG ({0} tags) #{1} :{2}", m.Tags.Count, m.Channel, msg);
+            string msg = m.GetTrailingParam();
+            Logger.Log().Warning("CLEARMSG ({0} tags) #{1} :{2}", m.GetTagCount(), m.Channel, msg);
 
             TwitchChatMessageClearArgs message = new TwitchChatMessageClearArgs(msg);
 
             string msgID;
-            if (m.Tags.TryGetValue("target-msg-id", out msgID))
+            if (m.GetTag("target-msg-id", out msgID))
                 message.MessageID = msgID;
 
             mMessageClearEventCallback.PublishEvent(message);
         }
 
-        void ProcessCAP(Message m)
+        void ProcessCAP(IRCMessage m)
         {
             // TODO complete this part to discover if CAP was acquired
-            Logger.Log().Debug("CAP response: {0}", m.MessageString);
+            Logger.Log().Debug("CAP response: {0}", m.ToString());
         }
 
-        void ProcessNOTICE(Message m)
+        void ProcessNOTICE(IRCMessage m)
         {
-            Logger.Log().Info("Received a Notice from server: {0}", m.ParamsString);
+            Logger.Log().Info("Received a Notice from server: {0}", m.GetTrailingParam());
         }
 
-        void ProcessUSERNOTICE(Message m)
+        void ProcessUSERNOTICE(IRCMessage m)
         {
             Logger.Log().Info("Received a User Notice from server");
             Logger.Log().Secure("USERNOTICE message details:");
             m.Print(LogLevel.Secure);
         }
 
-        bool ProcessMessage(Message m)
+        bool ProcessMessage(IRCMessage m)
         {
             switch (m.Command)
             {
@@ -190,7 +188,7 @@ namespace LukeBot.Twitch
                 break;
             case IRCCommand.PING:
                 Logger.Log().Debug("Received PING - responding with PONG");
-                mConnection.Send("PONG :" + m.Params[m.Params.Count - 1]);
+                mIRCClient.Send(IRCMessage.PONG(m.GetTrailingParam()));
                 break;
             case IRCCommand.PRIVMSG:
                 ProcessPRIVMSG(m);
@@ -204,48 +202,42 @@ namespace LukeBot.Twitch
             case IRCCommand.CAP:
                 ProcessCAP(m);
                 break;
-            }
-
-            return true;
-        }
-
-        bool ProcessMessage(string msg)
-        {
-            if (msg == null)
-            {
-                Logger.Log().Warning("Connection dropped - exiting");
+            case IRCCommand.QUIT:
                 return false;
             }
 
-            Message m = Twitch.Message.Parse(msg);
-            return ProcessMessage(m);
+            return true;
         }
 
         bool CheckIfLoginSuccessful()
         {
-            string msg = mConnection.Read();
-            if (msg == null)
-                return false; // no message, connection was dropped without any reason
-
-            Message m = Twitch.Message.Parse(msg);
-            if (m.Command == IRCCommand.NOTICE)
+            try
             {
-                Logger.Log().Info("While trying to login received Notice from Server:");
-                Logger.Log().Info("  {0}", msg);
+                IRCMessage m = mIRCClient.Receive();
+                if (m.Command == IRCCommand.NOTICE)
+                {
+                    Logger.Log().Info("While trying to login received Notice from Server:");
+                    Logger.Log().Info("  {0}", m.ToString());
 
-                if (m.Params[m.Params.Count - 1].Equals("Login authentication failed"))
-                    return false;
-                else
-                    return true;
+                    if (m.GetTrailingParam().Equals("Login authentication failed"))
+                        return false;
+                    else
+                        return true;
+                }
+
+                // Login fail comes as IRC "NOTICE" call. If we don't get it, assume we logged in successfully.
+                // Process the message as normal afterwards.
+                ProcessMessage(m);
+            }
+            catch (System.Exception e)
+            {
+                Logger.Log().Error("Login to Twitch IRC server failed: " + e.Message);
+                return false;
             }
 
-            // Login fail comes as IRC "NOTICE" call. If we don't get it, assume we logged in successfully.
-            // Process the message as normal afterwards.
-            ProcessMessage(m);
             return true;
         }
 
-        // TODO parametrize
         void Login()
         {
             if (!mToken.Loaded)
@@ -254,28 +246,28 @@ namespace LukeBot.Twitch
             // log in
             Logger.Log().Debug("Bot login account: {0}", mName);
 
-            mConnection = new Connection("irc.chat.twitch.tv", 6697, true);
+            mIRCClient = new IRCClient("irc.chat.twitch.tv", 6697, true);
+            mIRCClient.Login(mName, mToken);
 
-            mConnection.Send("PASS oauth:" + mToken.Get());
-            mConnection.Send("NICK " + mName);
             if (!CheckIfLoginSuccessful())
             {
                 Logger.Log().Warning("Login to Twitch IRC server failed - retrying in 2 seconds...");
-                mConnection.Close();
+                mIRCClient.Close();
 
                 Thread.Sleep(2000);
-                mConnection = new Connection("irc.chat.twitch.tv", 6697, true);
 
-                mConnection.Send("PASS oauth:" + mToken.Get());
-                mConnection.Send("NICK " + mName);
+                mIRCClient = new IRCClient("irc.chat.twitch.tv", 6697, true);
+                mIRCClient.Login(mName, mToken);
+
                 if (!CheckIfLoginSuccessful())
                 {
                     throw new LoginFailedException("Login to Twitch IRC server failed");
                 }
             }
 
-            mConnection.Send("CAP REQ :twitch.tv/tags");
-            mConnection.Send("CAP REQ :twitch.tv/commands");
+            // TODO check if caps were properly enabled before using
+            mIRCClient.Send(IRCMessage.CAPRequest("twitch.tv/tags"));
+            mIRCClient.Send(IRCMessage.CAPRequest("twitch.tv/commands"));
         }
 
         void WorkerMain()
@@ -296,7 +288,7 @@ namespace LukeBot.Twitch
             Logger.Log().Info("Listening for response...");
 
             while (mRunning)
-                mRunning = ProcessMessage(mConnection.Read());
+                mRunning = ProcessMessage(mIRCClient.Receive());
         }
 
         void Disconnect()
@@ -305,14 +297,15 @@ namespace LukeBot.Twitch
             {
                 foreach (var c in mChannels)
                 {
-                    mConnection.Send("PART #" + c.Key);
+                    mIRCClient.Send(IRCMessage.PART(c.Key));
                 }
-                mConnection.Send("QUIT");
+                mIRCClient.Send(IRCMessage.QUIT());
             }
         }
 
-        public TwitchIRC(Token token)
+        public TwitchIRC(string username, Token token)
         {
+            mName = username;
             mWorker = new Thread(this.WorkerMain);
             mChannelsMutex = new Mutex();
             mLoggedInEvent = new AutoResetEvent(false);
@@ -362,7 +355,7 @@ namespace LukeBot.Twitch
                 throw new ArgumentException(String.Format("Cannot join channel {0} - already joined", user.data[0].login));
             }
 
-            mConnection.Send("JOIN #" + user.data[0].login);
+            mIRCClient.Send(IRCMessage.JOIN(user.data[0].login));
 
             mChannels.Add(user.data[0].login, new IRCChannel(user.data[0].login));
 
@@ -409,10 +402,10 @@ namespace LukeBot.Twitch
                 mWorker.Join();
             }
 
-            if (mConnection != null)
+            if (mIRCClient != null)
             {
-                mConnection.Close();
-                mConnection = null;
+                mIRCClient.Close();
+                mIRCClient = null;
             }
         }
     }

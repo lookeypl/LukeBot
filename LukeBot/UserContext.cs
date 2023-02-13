@@ -97,7 +97,7 @@ namespace LukeBot
         }
 
         // Create a new Widget used by this user
-        public void CreateWidget(string moduleType)
+        public void CreateWidget(string widgetType)
         {
             // TODO
         }
@@ -115,10 +115,6 @@ namespace LukeBot
         public void RunModules()
         {
             mWidgets.Init();
-
-            Logger.Log().Info("Initializing LukeBot modules for user {0}", Username);
-            foreach (IModule m in mModules)
-                m.Init();
 
             Logger.Log().Info("Running LukeBot modules for user {0}", Username);
             foreach (IModule m in mModules)

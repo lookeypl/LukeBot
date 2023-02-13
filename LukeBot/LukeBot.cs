@@ -231,9 +231,8 @@ namespace LukeBot
                 Logger.Log().Info("Starting web endpoint...");
                 Endpoint.Endpoint.StartThread();
 
-                Logger.Log().Info("Initializing global Twitch settings...");
+                Logger.Log().Info("Initializing Twitch main module...");
                 mTwitch = new TwitchMainModule();
-                mTwitch.Init();
                 mTwitch.Run();
 
                 LoadUsers();
@@ -253,6 +252,7 @@ namespace LukeBot
 
             UnloadUsers();
 
+            Logger.Log().Info("Stopping Twitch main module...");
             mTwitch.RequestShutdown();
             mTwitch.WaitForShutdown();
 

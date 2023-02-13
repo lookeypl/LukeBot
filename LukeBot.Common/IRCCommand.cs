@@ -1,4 +1,4 @@
-namespace LukeBot.Twitch
+namespace LukeBot.Common
 {
     public enum IRCCommand
     {
@@ -14,12 +14,17 @@ namespace LukeBot.Twitch
         CLEARMSG,
         HOSTTARGET,
         JOIN,
+        NICK,
         NOTICE,
         PART,
+        PASS,
         PING,
+        PONG,
         PRIVMSG,
+        QUIT,
         RECONNECT,
         ROOMSTATE,
+        USER,
         USERNOTICE,
         USERSTATE,
     }

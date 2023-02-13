@@ -66,6 +66,12 @@ namespace LukeBot.Spotify
             );
 
             Login(spotifyUsername);
+
+            mNowPlaying = new NowPlaying(mToken);
+            mNowPlayingTextFile = new NowPlayingTextFile(
+                "Outputs/" + Constants.SERVICE_NAME + "/" + mLBUser + "/nowplaying_artist.txt",
+                "Outputs/" + Constants.SERVICE_NAME + "/" + mLBUser +  "/nowplaying_title.txt"
+            );
         }
 
         ~SpotifyModule()
@@ -76,11 +82,6 @@ namespace LukeBot.Spotify
 
         public void Init()
         {
-            mNowPlaying = new NowPlaying(mToken);
-            mNowPlayingTextFile = new NowPlayingTextFile(
-                "Outputs/" + Constants.SERVICE_NAME + "/" + mLBUser + "/nowplaying_artist.txt",
-                "Outputs/" + Constants.SERVICE_NAME + "/" + mLBUser +  "/nowplaying_title.txt"
-            );
         }
 
         public void RequestShutdown()

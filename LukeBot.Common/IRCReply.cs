@@ -1,4 +1,4 @@
-namespace LukeBot.Twitch
+namespace LukeBot.Common
 {
     // A list of possible numeric IRC replies
     public enum IRCReply: ushort

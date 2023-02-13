@@ -8,7 +8,7 @@ using LukeBot.Config;
 
 namespace LukeBot.Twitch
 {
-    public class TwitchMainModule: IModule
+    public class TwitchMainModule
     {
         private string mBotLogin;
         private Token mToken;
@@ -39,11 +39,10 @@ namespace LukeBot.Twitch
             }
 
             mBotData = API.Twitch.GetUser(mToken);
-            mIRC = new TwitchIRC(mToken);
+            mIRC = new TwitchIRC(mBotLogin, mToken);
             mUsers = new Dictionary<string, TwitchUserModule>();
         }
 
-        // TEMPORARY
         public void JoinChannel(string channel)
         {
             Logger.Log().Debug("Joining channel {0}", channel);
@@ -62,20 +61,14 @@ namespace LukeBot.Twitch
             Logger.Log().Secure("Joined channel twitch ID: {0}", user.GetUserData().data[0].id);
         }
 
-        // TEMPORARY
         public void AddCommandToChannel(string channel, string commandName, Command.ICommand command)
         {
             mIRC.AddCommandToChannel(channel, commandName, command);
         }
 
-        // TEMPORARY
         public void AwaitIRCLoggedIn(int timeoutMs)
         {
             mIRC.AwaitLoggedIn(timeoutMs);
-        }
-
-        public void Init()
-        {
         }
 
         public void Run()

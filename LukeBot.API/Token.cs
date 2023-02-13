@@ -43,6 +43,7 @@ namespace LukeBot.API
 
             Conf.Add(mTokenPath, Property.Create<AuthToken>(mToken));
             Conf.Save();
+            Loaded = true;
         }
 
         public Token(string service, string userId, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)

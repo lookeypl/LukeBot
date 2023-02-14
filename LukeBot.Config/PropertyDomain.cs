@@ -134,6 +134,7 @@ namespace LukeBot.Config
                     // this was loaded earlier but we couldn't create a Property out of it, possibly
                     // because required Assembly was not yet loaded. Retry creating the property.
                     p = Property.CreateFromLazyProperty(p.Get<LazyProperty>());
+                    p.SetName(name);
                     mProperties.Remove(name);
                     mProperties.Add(name, p);
                 }

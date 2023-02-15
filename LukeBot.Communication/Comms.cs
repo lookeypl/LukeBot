@@ -1,6 +1,6 @@
-﻿namespace LukeBot.Core
+﻿namespace LukeBot.Communication
 {
-    public class Systems
+    public class Comms
     {
         static private CommunicationSystem mCommunicationSystem;
         static private EventSystem mEventSystem;

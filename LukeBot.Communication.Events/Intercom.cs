@@ -2,7 +2,7 @@ using System.Threading;
 using System.Collections.Generic;
 
 
-namespace LukeBot.Core.Events
+namespace LukeBot.Communication.Events
 {
     namespace Intercom
     {

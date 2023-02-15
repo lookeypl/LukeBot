@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Intercom = LukeBot.Core.Events.Intercom;
+using Intercom = LukeBot.Communication.Events.Intercom;
 
 
-namespace LukeBot.Core
+namespace LukeBot.Communication
 {
     // basic idea - replacement for CommunicationSystem
     // A wants to request something from B, but they gotta be hidden behind some abstraction

@@ -3,7 +3,7 @@ using System.Threading;
 using LukeBot.Common;
 
 
-namespace LukeBot.Core
+namespace LukeBot.Communication
 {
     public class IntermediaryPromise
     {

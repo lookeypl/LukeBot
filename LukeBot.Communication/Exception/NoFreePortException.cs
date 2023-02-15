@@ -1,7 +1,7 @@
 using LukeBot.Common;
 
 
-namespace LukeBot.Core
+namespace LukeBot.Communication
 {
     public class NoFreePortException: Exception
     {

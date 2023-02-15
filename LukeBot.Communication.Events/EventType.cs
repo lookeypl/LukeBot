@@ -1,7 +1,7 @@
 using System;
 
 
-namespace LukeBot.Core.Events
+namespace LukeBot.Communication.Events
 {
     [Flags]
     public enum Type

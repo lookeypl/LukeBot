@@ -3,7 +3,7 @@ using System.Net;
 using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.API;
-using LukeBot.Core;
+using LukeBot.Communication;
 using LukeBot.Config;
 
 namespace LukeBot.Twitch
@@ -18,7 +18,7 @@ namespace LukeBot.Twitch
 
         public TwitchMainModule()
         {
-            Systems.Communication.Register(Constants.SERVICE_NAME);
+            Comms.Communication.Register(Constants.SERVICE_NAME);
 
             mBotLogin = Conf.Get<string>("twitch.login");
             if (mBotLogin == LukeBot.Common.Constants.DEFAULT_LOGIN_NAME)

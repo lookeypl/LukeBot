@@ -2,8 +2,8 @@
 using System.IO;
 using LukeBot.Common;
 using LukeBot.Spotify.Common;
-using LukeBot.Core;
-using LukeBot.Core.Events;
+using LukeBot.Communication;
+using LukeBot.Communication.Events;
 
 
 namespace LukeBot.Spotify
@@ -21,8 +21,8 @@ namespace LukeBot.Spotify
             mTitleFilePath = titlePath;
             mNeedsUpdate = false;
 
-            Systems.Event.SpotifyMusicStateUpdate += OnStateUpdate;
-            Systems.Event.SpotifyMusicTrackChanged += OnTrackChanged;
+            Comms.Event.SpotifyMusicStateUpdate += OnStateUpdate;
+            Comms.Event.SpotifyMusicTrackChanged += OnTrackChanged;
         }
 
         ~NowPlayingTextFile()

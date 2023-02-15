@@ -3,8 +3,8 @@ using System.IO;
 using System.Net.WebSockets;
 using System.Text.Json;
 using LukeBot.Common;
-using LukeBot.Core;
-using LukeBot.Core.Events;
+using LukeBot.Communication;
+using LukeBot.Communication.Events;
 
 
 namespace LukeBot.Widget
@@ -32,9 +32,9 @@ namespace LukeBot.Widget
         public Chat()
             : base("LukeBot.Widget/Widgets/Chat.html")
         {
-            Core.Systems.Event.TwitchChatMessage += OnMessage;
-            Core.Systems.Event.TwitchChatUserClear += OnClearChat;
-            Core.Systems.Event.TwitchChatMessageClear += OnClearMsg;
+            Comms.Event.TwitchChatMessage += OnMessage;
+            Comms.Event.TwitchChatUserClear += OnClearChat;
+            Comms.Event.TwitchChatMessageClear += OnClearMsg;
         }
 
         ~Chat()

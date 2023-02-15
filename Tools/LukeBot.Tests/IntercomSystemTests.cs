@@ -1,11 +1,11 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using LukeBot.Core;
+using LukeBot.Communication;
 using LukeBot.Common;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System;
 using System.Threading;
-using Intercom = LukeBot.Core.Events.Intercom;
+using Intercom = LukeBot.Communication.Events.Intercom;
 
 
 namespace LukeBot.Tests

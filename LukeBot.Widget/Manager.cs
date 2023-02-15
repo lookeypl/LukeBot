@@ -3,7 +3,8 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Threading;
 using LukeBot.Common;
-using Intercom = LukeBot.Core.Events.Intercom;
+using LukeBot.Communication;
+using Intercom = LukeBot.Communication.Events.Intercom;
 
 
 namespace LukeBot.Widget
@@ -41,7 +42,7 @@ namespace LukeBot.Widget
             widgetManagerInfo.AddMessage(Intercom::Messages.GET_WIDGET_PAGE, GetWidgetPageDelegate);
             widgetManagerInfo.AddMessage(Intercom::Messages.ASSIGN_WS, AssignWSDelegate);
 
-            Core.Systems.Intercom.Register(widgetManagerInfo);
+            Comms.Intercom.Register(widgetManagerInfo);
         }
 
         public void Run()

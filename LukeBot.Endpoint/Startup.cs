@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using LukeBot.Common;
 using LukeBot.API;
-using LukeBot.Core;
-using Intercom = LukeBot.Core.Events.Intercom;
+using LukeBot.Communication;
+using Intercom = LukeBot.Communication.Events.Intercom;
 
 
 namespace LukeBot.Endpoint
@@ -66,7 +66,7 @@ namespace LukeBot.Endpoint
                 Logger.Log().Info("  -> " + query.Key + " = " + query.Value);
             }
 
-            Intermediary srv = Systems.Communication.GetIntermediary(service);
+            Intermediary srv = Comms.Communication.GetIntermediary(service);
 
             if (!context.Request.Query.ContainsKey("state"))
             {
@@ -108,7 +108,7 @@ namespace LukeBot.Endpoint
 
             Intercom::GetWidgetPageMessage msg = new Intercom::GetWidgetPageMessage(widgetUUID);
             Intercom::GetWidgetPageResponse page =
-                Core.Systems.Intercom.Request<Intercom::GetWidgetPageResponse, Intercom::GetWidgetPageMessage>(
+                Comms.Intercom.Request<Intercom::GetWidgetPageResponse, Intercom::GetWidgetPageMessage>(
                     Intercom::Endpoints.WIDGET_MANAGER, msg
                 );
 
@@ -141,7 +141,7 @@ namespace LukeBot.Endpoint
 
                 Intercom::AssignWSMessage msg = new Intercom::AssignWSMessage(widgetUUID, ws);
                 Intercom::AssignWSResponse resp =
-                    Core.Systems.Intercom.Request<Intercom::AssignWSResponse, Intercom::AssignWSMessage>(
+                    Comms.Intercom.Request<Intercom::AssignWSResponse, Intercom::AssignWSMessage>(
                         Intercom::Endpoints.WIDGET_MANAGER, msg
                     );
 

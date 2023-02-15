@@ -7,8 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using LukeBot.Common;
 using LukeBot.API;
-using LukeBot.Core;
-using LukeBot.Core.Events;
+using LukeBot.Communication;
+using LukeBot.Communication.Events;
 using Newtonsoft.Json;
 
 
@@ -229,15 +229,15 @@ namespace LukeBot.Twitch
             mPingPongTimer.Elapsed += OnPingPongTimerEvent;
             mSendThread = new Thread(SendThreadMain);
 
-            List<EventCallback> events = Systems.Event.RegisterEventPublisher(
-                this, Core.Events.Type.TwitchChannelPointsRedemption
+            List<EventCallback> events = Comms.Event.RegisterEventPublisher(
+                this, Communication.Events.Type.TwitchChannelPointsRedemption
             );
 
             foreach (EventCallback e in events)
             {
                 switch (e.type)
                 {
-                case Core.Events.Type.TwitchChannelPointsRedemption:
+                case Communication.Events.Type.TwitchChannelPointsRedemption:
                     mChannelPointsRedemptionCallback = e;
                     break;
                 default:

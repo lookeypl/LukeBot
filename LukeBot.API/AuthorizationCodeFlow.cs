@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Text.Json;
 using LukeBot.Common;
-using LukeBot.Core;
+using LukeBot.Communication;
 
 
 namespace LukeBot.API
@@ -41,7 +41,7 @@ namespace LukeBot.API
 
             Logger.Log().Debug("Notifying comms manager");
             PromiseData userResponseBase = new UserToken();
-            IntermediaryPromise userPromise = Systems.Communication.GetIntermediary(mService).Expect(state, ref userResponseBase);
+            IntermediaryPromise userPromise = Comms.Communication.GetIntermediary(mService).Expect(state, ref userResponseBase);
 
             Logger.Log().Debug("Opening browser window with query {0}", URL);
             Utils.StartBrowser(URL);

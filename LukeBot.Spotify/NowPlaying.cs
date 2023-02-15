@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.API;
 using LukeBot.Spotify.Common;
-using LukeBot.Core;
-using LukeBot.Core.Events;
+using LukeBot.Communication;
+using LukeBot.Communication.Events;
 
 
 namespace LukeBot.Spotify
@@ -39,18 +39,18 @@ namespace LukeBot.Spotify
             mCurrentPlaybackState = null;
             mCurrentStateUpdate = new SpotifyMusicStateUpdateArgs();
 
-            List<EventCallback> events = Systems.Event.RegisterEventPublisher(
-                this, Core.Events.Type.SpotifyMusicStateUpdate | Core.Events.Type.SpotifyMusicTrackChanged
+            List<EventCallback> events = Comms.Event.RegisterEventPublisher(
+                this, Communication.Events.Type.SpotifyMusicStateUpdate | Communication.Events.Type.SpotifyMusicTrackChanged
             );
 
             foreach (EventCallback e in events)
             {
                 switch (e.type)
                 {
-                case Core.Events.Type.SpotifyMusicStateUpdate:
+                case Communication.Events.Type.SpotifyMusicStateUpdate:
                     mStateUpdateCallback = e;
                     break;
-                case Core.Events.Type.SpotifyMusicTrackChanged:
+                case Communication.Events.Type.SpotifyMusicTrackChanged:
                     mTrackChangedCallback = e;
                     break;
                 default:

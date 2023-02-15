@@ -3,8 +3,8 @@ using System.IO;
 using System.Threading;
 using System.Text.Json;
 using LukeBot.Common;
-using LukeBot.Core;
-using LukeBot.Core.Events;
+using LukeBot.Communication;
+using LukeBot.Communication.Events;
 using LukeBot.Spotify.Common;
 
 
@@ -45,8 +45,8 @@ namespace LukeBot.Widget
             mState = null;
             mCurrentTrack = null;
 
-            Systems.Event.SpotifyMusicStateUpdate += OnStateUpdate;
-            Systems.Event.SpotifyMusicTrackChanged += OnTrackChanged;
+            Comms.Event.SpotifyMusicStateUpdate += OnStateUpdate;
+            Comms.Event.SpotifyMusicTrackChanged += OnTrackChanged;
 
             OnConnectedEvent += OnConnected;
         }

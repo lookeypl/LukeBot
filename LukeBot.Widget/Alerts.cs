@@ -1,8 +1,8 @@
 ﻿using System.IO;
 using Newtonsoft.Json;
 using LukeBot.Common;
-using LukeBot.Core;
-using LukeBot.Core.Events;
+using LukeBot.Communication;
+using LukeBot.Communication.Events;
 
 
 namespace LukeBot.Widget
@@ -20,7 +20,7 @@ namespace LukeBot.Widget
         public Alerts()
             : base("LukeBot.Widget/Widgets/Alerts.html")
         {
-            Systems.Event.TwitchChannelPointsRedemption += OnChannelPointsEvent;
+            Comms.Event.TwitchChannelPointsRedemption += OnChannelPointsEvent;
         }
 
         ~Alerts()

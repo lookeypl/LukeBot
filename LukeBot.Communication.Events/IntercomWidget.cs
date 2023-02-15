@@ -2,7 +2,7 @@ using System.Net.WebSockets;
 using System.Threading.Tasks;
 
 
-namespace LukeBot.Core.Events
+namespace LukeBot.Communication.Events
 {
     namespace Intercom
     {

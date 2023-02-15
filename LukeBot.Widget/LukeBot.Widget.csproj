@@ -28,10 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LukeBot.Core\LukeBot.Core.csproj" />
+    <ProjectReference Include="..\LukeBot.Communication\LukeBot.Communication.csproj" />
     <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
     <ProjectReference Include="..\LukeBot.Config\LukeBot.Config.csproj" />
-    <ProjectReference Include="..\LukeBot.Core.Events\LukeBot.Core.Events.csproj" />
+    <ProjectReference Include="..\LukeBot.Communication.Events\LukeBot.Communication.Events.csproj" />
   </ItemGroup>
 
 </Project>

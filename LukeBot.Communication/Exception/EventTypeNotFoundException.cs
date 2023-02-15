@@ -1,4 +1,4 @@
-﻿namespace LukeBot.Core
+﻿namespace LukeBot.Communication
 {
     public class EventTypeNotFoundException: System.Exception
     {

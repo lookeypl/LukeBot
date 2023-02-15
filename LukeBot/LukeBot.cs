@@ -1,8 +1,7 @@
 ﻿using LukeBot.Common;
 using LukeBot.Config;
-using LukeBot.Endpoint;
 using LukeBot.Twitch;
-using LukeBot.Spotify;
+using LukeBot.Communication;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading;
@@ -159,14 +158,14 @@ namespace LukeBot
             Logger.Log().Info("Loading configuration...");
             Conf.Initialize(opts.StoreDir);
 
-            Logger.Log().Info("Initializing Core systems...");
-            Core.Systems.Initialize();
+            Logger.Log().Info("Initializing Core Comms...");
+            Comms.Initialize();
 /*
             if (IsInDevMode())
             {
                 StartDevmode();
                 Logger.Log().Info("Core systems teardown...");
-                Core.Systems.Teardown();
+                Core.Comms.Teardown();
                 Conf.Teardown();
                 return;
             }
@@ -260,7 +259,7 @@ namespace LukeBot
             Endpoint.Endpoint.StopThread();
 
             Logger.Log().Info("Core systems teardown...");
-            Core.Systems.Teardown();
+            Comms.Teardown();
             Conf.Teardown();
         }
     }

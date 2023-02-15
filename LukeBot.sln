@@ -41,7 +41,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.API", "LukeBot.API\
 		{93D23CA9-0CBA-4025-8DA9-103283B3887A} = {93D23CA9-0CBA-4025-8DA9-103283B3887A}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Core", "LukeBot.Core\LukeBot.Core.csproj", "{93D23CA9-0CBA-4025-8DA9-103283B3887A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Communication", "LukeBot.Communication\LukeBot.Communication.csproj", "{93D23CA9-0CBA-4025-8DA9-103283B3887A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{0EA88F14-0FD2-480F-94F3-2EB65A498D30}"
 EndProject
@@ -51,7 +51,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Twitch.Common", "Lu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Spotify.Common", "LukeBot.Spotify.Common\LukeBot.Spotify.Common.csproj", "{283EE86E-47C6-4248-BC2D-BA185CF37A80}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Core.Events", "LukeBot.Core.Events\LukeBot.Core.Events.csproj", "{5A13C2EA-88E6-4691-986F-57C337DE1EFF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Communication.Events", "LukeBot.Communication.Events\LukeBot.Communication.Events.csproj", "{5A13C2EA-88E6-4691-986F-57C337DE1EFF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Widget", "LukeBot.Widget\LukeBot.Widget.csproj", "{8F60A7EE-B21A-4323-B587-DD171F1A0DFE}"
 EndProject

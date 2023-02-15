@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using LukeBot.Common;
-using LukeBot.Core.Events;
+using LukeBot.Communication.Events;
 
 
-namespace LukeBot.Core
+namespace LukeBot.Communication
 {
     public interface IEventPublisher
     {

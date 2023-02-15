@@ -4,7 +4,7 @@ using System.Net;
 using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.API;
-using LukeBot.Core;
+using LukeBot.Communication;
 using LukeBot.Config;
 
 
@@ -56,7 +56,7 @@ namespace LukeBot.Spotify
         {
             mLBUser = lbUser;
 
-            Systems.Communication.Register(Constants.SERVICE_NAME);
+            Comms.Communication.Register(Constants.SERVICE_NAME);
             string storagePath = "Outputs/" + Constants.SERVICE_NAME;
             if (!Directory.Exists(storagePath))
                 Directory.CreateDirectory(storagePath);

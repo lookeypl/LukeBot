@@ -4,7 +4,7 @@ using LukeBot.Common;
 using LukeBot.Twitch.Common;
 
 
-namespace LukeBot.Core.Events
+namespace LukeBot.Communication.Events
 {
     public class TwitchChatMessageArgs: EventArgsBase
     {

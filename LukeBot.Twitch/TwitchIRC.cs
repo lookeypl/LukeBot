@@ -1,11 +1,11 @@
 ﻿using LukeBot.Common;
 using LukeBot.API;
-using LukeBot.Core;
+using LukeBot.Communication;
 using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading;
-using LukeBot.Core.Events;
+using LukeBot.Communication.Events;
 
 
 namespace LukeBot.Twitch
@@ -313,21 +313,21 @@ namespace LukeBot.Twitch
             mToken = token;
             mExternalEmotes = new EmoteProvider();
 
-            List<EventCallback> events = Core.Systems.Event.RegisterEventPublisher(
-                this, Core.Events.Type.TwitchChatMessage | Core.Events.Type.TwitchChatMessageClear | Core.Events.Type.TwitchChatUserClear
+            List<EventCallback> events = Communication.Comms.Event.RegisterEventPublisher(
+                this, Communication.Events.Type.TwitchChatMessage | Communication.Events.Type.TwitchChatMessageClear | Communication.Events.Type.TwitchChatUserClear
             );
 
             foreach (EventCallback e in events)
             {
                 switch (e.type)
                 {
-                case Core.Events.Type.TwitchChatMessage:
+                case Communication.Events.Type.TwitchChatMessage:
                     mMessageEventCallback = e;
                     break;
-                case Core.Events.Type.TwitchChatMessageClear:
+                case Communication.Events.Type.TwitchChatMessageClear:
                     mMessageClearEventCallback = e;
                     break;
-                case Core.Events.Type.TwitchChatUserClear:
+                case Communication.Events.Type.TwitchChatUserClear:
                     mUserClearEventCallback = e;
                     break;
                 default:

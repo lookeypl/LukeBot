@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 
-namespace LukeBot.Core
+namespace LukeBot.Communication
 {
     public sealed class CommunicationSystem
     {

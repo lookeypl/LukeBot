@@ -21,7 +21,7 @@ namespace LukeBot.Config
 
         private void Load_WalkNode(PropertyStore store, string fullName, JObject o)
         {
-            Logger.Log().Debug("Walking node fullName {0}", fullName);
+            Logger.Log().Secure("Walking node fullName {0}", fullName);
 
             if ((string)o["type"] == typeof(PropertyDomain).ToString())
             {

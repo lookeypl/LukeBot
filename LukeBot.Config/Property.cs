@@ -23,7 +23,7 @@ namespace LukeBot.Config
 
         static private Property AllocateProperty(Type t, string val)
         {
-            Logger.Log().Debug("Deserializing object {0} to type {1}", val, t);
+            Logger.Log().Secure("Deserializing object {0} to type {1}", val, t);
 
             dynamic jObj = JsonConvert.DeserializeObject(val, t);
             Type propType = typeof(PropertyType<>).MakeGenericType(t);

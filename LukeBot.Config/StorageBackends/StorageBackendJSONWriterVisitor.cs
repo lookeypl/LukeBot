@@ -21,7 +21,7 @@ namespace LukeBot.Config
         {
             string val = JsonConvert.SerializeObject(p.Value);
 
-            Logger.Log().Debug("Visit: {0} = {1}", p.Name, val);
+            Logger.Log().Secure("Visit: {0} = {1}", p.Name, val);
 
             JObject o = new JObject();
 
@@ -34,7 +34,7 @@ namespace LukeBot.Config
 
         public void VisitStart(PropertyDomain pd)
         {
-            Logger.Log().Debug("VisitStart: {0}", pd.mName);
+            Logger.Log().Secure("VisitStart: {0}", pd.mName);
 
             if (pd.mName == PropertyStore.PROP_STORE_DOMAIN_ROOT)
             {
@@ -46,7 +46,7 @@ namespace LukeBot.Config
 
         public void VisitEnd(PropertyDomain pd)
         {
-            Logger.Log().Debug("VisitEnd: {0}", pd.mName);
+            Logger.Log().Secure("VisitEnd: {0}", pd.mName);
 
             JObject o;
             if (pd.mName == PropertyStore.PROP_STORE_DOMAIN_ROOT)

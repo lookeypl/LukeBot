@@ -84,6 +84,12 @@ public class ModifyCommand: Command
 [Verb("list", HelpText = "List all existing properties in the Store.")]
 public class ListCommand: Command
 {
+    [Option('a', "all",
+        Required = false,
+        Default = false,
+        HelpText = "Enable option to list hidden properties (might print out unsafe properties)")]
+    public bool ShowAll { get; set; }
+
     public ListCommand()
     {
     }
@@ -167,6 +173,6 @@ public class CommandProcessor
     {
         Logger.Log().Info("List properties in store {0}", cmd.StoreDir);
         PropertyStore store = OpenStore(cmd);
-        store.PrintDebug(LogLevel.Info);
+        store.PrintDebug(LogLevel.Info, cmd.ShowAll);
     }
 }

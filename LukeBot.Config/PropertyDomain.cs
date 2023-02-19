@@ -133,8 +133,13 @@ namespace LukeBot.Config
                 {
                     // this was loaded earlier but we couldn't create a Property out of it, possibly
                     // because required Assembly was not yet loaded. Retry creating the property.
+
+                    // Store hidden parameter to pass it over to a new property
+                    bool hidden = p.Hidden;
+
                     p = Property.CreateFromLazyProperty(p.Get<LazyProperty>());
                     p.SetName(name);
+                    p.SetHidden(hidden);
                     mProperties.Remove(name);
                     mProperties.Add(name, p);
                 }

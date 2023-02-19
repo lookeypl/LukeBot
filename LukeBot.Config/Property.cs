@@ -11,6 +11,7 @@ namespace LukeBot.Config
     {
         public string Name { get; private set; }
         public System.Type Type { get; private set; }
+        public bool Hidden { get; private set; }
 
         static private Type FindValueType(string typeName)
         {
@@ -35,7 +36,9 @@ namespace LukeBot.Config
 
         protected Property(System.Type type)
         {
+            Name = "";
             Type = type;
+            Hidden = false;
         }
 
         public bool IsType(System.Type t)
@@ -61,7 +64,14 @@ namespace LukeBot.Config
 
         static public Property Create<T>(T val)
         {
-            return new PropertyType<T>(val);
+            return Create<T>(val, false);
+        }
+
+        static public Property Create<T>(T val, bool hidden)
+        {
+            Property p = new PropertyType<T>(val);
+            p.SetHidden(hidden);
+            return p;
         }
 
         static public Property Create(string type, string serializedVal)
@@ -90,6 +100,11 @@ namespace LukeBot.Config
             }
 
             return AllocateProperty(t, p.mSerializedVal);
+        }
+
+        public void SetHidden(bool hidden)
+        {
+            Hidden = hidden;
         }
 
         internal void SetName(string name)

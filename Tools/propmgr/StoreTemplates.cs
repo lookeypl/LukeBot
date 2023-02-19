@@ -23,10 +23,10 @@ public class DefaultStoreTemplate: StoreTemplate
         store.Add("lukebot.users", Property.Create<string[]>(new string[] { "admin" }));
 
         store.Add("twitch.login", Property.Create<string>(Constants.DEFAULT_LOGIN_NAME));
-        store.Add("twitch.client_id", Property.Create<string>(Constants.DEFAULT_CLIENT_ID_NAME));
-        store.Add("twitch.client_secret", Property.Create<string>(Constants.DEFAULT_CLIENT_SECRET_NAME));
+        store.Add("twitch.client_id", Property.Create<string>(Constants.DEFAULT_CLIENT_ID_NAME, true));
+        store.Add("twitch.client_secret", Property.Create<string>(Constants.DEFAULT_CLIENT_SECRET_NAME, true));
 
-        store.Add("spotify.client_id", Property.Create<string>(Constants.DEFAULT_CLIENT_ID_NAME));
-        store.Add("spotify.client_secret", Property.Create<string>(Constants.DEFAULT_CLIENT_SECRET_NAME));
+        store.Add("spotify.client_id", Property.Create<string>(Constants.DEFAULT_CLIENT_ID_NAME, true));
+        store.Add("spotify.client_secret", Property.Create<string>(Constants.DEFAULT_CLIENT_SECRET_NAME, true));
     }
 }

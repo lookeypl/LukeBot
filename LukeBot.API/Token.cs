@@ -41,7 +41,8 @@ namespace LukeBot.API
             if (Conf.Exists(mTokenPath))
                 Conf.Remove(mTokenPath);
 
-            Conf.Add(mTokenPath, Property.Create<AuthToken>(mToken));
+            // Auth tokens should always be created hidden
+            Conf.Add(mTokenPath, Property.Create<AuthToken>(mToken, true));
             Conf.Save();
             Loaded = true;
         }

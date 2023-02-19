@@ -16,7 +16,14 @@ namespace LukeBot.Config
 
         private Property JObjectToProperty(JObject o)
         {
-            return Property.Create((string)o["type"], (string)o["value"]);
+            Property p = Property.Create((string)o["type"], (string)o["value"]);
+
+            JToken hiddenToken;
+            if (o.TryGetValue("hidden", out hiddenToken)) {
+                p.SetHidden((bool)hiddenToken);
+            }
+
+            return p;
         }
 
         private void Load_WalkNode(PropertyStore store, string fullName, JObject o)

@@ -27,6 +27,9 @@ namespace LukeBot.Config
 
             o.Add("name", p.Name);
             o.Add("type", p.Type.ToString());
+            if (p.Hidden)
+                o.Add("hidden", p.Hidden);
+
             o.Add("value", val);
 
             mObjectArrays.Peek().Add(o);

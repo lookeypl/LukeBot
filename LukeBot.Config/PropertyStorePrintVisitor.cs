@@ -8,6 +8,7 @@ namespace LukeBot.Config
     {
         private int mTabCount = 0;
         private LogLevel mLogLevel;
+        private bool mShowHidden;
 
 
         private string GetCurrentTabs()
@@ -21,14 +22,31 @@ namespace LukeBot.Config
             return tabs;
         }
 
+
         public PropertyStorePrintVisitor(LogLevel level)
         {
             mLogLevel = level;
+            mShowHidden = false;
+        }
+
+        public PropertyStorePrintVisitor(LogLevel level, bool showHidden)
+        {
+            mLogLevel = level;
+            mShowHidden = showHidden;
+
+            if (mShowHidden)
+                Logger.Log().Warning("!! Will print hidden properties !!");
         }
 
         public void Visit<T>(PropertyType<T> p)
         {
-            Logger.Log().Message(mLogLevel, "{0}{1} {2} = {3}", GetCurrentTabs(), p.Type.ToString(), p.Name, JsonConvert.SerializeObject(p.Value));
+            if (mShowHidden || (!mShowHidden && !p.Hidden))
+                Logger.Log().Message(mLogLevel, "{0}{1}{2} {3} = {4}",
+                    GetCurrentTabs(),
+                    p.Hidden ? "<hidden> " : "",
+                    p.Type.ToString(),
+                    p.Name,
+                    JsonConvert.SerializeObject(p.Value));
         }
 
         public void VisitStart(PropertyDomain pd)

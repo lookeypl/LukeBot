@@ -122,6 +122,11 @@ namespace LukeBot.Config
             Traverse(new PropertyStorePrintVisitor(level));
         }
 
+        public void PrintDebug(LogLevel level, bool showHidden)
+        {
+            Traverse(new PropertyStorePrintVisitor(level, showHidden));
+        }
+
         public void Clear()
         {
             mRootDomain = new PropertyDomain(PROP_STORE_DOMAIN_ROOT);

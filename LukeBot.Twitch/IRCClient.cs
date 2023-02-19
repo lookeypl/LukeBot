@@ -40,7 +40,7 @@ namespace LukeBot.Twitch
             {
                 // connection was dropped, leave
                 Logger.Log().Warning("Connection dropped");
-                return IRCMessage.QUIT();
+                return IRCMessage.INVALID();
             }
 
             return IRCMessage.Parse(msg);

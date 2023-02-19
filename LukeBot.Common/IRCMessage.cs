@@ -352,6 +352,22 @@ namespace LukeBot.Common
         }
 
 
+        private IRCMessage()
+        {
+            mMessageString = "";
+            mTags = new Dictionary<string, string>();
+            mParams = new List<string>();
+            mTrailingParam = "";
+
+            Nick = "";
+            User = "";
+            Host = "";
+            Channel = "";
+
+            Command = IRCCommand.INVALID;
+            Reply = IRCReply.INVALID;
+        }
+
         private IRCMessage(string msg)
         {
             mMessageString = msg;
@@ -517,6 +533,11 @@ namespace LukeBot.Common
         static public IRCMessage QUIT()
         {
             return new IRCMessage(IRCCommand.QUIT);
+        }
+
+        static public IRCMessage INVALID()
+        {
+            return new IRCMessage();
         }
     }
 }

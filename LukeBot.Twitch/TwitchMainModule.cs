@@ -1,10 +1,11 @@
 using System;
 using System.Net;
 using System.Collections.Generic;
-using LukeBot.Common;
 using LukeBot.API;
+using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Config;
+using CommonUtils = LukeBot.Common.Utils;
 
 namespace LukeBot.Twitch
 {
@@ -43,22 +44,27 @@ namespace LukeBot.Twitch
             mUsers = new Dictionary<string, TwitchUserModule>();
         }
 
-        public void JoinChannel(string channel)
+        public TwitchUserModule JoinChannel(string lbUser)
         {
-            Logger.Log().Debug("Joining channel {0}", channel);
+            string channel = Conf.Get<string>(
+                CommonUtils.FormConfName(LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN, lbUser, Constants.SERVICE_NAME, Constants.PROP_TWITCH_USER_LOGIN)
+            );
 
             if (mUsers.ContainsKey(channel))
             {
                 throw new ChannelAlreadyJoinedException("Cannot join channel {0} - already joined", channel);
             }
 
-            TwitchUserModule user = new TwitchUserModule(mToken, channel);
+            Logger.Log().Debug("Joining channel {0}", channel);
+
+            TwitchUserModule user = new TwitchUserModule(lbUser, mToken, channel);
 
             mIRC.JoinChannel(user.GetUserData());
 
             mUsers.Add(channel, user);
 
             Logger.Log().Secure("Joined channel twitch ID: {0}", user.GetUserData().data[0].id);
+            return user;
         }
 
         public void AddCommandToChannel(string channel, string commandName, Command.ICommand command)

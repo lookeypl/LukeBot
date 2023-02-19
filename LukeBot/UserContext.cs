@@ -9,6 +9,12 @@ using LukeBot.Spotify;
 
 namespace LukeBot
 {
+    public class WidgetDesc
+    {
+        public string widgetType { get; set; }
+        public string widgetID { get; set; }
+    }
+
     class UserContext
     {
         public string Username { get; private set; }
@@ -18,6 +24,7 @@ namespace LukeBot
 
         private readonly Dictionary<string, Func<string, IModule>> mModuleAllocators = new Dictionary<string, Func<string, IModule>>
         {
+            {"twitch", (string user) => GlobalModules.Twitch.JoinChannel(user)},
             {"spotify", (string user) => new SpotifyModule(user)},
         };
         private readonly Dictionary<string, Func<Widget::IWidget>> mWidgetAllocators = new Dictionary<string, Func<Widget::IWidget>>
@@ -36,12 +43,6 @@ namespace LukeBot
             public string moduleType { get; set; }
         }
 
-        private class WidgetDesc
-        {
-            public string widgetType { get; set; }
-            public string widgetID { get; set; }
-        }
-
         public UserContext(string user)
         {
             Username = user;
@@ -53,9 +54,18 @@ namespace LukeBot
             string[] usedModules = Conf.Get<string[]>(
                 Common.Utils.FormConfName(Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_MODULES_DOMAIN)
             );
-            WidgetDesc[] usedWidgets = Conf.Get<WidgetDesc[]>(
-                Common.Utils.FormConfName(Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_WIDGETS_DOMAIN)
-            );
+
+            WidgetDesc[] usedWidgets;
+            try
+            {
+                usedWidgets = Conf.Get<WidgetDesc[]>(
+                    Common.Utils.FormConfName(Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_WIDGETS_DOMAIN)
+                );
+            }
+            catch (PropertyNotFoundException)
+            {
+                usedWidgets = new WidgetDesc[0];
+            }
 
             foreach (string m in usedModules)
             {

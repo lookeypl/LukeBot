@@ -14,7 +14,6 @@ namespace LukeBot
         private string DEVMODE_FILE = "Data/devmode.lukebot";
 
         private List<UserContext> mUsers;
-        private TwitchMainModule mTwitch;
         private CLI.Interface mCLI;
 
         void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
@@ -152,14 +151,6 @@ namespace LukeBot
         {
             Console.CancelKeyPress += OnCancelKeyPress;
 
-            Logger.Log().Info("LukeBot v0.0.1 starting");
-            mCLI = new CLI.Interface();
-
-            Logger.Log().Info("Loading configuration...");
-            Conf.Initialize(opts.StoreDir);
-
-            Logger.Log().Info("Initializing Core Comms...");
-            Comms.Initialize();
 /*
             if (IsInDevMode())
             {
@@ -227,15 +218,26 @@ namespace LukeBot
 */
             try
             {
+                Logger.Log().Info("LukeBot v0.0.1 starting");
+                mCLI = new CLI.Interface();
+
+                Logger.Log().Info("Loading configuration...");
+                Conf.Initialize(opts.StoreDir);
+
+                Logger.Log().Info("Initializing Core Comms...");
+                Comms.Initialize();
+
+                Logger.Log().Info("Initializing Global Modules...");
+                GlobalModules.Initialize();
+
                 Logger.Log().Info("Starting web endpoint...");
                 Endpoint.Endpoint.StartThread();
 
-                Logger.Log().Info("Initializing Twitch main module...");
-                mTwitch = new TwitchMainModule();
-                mTwitch.Run();
+                GlobalModules.Run();
 
                 LoadUsers();
 
+                // We'll get stuck here until the end
                 Logger.Log().Info("Giving control to CLI");
                 mCLI.MainLoop();
             }
@@ -251,14 +253,14 @@ namespace LukeBot
 
             UnloadUsers();
 
-            Logger.Log().Info("Stopping Twitch main module...");
-            mTwitch.RequestShutdown();
-            mTwitch.WaitForShutdown();
+            Logger.Log().Info("Stopping Global Modules...");
+            GlobalModules.Stop();
 
             Logger.Log().Info("Stopping web endpoint...");
             Endpoint.Endpoint.StopThread();
 
             Logger.Log().Info("Core systems teardown...");
+            GlobalModules.Teardown();
             Comms.Teardown();
             Conf.Teardown();
         }

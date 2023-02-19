@@ -203,6 +203,7 @@ namespace LukeBot.Twitch
                 ProcessCAP(m);
                 break;
             case IRCCommand.QUIT:
+            case IRCCommand.INVALID:
                 return false;
             }
 
@@ -214,6 +215,12 @@ namespace LukeBot.Twitch
             try
             {
                 IRCMessage m = mIRCClient.Receive();
+                if (m.Command == IRCCommand.INVALID)
+                {
+                    Logger.Log().Info("Connection was dropped for some unknown reason");
+                    return false;
+                }
+
                 if (m.Command == IRCCommand.NOTICE)
                 {
                     Logger.Log().Info("While trying to login received Notice from Server:");

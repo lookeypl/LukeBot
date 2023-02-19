@@ -8,14 +8,16 @@ namespace LukeBot.Twitch
 {
     public class TwitchUserModule: IModule
     {
+        private string mLBUser;
         private string mName;
         private Token mUserToken;
         private API.Twitch.GetUserResponse mUserData;
         private PubSub mPubSub;
 
 
-        public TwitchUserModule(Token botToken, string channelName)
+        public TwitchUserModule(string lbUser, Token botToken, string channelName)
         {
+            mLBUser = lbUser;
             mName = channelName;
             mUserData = API.Twitch.GetUser(botToken, mName);
 

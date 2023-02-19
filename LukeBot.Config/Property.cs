@@ -17,7 +17,10 @@ namespace LukeBot.Config
             // more exhaustive search across all currently loaded assemblies
             return AppDomain.CurrentDomain.GetAssemblies()
                 .Where(a => !a.IsDynamic)
-                .SelectMany(a => a.GetTypes())
+                .SelectMany(a => {
+                    Type[] t = a.GetTypes();
+                    return t;
+                })
                 .FirstOrDefault(t => t.FullName.Equals(typeName));
         }
 

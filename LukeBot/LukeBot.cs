@@ -1,5 +1,6 @@
 ﻿using LukeBot.Common;
 using LukeBot.Config;
+using LukeBot.Globals;
 using LukeBot.Twitch;
 using LukeBot.Communication;
 using System.IO;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Config;
 using Widget = LukeBot.Widget;
-using LukeBot.Twitch;
+using LukeBot.Globals;
 using LukeBot.Spotify;
 
 

@@ -1,7 +1,7 @@
 using LukeBot.Twitch;
 
 
-namespace LukeBot
+namespace LukeBot.Globals
 {
     public class GlobalModules
     {

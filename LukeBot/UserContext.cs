@@ -51,18 +51,20 @@ namespace LukeBot
 
             Logger.Log().Info("Loading required modules for user {0}", Username);
 
-            string[] usedModules = Conf.Get<string[]>(
-                Common.Utils.FormConfName(Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_MODULES_DOMAIN)
-            );
+            string[] usedModules;
+            if (!Conf.TryGet<string[]>(
+                Common.Utils.FormConfName(Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_MODULES_DOMAIN),
+                out usedModules
+            ))
+            {
+                usedModules = new string[0];
+            }
 
             WidgetDesc[] usedWidgets;
-            try
-            {
-                usedWidgets = Conf.Get<WidgetDesc[]>(
-                    Common.Utils.FormConfName(Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_WIDGETS_DOMAIN)
-                );
-            }
-            catch (PropertyNotFoundException)
+            if (!Conf.TryGet<WidgetDesc[]>(
+                Common.Utils.FormConfName(Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_WIDGETS_DOMAIN),
+                out usedWidgets
+            ))
             {
                 usedWidgets = new WidgetDesc[0];
             }
@@ -124,7 +126,8 @@ namespace LukeBot
 
         public void RunModules()
         {
-            mWidgets.Init();
+            // TODO widgets manager should also be globalized?
+            //mWidgets.Init();
 
             Logger.Log().Info("Running LukeBot modules for user {0}", Username);
             foreach (IModule m in mModules)

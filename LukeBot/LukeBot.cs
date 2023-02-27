@@ -7,6 +7,9 @@ using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 using System;
+using System.Linq;
+using CommandLine;
+
 
 namespace LukeBot
 {
@@ -15,20 +18,17 @@ namespace LukeBot
         private string DEVMODE_FILE = "Data/devmode.lukebot";
 
         private List<UserContext> mUsers;
-        private CLI.Interface mCLI;
 
         void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
         {
             // UI is not handled here; it captures Ctrl+C on its own
             Logger.Log().Info("Requested shutdown");
-            mCLI.Terminate();
             mUsers[0].RequestModuleShutdown();
         }
 
         public LukeBot()
         {
             mUsers = new List<UserContext>();
-            mCLI = new CLI.Interface();
         }
 
         ~LukeBot()
@@ -73,6 +73,75 @@ namespace LukeBot
             }
 
             mUsers.Clear();
+        }
+
+        void AddUserToConfig(string name)
+        {
+            string[] users;
+
+            string propName = Utils.FormConfName(
+                Constants.PROP_STORE_LUKEBOT_DOMAIN, Constants.PROP_STORE_USERS_PROP
+            );
+            if (!Conf.TryGet<string[]>(propName, out users))
+            {
+                users = new string[1];
+                users[0] = name;
+                Conf.Add(propName, Property.Create<string[]>(users));
+                return;
+            }
+
+            Array.Resize(ref users, users.Length + 1);
+            users[users.Length - 1] = name;
+            Conf.Modify<string[]>(propName, users);
+        }
+
+        void AddUser(UserAddCommand args, out string msg)
+        {
+            try
+            {
+                AddUserToConfig(args.Name);
+
+                UserContext uc = new UserContext(args.Name);
+                uc.RunModules();
+
+                mUsers.Add(uc);
+
+                msg = "User " + args.Name + " added successfully";
+            }
+            catch (System.Exception e)
+            {
+                msg = "Failed to add user " + args.Name + ": " + e.Message;
+            }
+        }
+
+        void ListUsers(UserListCommand args, out string msg)
+        {
+            msg = "Available users:";
+        }
+
+        void HandleParseError(IEnumerable<Error> errs, out string msg)
+        {
+            msg = "Parsing user subcommand failed:\n";
+            foreach (Error e in errs)
+            {
+                if (e is HelpVerbRequestedError || e is HelpRequestedError)
+                    continue;
+
+                msg += e.Tag.ToString() + '\n';
+            }
+        }
+
+        void AddCLICommands()
+        {
+            GlobalModules.CLI.AddCommand("user", (string[] args) =>
+            {
+                string result = "";
+                Parser.Default.ParseArguments<UserAddCommand, UserListCommand>(args)
+                    .WithParsed<UserAddCommand>((UserAddCommand args) => AddUser(args, out result))
+                    .WithParsed<UserListCommand>((UserListCommand args) => ListUsers(args, out result))
+                    .WithNotParsed((IEnumerable<Error> errs) => HandleParseError(errs, out result));
+                return result;
+            });
         }
 
         public bool IsInDevMode()
@@ -220,7 +289,6 @@ namespace LukeBot
             try
             {
                 Logger.Log().Info("LukeBot v0.0.1 starting");
-                mCLI = new CLI.Interface();
 
                 Logger.Log().Info("Loading configuration...");
                 Conf.Initialize(opts.StoreDir);
@@ -240,7 +308,8 @@ namespace LukeBot
 
                 // We'll get stuck here until the end
                 Logger.Log().Info("Giving control to CLI");
-                mCLI.MainLoop();
+                AddCLICommands();
+                GlobalModules.CLI.MainLoop();
             }
             catch (Common.Exception e)
             {

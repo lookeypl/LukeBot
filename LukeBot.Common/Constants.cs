@@ -5,6 +5,7 @@ namespace LukeBot.Common
         public const string PROP_STORE_LUKEBOT_DOMAIN = "lukebot";
         public const string PROP_STORE_SERVER_IP_PROP_NAME = "server_ip";
         public const string PROP_STORE_USER_DOMAIN = "user";
+        public const string PROP_STORE_USERS_PROP = "users";
         public const string PROP_STORE_TOKEN_PROP = "token";
 
         public static readonly string PROP_STORE_SERVER_IP_PROP = Utils.FormConfName(PROP_STORE_LUKEBOT_DOMAIN, PROP_STORE_SERVER_IP_PROP_NAME);

@@ -52,6 +52,25 @@ namespace LukeBot.Config
             mStore.Save();
         }
 
+        public static bool TryGet<T>(string name, out T val)
+        {
+            try
+            {
+                val = Get<T>(name);
+                return true;
+            }
+            catch (PropertyNotFoundException)
+            {
+                // prop not found, just return false;
+                val = default(T);
+                return false;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
         public static void PrintDebug(LogLevel level)
         {
             mStore.PrintDebug(level);

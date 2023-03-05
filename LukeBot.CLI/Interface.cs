@@ -18,9 +18,10 @@ namespace LukeBot.CLI
         private Mutex mMessageMutex = new Mutex();
         private Dictionary<string, Command> mCommands = new Dictionary<string, Command>();
         private string mPostCommandMessage = "";
+        private string mSelectedUser = "";
 
 
-        void PreLogMessageEvent(object sender, LogMessageArgs args)
+        private void PreLogMessageEvent(object sender, LogMessageArgs args)
         {
             mMessageMutex.WaitOne();
 
@@ -31,18 +32,17 @@ namespace LukeBot.CLI
             }
         }
 
-        void PostLogMessageEvent(object sender, LogMessageArgs args)
+        private void PostLogMessageEvent(object sender, LogMessageArgs args)
         {
             if (!mDone)
             {
-                Console.Write(PROMPT);
-                mPromptWritten = true;
+                WritePrompt();
             }
 
             mMessageMutex.ReleaseMutex();
         }
 
-        void ProcessCommand(string cmd)
+        private void ProcessCommand(string cmd)
         {
             if (cmd == "quit")
             {
@@ -58,6 +58,15 @@ namespace LukeBot.CLI
             }
 
             mPostCommandMessage = c.Execute(cmdTokens.Skip(1).ToArray());
+        }
+
+        private void WritePrompt()
+        {
+            if (!mPromptWritten)
+            {
+                Console.Write(mSelectedUser + PROMPT);
+                mPromptWritten = true;
+            }
         }
 
         public Interface()
@@ -85,6 +94,41 @@ namespace LukeBot.CLI
             AddCommand(cmd, new LambdaCommand(d));
         }
 
+        // To be used inside CLI commands to query user for a yes/no choice
+        public void Message(string message)
+        {
+            // TODO this looks over-engineered, but I want to improve CLI vastly over the course
+            // of some patches (ex. control the Console Buffer directly to create a pseudo-UI)
+            // so it's better to use this now than later replace all Console.WriteLine()-s in
+            // rest of the project
+            Console.WriteLine(message);
+        }
+
+        public bool Ask(string message)
+        {
+            string response = "";
+            while (response != "y" && response != "n")
+            {
+                Console.Write(message + "(y/n): ");
+                response = Console.ReadLine();
+
+                if (response != "y" && response != "n")
+                    Console.WriteLine("Invalid response: " + response);
+            }
+
+            return (response == "y");
+        }
+
+        public void SaveSelectedUser(string username)
+        {
+            mSelectedUser = username;
+        }
+
+        public string GetSelectedUser()
+        {
+            return mSelectedUser;
+        }
+
         public void MainLoop()
         {
             try
@@ -101,11 +145,7 @@ namespace LukeBot.CLI
                         mPromptWritten = false;
                     }
 
-                    if (!mPromptWritten)
-                    {
-                        Console.Write(PROMPT);
-                        mPromptWritten = true;
-                    }
+                    WritePrompt();
 
                     mMessageMutex.ReleaseMutex();
 

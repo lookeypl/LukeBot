@@ -117,6 +117,43 @@ namespace LukeBot
         void ListUsers(UserListCommand args, out string msg)
         {
             msg = "Available users:";
+
+            foreach (UserContext uc in mUsers)
+            {
+                msg += "\n  " + uc.Username;
+            }
+        }
+
+        void RemoveUser(UserRemoveCommand args, out string msg)
+        {
+            if (!GlobalModules.CLI.Ask("Are you sure you want to remove user " + args.Name + "? This will remove all associated data!"))
+            {
+                msg = "User removal aborted";
+                return;
+            }
+
+            msg = "User " + args.Name + " removed.";
+        }
+
+        void SelectUser(UserSelectCommand args, out string msg)
+        {
+            if (args.Name.Length == 0)
+            {
+                // deselect user
+                msg = "Deselected user " + GlobalModules.CLI.GetSelectedUser();
+                GlobalModules.CLI.SaveSelectedUser("");
+                return;
+            }
+
+            if (mUsers.Exists(ctx => ctx.Username == args.Name))
+            {
+                GlobalModules.CLI.SaveSelectedUser(args.Name);
+                msg = "Selected user " + GlobalModules.CLI.GetSelectedUser();
+            }
+            else
+            {
+                msg = "User " + args.Name + " not found";
+            }
         }
 
         void HandleParseError(IEnumerable<Error> errs, out string msg)
@@ -136,9 +173,11 @@ namespace LukeBot
             GlobalModules.CLI.AddCommand("user", (string[] args) =>
             {
                 string result = "";
-                Parser.Default.ParseArguments<UserAddCommand, UserListCommand>(args)
+                Parser.Default.ParseArguments<UserAddCommand, UserListCommand, UserRemoveCommand, UserSelectCommand>(args)
                     .WithParsed<UserAddCommand>((UserAddCommand args) => AddUser(args, out result))
                     .WithParsed<UserListCommand>((UserListCommand args) => ListUsers(args, out result))
+                    .WithParsed<UserRemoveCommand>((UserRemoveCommand args) => RemoveUser(args, out result))
+                    .WithParsed<UserSelectCommand>((UserSelectCommand args) => SelectUser(args, out result))
                     .WithNotParsed((IEnumerable<Error> errs) => HandleParseError(errs, out result));
                 return result;
             });

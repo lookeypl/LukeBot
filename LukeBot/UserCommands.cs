@@ -19,4 +19,28 @@ namespace LukeBot
     {
 
     }
+
+    [Verb("remove", HelpText = "Remove user")]
+    public class UserRemoveCommand
+    {
+        [Value(0, MetaName = "username", Required = true, HelpText = "Name of user to remove")]
+        public string Name { get; set; }
+
+        public UserRemoveCommand()
+        {
+            Name = "";
+        }
+    }
+
+    [Verb("select", HelpText = "Select user for further commands")]
+    public class UserSelectCommand
+    {
+        [Value(0, MetaName = "username", Required = false, Default = "", HelpText = "Name of user to select. Leave empty to deselect.")]
+        public string Name { get; set; }
+
+        public UserSelectCommand()
+        {
+            Name = "";
+        }
+    }
 }

@@ -34,5 +34,22 @@ namespace LukeBot.Twitch
 
             mCommands.Add(name, command);
         }
+
+        public void DeleteCommand(string name)
+        {
+            if (!mCommands.ContainsKey(name))
+                throw new ArgumentException(String.Format("Command {0} does not exist for channel {1}", name, mChannelName));
+
+            mCommands.Remove(name);
+        }
+
+        public void EditCommand(string name, string newValue)
+        {
+            Command.ICommand cmd;
+            if (!mCommands.TryGetValue(name, out cmd))
+                throw new ArgumentException(String.Format("Command {0} does not exist for channel {1}", name, mChannelName));
+
+            cmd.Edit(newValue);
+        }
     };
 }

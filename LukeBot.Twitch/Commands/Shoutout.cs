@@ -1,14 +1,17 @@
-﻿using LukeBot.Common;
-using LukeBot.API;
+﻿using LukeBot.API;
+using LukeBot.Common;
+using LukeBot.Twitch.Common;
 
 
 namespace LukeBot.Twitch.Command
 {
     public class Shoutout: ICommand
     {
-        public Shoutout() {}
+        public Shoutout(string name)
+            : base(name)
+        {}
 
-        public string Execute(string[] args)
+        public override string Execute(string[] args)
         {
             if (args.Length < 2)
             {
@@ -45,6 +48,16 @@ namespace LukeBot.Twitch.Command
 
             return string.Format("Make sure to check out {0} at https://twitch.tv/{1}! They were last seen streaming {2}.",
                                  channelData.broadcaster_name, userData.login, channelData.game_name);
+        }
+
+        public override void Edit(string newValue)
+        {
+            // empty - no parameters that affect message contents
+        }
+
+        public override Descriptor ToDescriptor()
+        {
+            return new Descriptor(mName, TwitchCommandType.shoutout, "");
         }
     }
 }

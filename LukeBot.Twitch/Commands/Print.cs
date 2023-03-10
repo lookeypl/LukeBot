@@ -1,4 +1,4 @@
-using LukeBot.Common;
+using LukeBot.Twitch.Common;
 
 
 namespace LukeBot.Twitch.Command
@@ -7,14 +7,25 @@ namespace LukeBot.Twitch.Command
     {
         private string mMessage = "";
 
-        public Print(string msg)
+        public Print(string name, string msg)
+            : base(name)
         {
             mMessage = msg;
         }
 
-        public string Execute(string[] args)
+        public override string Execute(string[] args)
         {
             return mMessage;
+        }
+
+        public override void Edit(string newValue)
+        {
+            mMessage = newValue;
+        }
+
+        public override Descriptor ToDescriptor()
+        {
+            return new Descriptor(mName, TwitchCommandType.print, mMessage);
         }
     }
 }

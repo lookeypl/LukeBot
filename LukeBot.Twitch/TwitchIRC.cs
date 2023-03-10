@@ -392,6 +392,36 @@ namespace LukeBot.Twitch
             return mLoggedInEvent.WaitOne(timeoutMs);
         }
 
+        public void DeleteCommandFromChannel(string channel, string commandName)
+        {
+            mChannelsMutex.WaitOne();
+
+            if (!mChannels.ContainsKey(channel))
+            {
+                mChannelsMutex.ReleaseMutex();
+                throw new ArgumentException(String.Format("Invalid channel name {0}", channel));
+            }
+
+            mChannels[channel].DeleteCommand(commandName);
+
+            mChannelsMutex.ReleaseMutex();
+        }
+
+        public void EditCommandFromChannel(string channel, string commandName, string newValue)
+        {
+            mChannelsMutex.WaitOne();
+
+            if (!mChannels.ContainsKey(channel))
+            {
+                mChannelsMutex.ReleaseMutex();
+                throw new ArgumentException(String.Format("Invalid channel name {0}", channel));
+            }
+
+            mChannels[channel].EditCommand(commandName, newValue);
+
+            mChannelsMutex.ReleaseMutex();
+        }
+
         public void Run()
         {
             mWorker.Start();

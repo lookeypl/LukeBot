@@ -522,7 +522,7 @@ namespace LukeBot.Common
 
         static public IRCMessage PRIVMSG(string channel, string msg)
         {
-            IRCMessage m = new IRCMessage(IRCCommand.PART);
+            IRCMessage m = new IRCMessage(IRCCommand.PRIVMSG);
 
             m.Channel = channel;
             m.SetTrailingParam(msg);

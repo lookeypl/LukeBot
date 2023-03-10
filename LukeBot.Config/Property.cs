@@ -15,14 +15,25 @@ namespace LukeBot.Config
 
         static private Type FindValueType(string typeName)
         {
+            bool isArray = typeName.EndsWith("[]");
+            string typeToSearch = typeName;
+
+            if (isArray)
+                typeToSearch = typeName.Substring(0, typeName.Length - 2);
+
             // more exhaustive search across all currently loaded assemblies
-            return AppDomain.CurrentDomain.GetAssemblies()
+            Type t = AppDomain.CurrentDomain.GetAssemblies()
                 .Where(a => !a.IsDynamic)
-                .SelectMany(a => {
-                    Type[] t = a.GetTypes();
-                    return t;
-                })
-                .FirstOrDefault(t => t.FullName.Equals(typeName));
+                .SelectMany(a => a.GetTypes())
+                .FirstOrDefault(t => t.FullName.Equals(typeToSearch));
+
+            // it can happen that the assembly containing searched type is not loaded yet
+            // so t will be null here. If that is the case, return it and let upper code
+            // handle it
+            if (t != null && isArray)
+                t = t.MakeArrayType();
+
+            return t;
         }
 
         static private Property AllocateProperty(Type t, string val)
@@ -43,7 +54,7 @@ namespace LukeBot.Config
 
         public bool IsType(System.Type t)
         {
-            return (Type == t);
+            return (Type.Equals(t));
         }
 
         public T Get<T>()

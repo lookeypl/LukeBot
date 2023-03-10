@@ -2,7 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using LukeBot.Config;
 using System;
 using System.IO;
-
+using System.Collections.Generic;
 
 namespace LukeBot.Tests
 {
@@ -48,6 +48,17 @@ namespace LukeBot.Tests
         private void TestPropertyValue<T>(string name, T val)
         {
             Assert.AreEqual<T>(mStore.Get(name).Get<T>(), val);
+        }
+
+        private void TestArrayPropertyValue<T>(string name, T[] val)
+        {
+            T[] arr = mStore.Get(name).Get<T[]>();
+
+            Assert.AreEqual(val.Length, arr.Length);
+            for (int i = 0; i < arr.Length; i++)
+            {
+                Assert.AreEqual<T>(val[i], arr[i]);
+            }
         }
 
         [ClassInitialize]
@@ -220,6 +231,49 @@ namespace LukeBot.Tests
             TestPropertyValue<string>("loadtest.nested.string", TEST_STRING);
             TestPropertyValue<int>("other.simple", TEST_INT_2);
             TestPropertyValue<ComplexObj>("other.complex", complexSrc);
+        }
+
+        [TestMethod]
+        public void PropertyStore_ArraysGet()
+        {
+            int[] simpleArray = new int[3];
+            simpleArray[0] = 0;
+            simpleArray[1] = 1;
+            simpleArray[2] = 2;
+
+            ComplexObj[] complexArray = new ComplexObj[3];
+            complexArray[0] = new ComplexObj(1, 1.0f, "nr: 1");
+            complexArray[1] = new ComplexObj(2, 2.0f, "nr: 2");
+            complexArray[2] = new ComplexObj(3, 3.0f, "nr: 3");
+
+            mStore.Add("array.simple", Property.Create<int[]>(simpleArray));
+            mStore.Add("array.complex", Property.Create<ComplexObj[]>(complexArray));
+
+            TestArrayPropertyValue<int>("array.simple", simpleArray);
+            TestArrayPropertyValue<ComplexObj>("array.complex", complexArray);
+        }
+
+        [TestMethod]
+        public void PropertyStore_ArraysSaveLoad()
+        {
+            int[] simpleArray = new int[3];
+            simpleArray[0] = 0;
+            simpleArray[1] = 1;
+            simpleArray[2] = 2;
+
+            ComplexObj[] complexArray = new ComplexObj[3];
+            complexArray[0] = new ComplexObj(1, 1.0f, "nr: 1");
+            complexArray[1] = new ComplexObj(2, 2.0f, "nr: 2");
+            complexArray[2] = new ComplexObj(3, 3.0f, "nr: 3");
+
+            mStore.Add("array.simple", Property.Create<int[]>(simpleArray));
+            mStore.Add("array.complex", Property.Create<ComplexObj[]>(complexArray));
+
+            mStore.Save();
+
+            mStore = new PropertyStore(PROPERTY_STORE_TEST_DATA_FILE);
+            TestArrayPropertyValue<int>("array.simple", simpleArray);
+            TestArrayPropertyValue<ComplexObj>("array.complex", complexArray);
         }
 
         [TestMethod]

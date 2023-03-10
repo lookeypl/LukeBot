@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using LukeBot.Twitch.Common;
+using Newtonsoft.Json;
+
 
 namespace LukeBot.Twitch.Command
 {
@@ -14,6 +16,7 @@ namespace LukeBot.Twitch.Command
         {
         }
 
+        [JsonConstructor]
         public Descriptor(string name, TwitchCommandType type, string value)
         {
             Name = name;

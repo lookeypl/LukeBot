@@ -59,9 +59,10 @@ namespace LukeBot.Twitch
             if (!Conf.TryGet<Command.Descriptor[]>(cmdCollectionProp, out commands))
                 return; // quiet exit, assume user does not have any commands for Twitch chat
 
+            string twitchChannel = GetTwitchChannel(lbUser);
             foreach (Command.Descriptor cmd in commands)
             {
-                AddCommandToChannel(lbUser, cmd.Name, AllocateCommand(cmd));
+                mIRC.AddCommandToChannel(twitchChannel, cmd.Name, AllocateCommand(cmd));
             }
         }
 
@@ -97,7 +98,10 @@ namespace LukeBot.Twitch
             }
 
             commands = Array.FindAll<Command.Descriptor>(commands, (Command.Descriptor d) => d.Name != name);
-            Conf.Modify<Command.Descriptor[]>(cmdCollectionProp, commands);
+            if (commands.Length == 0)
+                Conf.Remove(cmdCollectionProp);
+            else
+                Conf.Modify<Command.Descriptor[]>(cmdCollectionProp, commands);
         }
 
         public TwitchMainModule()
@@ -144,8 +148,7 @@ namespace LukeBot.Twitch
 
             mIRC.JoinChannel(user.GetUserData());
 
-            // TODO uncomment when PropertyStore can properly load arrays of non-wow
-            //LoadCommandsFromConfig(lbUser);
+            LoadCommandsFromConfig(lbUser);
 
             mUsers.Add(channel, user);
 
@@ -157,7 +160,7 @@ namespace LukeBot.Twitch
         {
             string twitchChannel = GetTwitchChannel(lbUser);
             mIRC.AddCommandToChannel(twitchChannel, commandName, command);
-            //SaveCommandToConfig(lbUser, commandName, command);
+            SaveCommandToConfig(lbUser, commandName, command);
         }
 
         public Twitch.Command.ICommand AllocateCommand(Command.Descriptor d)
@@ -184,14 +187,14 @@ namespace LukeBot.Twitch
         {
             string twitchChannel = GetTwitchChannel(lbUser);
             mIRC.DeleteCommandFromChannel(twitchChannel, commandName);
-            //RemoveCommandFromConfig(lbUser, commandName);
+            RemoveCommandFromConfig(lbUser, commandName);
         }
 
         public void EditCommandFromChannel(string lbUser, string commandName, string newValue)
         {
             string twitchChannel = GetTwitchChannel(lbUser);
             mIRC.EditCommandFromChannel(twitchChannel, commandName, newValue);
-            //EditCommandInConfig(lbUser, commandName, newValue);
+            EditCommandInConfig(lbUser, commandName, newValue);
         }
 
         public void Run()

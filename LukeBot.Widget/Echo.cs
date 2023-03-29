@@ -1,5 +1,6 @@
 using System.IO;
 using LukeBot.Common;
+using LukeBot.Widget.Common;
 
 
 namespace LukeBot.Widget
@@ -23,10 +24,14 @@ namespace LukeBot.Widget
             }
         }
 
-        public Echo()
-            : base("LukeBot.Widget/Widgets/Echo.html")
+        public Echo(string id, string name)
+            : base("LukeBot.Widget/Widgets/Echo.html", id, name)
         {
+        }
 
+        public override WidgetType GetWidgetType()
+        {
+            return WidgetType.echo;
         }
 
         ~Echo()

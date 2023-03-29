@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Communication.Events;
+using LukeBot.Widget.Common;
 
 
 namespace LukeBot.Widget
@@ -17,10 +18,15 @@ namespace LukeBot.Widget
             SendToWSAsync(msg);
         }
 
-        public Alerts()
-            : base("LukeBot.Widget/Widgets/Alerts.html")
+        public Alerts(string id, string name)
+            : base("LukeBot.Widget/Widgets/Alerts.html", id, name)
         {
             Comms.Event.TwitchChannelPointsRedemption += OnChannelPointsEvent;
+        }
+
+        public override WidgetType GetWidgetType()
+        {
+            return WidgetType.alerts;
         }
 
         ~Alerts()

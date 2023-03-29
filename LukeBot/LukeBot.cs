@@ -18,7 +18,10 @@ namespace LukeBot
         private string DEVMODE_FILE = "Data/devmode.lukebot";
 
         private List<UserContext> mUsers;
-        private TwitchCommandProcessor mTwitchCommands;
+        private List<ICommandProcessor> mCommandProcessors = new List<ICommandProcessor>{
+            new TwitchCommandProcessor(),
+            new WidgetCommandProcessor()
+        };
 
         void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
         {
@@ -183,8 +186,10 @@ namespace LukeBot
                 return result;
             });
 
-            mTwitchCommands = new TwitchCommandProcessor();
-            mTwitchCommands.AddCLICommands();
+            foreach (ICommandProcessor cp in mCommandProcessors)
+            {
+                cp.AddCLICommands();
+            }
         }
 
         public bool IsInDevMode()

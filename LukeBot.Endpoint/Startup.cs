@@ -150,7 +150,7 @@ namespace LukeBot.Endpoint
                 if (resp.Status != Intercom::MessageStatus.SUCCESS)
                 {
                     await ws.CloseAsync(WebSocketCloseStatus.InternalServerError,
-                        string.Format("Failed to forward WS to widget: {0}", resp.ErrorReason),
+                        string.Format(resp.ErrorReason.Substring(0, 120)),
                         CancellationToken.None
                     );
                     return;

@@ -6,6 +6,7 @@ using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Communication.Events;
 using LukeBot.Spotify.Common;
+using LukeBot.Widget.Common;
 
 
 namespace LukeBot.Widget
@@ -39,8 +40,8 @@ namespace LukeBot.Widget
             }
         }
 
-        public NowPlaying()
-            : base("LukeBot.Widget/Widgets/NowPlaying.html")
+        public NowPlaying(string id, string name)
+            : base("LukeBot.Widget/Widgets/NowPlaying.html", id, name)
         {
             mState = null;
             mCurrentTrack = null;
@@ -49,6 +50,11 @@ namespace LukeBot.Widget
             Comms.Event.SpotifyMusicTrackChanged += OnTrackChanged;
 
             OnConnectedEvent += OnConnected;
+        }
+
+        public override WidgetType GetWidgetType()
+        {
+            return WidgetType.nowplaying;
         }
 
         ~NowPlaying()

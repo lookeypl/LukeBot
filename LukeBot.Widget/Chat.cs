@@ -5,6 +5,7 @@ using System.Text.Json;
 using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Communication.Events;
+using LukeBot.Widget.Common;
 
 
 namespace LukeBot.Widget
@@ -29,12 +30,17 @@ namespace LukeBot.Widget
             SendToWSAsync(JsonSerializer.Serialize(a));
         }
 
-        public Chat()
-            : base("LukeBot.Widget/Widgets/Chat.html")
+        public Chat(string id, string name)
+            : base("LukeBot.Widget/Widgets/Chat.html", id, name)
         {
             Comms.Event.TwitchChatMessage += OnMessage;
             Comms.Event.TwitchChatUserClear += OnClearChat;
             Comms.Event.TwitchChatMessageClear += OnClearMsg;
+        }
+
+        public override WidgetType GetWidgetType()
+        {
+            return WidgetType.chat;
         }
 
         ~Chat()

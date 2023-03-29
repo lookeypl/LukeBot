@@ -20,6 +20,7 @@ namespace LukeBot.Twitch
         private const string PUBSUB_MSG_TYPE_RESPONSE = "RESPONSE";
         private const string PUBSUB_MSG_TYPE_LISTEN = "LISTEN";
         private const string PUBSUB_MSG_TYPE_PING = "PING";
+        private const string PUBSUB_MSG_TYPE_RECONNECT = "RECONNECT"; // TODO SUPPORT THIS
 
         private const string PUBSUB_CHANNEL_POINTS_TOPIC = "channel-points-channel-v1";
 

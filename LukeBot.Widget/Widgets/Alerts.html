@@ -38,7 +38,7 @@
     printDebug(serverAddress);
 
 
-    let socket = new WebSocket("ws://" + serverAddress + "/");
+    let socket = new WebSocket(serverAddress);
     socket.onopen = function (e) {
         printDebug(`Connected to server at ${serverAddress}`);
     }

@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LukeBot.Common;
 using LukeBot.Config;
+using LukeBot.Widget.Common;
 
 
 namespace LukeBot.Widget
@@ -26,6 +27,7 @@ namespace LukeBot.Widget
         };
 
         public string ID { get; private set; }
+        public string Name { get; private set; }
         public string mWidgetFilePath;
         private List<string> mHead;
         protected WebSocket mWS;
@@ -58,6 +60,20 @@ namespace LukeBot.Widget
             reader.Close();
 
             return p;
+        }
+
+        internal string GetWidgetAddress()
+        {
+            string serverAddress = Conf.Get<string>(LukeBot.Common.Constants.PROP_STORE_SERVER_IP_PROP);
+            // TODO HTTP/HTTPS????
+            return "http://" + serverAddress + "/widget/" + ID;
+        }
+
+        private string GetWidgetWSAddress()
+        {
+            string serverAddress = Conf.Get<string>(LukeBot.Common.Constants.PROP_STORE_SERVER_IP_PROP);
+            // TODO WS/WSS????
+            return "ws://" + serverAddress + "/widgetws/" + ID;
         }
 
         private async Task<WebSocketRecv> RecvFromWSInternalAsync()
@@ -165,17 +181,13 @@ namespace LukeBot.Widget
             return mWSLifetimeTask;
         }
 
-        internal void SetID(string id)
-        {
-            ID = id;
-        }
 
-
-        public IWidget(string widgetFilePath)
+        public IWidget(string widgetFilePath, string id, string name)
         {
             mWidgetFilePath = widgetFilePath;
 
-            ID = "";
+            ID = id;
+            Name = name;
             mHead = new List<string>();
             mWS = null;
             mWSLifetimeEndEvent = new ManualResetEvent(false);
@@ -195,8 +207,7 @@ namespace LukeBot.Widget
                 page += h;
             }
 
-            string serverIP = Conf.Get<string>(Constants.SERVER_IP_FILE);
-            page += string.Format("<meta name=\"serveraddress\" content=\"{0}\">", /* TODO PROPSTORE Utils.GetConfigServerIP() + */"/widgetws/" + ID);
+            page += string.Format("<meta name=\"serveraddress\" content=\"{0}\">", GetWidgetWSAddress());
 
             page += "</head><body>";
             page += GetWidgetCode();
@@ -204,6 +215,20 @@ namespace LukeBot.Widget
 
             return page;
         }
+
+        public WidgetDesc GetDesc()
+        {
+            WidgetDesc wd = new WidgetDesc();
+
+            wd.Type = GetWidgetType();
+            wd.Id = ID;
+            wd.Name = Name;
+            wd.Address = GetWidgetAddress();
+
+            return wd;
+        }
+
+        public abstract WidgetType GetWidgetType();
 
         public virtual void RequestShutdown()
         {

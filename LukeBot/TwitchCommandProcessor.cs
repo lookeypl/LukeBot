@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using LukeBot.Common;
-using LukeBot.Config;
 using LukeBot.Globals;
 using LukeBot.Twitch.Common;
 using CommandLine;
@@ -64,7 +62,7 @@ namespace LukeBot
     {
     }
 
-    public class TwitchCommandProcessor
+    public class TwitchCommandProcessor: ICommandProcessor
     {
         private bool ValidateSelectedUser(out string lbUser)
         {
@@ -95,6 +93,7 @@ namespace LukeBot
             catch (System.Exception e)
             {
                 msg = "Failed to add command " + cmd.Name + ": " + e.Message;
+                return;
             }
 
             msg = "Added " + cmd.Type + " command " + cmd.Name + " for user " + user;
@@ -116,6 +115,7 @@ namespace LukeBot
             catch (System.Exception e)
             {
                 msg = "Failed to delete command " + cmd.Name + ": " + e.Message;
+                return;
             }
 
             msg = "Command " + cmd.Name + " for user " + user + " deleted.";
@@ -137,6 +137,7 @@ namespace LukeBot
             catch (System.Exception e)
             {
                 msg = "Failed to edit command " + cmd.Name + ": " + e.Message;
+                return;
             }
 
             msg = "Edited twitch command " + cmd.Name + " for user " + user;

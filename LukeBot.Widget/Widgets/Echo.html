@@ -12,7 +12,7 @@
     const serverAddress = getMeta('serveraddress');
     console.log(serverAddress);
 
-    let socket = new WebSocket("ws://" + serverAddress);
+    let socket = new WebSocket(serverAddress);
     socket.onopen = function (e) {
         console.log(`Connected to server at ${serverAddress}`);
     }

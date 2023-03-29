@@ -2,19 +2,14 @@
 using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Config;
-using Widget = LukeBot.Widget;
+using LukeBot.Widget;
+using LukeBot.Widget.Common;
 using LukeBot.Globals;
 using LukeBot.Spotify;
 
 
 namespace LukeBot
 {
-    public class WidgetDesc
-    {
-        public string widgetType { get; set; }
-        public string widgetID { get; set; }
-    }
-
     class UserContext
     {
         public string Username { get; private set; }
@@ -26,17 +21,10 @@ namespace LukeBot
         {
             {"twitch", (string user) => GlobalModules.Twitch.JoinChannel(user)},
             {"spotify", (string user) => new SpotifyModule(user)},
-        };
-        private readonly Dictionary<string, Func<Widget::IWidget>> mWidgetAllocators = new Dictionary<string, Func<Widget::IWidget>>
-        {
-            {"alerts", () => new Widget::Alerts()},
-            {"chat", () => new Widget::Chat()},
-            {"echo", () => new Widget::Echo()},
-            {"nowplaying", () => new Widget::NowPlaying()},
+            {"widget", (string user) => GlobalModules.Widget.LoadWidgetUserModule(user)},
         };
 
         private List<IModule> mModules = null;
-        private Widget::Manager mWidgets = null;
 
         private class ModuleDesc
         {
@@ -47,7 +35,6 @@ namespace LukeBot
         {
             Username = user;
             mModules = new List<IModule>();
-            mWidgets = new Widget::Manager();
 
             Logger.Log().Info("Loading required modules for user {0}", Username);
 
@@ -60,23 +47,9 @@ namespace LukeBot
                 usedModules = new string[0];
             }
 
-            WidgetDesc[] usedWidgets;
-            if (!Conf.TryGet<WidgetDesc[]>(
-                Common.Utils.FormConfName(Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_WIDGETS_DOMAIN),
-                out usedWidgets
-            ))
-            {
-                usedWidgets = new WidgetDesc[0];
-            }
-
             foreach (string m in usedModules)
             {
                 LoadModule(m, Username);
-            }
-
-            foreach (WidgetDesc w in usedWidgets)
-            {
-                LoadWidget(w);
             }
 
             Logger.Log().Info("Created LukeBot user {0}", Username);
@@ -97,19 +70,8 @@ namespace LukeBot
             }
         }
 
-        private string LoadWidget(WidgetDesc desc)
-        {
-            return AddWidget(mWidgetAllocators[desc.widgetType](), desc.widgetID);
-        }
-
         // Create a new Module associated with this User.
         public void CreateModule(string moduleType)
-        {
-            // TODO
-        }
-
-        // Create a new Widget used by this user
-        public void CreateWidget(string widgetType)
         {
             // TODO
         }
@@ -119,16 +81,8 @@ namespace LukeBot
             mModules.Add(module);
         }
 
-        private string AddWidget(Widget::IWidget widget, string widgetID)
-        {
-            return mWidgets.Register(widget, widgetID);
-        }
-
         public void RunModules()
         {
-            // TODO widgets manager should also be globalized?
-            //mWidgets.Init();
-
             Logger.Log().Info("Running LukeBot modules for user {0}", Username);
             foreach (IModule m in mModules)
                 m.Run();
@@ -138,16 +92,12 @@ namespace LukeBot
         {
             foreach (IModule m in mModules)
                 m.RequestShutdown();
-
-            mWidgets.RequestShutdown();
         }
 
         public void WaitForModulesShutdown()
         {
             foreach (IModule m in mModules)
                 m.WaitForShutdown();
-
-            mWidgets.WaitForShutdown();
         }
     }
 }

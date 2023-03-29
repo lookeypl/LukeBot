@@ -12,9 +12,9 @@ namespace LukeBot.Widget
 {
     public class WidgetMainModule
     {
-        private Dictionary<string, WidgetUserModule> mUsers;
-        private Dictionary<string, string> mWidgetIDToUser;
-        private Mutex mMutex;
+        private Dictionary<string, WidgetUserModule> mUsers = new();
+        private Dictionary<string, string> mWidgetIDToUser = new();
+        private Mutex mMutex = new();
 
 
         Intercom::ResponseBase ResponseAllocator(Intercom::MessageBase msg)
@@ -81,10 +81,6 @@ namespace LukeBot.Widget
 
         public WidgetMainModule()
         {
-            mUsers = new Dictionary<string, WidgetUserModule>();
-            mWidgetIDToUser = new Dictionary<string, string>();
-            mMutex = new Mutex();
-
             Intercom::EndpointInfo widgetManagerInfo = new Intercom::EndpointInfo(Intercom::Endpoints.WIDGET_MANAGER, ResponseAllocator);
             widgetManagerInfo.AddMessage(Intercom::Messages.GET_WIDGET_PAGE, GetWidgetPageDelegate);
             widgetManagerInfo.AddMessage(Intercom::Messages.ASSIGN_WS, AssignWSDelegate);

@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Threading;
+
 
 namespace LukeBot.Common
 {
     public enum LogLevel
     {
-        Error = 0,
+        None = 0,
+        Error,
         Warning,
         Info,
         Debug,
@@ -23,7 +26,8 @@ namespace LukeBot.Common
     class LoggerSingleton
     {
         private static LoggerSingleton mInstance = null;
-        private static readonly object mLock = new object();
+        private static readonly object mLock = new();
+        private Mutex mLoggingMutex = new();
         private CultureInfo mCultureInfo = null;
         private Timer mTimer = null;
         private ConsoleColor mDefaultColor;
@@ -140,13 +144,19 @@ namespace LukeBot.Common
                 severity = level
             };
 
-            OnPreLogMessage(msgArgs);
-            if (mAllowPreamble)
-                Console.WriteLine(intro + formatted);
-            else
-                Console.WriteLine(formatted);
-            Console.ForegroundColor = mDefaultColor;
-            OnPostLogMessage(msgArgs);
+            {
+                mLoggingMutex.WaitOne();
+
+                OnPreLogMessage(msgArgs);
+                if (mAllowPreamble)
+                    Console.WriteLine(intro + formatted);
+                else
+                    Console.WriteLine(formatted);
+                Console.ForegroundColor = mDefaultColor;
+                OnPostLogMessage(msgArgs);
+
+                mLoggingMutex.ReleaseMutex();
+            }
         }
 
         public static bool IsLogLevelEnabled(LogLevel level)
@@ -249,6 +259,11 @@ namespace LukeBot.Common
         public static void AddPostMessageEvent(EventHandler<LogMessageArgs> f)
         {
             LoggerSingleton.Instance.PostLogMessage += f;
+        }
+
+        public static bool IsLogLevelEnabled(LogLevel level)
+        {
+            return LoggerSingleton.IsLogLevelEnabled(level);
         }
 
         public static void SetProjectRootDir(string dir)

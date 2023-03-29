@@ -12,7 +12,7 @@ namespace LukeBot.Widget
 {
     public class WidgetUserModule: IModule
     {
-        private Dictionary<string, IWidget> mWidgets = new Dictionary<string, IWidget>();
+        private Dictionary<string, IWidget> mWidgets = new();
         private string mLBUser;
 
 

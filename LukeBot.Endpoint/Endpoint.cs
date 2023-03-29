@@ -2,6 +2,7 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.Threading;
 using LukeBot.Common;
 using LukeBot.Config;
@@ -51,6 +52,12 @@ namespace LukeBot.Endpoint
         public IWebHostBuilder CreateHostBuilder()
         {
             IWebHostBuilder builder = WebHost.CreateDefaultBuilder();
+
+            builder.ConfigureLogging(logging =>
+            {
+                logging.ClearProviders();
+                logging.AddProvider(new LBLoggingProvider());
+            });
 
             string IP = Conf.Get<string>(Common.Constants.PROP_STORE_SERVER_IP_PROP);
             if (IP != Common.Constants.DEFAULT_SERVER_IP)

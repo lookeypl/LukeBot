@@ -97,9 +97,13 @@ namespace LukeBot.Widget
 
             WidgetUserModule user = new WidgetUserModule(lbUser);
 
-            mUsers.Add(lbUser, user);
+            Logger.Log().Debug("Got {0} widgets for user {1}", user.ListWidgets().Count, lbUser);
 
-            Logger.Log().Secure("Loaded Widget user {0}", lbUser);
+            mUsers.Add(lbUser, user);
+            foreach (WidgetDesc wd in user.ListWidgets())
+                mWidgetIDToUser.Add(wd.Id, lbUser);
+
+            Logger.Log().Info("Loaded Widgets for user {0}", lbUser);
             return user;
         }
 

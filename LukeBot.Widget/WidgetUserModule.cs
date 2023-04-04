@@ -6,6 +6,7 @@ using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Widget.Common;
 using Intercom = LukeBot.Communication.Events.Intercom;
+using CommonUtils = LukeBot.Common.Utils;
 
 
 namespace LukeBot.Widget
@@ -16,19 +17,62 @@ namespace LukeBot.Widget
         private string mLBUser;
 
 
-        private void LoadWidgetsFromConfig()
+        private string GetWidgetCollectionPropertyName()
         {
-
+            return CommonUtils.FormConfName(
+                LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN,
+                mLBUser,
+                Constants.MODULE_NAME,
+                Constants.PROP_WIDGETS
+            );
         }
 
-        private void AddWidgetToConfig(IWidget w)
+        private void LoadWidgetsFromConfig()
         {
+            string widgetCollectionProp = GetWidgetCollectionPropertyName();
 
+            WidgetDesc[] widgets;
+            if (!Conf.TryGet<WidgetDesc[]>(widgetCollectionProp, out widgets))
+                return; // quiet exit, assume user does not have any widgets
+
+            foreach (WidgetDesc wd in widgets)
+                LoadWidget(wd);
+        }
+
+        private void SaveWidgetToConfig(IWidget w)
+        {
+            string widgetCollectionProp = GetWidgetCollectionPropertyName();
+
+            WidgetDesc wd = w.GetDesc();
+
+            WidgetDesc[] widgets;
+            if (!Conf.TryGet<WidgetDesc[]>(widgetCollectionProp, out widgets))
+            {
+                widgets = new WidgetDesc[1];
+                widgets[0] = wd;
+                Conf.Add(widgetCollectionProp, Property.Create<WidgetDesc[]>(widgets));
+                return;
+            }
+
+            Array.Resize(ref widgets, widgets.Length + 1);
+            widgets[widgets.Length - 1] = wd;
+            Array.Sort<WidgetDesc>(widgets, new WidgetDesc.Comparer());
+            Conf.Modify<WidgetDesc[]>(widgetCollectionProp, widgets);
         }
 
         private void RemoveWidgetFromConfig(string id)
         {
+            string widgetCollectionProp = GetWidgetCollectionPropertyName();
 
+            WidgetDesc[] commands;
+            if (!Conf.TryGet<WidgetDesc[]>(widgetCollectionProp, out commands))
+                return;
+
+            commands = Array.FindAll<WidgetDesc>(commands, (WidgetDesc d) => d.Id != id);
+            if (commands.Length == 0)
+                Conf.Remove(widgetCollectionProp);
+            else
+                Conf.Modify<WidgetDesc[]>(widgetCollectionProp, commands);
         }
 
         private IWidget AllocateWidget(WidgetType type, string id, string name)
@@ -44,6 +88,13 @@ namespace LukeBot.Widget
             }
         }
 
+
+        internal IWidget LoadWidget(WidgetDesc wd)
+        {
+            IWidget w = AllocateWidget(wd.Type, wd.Id, wd.Name);
+            mWidgets.Add(wd.Id, w);
+            return w;
+        }
 
         internal string GetWidgetPage(string widgetID)
         {
@@ -89,6 +140,8 @@ namespace LukeBot.Widget
             IWidget w = AllocateWidget(type, id, name);
             mWidgets.Add(id, w);
 
+            SaveWidgetToConfig(w);
+
             return w;
         }
 
@@ -117,6 +170,8 @@ namespace LukeBot.Widget
             w.WaitForShutdown();
 
             mWidgets.Remove(id);
+
+            RemoveWidgetFromConfig(id);
         }
 
         public void RequestShutdown()

@@ -344,11 +344,11 @@ namespace LukeBot
                 Logger.Log().Info("Initializing Core Comms...");
                 Comms.Initialize();
 
-                Logger.Log().Info("Initializing Global Modules...");
-                GlobalModules.Initialize();
-
                 Logger.Log().Info("Starting web endpoint...");
                 Endpoint.Endpoint.StartThread();
+
+                Logger.Log().Info("Initializing Global Modules...");
+                GlobalModules.Initialize();
 
                 GlobalModules.Run();
 

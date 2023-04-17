@@ -40,7 +40,7 @@ namespace LukeBot.Endpoint
 
         public void Log<TState>(MSLogging.LogLevel logLevel, MSLogging.EventId eventId, TState state, System.Exception exception, Func<TState, System.Exception, string> formatter)
         {
-            Logger.Log().Message(MSLogLevelToLBLogLevel(logLevel), "Kestrel: {1}", formatter(state, exception));
+            Logger.Log().Message(MSLogLevelToLBLogLevel(logLevel), "Kestrel: {0}", formatter(state, exception));
         }
     }
 }

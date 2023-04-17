@@ -28,11 +28,11 @@ namespace LukeBot.Common
         private static LoggerSingleton mInstance = null;
         private static readonly object mLock = new();
         private Mutex mLoggingMutex = new();
-        private CultureInfo mCultureInfo = null;
-        private Timer mTimer = null;
-        private ConsoleColor mDefaultColor;
-        private string mProjectRootDir;
-        private bool mAllowPreamble;
+        private CultureInfo mCultureInfo = new("en-US");
+        private Timer mTimer = new();
+        private ConsoleColor mDefaultColor = Console.ForegroundColor;
+        private string mProjectRootDir = "";
+        private bool mAllowPreamble = true;
 
         public event EventHandler<LogMessageArgs> PreLogMessage;
         public event EventHandler<LogMessageArgs> PostLogMessage;
@@ -53,13 +53,7 @@ namespace LukeBot.Common
 
         private LoggerSingleton()
         {
-            mCultureInfo = new CultureInfo("en-US");
-            mTimer = new Timer();
-            mProjectRootDir = "";
-            mAllowPreamble = true;
             mTimer.Start();
-
-            mDefaultColor = Console.ForegroundColor;
         }
 
         private void OnPreLogMessage(LogMessageArgs args)

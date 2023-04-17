@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-
+using Newtonsoft.Json;
 
 namespace LukeBot.Widget.Common
 {
@@ -16,6 +16,8 @@ namespace LukeBot.Widget.Common
         public WidgetType Type { get; set; }
         public string Id { get; set; }
         public string Name { get; set; }
+
+        [JsonIgnore]
         public string Address { get; set; }
 
         public string ToFormattedString()

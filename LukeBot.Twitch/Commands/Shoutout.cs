@@ -46,7 +46,7 @@ namespace LukeBot.Twitch.Command
                 return string.Format("Shoutout command failed: {0}", e.Message);
             }
 
-            return string.Format("Make sure to check out {0} at https://twitch.tv/{1}! They were last seen streaming {2}.",
+            return string.Format("Make sure to check out {0} at https://twitch.tv/{1} ! They were last seen streaming {2}.",
                                  channelData.broadcaster_name, userData.login, channelData.game_name);
         }
 

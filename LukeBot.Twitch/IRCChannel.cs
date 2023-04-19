@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System;
+using LukeBot.Common;
 
 
 namespace LukeBot.Twitch
@@ -24,6 +25,7 @@ namespace LukeBot.Twitch
                 return "";
             }
 
+            Logger.Log().Debug("Processing command {0}", cmd);
             return mCommands[cmd].Execute(args);
         }
 

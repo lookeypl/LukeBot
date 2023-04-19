@@ -94,11 +94,8 @@ namespace LukeBot.Twitch
 
             mMessageEventCallback.PublishEvent(message);
 
-            if (chatMsg[0] != '!')
-                return;
-
             string[] chatMsgTokens = chatMsg.Split(' ');
-            string cmd = chatMsgTokens[0].Substring(1); // strip '!' character
+            string cmd = chatMsgTokens[0];
             string response = "";
 
             mChannelsMutex.WaitOne();
@@ -108,7 +105,6 @@ namespace LukeBot.Twitch
                 if (!mChannels.ContainsKey(m.Channel))
                     throw new InvalidDataException(String.Format("Unknown channel: {0}", m.Channel));
 
-                Logger.Log().Debug("Processing command {0}", cmd);
                 response = mChannels[m.Channel].ProcessMessage(cmd, chatMsgTokens);
             }
             catch (LukeBot.Common.Exception e)

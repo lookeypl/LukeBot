@@ -34,9 +34,7 @@ namespace LukeBot.Twitch.Command
             msg.Name = args[1];
             msg.Param = String.Join(' ', args, 2, args.Length - 2);
 
-            Intercom::ResponseBase resp = Comms.Intercom.Request<Intercom::ResponseBase, EditCommandIntercomMsg>(
-                TwitchIntercomMessages.TWITCH_INTERCOM_ENDPOINT, msg
-            );
+            Intercom::ResponseBase resp = Comms.Intercom.Request<Intercom::ResponseBase, EditCommandIntercomMsg>(msg);
 
             // we don't want to hang the bot for longer than 1 second (this is all internal communications
             // anyway so it shouldn't take long)

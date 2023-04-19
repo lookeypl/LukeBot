@@ -12,6 +12,8 @@ using LukeBot.Common;
 using LukeBot.API;
 using LukeBot.Communication;
 using Intercom = LukeBot.Communication.Events.Intercom;
+using LukeBot.Widget.Common;
+
 
 
 namespace LukeBot.Endpoint
@@ -106,15 +108,13 @@ namespace LukeBot.Endpoint
         {
             Logger.Log().Debug("Widget requested - handling {0}", widgetUUID);
 
-            Intercom::GetWidgetPageMessage msg = new Intercom::GetWidgetPageMessage(widgetUUID);
-            Intercom::GetWidgetPageResponse page =
-                Comms.Intercom.Request<Intercom::GetWidgetPageResponse, Intercom::GetWidgetPageMessage>(
-                    Intercom::Endpoints.WIDGET_MANAGER, msg
-                );
+            GetWidgetPageMessage msg = new GetWidgetPageMessage(widgetUUID);
+            GetWidgetPageResponse page =
+                Comms.Intercom.Request<GetWidgetPageResponse, GetWidgetPageMessage>(msg);
 
             page.Wait();
 
-            if (page.Status == Intercom.MessageStatus.SUCCESS)
+            if (page.Status == Intercom::MessageStatus.SUCCESS)
             {
                 await context.Response.WriteAsync(page.pageContents);
             }
@@ -139,11 +139,9 @@ namespace LukeBot.Endpoint
             {
                 WebSocket ws = await context.WebSockets.AcceptWebSocketAsync();
 
-                Intercom::AssignWSMessage msg = new Intercom::AssignWSMessage(widgetUUID, ws);
-                Intercom::AssignWSResponse resp =
-                    Comms.Intercom.Request<Intercom::AssignWSResponse, Intercom::AssignWSMessage>(
-                        Intercom::Endpoints.WIDGET_MANAGER, msg
-                    );
+                AssignWSMessage msg = new AssignWSMessage(widgetUUID, ws);
+                AssignWSResponse resp =
+                    Comms.Intercom.Request<AssignWSResponse, AssignWSMessage>(msg);
 
                 resp.Wait();
 

@@ -10,8 +10,8 @@ namespace LukeBot.Twitch
         // LukeBot user to add the command for
         public string User { get; set; }
 
-        public IntercomMessageBase(string msgType)
-            : base(msgType)
+        public IntercomMessageBase(string endpoint, string msgType)
+            : base(endpoint, msgType)
         {
         }
     }
@@ -23,7 +23,7 @@ namespace LukeBot.Twitch
         public string Param { get; set; }
 
         public AddCommandIntercomMsg()
-            : base(TwitchIntercomMessages.ADD_COMMAND_MSG)
+            : base(TwitchIntercomMessages.TWITCH_INTERCOM_ENDPOINT, TwitchIntercomMessages.ADD_COMMAND_MSG)
         {
         }
     }
@@ -34,7 +34,7 @@ namespace LukeBot.Twitch
         public string Param { get; set; }
 
         public EditCommandIntercomMsg()
-            : base(TwitchIntercomMessages.EDIT_COMMAND_MSG)
+            : base(TwitchIntercomMessages.TWITCH_INTERCOM_ENDPOINT, TwitchIntercomMessages.EDIT_COMMAND_MSG)
         {
         }
     }
@@ -44,7 +44,7 @@ namespace LukeBot.Twitch
         public string Name { get; set; }
 
         public DeleteCommandIntercomMsg()
-            : base(TwitchIntercomMessages.DELETE_COMMAND_MSG)
+            : base(TwitchIntercomMessages.TWITCH_INTERCOM_ENDPOINT, TwitchIntercomMessages.DELETE_COMMAND_MSG)
         {
         }
     }

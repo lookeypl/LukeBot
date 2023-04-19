@@ -24,15 +24,15 @@ namespace LukeBot.Communication
             mIntercomEndpoints.Add(info.mName, info);
         }
 
-        public TResp Request<TResp, TMsg>(string endpoint, TMsg message)
+        public TResp Request<TResp, TMsg>(TMsg message)
             where TResp: Intercom::ResponseBase, new()
             where TMsg: Intercom::MessageBase
         {
             Intercom::EndpointInfo endpointInfo;
-            if (!mIntercomEndpoints.TryGetValue(endpoint, out endpointInfo))
+            if (!mIntercomEndpoints.TryGetValue(message.Endpoint, out endpointInfo))
             {
                 TResp r = new TResp();
-                r.SignalError(string.Format("Intercom Endpoint {0} not found", endpoint));
+                r.SignalError(string.Format("Intercom Endpoint {0} not found", message.Endpoint));
                 return r;
             }
 
@@ -40,7 +40,7 @@ namespace LukeBot.Communication
             if (!endpointInfo.mMethods.TryGetValue(message.Message, out endpointDelegate))
             {
                 TResp r = new TResp();
-                r.SignalError(string.Format("Intercom Endpoint {0}: Message {1} not found", endpoint, message.Message));
+                r.SignalError(string.Format("Intercom Endpoint {0}: Message {1} not found", message.Endpoint, message.Message));
                 return r;
             }
 

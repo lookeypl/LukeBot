@@ -28,7 +28,7 @@ namespace LukeBot.Tests
             int value;
 
             public IntercomTestEchoMessage(int v)
-                : base(INTERCOM_TEST_ECHO_MSG)
+                : base(INTERCOM_TEST_ENDPOINT, INTERCOM_TEST_ECHO_MSG)
             {
                 value = v;
             }
@@ -150,7 +150,7 @@ namespace LukeBot.Tests
 
             Console.WriteLine("Main thread: Requesting response to message");
             IntercomTestEchoResponse resp =
-                mIntercom.Request<IntercomTestEchoResponse, IntercomTestEchoMessage>(INTERCOM_TEST_ENDPOINT, msg);
+                mIntercom.Request<IntercomTestEchoResponse, IntercomTestEchoMessage>(msg);
 
             Console.WriteLine("Main thread: Awaiting for response");
             resp.Wait();

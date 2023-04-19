@@ -16,10 +16,12 @@ namespace LukeBot.Communication.Events
 
         public class MessageBase
         {
+            public string Endpoint;
             public string Message;
 
-            protected MessageBase(string messageTypeStr)
+            protected MessageBase(string endpointStr, string messageTypeStr)
             {
+                Endpoint = endpointStr;
                 Message = messageTypeStr;
             }
         }

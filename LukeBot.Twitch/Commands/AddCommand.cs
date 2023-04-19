@@ -35,9 +35,7 @@ namespace LukeBot.Twitch.Command
             msg.Type = TwitchCommandType.print; // we assume from chat-level you can only add print commands
             msg.Param = String.Join(' ', args, 2, args.Length - 2);
 
-            Intercom::ResponseBase resp = Comms.Intercom.Request<Intercom::ResponseBase, AddCommandIntercomMsg>(
-                TwitchIntercomMessages.TWITCH_INTERCOM_ENDPOINT, msg
-            );
+            Intercom::ResponseBase resp = Comms.Intercom.Request<Intercom::ResponseBase, AddCommandIntercomMsg>(msg);
 
             // we don't want to hang the bot for longer than 1 second (this is all internal communications
             // anyway so it shouldn't take long)

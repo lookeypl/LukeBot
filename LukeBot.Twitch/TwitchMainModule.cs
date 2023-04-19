@@ -21,6 +21,8 @@ namespace LukeBot.Twitch
         private Dictionary<string, TwitchUserModule> mUsers;
 
 
+        // Config interactions //
+
         private string GetCommandCollectionPropertyName(string lbUser)
         {
             return CommonUtils.FormConfName(
@@ -105,6 +107,9 @@ namespace LukeBot.Twitch
                 Conf.Modify<Command.Descriptor[]>(cmdCollectionProp, commands);
         }
 
+
+        // Intercom interactions //
+
         private void IntercomAddCommandDelegate(Intercom::MessageBase msg, ref Intercom::ResponseBase resp)
         {
             AddCommandIntercomMsg m = (AddCommandIntercomMsg)msg;
@@ -155,6 +160,9 @@ namespace LukeBot.Twitch
 
             resp.SignalSuccess();
         }
+
+
+        // Public methods //
 
         public TwitchMainModule()
         {

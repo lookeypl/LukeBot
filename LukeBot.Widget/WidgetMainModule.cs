@@ -21,8 +21,8 @@ namespace LukeBot.Widget
         {
             switch (msg.Message)
             {
-            case Intercom::Messages.GET_WIDGET_PAGE: return new Intercom::GetWidgetPageResponse();
-            case Intercom::Messages.ASSIGN_WS: return new Intercom::AssignWSResponse();
+            case Messages.GET_WIDGET_PAGE: return new GetWidgetPageResponse();
+            case Messages.ASSIGN_WS: return new AssignWSResponse();
             }
 
             Debug.Assert(false, "Message should be validated by now - should not happen");
@@ -31,8 +31,8 @@ namespace LukeBot.Widget
 
         void GetWidgetPageDelegate(Intercom::MessageBase msg, ref Intercom::ResponseBase resp)
         {
-            Intercom::GetWidgetPageMessage m = (Intercom::GetWidgetPageMessage)msg;
-            Intercom::GetWidgetPageResponse r = (Intercom::GetWidgetPageResponse)resp;
+            GetWidgetPageMessage m = (GetWidgetPageMessage)msg;
+            GetWidgetPageResponse r = (GetWidgetPageResponse)resp;
 
             mMutex.WaitOne();
 
@@ -58,8 +58,8 @@ namespace LukeBot.Widget
 
         void AssignWSDelegate(Intercom::MessageBase msg, ref Intercom::ResponseBase resp)
         {
-            Intercom::AssignWSMessage m = (Intercom::AssignWSMessage)msg;
-            Intercom::AssignWSResponse r = (Intercom::AssignWSResponse)resp;
+            AssignWSMessage m = (AssignWSMessage)msg;
+            AssignWSResponse r = (AssignWSResponse)resp;
 
             mMutex.WaitOne();
 
@@ -81,9 +81,9 @@ namespace LukeBot.Widget
 
         public WidgetMainModule()
         {
-            Intercom::EndpointInfo widgetManagerInfo = new Intercom::EndpointInfo(Intercom::Endpoints.WIDGET_MANAGER, ResponseAllocator);
-            widgetManagerInfo.AddMessage(Intercom::Messages.GET_WIDGET_PAGE, GetWidgetPageDelegate);
-            widgetManagerInfo.AddMessage(Intercom::Messages.ASSIGN_WS, AssignWSDelegate);
+            Intercom::EndpointInfo widgetManagerInfo = new Intercom::EndpointInfo(Endpoints.WIDGET_MANAGER, ResponseAllocator);
+            widgetManagerInfo.AddMessage(Messages.GET_WIDGET_PAGE, GetWidgetPageDelegate);
+            widgetManagerInfo.AddMessage(Messages.ASSIGN_WS, AssignWSDelegate);
 
             Comms.Intercom.Register(widgetManagerInfo);
         }

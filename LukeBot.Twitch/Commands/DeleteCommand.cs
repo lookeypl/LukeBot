@@ -33,9 +33,7 @@ namespace LukeBot.Twitch.Command
             msg.User = mLBUser;
             msg.Name = args[1];
 
-            Intercom::ResponseBase resp = Comms.Intercom.Request<Intercom::ResponseBase, DeleteCommandIntercomMsg>(
-                TwitchIntercomMessages.TWITCH_INTERCOM_ENDPOINT, msg
-            );
+            Intercom::ResponseBase resp = Comms.Intercom.Request<Intercom::ResponseBase, DeleteCommandIntercomMsg>(msg);
 
             // we don't want to hang the bot for longer than 1 second (this is all internal communications
             // anyway so it shouldn't take long)

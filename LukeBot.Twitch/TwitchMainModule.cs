@@ -190,10 +190,10 @@ namespace LukeBot.Twitch
             mIRC = new TwitchIRC(mBotLogin, mToken);
             mUsers = new Dictionary<string, TwitchUserModule>();
 
-            Intercom::EndpointInfo epInfo = new Intercom::EndpointInfo(TwitchIntercomMessages.TWITCH_INTERCOM_ENDPOINT);
-            epInfo.AddMessage(TwitchIntercomMessages.ADD_COMMAND_MSG, IntercomAddCommandDelegate);
-            epInfo.AddMessage(TwitchIntercomMessages.EDIT_COMMAND_MSG, IntercomEditCommandDelegate);
-            epInfo.AddMessage(TwitchIntercomMessages.DELETE_COMMAND_MSG, IntercomDeleteCommandDelegate);
+            Intercom::EndpointInfo epInfo = new Intercom::EndpointInfo(Endpoints.TWITCH_MAIN_MODULE);
+            epInfo.AddMessage(Messages.ADD_COMMAND, IntercomAddCommandDelegate);
+            epInfo.AddMessage(Messages.EDIT_COMMAND, IntercomEditCommandDelegate);
+            epInfo.AddMessage(Messages.DELETE_COMMAND, IntercomDeleteCommandDelegate);
             Comms.Intercom.Register(epInfo);
         }
 

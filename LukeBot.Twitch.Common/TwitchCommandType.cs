@@ -5,5 +5,8 @@ namespace LukeBot.Twitch.Common
         invalid = 0,
         print,
         shoutout,
+        addcom,
+        delcom,
+        editcom,
     }
 }

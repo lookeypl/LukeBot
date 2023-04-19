@@ -72,8 +72,8 @@ namespace LukeBot
 
         public void HandleAddcom(TwitchAddcomCommand cmd, out string msg)
         {
-            string user;
-            if (!ValidateSelectedUser(out user))
+            string lbUser;
+            if (!ValidateSelectedUser(out lbUser))
             {
                 msg = "User is not selected";
                 return;
@@ -81,14 +81,14 @@ namespace LukeBot
 
             try
             {
-                Twitch.Command.ICommand twCmd = GlobalModules.Twitch.AllocateCommand(cmd.Name, cmd.Type, string.Join(' ', cmd.Value));
+                Twitch.Command.ICommand twCmd = GlobalModules.Twitch.AllocateCommand(lbUser, cmd.Name, cmd.Type, string.Join(' ', cmd.Value));
                 if (twCmd == null)
                 {
                     msg = "Invalid command type";
                     return;
                 }
 
-                GlobalModules.Twitch.AddCommandToChannel(user, cmd.Name, twCmd);
+                GlobalModules.Twitch.AddCommandToChannel(lbUser, cmd.Name, twCmd);
             }
             catch (System.Exception e)
             {
@@ -96,13 +96,13 @@ namespace LukeBot
                 return;
             }
 
-            msg = "Added " + cmd.Type + " command " + cmd.Name + " for user " + user;
+            msg = "Added " + cmd.Type + " command " + cmd.Name + " for user " + lbUser;
         }
 
         public void HandleDelcom(TwitchDelcomCommand cmd, out string msg)
         {
-            string user;
-            if (!ValidateSelectedUser(out user))
+            string lbUser;
+            if (!ValidateSelectedUser(out lbUser))
             {
                 msg = "User is not selected";
                 return;
@@ -110,7 +110,7 @@ namespace LukeBot
 
             try
             {
-                GlobalModules.Twitch.DeleteCommandFromChannel(user, cmd.Name);
+                GlobalModules.Twitch.DeleteCommandFromChannel(lbUser, cmd.Name);
             }
             catch (System.Exception e)
             {
@@ -118,13 +118,13 @@ namespace LukeBot
                 return;
             }
 
-            msg = "Command " + cmd.Name + " for user " + user + " deleted.";
+            msg = "Command " + cmd.Name + " for user " + lbUser + " deleted.";
         }
 
         public void HandleEditcom(TwitchEditcomCommand cmd, out string msg)
         {
-            string user;
-            if (!ValidateSelectedUser(out user))
+            string lbUser;
+            if (!ValidateSelectedUser(out lbUser))
             {
                 msg = "User is not selected";
                 return;
@@ -132,7 +132,7 @@ namespace LukeBot
 
             try
             {
-                GlobalModules.Twitch.EditCommandFromChannel(user, cmd.Name, string.Join(' ', cmd.Value));
+                GlobalModules.Twitch.EditCommandFromChannel(lbUser, cmd.Name, string.Join(' ', cmd.Value));
             }
             catch (System.Exception e)
             {
@@ -140,7 +140,7 @@ namespace LukeBot
                 return;
             }
 
-            msg = "Edited twitch command " + cmd.Name + " for user " + user;
+            msg = "Edited twitch command " + cmd.Name + " for user " + lbUser;
         }
 
         public void HandleParseError(IEnumerable<Error> errs, out string msg)

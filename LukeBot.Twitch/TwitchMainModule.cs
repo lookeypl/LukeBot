@@ -7,6 +7,7 @@ using LukeBot.Communication;
 using LukeBot.Config;
 using LukeBot.Twitch.Common;
 using CommonUtils = LukeBot.Common.Utils;
+using Intercom = LukeBot.Communication.Events.Intercom;
 
 
 namespace LukeBot.Twitch
@@ -62,7 +63,7 @@ namespace LukeBot.Twitch
             string twitchChannel = GetTwitchChannel(lbUser);
             foreach (Command.Descriptor cmd in commands)
             {
-                mIRC.AddCommandToChannel(twitchChannel, cmd.Name, AllocateCommand(cmd));
+                mIRC.AddCommandToChannel(twitchChannel, cmd.Name, AllocateCommand(lbUser, cmd));
             }
         }
 
@@ -104,6 +105,57 @@ namespace LukeBot.Twitch
                 Conf.Modify<Command.Descriptor[]>(cmdCollectionProp, commands);
         }
 
+        private void IntercomAddCommandDelegate(Intercom::MessageBase msg, ref Intercom::ResponseBase resp)
+        {
+            AddCommandIntercomMsg m = (AddCommandIntercomMsg)msg;
+
+            try
+            {
+                AddCommandToChannel(m.User, m.Name, AllocateCommand(m.User, m.Name, m.Type, m.Param));
+            }
+            catch (System.Exception e)
+            {
+                resp.SignalError(e.Message);
+                return;
+            }
+
+            resp.SignalSuccess();
+        }
+
+        private void IntercomEditCommandDelegate(Intercom::MessageBase msg, ref Intercom::ResponseBase resp)
+        {
+            EditCommandIntercomMsg m = (EditCommandIntercomMsg)msg;
+
+            try
+            {
+                EditCommandFromChannel(m.User, m.Name, m.Param);
+            }
+            catch (System.Exception e)
+            {
+                resp.SignalError(e.Message);
+                return;
+            }
+
+            resp.SignalSuccess();
+        }
+
+        private void IntercomDeleteCommandDelegate(Intercom::MessageBase msg, ref Intercom::ResponseBase resp)
+        {
+            DeleteCommandIntercomMsg m = (DeleteCommandIntercomMsg)msg;
+
+            try
+            {
+                DeleteCommandFromChannel(m.User, m.Name);
+            }
+            catch (System.Exception e)
+            {
+                resp.SignalError(e.Message);
+                return;
+            }
+
+            resp.SignalSuccess();
+        }
+
         public TwitchMainModule()
         {
             Comms.Communication.Register(Constants.SERVICE_NAME);
@@ -129,6 +181,12 @@ namespace LukeBot.Twitch
             mBotData = API.Twitch.GetUser(mToken);
             mIRC = new TwitchIRC(mBotLogin, mToken);
             mUsers = new Dictionary<string, TwitchUserModule>();
+
+            Intercom::EndpointInfo epInfo = new Intercom::EndpointInfo(TwitchIntercomMessages.TWITCH_INTERCOM_ENDPOINT);
+            epInfo.AddMessage(TwitchIntercomMessages.ADD_COMMAND_MSG, IntercomAddCommandDelegate);
+            epInfo.AddMessage(TwitchIntercomMessages.EDIT_COMMAND_MSG, IntercomEditCommandDelegate);
+            epInfo.AddMessage(TwitchIntercomMessages.DELETE_COMMAND_MSG, IntercomDeleteCommandDelegate);
+            Comms.Intercom.Register(epInfo);
         }
 
         public TwitchUserModule JoinChannel(string lbUser)
@@ -163,17 +221,20 @@ namespace LukeBot.Twitch
             SaveCommandToConfig(lbUser, commandName, command);
         }
 
-        public Twitch.Command.ICommand AllocateCommand(Command.Descriptor d)
+        public Twitch.Command.ICommand AllocateCommand(string lbUser, Command.Descriptor d)
         {
-            return AllocateCommand(d.Name, d.Type, d.Value);
+            return AllocateCommand(lbUser, d.Name, d.Type, d.Value);
         }
 
-        public Twitch.Command.ICommand AllocateCommand(string name, TwitchCommandType type, string value)
+        public Twitch.Command.ICommand AllocateCommand(string lbUser, string name, TwitchCommandType type, string value)
         {
             switch (type)
             {
             case TwitchCommandType.print: return new Command.Print(name, value);
             case TwitchCommandType.shoutout: return new Command.Shoutout(name);
+            case TwitchCommandType.addcom: return new Command.AddCommand(name, lbUser);
+            case TwitchCommandType.editcom: return new Command.EditCommand(name, lbUser);
+            case TwitchCommandType.delcom: return new Command.DeleteCommand(name, lbUser);
             default: return null;
             }
         }

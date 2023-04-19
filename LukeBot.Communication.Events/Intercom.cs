@@ -71,6 +71,16 @@ namespace LukeBot.Communication.Events
             public ResponseAllocator mResponseAllocator { get; private set; }
             public Dictionary<string, Delegate> mMethods { get; private set; }
 
+            private static ResponseBase DefaultResponseAllocator(MessageBase msg)
+            {
+                return new ResponseBase();
+            }
+
+            public EndpointInfo(string name)
+                : this(name, DefaultResponseAllocator)
+            {
+            }
+
             public EndpointInfo(string name, ResponseAllocator allocator)
             {
                 mName = name;

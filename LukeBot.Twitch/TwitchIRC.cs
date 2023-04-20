@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Threading;
 using LukeBot.Communication.Events;
 
+using Command = LukeBot.Twitch.Common.Command;
+
 
 namespace LukeBot.Twitch
 {
@@ -28,6 +30,28 @@ namespace LukeBot.Twitch
 
         private Thread mWorker;
         private Mutex mChannelsMutex;
+
+        private Command::User EstablishUserIdentity(IRCMessage m)
+        {
+            Command::User identity = Command::User.Chatter;
+
+            if (m.User == m.Channel)
+                identity |= Command::User.Broadcaster;
+
+            string isMod;
+            if (m.GetTag("mod", out isMod) && Int32.Parse(isMod) == 1)
+                identity |= Command::User.Moderator;
+
+            string isVIP;
+            if (m.GetTag("vip", out isVIP) && Int32.Parse(isVIP) == 1)
+                identity |= Command::User.VIP;
+
+            string isSub;
+            if (m.GetTag("subscriber", out isSub) && Int32.Parse(isSub) == 1)
+                identity |= Command::User.Subscriber;
+
+            return identity;
+        }
 
         void ProcessReply(IRCMessage m)
         {
@@ -60,7 +84,8 @@ namespace LukeBot.Twitch
         void ProcessPRIVMSG(IRCMessage m)
         {
             string chatMsg = m.GetTrailingParam();
-            Logger.Log().Info("({0} tags) #{1} {2}: {3}", m.GetTagCount(), m.Channel, m.User, chatMsg);
+
+            Logger.Log().Info("({0}) #{1} {2}: {3}", m.TagStr, m.Channel, m.User, chatMsg);
 
             // Message related tags pulled from metadata (if available)
             string msgID;
@@ -96,6 +121,7 @@ namespace LukeBot.Twitch
 
             string[] chatMsgTokens = chatMsg.Split(' ');
             string cmd = chatMsgTokens[0];
+            Command::User userIdentity = EstablishUserIdentity(m);
             string response = "";
 
             mChannelsMutex.WaitOne();
@@ -105,7 +131,7 @@ namespace LukeBot.Twitch
                 if (!mChannels.ContainsKey(m.Channel))
                     throw new InvalidDataException(String.Format("Unknown channel: {0}", m.Channel));
 
-                response = mChannels[m.Channel].ProcessMessage(cmd, chatMsgTokens);
+                response = mChannels[m.Channel].ProcessMessage(cmd, userIdentity, chatMsgTokens);
             }
             catch (LukeBot.Common.Exception e)
             {
@@ -414,6 +440,58 @@ namespace LukeBot.Twitch
             }
 
             mChannels[channel].EditCommand(commandName, newValue);
+
+            mChannelsMutex.ReleaseMutex();
+        }
+
+        public Command::Descriptor[] GetCommandDescriptors(string channel)
+        {
+            return new Command::Descriptor[0];
+        }
+
+        public Command::Descriptor GetCommandDescriptor(string channel, string name)
+        {
+            mChannelsMutex.WaitOne();
+
+            if (!mChannels.ContainsKey(channel))
+            {
+                mChannelsMutex.ReleaseMutex();
+                throw new ArgumentException(String.Format("Invalid channel name {0}", channel));
+            }
+
+            Command::Descriptor d = mChannels[channel].GetCommand(name).ToDescriptor();
+
+            mChannelsMutex.ReleaseMutex();
+
+            return d;
+        }
+
+        public void AllowPrivilegeInCommand(string channel, string name, Command::User privilege)
+        {
+            mChannelsMutex.WaitOne();
+
+            if (!mChannels.ContainsKey(channel))
+            {
+                mChannelsMutex.ReleaseMutex();
+                throw new ArgumentException(String.Format("Invalid channel name {0}", channel));
+            }
+
+            mChannels[channel].GetCommand(name).AllowUsers(privilege);
+
+            mChannelsMutex.ReleaseMutex();
+        }
+
+        public void DenyPrivilegeInCommand(string channel, string name, Command::User privilege)
+        {
+            mChannelsMutex.WaitOne();
+
+            if (!mChannels.ContainsKey(channel))
+            {
+                mChannelsMutex.ReleaseMutex();
+                throw new ArgumentException(String.Format("Invalid channel name {0}", channel));
+            }
+
+            mChannels[channel].GetCommand(name).DenyUsers(privilege);
 
             mChannelsMutex.ReleaseMutex();
         }

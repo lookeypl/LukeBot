@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System;
 using LukeBot.Common;
+using Command = LukeBot.Twitch.Common.Command;
 
 
 namespace LukeBot.Twitch
@@ -16,7 +17,7 @@ namespace LukeBot.Twitch
             mCommands = new Dictionary<string, Command.ICommand>();
         }
 
-        public string ProcessMessage(string cmd, string[] args)
+        public string ProcessMessage(string cmd, Command::User userIdentity, string[] args)
         {
             if (!mCommands.ContainsKey(cmd))
             {
@@ -26,6 +27,14 @@ namespace LukeBot.Twitch
             }
 
             Logger.Log().Debug("Processing command {0}", cmd);
+            Command.ICommand c = mCommands[cmd];
+
+            if (!c.CheckPrivilege(userIdentity))
+            {
+                Logger.Log().Debug("Privilege check denied for command {0}", cmd);
+                return "";
+            }
+
             return mCommands[cmd].Execute(args);
         }
 
@@ -52,6 +61,11 @@ namespace LukeBot.Twitch
                 throw new ArgumentException(String.Format("Command {0} does not exist for channel {1}", name, mChannelName));
 
             cmd.Edit(newValue);
+        }
+
+        public Command.ICommand GetCommand(string name)
+        {
+            return mCommands[name];
         }
     };
 }

@@ -1,6 +1,6 @@
 ﻿using LukeBot.API;
 using LukeBot.Common;
-using LukeBot.Twitch.Common;
+using Command = LukeBot.Twitch.Common.Command;
 
 
 namespace LukeBot.Twitch.Command
@@ -55,9 +55,9 @@ namespace LukeBot.Twitch.Command
             // empty - no parameters that affect message contents
         }
 
-        public override Descriptor ToDescriptor()
+        public override Command::Descriptor ToDescriptor()
         {
-            return new Descriptor(mName, TwitchCommandType.shoutout, "");
+            return new Command::Descriptor(mName, Command::Type.shoutout, mPrivilegeLevel, "");
         }
     }
 }

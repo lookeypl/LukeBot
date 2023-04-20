@@ -6,7 +6,9 @@ using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Config;
 using LukeBot.Twitch.Common;
+
 using CommonUtils = LukeBot.Common.Utils;
+using Command = LukeBot.Twitch.Common.Command;
 using Intercom = LukeBot.Communication.Events.Intercom;
 
 
@@ -43,27 +45,27 @@ namespace LukeBot.Twitch
             ));
         }
 
-        private void EditCommandInConfig(string lbUser, string commandName, string newValue)
+        private void UpdateCommandInConfig(string lbUser, string commandName)
         {
             string cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
 
-            Command.Descriptor[] commands = Conf.Get<Command.Descriptor[]>(cmdCollectionProp);
+            Command::Descriptor[] commands = Conf.Get<Command::Descriptor[]>(cmdCollectionProp);
 
-            int idx = Array.FindIndex<Command.Descriptor>(commands, (Command.Descriptor d) => d.Name == commandName);
-            commands[idx].UpdateValue(newValue);
-            Conf.Modify<Command.Descriptor[]>(cmdCollectionProp, commands);
+            int idx = Array.FindIndex<Command::Descriptor>(commands, (Command::Descriptor d) => d.Name == commandName);
+            commands[idx] = GetCommandDescriptor(lbUser, commandName);
+            Conf.Modify<Command::Descriptor[]>(cmdCollectionProp, commands);
         }
 
         private void LoadCommandsFromConfig(string lbUser)
         {
             string cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
 
-            Command.Descriptor[] commands;
-            if (!Conf.TryGet<Command.Descriptor[]>(cmdCollectionProp, out commands))
+            Command::Descriptor[] commands;
+            if (!Conf.TryGet<Command::Descriptor[]>(cmdCollectionProp, out commands))
                 return; // quiet exit, assume user does not have any commands for Twitch chat
 
             string twitchChannel = GetTwitchChannel(lbUser);
-            foreach (Command.Descriptor cmd in commands)
+            foreach (Command::Descriptor cmd in commands)
             {
                 mIRC.AddCommandToChannel(twitchChannel, cmd.Name, AllocateCommand(lbUser, cmd));
             }
@@ -73,38 +75,38 @@ namespace LukeBot.Twitch
         {
             string cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
 
-            Command.Descriptor desc = cmd.ToDescriptor();
+            Command::Descriptor desc = cmd.ToDescriptor();
 
-            Command.Descriptor[] commands;
-            if (!Conf.TryGet<Command.Descriptor[]>(cmdCollectionProp, out commands))
+            Command::Descriptor[] commands;
+            if (!Conf.TryGet<Command::Descriptor[]>(cmdCollectionProp, out commands))
             {
-                commands = new Command.Descriptor[1];
+                commands = new Command::Descriptor[1];
                 commands[0] = desc;
-                Conf.Add(cmdCollectionProp, Property.Create<Command.Descriptor[]>(commands));
+                Conf.Add(cmdCollectionProp, Property.Create<Command::Descriptor[]>(commands));
                 return;
             }
 
             Array.Resize(ref commands, commands.Length + 1);
             commands[commands.Length - 1] = desc;
-            Array.Sort<Command.Descriptor>(commands, new Command.DescriptorComparer());
-            Conf.Modify<Command.Descriptor[]>(cmdCollectionProp, commands);
+            Array.Sort<Command::Descriptor>(commands, new Command::DescriptorComparer());
+            Conf.Modify<Command::Descriptor[]>(cmdCollectionProp, commands);
         }
 
         private void RemoveCommandFromConfig(string lbUser, string name)
         {
             string cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
 
-            Command.Descriptor[] commands;
-            if (!Conf.TryGet<Command.Descriptor[]>(cmdCollectionProp, out commands))
+            Command::Descriptor[] commands;
+            if (!Conf.TryGet<Command::Descriptor[]>(cmdCollectionProp, out commands))
             {
                 return;
             }
 
-            commands = Array.FindAll<Command.Descriptor>(commands, (Command.Descriptor d) => d.Name != name);
+            commands = Array.FindAll<Command::Descriptor>(commands, (Command::Descriptor d) => d.Name != name);
             if (commands.Length == 0)
                 Conf.Remove(cmdCollectionProp);
             else
-                Conf.Modify<Command.Descriptor[]>(cmdCollectionProp, commands);
+                Conf.Modify<Command::Descriptor[]>(cmdCollectionProp, commands);
         }
 
 
@@ -229,20 +231,20 @@ namespace LukeBot.Twitch
             SaveCommandToConfig(lbUser, commandName, command);
         }
 
-        public Twitch.Command.ICommand AllocateCommand(string lbUser, Command.Descriptor d)
+        public Twitch.Command.ICommand AllocateCommand(string lbUser, Command::Descriptor d)
         {
             return AllocateCommand(lbUser, d.Name, d.Type, d.Value);
         }
 
-        public Twitch.Command.ICommand AllocateCommand(string lbUser, string name, TwitchCommandType type, string value)
+        public Twitch.Command.ICommand AllocateCommand(string lbUser, string name, Command::Type type, string value)
         {
             switch (type)
             {
-            case TwitchCommandType.print: return new Command.Print(name, value);
-            case TwitchCommandType.shoutout: return new Command.Shoutout(name);
-            case TwitchCommandType.addcom: return new Command.AddCommand(name, lbUser);
-            case TwitchCommandType.editcom: return new Command.EditCommand(name, lbUser);
-            case TwitchCommandType.delcom: return new Command.DeleteCommand(name, lbUser);
+            case Command::Type.print: return new Command.Print(name, value);
+            case Command::Type.shoutout: return new Command.Shoutout(name);
+            case Command::Type.addcom: return new Command.AddCommand(name, lbUser);
+            case Command::Type.editcom: return new Command.EditCommand(name, lbUser);
+            case Command::Type.delcom: return new Command.DeleteCommand(name, lbUser);
             default: return null;
             }
         }
@@ -263,7 +265,32 @@ namespace LukeBot.Twitch
         {
             string twitchChannel = GetTwitchChannel(lbUser);
             mIRC.EditCommandFromChannel(twitchChannel, commandName, newValue);
-            EditCommandInConfig(lbUser, commandName, newValue);
+            UpdateCommandInConfig(lbUser, commandName);
+        }
+
+        public Command::Descriptor[] GetCommandDescriptors(string lbUser)
+        {
+            return new Command::Descriptor[0];
+        }
+
+        public Command::Descriptor GetCommandDescriptor(string lbUser, string name)
+        {
+            string twitchChannel = GetTwitchChannel(lbUser);
+            return mIRC.GetCommandDescriptor(twitchChannel, name);
+        }
+
+        public void AllowPrivilegeInCommand(string lbUser, string name, Command::User privilege)
+        {
+            string twitchChannel = GetTwitchChannel(lbUser);
+            mIRC.AllowPrivilegeInCommand(twitchChannel, name, privilege);
+            UpdateCommandInConfig(twitchChannel, name);
+        }
+
+        public void DenyPrivilegeInCommand(string lbUser, string name, Command::User privilege)
+        {
+            string twitchChannel = GetTwitchChannel(lbUser);
+            mIRC.DenyPrivilegeInCommand(twitchChannel, name, privilege);
+            UpdateCommandInConfig(twitchChannel, name);
         }
 
         public void Run()

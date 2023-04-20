@@ -2,6 +2,7 @@ using System;
 using LukeBot.Common;
 using LukeBot.Twitch.Common;
 using LukeBot.Communication;
+using Command = LukeBot.Twitch.Common.Command;
 using Intercom = LukeBot.Communication.Events.Intercom;
 
 
@@ -32,7 +33,7 @@ namespace LukeBot.Twitch.Command
             AddCommandIntercomMsg msg = new AddCommandIntercomMsg();
             msg.User = mLBUser;
             msg.Name = args[1];
-            msg.Type = TwitchCommandType.print; // we assume from chat-level you can only add print commands
+            msg.Type = Command::Type.print; // we assume from chat-level you can only add print commands
             msg.Param = String.Join(' ', args, 2, args.Length - 2);
 
             Intercom::ResponseBase resp = Comms.Intercom.Request<Intercom::ResponseBase, AddCommandIntercomMsg>(msg);
@@ -52,9 +53,9 @@ namespace LukeBot.Twitch.Command
             }
         }
 
-        public override Descriptor ToDescriptor()
+        public override Command::Descriptor ToDescriptor()
         {
-            return new Descriptor(mName, TwitchCommandType.addcom, "");
+            return new Command::Descriptor(mName, Command::Type.addcom, mPrivilegeLevel, "");
         }
     }
 }

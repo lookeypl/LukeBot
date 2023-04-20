@@ -1,5 +1,6 @@
 using LukeBot.Communication;
 using LukeBot.Twitch.Common;
+using Command = LukeBot.Twitch.Common.Command;
 using Intercom = LukeBot.Communication.Events.Intercom;
 
 
@@ -19,7 +20,7 @@ namespace LukeBot.Twitch
     public class AddCommandIntercomMsg: IntercomMessageBase
     {
         public string Name { get; set; }
-        public TwitchCommandType Type { get; set; }
+        public Command::Type Type { get; set; }
         public string Param { get; set; }
 
         public AddCommandIntercomMsg()

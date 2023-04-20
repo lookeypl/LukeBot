@@ -1,4 +1,4 @@
-using LukeBot.Twitch.Common;
+using Command = LukeBot.Twitch.Common.Command;
 
 
 namespace LukeBot.Twitch.Command
@@ -23,9 +23,9 @@ namespace LukeBot.Twitch.Command
             mMessage = newValue;
         }
 
-        public override Descriptor ToDescriptor()
+        public override Command::Descriptor ToDescriptor()
         {
-            return new Descriptor(mName, TwitchCommandType.print, mMessage);
+            return new Command::Descriptor(mName, Command::Type.print, mPrivilegeLevel, mMessage);
         }
     }
 }

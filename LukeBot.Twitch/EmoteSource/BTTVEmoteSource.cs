@@ -6,7 +6,6 @@ using LukeBot.Twitch.Common;
 
 namespace LukeBot.Twitch
 {
-
     class BTTVEmoteSource: IEmoteSource
     {
         public BTTVEmoteSource()

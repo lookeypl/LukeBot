@@ -55,6 +55,10 @@ namespace LukeBot.Common
         // in case there is a parameter beginning with '#' character; otherwise empty.
         public string Channel { get; set; }
 
+        // String containing tags attached to this IRC message. Parsed version is
+        // available via GetTag()/GetTags()/GetTagCount() API
+        public string TagStr { get; private set; }
+
 
         // Parser internals
         private enum State
@@ -206,7 +210,8 @@ namespace LukeBot.Common
                 {
                 case State.Tag:
                 {
-                    m.mTags = ParseTags(tokens[i].Substring(1));
+                    m.TagStr = tokens[i].Substring(1);
+                    m.mTags = ParseTags(m.TagStr);
                     break;
                 }
                 case State.Prefix:
@@ -352,6 +357,11 @@ namespace LukeBot.Common
         }
 
 
+        internal Dictionary<string, string> GetTags()
+        {
+            return mTags;
+        }
+
         private IRCMessage()
         {
             mMessageString = "";
@@ -363,56 +373,27 @@ namespace LukeBot.Common
             User = "";
             Host = "";
             Channel = "";
+            TagStr = "";
 
             Command = IRCCommand.INVALID;
             Reply = IRCReply.INVALID;
         }
 
         private IRCMessage(string msg)
+            : this()
         {
             mMessageString = msg;
-            mTags = new Dictionary<string, string>();
-            mParams = new List<string>();
-            mTrailingParam = "";
-
-            Nick = "";
-            User = "";
-            Host = "";
-            Channel = "";
-
-            Command = IRCCommand.INVALID;
-            Reply = IRCReply.INVALID;
         }
 
         public IRCMessage(IRCCommand cmd)
+            : this()
         {
-            mMessageString = "";
-            mTags = new Dictionary<string, string>();
-            mParams = new List<string>();
-            mTrailingParam = "";
-
-            Nick = "";
-            User = "";
-            Host = "";
-            Channel = "";
-
             Command = cmd;
-            Reply = IRCReply.INVALID;
         }
 
         public IRCMessage(IRCReply reply)
+            : this(IRCCommand.REPLY)
         {
-            mMessageString = "";
-            mTags = new Dictionary<string, string>();
-            mParams = new List<string>();
-            mTrailingParam = "";
-
-            Nick = "";
-            User = "";
-            Host = "";
-            Channel = "";
-
-            Command = IRCCommand.REPLY;
             Reply = reply;
         }
 

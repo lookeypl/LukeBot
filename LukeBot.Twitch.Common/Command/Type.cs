@@ -1,6 +1,6 @@
-namespace LukeBot.Twitch.Common
+namespace LukeBot.Twitch.Common.Command
 {
-    public enum TwitchCommandType
+    public enum Type
     {
         invalid = 0,
         print,

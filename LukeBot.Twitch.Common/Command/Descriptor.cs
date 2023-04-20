@@ -1,26 +1,32 @@
 using System.Collections.Generic;
-using LukeBot.Twitch.Common;
 using Newtonsoft.Json;
 
 
-namespace LukeBot.Twitch.Command
+namespace LukeBot.Twitch.Common.Command
 {
     public class Descriptor
     {
         public string Name { get; private set; }
-        public TwitchCommandType Type { get; private set; }
+        public Type Type { get; private set; }
+        public User Privilege { get; private set; }
         public string Value { get; private set; }
 
         public Descriptor(string name)
-            : this(name, TwitchCommandType.invalid, "")
+            : this(name, Type.invalid, User.Everyone, "")
+        {
+        }
+
+        public Descriptor(string name, Type type, string value)
+            : this(name, type, User.Everyone, value)
         {
         }
 
         [JsonConstructor]
-        public Descriptor(string name, TwitchCommandType type, string value)
+        public Descriptor(string name, Type type, User privilege, string value)
         {
             Name = name;
             Type = type;
+            Privilege = privilege;
             Value = value;
         }
 
@@ -30,7 +36,7 @@ namespace LukeBot.Twitch.Command
         }
     }
 
-    internal class DescriptorComparer: IComparer<Descriptor>
+    public class DescriptorComparer: IComparer<Descriptor>
     {
         public int Compare(Descriptor a, Descriptor b)
         {

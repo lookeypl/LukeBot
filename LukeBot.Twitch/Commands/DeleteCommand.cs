@@ -2,6 +2,7 @@ using System;
 using LukeBot.Common;
 using LukeBot.Twitch.Common;
 using LukeBot.Communication;
+using Command = LukeBot.Twitch.Common.Command;
 using Intercom = LukeBot.Communication.Events.Intercom;
 
 
@@ -50,9 +51,9 @@ namespace LukeBot.Twitch.Command
             }
         }
 
-        public override Descriptor ToDescriptor()
+        public override Command::Descriptor ToDescriptor()
         {
-            return new Descriptor(mName, TwitchCommandType.delcom, "");
+            return new Command::Descriptor(mName, Command::Type.delcom, mPrivilegeLevel, "");
         }
     }
 }

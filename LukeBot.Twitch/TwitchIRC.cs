@@ -38,17 +38,20 @@ namespace LukeBot.Twitch
             if (m.User == m.Channel)
                 identity |= Command::User.Broadcaster;
 
-            string isMod;
-            if (m.GetTag("mod", out isMod) && Int32.Parse(isMod) == 1)
-                identity |= Command::User.Moderator;
+            if (mTagsEnabled)
+            {
+                string isMod;
+                if (m.GetTag("mod", out isMod) && Int32.Parse(isMod) == 1)
+                    identity |= Command::User.Moderator;
 
-            string isVIP;
-            if (m.GetTag("vip", out isVIP) && Int32.Parse(isVIP) == 1)
-                identity |= Command::User.VIP;
+                string isVIP;
+                if (m.GetTag("vip", out isVIP) && Int32.Parse(isVIP) == 1)
+                    identity |= Command::User.VIP;
 
-            string isSub;
-            if (m.GetTag("subscriber", out isSub) && Int32.Parse(isSub) == 1)
-                identity |= Command::User.Subscriber;
+                string isSub;
+                if (m.GetTag("subscriber", out isSub) && Int32.Parse(isSub) == 1)
+                    identity |= Command::User.Subscriber;
+            }
 
             return identity;
         }
@@ -85,14 +88,13 @@ namespace LukeBot.Twitch
         {
             string chatMsg = m.GetTrailingParam();
 
-            Logger.Log().Info("({0}) #{1} {2}: {3}", m.TagStr, m.Channel, m.User, chatMsg);
+            Logger.Log().Info("({0} tags) #{1} {2}: {3}", m.GetTagCount(), m.Channel, m.User, chatMsg);
 
             // Message related tags pulled from metadata (if available)
             string msgID;
             if (!mTagsEnabled || !m.GetTag("id", out msgID))
                 msgID = String.Format("{0}", mMsgIDCounter++);
 
-            Command::User userIdentity;
             TwitchChatMessageArgs message = new TwitchChatMessageArgs(msgID);
             message.Nick = m.User;
             message.Message = chatMsg;
@@ -117,14 +119,11 @@ namespace LukeBot.Twitch
                 {
                     message.ParseEmotesString(chatMsg, emotes);
                 }
-
-                userIdentity = EstablishUserIdentity(m);
             }
             else
             {
                 message.UserID = m.User;
                 message.DisplayName = m.User;
-                userIdentity = Command::User.Chatter;
             }
 
             message.AddExternalEmotes(mExternalEmotes.ParseEmotes(message.Message));
@@ -133,6 +132,7 @@ namespace LukeBot.Twitch
 
             string[] chatMsgTokens = chatMsg.Split(' ');
             string cmd = chatMsgTokens[0];
+            Command::User userIdentity = EstablishUserIdentity(m);
             string response = "";
 
             mChannelsMutex.WaitOne();
@@ -184,8 +184,13 @@ namespace LukeBot.Twitch
 
         void ProcessCAP(IRCMessage m)
         {
-            // TODO complete this part to discover if CAP was acquired
             Logger.Log().Debug("CAP response: {0}", m.ToString());
+
+            if (m.GetParams()[1] == "ACK" && m.GetTrailingParam().Equals("twitch.tv/tags"))
+            {
+                Logger.Log().Debug("IRC Tag capability enabled");
+                mTagsEnabled = true;
+            }
         }
 
         void ProcessNOTICE(IRCMessage m)
@@ -458,9 +463,25 @@ namespace LukeBot.Twitch
             mChannelsMutex.ReleaseMutex();
         }
 
-        public Command::Descriptor[] GetCommandDescriptors(string channel)
+        public List<Command::Descriptor> GetCommandDescriptors(string channel)
         {
-            return new Command::Descriptor[0];
+            List<Command::Descriptor> cmdDescs = new List<Command::Descriptor>();
+
+            mChannelsMutex.WaitOne();
+
+            if (!mChannels.ContainsKey(channel))
+            {
+                mChannelsMutex.ReleaseMutex();
+                throw new ArgumentException(String.Format("Invalid channel name {0}", channel));
+            }
+
+            Dictionary<string, Command.ICommand> cmds = mChannels[channel].GetCommands();
+            foreach (Command.ICommand cmd in cmds.Values)
+                cmdDescs.Add(cmd.ToDescriptor());
+
+            mChannelsMutex.ReleaseMutex();
+
+            return cmdDescs;
         }
 
         public Command::Descriptor GetCommandDescriptor(string channel, string name)

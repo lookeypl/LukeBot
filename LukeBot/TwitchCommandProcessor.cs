@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Collections.Generic;
 using LukeBot.Globals;
 using LukeBot.Twitch.Common.Command;
@@ -10,13 +12,16 @@ namespace LukeBot
     [Verb("addcom", HelpText = "Add command for user")]
     public class TwitchAddcomCommand
     {
-        [Value(0, MetaName = "name", Required = true, HelpText = "Name of command to add")]
+        [Value(0, MetaName = "name", Required = true, HelpText = "Name of command to add.")]
         public string Name { get; set; }
 
-        [Value(1, MetaName = "type", Required = true, HelpText = "Type of command to add")]
+        [Value(1, MetaName = "type", Required = true, HelpText =
+            "Type of command to add. Available command types: " +
+            "  print, shoutout, addcom, editcom, delcom"
+        )]
         public Command::Type Type { get; set; }
 
-        [Value(2, MetaName = "value", Required = false, HelpText = "Value for the command")]
+        [Value(2, MetaName = "value", Required = false, HelpText = "Value for the command.")]
         public IEnumerable<string> Value { get; set; }
 
         public TwitchAddcomCommand()
@@ -53,7 +58,7 @@ namespace LukeBot
         }
     }
 
-    [Verb("listcom", HelpText = "List available Twitch commands for given user")]
+    [Verb("listcom", HelpText = "List available Twitch commands for selected user")]
     public class TwitchListcomCommand
     {
         public TwitchListcomCommand()
@@ -67,10 +72,26 @@ namespace LukeBot
         [Value(0, MetaName = "name", Required = true, HelpText = "Name of command to modify")]
         public string Name { get; set; }
 
-        [Option('a', "allow", SetName = "allow", HelpText = "Allow selected users to execute command")]
+        [Option('a', "allow", SetName = "allow", HelpText =
+            "Allow selected users to execute command. Available user groups are:\n" +
+            "  Broadcaster, Moderator, VIP, Subscriber, Chatter\n" +
+            "\n" +
+            "Above groups must be provided in a comma-separated list, case-agnostic, without spaces.\n" +
+            "Command also accepts \"Everyone\" (case-agnostic) as an alias of all groups above at once.\n" +
+            "\n" +
+            "It is possible to provide only first letters of a group.\n"
+        )]
         public string Allowed { get; set; }
 
-        [Option('d', "deny", SetName = "deny", HelpText = "Deny selected users to execute command")]
+        [Option('d', "deny", SetName = "deny", HelpText =
+            "Deny selected users to execute command. Available user groups are:\n" +
+            "  Broadcaster, Moderator, VIP, Subscriber, Chatter\n" +
+            "\n" +
+            "Above groups must be provided in a comma-separated list, case-agnostic, without spaces.\n" +
+            "Command also accepts \"Everyone\" (case-agnostic) as an alias of all groups above at once.\n" +
+            "\n" +
+            "It is possible to provide only first letters of a group.\n"
+        )]
         public string Denied { get; set; }
 
         [Option('l', "list", SetName = "list", HelpText = "List current command modifiers")]
@@ -181,8 +202,21 @@ namespace LukeBot
                 return;
             }
 
-            // TODO
-            msg = "Available commands:\n";
+            try
+            {
+                msg = "Available commands:\n";
+
+                List<Command::Descriptor> cmds = GlobalModules.Twitch.GetCommandDescriptors(lbUser);
+
+                foreach (Command::Descriptor c in cmds)
+                {
+                    msg += String.Format("  {0} ({1})\n", c.Name, c.Type.ToString());
+                }
+            }
+            catch (System.Exception e)
+            {
+                msg = "Failed to fetch available commands: " + e.Message;
+            }
         }
 
         public void HandleModcom(TwitchModcomCommand cmd, out string msg)

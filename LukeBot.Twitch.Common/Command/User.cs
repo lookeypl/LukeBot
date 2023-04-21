@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 namespace LukeBot.Twitch.Common.Command
 {
@@ -6,13 +7,12 @@ namespace LukeBot.Twitch.Common.Command
     public enum User
     {
         Chatter = (1 << 0),
-        Follower = (1 << 1),
-        Subscriber = (1 << 2),
-        VIP = (1 << 3),
-        Moderator = (1 << 4),
-        Broadcaster = (1 << 5),
+        Subscriber = (1 << 1),
+        VIP = (1 << 2),
+        Moderator = (1 << 3),
+        Broadcaster = (1 << 4),
 
-        Everyone = Chatter | Follower | Subscriber | VIP | Moderator | Broadcaster,
+        Everyone = Chatter | Subscriber | VIP | Moderator | Broadcaster,
     }
 
     public static class UserExtensions
@@ -24,7 +24,9 @@ namespace LukeBot.Twitch.Common.Command
             if ((u & User.Everyone) == User.Everyone)
                 return "Everyone";
 
-            foreach (User usr in Enum.GetValues<User>())
+            User[] users = Enum.GetValues<User>();
+            Array.Reverse<User>(users);
+            foreach (User usr in users)
             {
                 if (usr == User.Everyone)
                     continue;
@@ -42,23 +44,35 @@ namespace LukeBot.Twitch.Common.Command
             return s;
         }
 
+        // PossibleValues skip User.Everyone since it's a special value
+        private static User[] PossibleValues = Enum.GetValues<User>().Where(u => u != User.Everyone).ToArray();
+        private static string[] PossibleValueStrings = PossibleValues.Select(u => u.ToString().ToLower()).ToArray();
+
         public static User ToUserEnum(this string s)
         {
-            if (s == "Everyone")
+            User result = 0;
+            bool valueFound = true;
+            string[] userList = s.ToLower().Split(',');
+
+            if ("everyone".StartsWith(userList[0]))
                 return User.Everyone;
 
-            User result = 0;
-
-            foreach (string user in s.Split(','))
+            foreach (string user in userList)
             {
-                foreach (User u in Enum.GetValues<User>())
+                valueFound = false;
+
+                for (int i = 0; i < PossibleValues.Length; ++i)
                 {
-                    if (u.ToString() == user)
+                    if (PossibleValueStrings[i].StartsWith(user))
                     {
-                        result |= u;
+                        valueFound = true;
+                        result |= PossibleValues[i];
                         break;
                     }
                 }
+
+                if (!valueFound)
+                    throw new ArgumentException("Provided invalid value: " + user);
             }
 
             return result;

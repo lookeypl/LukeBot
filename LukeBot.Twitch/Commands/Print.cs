@@ -7,10 +7,10 @@ namespace LukeBot.Twitch.Command
     {
         private string mMessage = "";
 
-        public Print(string name, string msg)
-            : base(name)
+        public Print(Command::Descriptor d)
+            : base(d)
         {
-            mMessage = msg;
+            mMessage = d.Value;
         }
 
         public override string Execute(string[] args)

@@ -233,20 +233,20 @@ namespace LukeBot.Twitch
 
         public Twitch.Command.ICommand AllocateCommand(string lbUser, Command::Descriptor d)
         {
-            return AllocateCommand(lbUser, d.Name, d.Type, d.Value);
+            switch (d.Type)
+            {
+            case Command::Type.print: return new Command.Print(d);
+            case Command::Type.shoutout: return new Command.Shoutout(d);
+            case Command::Type.addcom: return new Command.AddCommand(d, lbUser);
+            case Command::Type.editcom: return new Command.EditCommand(d, lbUser);
+            case Command::Type.delcom: return new Command.DeleteCommand(d, lbUser);
+            default: return null;
+            }
         }
 
         public Twitch.Command.ICommand AllocateCommand(string lbUser, string name, Command::Type type, string value)
         {
-            switch (type)
-            {
-            case Command::Type.print: return new Command.Print(name, value);
-            case Command::Type.shoutout: return new Command.Shoutout(name);
-            case Command::Type.addcom: return new Command.AddCommand(name, lbUser);
-            case Command::Type.editcom: return new Command.EditCommand(name, lbUser);
-            case Command::Type.delcom: return new Command.DeleteCommand(name, lbUser);
-            default: return null;
-            }
+            return AllocateCommand(lbUser, new Command::Descriptor(name, type, value));
         }
 
         public void AwaitIRCLoggedIn(int timeoutMs)
@@ -268,9 +268,10 @@ namespace LukeBot.Twitch
             UpdateCommandInConfig(lbUser, commandName);
         }
 
-        public Command::Descriptor[] GetCommandDescriptors(string lbUser)
+        public List<Command::Descriptor> GetCommandDescriptors(string lbUser)
         {
-            return new Command::Descriptor[0];
+            string twitchChannel = GetTwitchChannel(lbUser);
+            return mIRC.GetCommandDescriptors(twitchChannel);
         }
 
         public Command::Descriptor GetCommandDescriptor(string lbUser, string name)

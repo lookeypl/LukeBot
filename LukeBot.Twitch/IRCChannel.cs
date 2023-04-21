@@ -63,6 +63,11 @@ namespace LukeBot.Twitch
             cmd.Edit(newValue);
         }
 
+        public Dictionary<string, Command.ICommand> GetCommands()
+        {
+            return mCommands;
+        }
+
         public Command.ICommand GetCommand(string name)
         {
             return mCommands[name];

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 
 
-namespace LukeBot.Tests
+namespace LukeBot.Tests.Twitch
 {
     // TODO these tests probably needs massive expansion in order to check if everything is parsed
     // properly and without issues. Especially check for:

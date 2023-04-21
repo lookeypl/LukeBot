@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
-namespace LukeBot.Tests
+namespace LukeBot.Tests.Config
 {
     [TestClass]
     public class PropertyStoreTests

@@ -8,10 +8,16 @@ namespace LukeBot.Twitch.Command
         protected string mName;
         protected User mPrivilegeLevel;
 
-        protected ICommand(string name)
+        protected ICommand(Descriptor d)
+        {
+            mName = d.Name;
+            mPrivilegeLevel = d.Privilege;
+        }
+
+        protected ICommand(string name, User privilegeLevel)
         {
             mName = name;
-            mPrivilegeLevel = User.Everyone;
+            mPrivilegeLevel = privilegeLevel;
         }
 
         // Provided args from a chat message; returns a message to send back
@@ -35,6 +41,8 @@ namespace LukeBot.Twitch.Command
 
         public bool CheckPrivilege(User userIdentity)
         {
+            //   B M V S C
+            //   1 0 0 0 0  priv
             return (userIdentity & mPrivilegeLevel) > 0;
         }
     }

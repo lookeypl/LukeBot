@@ -7,9 +7,15 @@ namespace LukeBot.Twitch.Command
 {
     public class Shoutout: ICommand
     {
-        public Shoutout(string name)
-            : base(name)
-        {}
+        public Shoutout(Command::Descriptor d)
+            : base(d)
+        {
+        }
+
+        public override void Edit(string newValue)
+        {
+            // empty - no parameters that affect message contents
+        }
 
         public override string Execute(string[] args)
         {
@@ -48,11 +54,6 @@ namespace LukeBot.Twitch.Command
 
             return string.Format("Make sure to check out {0} at https://twitch.tv/{1} ! They were last seen streaming {2}.",
                                  channelData.broadcaster_name, userData.login, channelData.game_name);
-        }
-
-        public override void Edit(string newValue)
-        {
-            // empty - no parameters that affect message contents
         }
 
         public override Command::Descriptor ToDescriptor()

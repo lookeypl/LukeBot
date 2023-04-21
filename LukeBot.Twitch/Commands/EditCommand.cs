@@ -12,8 +12,8 @@ namespace LukeBot.Twitch.Command
     {
         public string mLBUser;
 
-        public EditCommand(string name, string lbUser)
-            : base(name)
+        public EditCommand(Command::Descriptor d, string lbUser)
+            : base(d)
         {
             mLBUser = lbUser;
         }

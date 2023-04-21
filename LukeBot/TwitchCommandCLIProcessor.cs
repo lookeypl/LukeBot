@@ -9,8 +9,8 @@ using CommandLine;
 
 namespace LukeBot
 {
-    [Verb("addcom", HelpText = "Add command for user")]
-    public class TwitchAddcomCommand
+    [Verb("add", HelpText = "Add command for user")]
+    public class TwitchAddCommand
     {
         [Value(0, MetaName = "name", Required = true, HelpText = "Name of command to add.")]
         public string Name { get; set; }
@@ -24,27 +24,27 @@ namespace LukeBot
         [Value(2, MetaName = "value", Required = false, HelpText = "Value for the command.")]
         public IEnumerable<string> Value { get; set; }
 
-        public TwitchAddcomCommand()
+        public TwitchAddCommand()
         {
             Name = "";
             Type = Command::Type.print;
         }
     }
 
-    [Verb("delcom", HelpText = "Delete command for user")]
-    public class TwitchDelcomCommand
+    [Verb("delete", HelpText = "Delete command for user")]
+    public class TwitchDeleteCommand
     {
         [Value(0, MetaName = "name", Required = true, HelpText = "Name of command to delete")]
         public string Name { get; set; }
 
-        public TwitchDelcomCommand()
+        public TwitchDeleteCommand()
         {
             Name = "";
         }
     }
 
-    [Verb("editcom", HelpText = "Edit existing Twitch command")]
-    public class TwitchEditcomCommand
+    [Verb("edit", HelpText = "Edit existing Twitch command")]
+    public class TwitchEditCommand
     {
         [Value(0, MetaName = "name", Required = true, HelpText = "Name of command to delete")]
         public string Name { get; set; }
@@ -52,22 +52,22 @@ namespace LukeBot
         [Value(1, MetaName = "new_value", Required = true, HelpText = "New value to set to command")]
         public IEnumerable<string> Value { get; set; }
 
-        public TwitchEditcomCommand()
+        public TwitchEditCommand()
         {
             Name = "";
         }
     }
 
-    [Verb("listcom", HelpText = "List available Twitch commands for selected user")]
-    public class TwitchListcomCommand
+    [Verb("list", HelpText = "List available Twitch commands for selected user")]
+    public class TwitchListCommand
     {
-        public TwitchListcomCommand()
+        public TwitchListCommand()
         {
         }
     }
 
-    [Verb("modcom", HelpText = "Modify command's parameters")]
-    public class TwitchModcomCommand
+    [Verb("modify", HelpText = "Modify command's parameters")]
+    public class TwitchModifyCommand
     {
         [Value(0, MetaName = "name", Required = true, HelpText = "Name of command to modify")]
         public string Name { get; set; }
@@ -97,22 +97,12 @@ namespace LukeBot
         [Option('l', "list", SetName = "list", HelpText = "List current command modifiers")]
         public bool List { get; set; }
 
-        public TwitchModcomCommand()
+        public TwitchModifyCommand()
         {
         }
     }
 
-    [Verb("enable", HelpText = "Enable Twitch module")]
-    public class TwitchEnableCommand
-    {
-    }
-
-    [Verb("disable", HelpText = "Disable Twitch module")]
-    public class TwitchDisableCommand
-    {
-    }
-
-    public class TwitchCommandProcessor: ICommandProcessor
+    public class TwitchCommandCLIProcessor
     {
         private bool ValidateSelectedUser(out string lbUser)
         {
@@ -120,7 +110,7 @@ namespace LukeBot
             return (lbUser.Length > 0);
         }
 
-        public void HandleAddcom(TwitchAddcomCommand cmd, out string msg)
+        public void HandleAddcom(TwitchAddCommand cmd, out string msg)
         {
             string lbUser;
             if (!ValidateSelectedUser(out lbUser))
@@ -149,7 +139,7 @@ namespace LukeBot
             msg = "Added " + cmd.Type + " command " + cmd.Name + " for user " + lbUser;
         }
 
-        public void HandleDelcom(TwitchDelcomCommand cmd, out string msg)
+        public void HandleDelcom(TwitchDeleteCommand cmd, out string msg)
         {
             string lbUser;
             if (!ValidateSelectedUser(out lbUser))
@@ -171,7 +161,7 @@ namespace LukeBot
             msg = "Command " + cmd.Name + " for user " + lbUser + " deleted.";
         }
 
-        public void HandleEditcom(TwitchEditcomCommand cmd, out string msg)
+        public void HandleEditcom(TwitchEditCommand cmd, out string msg)
         {
             string lbUser;
             if (!ValidateSelectedUser(out lbUser))
@@ -193,7 +183,7 @@ namespace LukeBot
             msg = "Edited twitch command " + cmd.Name + " for user " + lbUser;
         }
 
-        public void HandleListcom(TwitchListcomCommand cmd, out string msg)
+        public void HandleListcom(TwitchListCommand cmd, out string msg)
         {
             string lbUser;
             if (!ValidateSelectedUser(out lbUser))
@@ -219,7 +209,7 @@ namespace LukeBot
             }
         }
 
-        public void HandleModcom(TwitchModcomCommand cmd, out string msg)
+        public void HandleModcom(TwitchModifyCommand cmd, out string msg)
         {
             string lbUser;
             if (!ValidateSelectedUser(out lbUser))
@@ -275,26 +265,18 @@ namespace LukeBot
             }
         }
 
-        public void HandleParseError(IEnumerable<Error> errs, out string msg)
+        public string Parse(string[] args)
         {
-            msg = "Error while parsing twitch command";
-        }
-
-        public void AddCLICommands()
-        {
-            GlobalModules.CLI.AddCommand("twitch", (string[] args) =>
-            {
-                string result = "";
-                Parser.Default.ParseArguments<TwitchAddcomCommand, TwitchDelcomCommand, TwitchEditcomCommand,
-                        TwitchListcomCommand, TwitchModcomCommand>(args)
-                    .WithParsed<TwitchAddcomCommand>((TwitchAddcomCommand arg) => HandleAddcom(arg, out result))
-                    .WithParsed<TwitchDelcomCommand>((TwitchDelcomCommand arg) => HandleDelcom(arg, out result))
-                    .WithParsed<TwitchEditcomCommand>((TwitchEditcomCommand arg) => HandleEditcom(arg, out result))
-                    .WithParsed<TwitchListcomCommand>((TwitchListcomCommand arg) => HandleListcom(arg, out result))
-                    .WithParsed<TwitchModcomCommand>((TwitchModcomCommand arg) => HandleModcom(arg, out result))
-                    .WithNotParsed((IEnumerable<Error> errs) => HandleParseError(errs, out result));
-                return result;
-            });
+            string result = "";
+            Parser.Default.ParseArguments<TwitchAddCommand, TwitchDeleteCommand, TwitchEditCommand,
+                    TwitchListCommand, TwitchModifyCommand>(args)
+                .WithParsed<TwitchAddCommand>((TwitchAddCommand arg) => HandleAddcom(arg, out result))
+                .WithParsed<TwitchDeleteCommand>((TwitchDeleteCommand arg) => HandleDelcom(arg, out result))
+                .WithParsed<TwitchEditCommand>((TwitchEditCommand arg) => HandleEditcom(arg, out result))
+                .WithParsed<TwitchListCommand>((TwitchListCommand arg) => HandleListcom(arg, out result))
+                .WithParsed<TwitchModifyCommand>((TwitchModifyCommand arg) => HandleModcom(arg, out result))
+                .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, "twitch-command", out result));
+            return result;
         }
     }
 }

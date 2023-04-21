@@ -1,6 +1,6 @@
 namespace LukeBot
 {
-    public interface ICommandProcessor
+    public interface ICLIProcessor
     {
         public void AddCLICommands();
     }

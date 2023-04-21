@@ -22,13 +22,13 @@ namespace LukeBot
         }
     }
 
-    [Verb("addr", HelpText = "Get widget's address")]
-    public class WidgetAddrCommand
+    [Verb("address", HelpText = "Get widget's address")]
+    public class WidgetAddressCommand
     {
         [Value(0, MetaName = "id", Required = true, HelpText = "Widget's ID")]
         public string Id { get; set; }
 
-        public WidgetAddrCommand()
+        public WidgetAddressCommand()
         {
             Id = "";
         }
@@ -63,7 +63,7 @@ namespace LukeBot
         }
     }
 
-    public class WidgetCommandProcessor: ICommandProcessor
+    public class WidgetCLIProcessor: ICLIProcessor
     {
         private bool ValidateSelectedUser(out string lbUser)
         {
@@ -94,7 +94,7 @@ namespace LukeBot
             msg = "Added new widget at address: " + addr;
         }
 
-        public void HandleAddr(WidgetAddrCommand cmd, out string msg)
+        public void HandleAddress(WidgetAddressCommand cmd, out string msg)
         {
             string user;
             if (!ValidateSelectedUser(out user))
@@ -195,23 +195,18 @@ namespace LukeBot
             msg = "Widget " + cmd.Id + " deleted.";
         }
 
-        public void HandleParseError(IEnumerable<Error> errs, out string msg)
-        {
-            msg = "Error while parsing widget command";
-        }
-
         public void AddCLICommands()
         {
             GlobalModules.CLI.AddCommand("widget", (string[] args) =>
             {
                 string result = "";
-                Parser.Default.ParseArguments<WidgetAddCommand, WidgetAddrCommand, WidgetListCommand, WidgetInfoCommand, WidgetDeleteCommand>(args)
+                Parser.Default.ParseArguments<WidgetAddCommand, WidgetAddressCommand, WidgetListCommand, WidgetInfoCommand, WidgetDeleteCommand>(args)
                     .WithParsed<WidgetAddCommand>((WidgetAddCommand arg) => HandleAdd(arg, out result))
-                    .WithParsed<WidgetAddrCommand>((WidgetAddrCommand arg) => HandleAddr(arg, out result))
+                    .WithParsed<WidgetAddressCommand>((WidgetAddressCommand arg) => HandleAddress(arg, out result))
                     .WithParsed<WidgetListCommand>((WidgetListCommand arg) => HandleList(arg, out result))
                     .WithParsed<WidgetInfoCommand>((WidgetInfoCommand arg) => HandleInfo(arg, out result))
                     .WithParsed<WidgetDeleteCommand>((WidgetDeleteCommand arg) => HandleDelete(arg, out result))
-                    .WithNotParsed((IEnumerable<Error> errs) => HandleParseError(errs, out result));
+                    .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, "widget", out result));
                 return result;
             });
         }

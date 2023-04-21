@@ -89,30 +89,42 @@ namespace LukeBot.Twitch
 
             // Message related tags pulled from metadata (if available)
             string msgID;
-            if (!m.GetTag("id", out msgID))
+            if (!mTagsEnabled || !m.GetTag("id", out msgID))
                 msgID = String.Format("{0}", mMsgIDCounter++);
 
+            Command::User userIdentity;
             TwitchChatMessageArgs message = new TwitchChatMessageArgs(msgID);
             message.Nick = m.User;
             message.Message = chatMsg;
 
-            string userID;
-            if (m.GetTag("user-id", out userID))
-                message.UserID = userID;
-
-            string color;
-            if (m.GetTag("color", out color))
-                message.Color = color;
-
-            string displayName;
-            if (m.GetTag("display-name", out displayName))
-                message.DisplayName = displayName;
-
-            // Twitch global/sub emotes - taken from IRC tags
-            string emotes;
-            if (m.GetTag("emotes", out emotes))
+            if (mTagsEnabled)
             {
-                message.ParseEmotesString(chatMsg, emotes);
+                string userID;
+                if (m.GetTag("user-id", out userID))
+                    message.UserID = userID;
+
+                string color;
+                if (m.GetTag("color", out color))
+                    message.Color = color;
+
+                string displayName;
+                if (m.GetTag("display-name", out displayName))
+                    message.DisplayName = displayName;
+
+                // Twitch global/sub emotes - taken from IRC tags
+                string emotes;
+                if (m.GetTag("emotes", out emotes))
+                {
+                    message.ParseEmotesString(chatMsg, emotes);
+                }
+
+                userIdentity = EstablishUserIdentity(m);
+            }
+            else
+            {
+                message.UserID = m.User;
+                message.DisplayName = m.User;
+                userIdentity = Command::User.Chatter;
             }
 
             message.AddExternalEmotes(mExternalEmotes.ParseEmotes(message.Message));
@@ -121,7 +133,6 @@ namespace LukeBot.Twitch
 
             string[] chatMsgTokens = chatMsg.Split(' ');
             string cmd = chatMsgTokens[0];
-            Command::User userIdentity = EstablishUserIdentity(m);
             string response = "";
 
             mChannelsMutex.WaitOne();
@@ -161,9 +172,12 @@ namespace LukeBot.Twitch
 
             TwitchChatMessageClearArgs message = new TwitchChatMessageClearArgs(msg);
 
-            string msgID;
-            if (m.GetTag("target-msg-id", out msgID))
-                message.MessageID = msgID;
+            if (mTagsEnabled)
+            {
+                string msgID;
+                if (m.GetTag("target-msg-id", out msgID))
+                    message.MessageID = msgID;
+            }
 
             mMessageClearEventCallback.PublishEvent(message);
         }

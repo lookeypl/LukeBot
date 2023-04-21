@@ -200,6 +200,7 @@
         remove(msgObj) {
             let id = msgObj.MessageID;
             if (msgObj.MessageID == "") {
+                // TODO - with no tags search for message itself by content and user and remove it
                 printDebug("Cannot remove message - no msg id provided");
                 return;
             }

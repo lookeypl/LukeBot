@@ -2,10 +2,7 @@
 using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Config;
-using LukeBot.Widget;
-using LukeBot.Widget.Common;
 using LukeBot.Globals;
-using LukeBot.Spotify;
 
 
 namespace LukeBot
@@ -20,7 +17,7 @@ namespace LukeBot
         private readonly Dictionary<string, Func<string, IModule>> mModuleAllocators = new Dictionary<string, Func<string, IModule>>
         {
             {"twitch", (string user) => GlobalModules.Twitch.JoinChannel(user)},
-            {"spotify", (string user) => new SpotifyModule(user)},
+            {"spotify", (string user) => null /* TODO */},
             {"widget", (string user) => GlobalModules.Widget.LoadWidgetUserModule(user)},
         };
 
@@ -31,54 +28,127 @@ namespace LukeBot
             public string moduleType { get; set; }
         }
 
+
+        private void AddModuleToConfig(string module)
+        {
+            string modulesProp = Utils.FormConfName(
+                Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_MODULES_DOMAIN
+            );
+
+            string[] modules;
+            if (!Conf.TryGet<string[]>(modulesProp, out modules))
+            {
+                modules = new string[1];
+                modules[0] = module;
+                Conf.Add(modulesProp, Property.Create<string[]>(modules));
+                return;
+            }
+
+            Array.Resize(ref modules, modules.Length + 1);
+            modules[modules.Length - 1] = module;
+            Array.Sort<string>(modules);
+            Conf.Modify<string[]>(modulesProp, modules);
+        }
+
+        private void LoadModulesFromConfig()
+        {
+            string modulesProp = Utils.FormConfName(
+                Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_MODULES_DOMAIN
+            );
+
+            string[] modules;
+            if (!Conf.TryGet<string[]>(modulesProp, out modules))
+            {
+                modules = new string[0];
+            }
+
+            foreach (string m in modules)
+            {
+                try
+                {
+                    // here we ignore the returned module and do not start it
+                    // RunModules() will be called later and will kickstart it for us
+                    LoadModule(m);
+                }
+                catch (System.Exception e)
+                {
+                    Logger.Log().Error(String.Format("Failed to initialize module {0} for user {1}: {2}",
+                        m, Username, e.Message));
+                    Logger.Log().Error(String.Format("Module {0} for user {1} will be skipped on this load.",
+                        m, Username));
+                }
+            }
+        }
+
+        private void RemoveModuleFromConfig(string module)
+        {
+            string modulesProp = Utils.FormConfName(
+                Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_MODULES_DOMAIN
+            );
+
+            string[] modules;
+            if (!Conf.TryGet<string[]>(modulesProp, out modules))
+            {
+                return;
+            }
+
+            modules = Array.FindAll<string>(modules, m => m != module);
+            if (modules.Length == 0)
+                Conf.Remove(modulesProp);
+            else
+                Conf.Modify<string[]>(modulesProp, modules);
+        }
+
+
         public UserContext(string user)
         {
             Username = user;
             mModules = new List<IModule>();
 
             Logger.Log().Info("Loading required modules for user {0}", Username);
+            LoadModulesFromConfig();
 
-            string[] usedModules;
-            if (!Conf.TryGet<string[]>(
-                Common.Utils.FormConfName(Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_MODULES_DOMAIN),
-                out usedModules
-            ))
-            {
-                usedModules = new string[0];
-            }
-
-            foreach (string m in usedModules)
-            {
-                LoadModule(m, Username);
-            }
-
-            Logger.Log().Info("Created LukeBot user {0}", Username);
+            Logger.Log().Info("Loaded LukeBot user {0}", Username);
         }
 
-        private void LoadModule(string moduleType, string lbUser)
+        private IModule LoadModule(string moduleType)
         {
-            try
-            {
-                AddModule(mModuleAllocators[moduleType](lbUser));
-            }
-            catch (Common.Exception e)
-            {
-                Logger.Log().Error(String.Format("Failed to initialize module {0} for user {1}: {2}",
-                    moduleType, Username, e.Message));
-                Logger.Log().Error(String.Format("Module {0} for user {1} will be skipped",
-                    moduleType, Username));
-            }
+            IModule m = mModuleAllocators[moduleType](Username);
+            mModules.Add(m);
+            return m;
         }
 
-        // Create a new Module associated with this User.
-        public void CreateModule(string moduleType)
+        private void UnloadModule(string moduleType)
         {
-            // TODO
+            IModule m = mModules.Find(m => m.GetModuleName() == moduleType);
+            m.RequestShutdown();
+            m.WaitForShutdown();
+
+            mModules.Remove(m);
         }
 
-        private void AddModule(IModule module)
+        public void EnableModule(string module)
         {
-            mModules.Add(module);
+            if (mModules.Exists(m => m.GetModuleName() == module))
+            {
+                throw new ModuleEnabledException(module, Username);
+            }
+
+            IModule m = LoadModule(module);
+            AddModuleToConfig(module);
+
+            m.Run();
+        }
+
+        public void DisableModule(string module)
+        {
+            if (!mModules.Exists(m => m.GetModuleName() == module))
+            {
+                throw new ModuleDisabledException(module, Username);
+            }
+
+            UnloadModule(module);
+            RemoveModuleFromConfig(module);
         }
 
         public void RunModules()

@@ -56,8 +56,8 @@ namespace LukeBot.Spotify
         {
             mLBUser = lbUser;
 
-            Comms.Communication.Register(Constants.SERVICE_NAME);
-            string storagePath = "Outputs/" + Constants.SERVICE_NAME;
+            Comms.Communication.Register(LukeBot.Common.Constants.SPOTIFY_MODULE_NAME);
+            string storagePath = "Outputs/" + LukeBot.Common.Constants.SPOTIFY_MODULE_NAME;
             if (!Directory.Exists(storagePath))
                 Directory.CreateDirectory(storagePath);
 
@@ -69,8 +69,8 @@ namespace LukeBot.Spotify
 
             mNowPlaying = new NowPlaying(mToken);
             mNowPlayingTextFile = new NowPlayingTextFile(
-                "Outputs/" + Constants.SERVICE_NAME + "/" + mLBUser + "/nowplaying_artist.txt",
-                "Outputs/" + Constants.SERVICE_NAME + "/" + mLBUser +  "/nowplaying_title.txt"
+                "Outputs/" + LukeBot.Common.Constants.SPOTIFY_MODULE_NAME + "/" + mLBUser + "/nowplaying_artist.txt",
+                "Outputs/" + LukeBot.Common.Constants.SPOTIFY_MODULE_NAME + "/" + mLBUser +  "/nowplaying_title.txt"
             );
         }
 
@@ -78,6 +78,11 @@ namespace LukeBot.Spotify
         {
             mNowPlayingTextFile = null;
             mNowPlaying = null;
+        }
+
+        public string GetModuleName()
+        {
+            return LukeBot.Common.Constants.SPOTIFY_MODULE_NAME;
         }
 
         public void Init()

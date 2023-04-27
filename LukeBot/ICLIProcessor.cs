@@ -1,7 +1,7 @@
 namespace LukeBot
 {
-    public interface ICLIProcessor
+    internal interface ICLIProcessor
     {
-        public void AddCLICommands();
+        public void AddCLICommands(LukeBot lb);
     }
 }

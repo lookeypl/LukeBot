@@ -44,6 +44,11 @@ namespace LukeBot.Twitch
 
         // IModule overrides
 
+        public string GetModuleName()
+        {
+            return LukeBot.Common.Constants.TWITCH_MODULE_NAME;
+        }
+
         public void Run()
         {
         }

@@ -15,5 +15,9 @@ namespace LukeBot.Common
         public const string DEFAULT_LOGIN_NAME = "SET_BOT_LOGIN_HERE";
         public const string DEFAULT_CLIENT_ID_NAME = "SET_YOUR_CLIENT_ID_HERE";
         public const string DEFAULT_CLIENT_SECRET_NAME = "SET_YOUR_CLIENT_SECRET_HERE";
+
+        public const string SPOTIFY_MODULE_NAME = "spotify";
+        public const string TWITCH_MODULE_NAME = "twitch";
+        public const string WIDGET_MODULE_NAME = "widget";
     }
 }

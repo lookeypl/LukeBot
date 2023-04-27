@@ -119,7 +119,7 @@ namespace LukeBot.Config
 
             if (!mProperties.TryGetValue(name, out p))
             {
-                throw new PropertyNotFoundException("Not found property: {0}", name);
+                throw new PropertyNotFoundException("Property \"{0}\" not found", name);
             }
 
             if (path.Count == 0)
@@ -152,7 +152,7 @@ namespace LukeBot.Config
                 return p.Get<PropertyDomain>().Get(path);
             }
 
-            throw new PropertyNotFoundException("Not found property of name: {0}", name);
+            throw new PropertyNotFoundException("Property of name {0} is a domain, not a Property", name);
         }
 
         public void Remove(Queue<string> path)

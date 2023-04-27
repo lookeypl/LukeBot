@@ -22,7 +22,7 @@ namespace LukeBot.Widget
             return CommonUtils.FormConfName(
                 LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN,
                 mLBUser,
-                Constants.MODULE_NAME,
+                LukeBot.Common.Constants.WIDGET_MODULE_NAME,
                 Constants.PROP_WIDGETS
             );
         }
@@ -123,6 +123,11 @@ namespace LukeBot.Widget
 
         ~WidgetUserModule()
         {
+        }
+
+        public string GetModuleName()
+        {
+            return LukeBot.Common.Constants.WIDGET_MODULE_NAME;
         }
 
         public void Init()

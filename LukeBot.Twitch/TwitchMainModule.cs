@@ -30,7 +30,7 @@ namespace LukeBot.Twitch
             return CommonUtils.FormConfName(
                 LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN,
                 lbUser,
-                Constants.SERVICE_NAME,
+                LukeBot.Common.Constants.TWITCH_MODULE_NAME,
                 Constants.PROP_TWITCH_COMMANDS
             );
         }
@@ -40,7 +40,7 @@ namespace LukeBot.Twitch
             return Conf.Get<string>(CommonUtils.FormConfName(
                 LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN,
                 lbUser,
-                Constants.SERVICE_NAME,
+                LukeBot.Common.Constants.TWITCH_MODULE_NAME,
                 Constants.PROP_TWITCH_USER_LOGIN
             ));
         }
@@ -168,7 +168,7 @@ namespace LukeBot.Twitch
 
         public TwitchMainModule()
         {
-            Comms.Communication.Register(Constants.SERVICE_NAME);
+            Comms.Communication.Register(LukeBot.Common.Constants.TWITCH_MODULE_NAME);
 
             mBotLogin = Conf.Get<string>("twitch.login");
             if (mBotLogin == LukeBot.Common.Constants.DEFAULT_LOGIN_NAME)
@@ -202,7 +202,7 @@ namespace LukeBot.Twitch
         public TwitchUserModule JoinChannel(string lbUser)
         {
             string channel = Conf.Get<string>(
-                CommonUtils.FormConfName(LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN, lbUser, Constants.SERVICE_NAME, Constants.PROP_TWITCH_USER_LOGIN)
+                CommonUtils.FormConfName(LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN, lbUser, LukeBot.Common.Constants.TWITCH_MODULE_NAME, Constants.PROP_TWITCH_USER_LOGIN)
             );
 
             if (mUsers.ContainsKey(channel))

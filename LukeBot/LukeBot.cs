@@ -1,24 +1,20 @@
 ﻿using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Globals;
-using LukeBot.Twitch;
 using LukeBot.Communication;
-using System.IO;
 using System.Collections.Generic;
-using System.Threading;
 using System;
 using System.Linq;
-using CommandLine;
 
 
 namespace LukeBot
 {
-    class LukeBot
+    internal class LukeBot
     {
-        private string DEVMODE_FILE = "Data/devmode.lukebot";
-
-        private List<UserContext> mUsers;
+        private Dictionary<string, UserContext> mUsers = new();
+        private UserContext mCurrentUser = null;
         private List<ICLIProcessor> mCommandProcessors = new List<ICLIProcessor>{
+            new UserCLIProcessor(),
             new TwitchCLIProcessor(),
             new WidgetCLIProcessor()
         };
@@ -26,13 +22,12 @@ namespace LukeBot
         void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
         {
             // UI is not handled here; it captures Ctrl+C on its own
-            Logger.Log().Info("Requested shutdown");
-            mUsers[0].RequestModuleShutdown();
+            Logger.Log().Info("Ctrl+C handled: Requested shutdown");
+            Shutdown();
         }
 
         public LukeBot()
         {
-            mUsers = new List<UserContext>();
         }
 
         ~LukeBot()
@@ -52,10 +47,10 @@ namespace LukeBot
             foreach (string user in users)
             {
                 Logger.Log().Info("Loading LukeBot user " + user);
-                mUsers.Add(new UserContext(user));
+                mUsers.Add(user, new UserContext(user));
             }
 
-            foreach (UserContext u in mUsers)
+            foreach (UserContext u in mUsers.Values)
             {
                 Logger.Log().Info("Running modules for User " + u.Username);
                 u.RunModules();
@@ -66,12 +61,12 @@ namespace LukeBot
         {
             Logger.Log().Info("Unloading users...");
 
-            foreach (UserContext u in mUsers)
+            foreach (UserContext u in mUsers.Values)
             {
                 u.RequestModuleShutdown();
             }
 
-            foreach (UserContext u in mUsers)
+            foreach (UserContext u in mUsers.Values)
             {
                 u.WaitForModulesShutdown();
             }
@@ -99,118 +94,112 @@ namespace LukeBot
             Conf.Modify<string[]>(propName, users);
         }
 
-        void AddUser(UserAddCommand args, out string msg)
+        void RemoveUserFromConfig(string name)
         {
-            try
+            string[] users;
+
+            string propName = Utils.FormConfName(
+                Constants.PROP_STORE_LUKEBOT_DOMAIN, Constants.PROP_STORE_USERS_PROP
+            );
+            if (!Conf.TryGet<string[]>(propName, out users))
             {
-                AddUserToConfig(args.Name);
-
-                UserContext uc = new UserContext(args.Name);
-                uc.RunModules();
-
-                mUsers.Add(uc);
-
-                msg = "User " + args.Name + " added successfully";
-            }
-            catch (System.Exception e)
-            {
-                msg = "Failed to add user " + args.Name + ": " + e.Message;
-            }
-        }
-
-        void ListUsers(UserListCommand args, out string msg)
-        {
-            msg = "Available users:";
-
-            foreach (UserContext uc in mUsers)
-            {
-                msg += "\n  " + uc.Username;
-            }
-        }
-
-        void RemoveUser(UserRemoveCommand args, out string msg)
-        {
-            if (!GlobalModules.CLI.Ask("Are you sure you want to remove user " + args.Name + "? This will remove all associated data!"))
-            {
-                msg = "User removal aborted";
                 return;
             }
 
-            msg = "User " + args.Name + " removed.";
+            if (!mUsers.ContainsKey(name))
+            {
+                throw new ArgumentException("User " + name + " does not exist.");
+            }
+
+            users = Array.FindAll<string>(users, s => s != name);
+
+            if (users.Length == 0)
+                Conf.Remove(propName);
+            else
+                Conf.Modify<string[]>(propName, users);
+
+            // also clear entire branch of user-related settings
+            string userConfDomain = Utils.FormConfName(
+                Constants.PROP_STORE_USER_DOMAIN, name
+            );
+
+            if (Conf.Exists(userConfDomain))
+                Conf.Remove(userConfDomain);
         }
 
-        void SelectUser(UserSelectCommand args, out string msg)
+
+        void AddCLICommands()
         {
-            if (args.Name.Length == 0)
+            foreach (ICLIProcessor cp in mCommandProcessors)
             {
-                // deselect user
-                msg = "Deselected user " + GlobalModules.CLI.GetSelectedUser();
+                cp.AddCLICommands(this);
+            }
+        }
+
+        void Shutdown()
+        {
+            UnloadUsers();
+
+            Logger.Log().Info("Stopping Global Modules...");
+            GlobalModules.Stop();
+
+            Logger.Log().Info("Stopping web endpoint...");
+            Endpoint.Endpoint.StopThread();
+
+            Logger.Log().Info("Core systems teardown...");
+            GlobalModules.Teardown();
+            Comms.Teardown();
+            Conf.Teardown();
+        }
+
+        public void AddUser(string lbUsername)
+        {
+            AddUserToConfig(lbUsername);
+
+            UserContext uc = new UserContext(lbUsername);
+            uc.RunModules();
+
+            mUsers.Add(lbUsername, uc);
+        }
+
+        public void RemoveUser(string lbUsername)
+        {
+            UserContext u = mUsers[lbUsername];
+            u.RequestModuleShutdown();
+            u.WaitForModulesShutdown();
+
+            // deselect current user if it is the one we remove
+            if (mCurrentUser.Username == lbUsername)
+                SelectUser("");
+
+            RemoveUserFromConfig(lbUsername);
+            mUsers.Remove(lbUsername);
+        }
+
+        public void SelectUser(string lbUsername)
+        {
+            if (lbUsername.Length == 0)
+            {
+                mCurrentUser = null;
                 GlobalModules.CLI.SaveSelectedUser("");
                 return;
             }
 
-            if (mUsers.Exists(ctx => ctx.Username == args.Name))
-            {
-                GlobalModules.CLI.SaveSelectedUser(args.Name);
-                msg = "Selected user " + GlobalModules.CLI.GetSelectedUser();
-            }
-            else
-            {
-                msg = "User " + args.Name + " not found";
-            }
+            mCurrentUser = mUsers[lbUsername];
+            GlobalModules.CLI.SaveSelectedUser(mCurrentUser.Username);
         }
 
-        void HandleParseError(IEnumerable<Error> errs, out string msg)
+        public List<string> GetUsernames()
         {
-            msg = "Parsing user subcommand failed:\n";
-            foreach (Error e in errs)
-            {
-                if (e is HelpVerbRequestedError || e is HelpRequestedError)
-                    continue;
-
-                msg += e.Tag.ToString() + '\n';
-            }
+            return mUsers.Keys.ToList<string>();
         }
 
-        void AddCLICommands()
+        public UserContext GetCurrentUser()
         {
-            GlobalModules.CLI.AddCommand("user", (string[] args) =>
-            {
-                string result = "";
-                Parser.Default.ParseArguments<UserAddCommand, UserListCommand, UserRemoveCommand, UserSelectCommand>(args)
-                    .WithParsed<UserAddCommand>((UserAddCommand args) => AddUser(args, out result))
-                    .WithParsed<UserListCommand>((UserListCommand args) => ListUsers(args, out result))
-                    .WithParsed<UserRemoveCommand>((UserRemoveCommand args) => RemoveUser(args, out result))
-                    .WithParsed<UserSelectCommand>((UserSelectCommand args) => SelectUser(args, out result))
-                    .WithNotParsed((IEnumerable<Error> errs) => HandleParseError(errs, out result));
-                return result;
-            });
+            if (mCurrentUser == null)
+                throw new NoUserSelectedException();
 
-            foreach (ICLIProcessor cp in mCommandProcessors)
-            {
-                cp.AddCLICommands();
-            }
-        }
-
-        public bool IsInDevMode()
-        {
-            try
-            {
-                if (FileUtils.Exists(DEVMODE_FILE))
-                {
-                    string data = File.ReadAllText(DEVMODE_FILE);
-                    int enabled = 0;
-                    if (!Int32.TryParse(data, out enabled))
-                        return false;
-                    return (enabled != 0);
-                }
-            }
-            catch
-            {
-                // quietly exit
-            }
-
-            return false;
+            return mCurrentUser;
         }
 
         public void Run(ProgramOptions opts)
@@ -252,18 +241,7 @@ namespace LukeBot
                 Logger.Log().Error("Backtrace:\n{0}", e.StackTrace);
             }
 
-            UnloadUsers();
-
-            Logger.Log().Info("Stopping Global Modules...");
-            GlobalModules.Stop();
-
-            Logger.Log().Info("Stopping web endpoint...");
-            Endpoint.Endpoint.StopThread();
-
-            Logger.Log().Info("Core systems teardown...");
-            GlobalModules.Teardown();
-            Comms.Teardown();
-            Conf.Teardown();
+            Shutdown();
         }
     }
 }

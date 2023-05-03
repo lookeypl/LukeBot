@@ -1,10 +1,10 @@
-namespace LukeBot.CLI
+namespace LukeBot.Interface
 {
     internal class LambdaCommand: Command
     {
-        private Interface.CmdDelegate mDelegate;
+        private CLI.CmdDelegate mDelegate;
 
-        public LambdaCommand(Interface.CmdDelegate d)
+        public LambdaCommand(CLI.CmdDelegate d)
         {
             mDelegate = d;
         }

@@ -1,4 +1,4 @@
-namespace LukeBot.CLI
+namespace LukeBot.Interface
 {
     public interface Command
     {

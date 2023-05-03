@@ -1,4 +1,5 @@
-﻿using LukeBot.Common;
+﻿using LukeBot.Interface;
+using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Globals;
 using LukeBot.Communication;
@@ -181,12 +182,12 @@ namespace LukeBot
             if (lbUsername.Length == 0)
             {
                 mCurrentUser = null;
-                GlobalModules.CLI.SaveSelectedUser("");
+                CLI.Instance.SaveSelectedUser("");
                 return;
             }
 
             mCurrentUser = mUsers[lbUsername];
-            GlobalModules.CLI.SaveSelectedUser(mCurrentUser.Username);
+            CLI.Instance.SaveSelectedUser(mCurrentUser.Username);
         }
 
         public List<string> GetUsernames()
@@ -229,7 +230,7 @@ namespace LukeBot
                 // We'll get stuck here until the end
                 Logger.Log().Info("Giving control to CLI");
                 AddCLICommands();
-                GlobalModules.CLI.MainLoop();
+                CLI.Instance.MainLoop();
             }
             catch (Common.Exception e)
             {

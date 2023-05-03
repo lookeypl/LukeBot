@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using LukeBot.Globals;
+using LukeBot.Interface;
 using CommandLine;
 
 namespace LukeBot
@@ -76,7 +77,7 @@ namespace LukeBot
 
         void HandleRemoveUserCommand(UserRemoveCommand args, out string msg)
         {
-            if (!GlobalModules.CLI.Ask("Are you sure you want to remove user " + args.Name + "? This will remove all associated data!"))
+            if (!CLI.Instance.Ask("Are you sure you want to remove user " + args.Name + "? This will remove all associated data!"))
             {
                 msg = "User removal aborted";
                 return;
@@ -118,7 +119,7 @@ namespace LukeBot
         {
             mLukeBot = lb;
 
-            GlobalModules.CLI.AddCommand(COMMAND_NAME, (string[] args) =>
+            CLI.Instance.AddCommand(COMMAND_NAME, (string[] args) =>
             {
                 string result = "";
                 Parser.Default.ParseArguments<UserAddCommand, UserListCommand, UserRemoveCommand, UserSelectCommand>(args)

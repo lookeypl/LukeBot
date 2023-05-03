@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Globals;
+using LukeBot.Interface;
 using LukeBot.Widget.Common;
 using CommandLine;
 
@@ -206,7 +207,7 @@ namespace LukeBot
         {
             mLukeBot = lb;
 
-            GlobalModules.CLI.AddCommand(Constants.WIDGET_MODULE_NAME, (string[] args) =>
+            CLI.Instance.AddCommand(Constants.WIDGET_MODULE_NAME, (string[] args) =>
             {
                 string result = "";
                 Parser.Default.ParseArguments<WidgetAddCommand, WidgetAddressCommand, WidgetListCommand, WidgetInfoCommand,

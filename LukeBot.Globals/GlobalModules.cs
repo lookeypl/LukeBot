@@ -1,4 +1,4 @@
-using CLIface = LukeBot.CLI;
+using LukeBot.Interface;
 using LukeBot.Module;
 using LukeBot.Twitch;
 using LukeBot.Widget;
@@ -8,19 +8,10 @@ namespace LukeBot.Globals
 {
     public class GlobalModules
     {
-        static private CLIface.Interface mCLI = null;
         static private UserModuleManager mModuleManager = null;
         static private TwitchMainModule mTwitchMainModule = null;
         static private WidgetMainModule mWidgetMainModule = null;
         static private bool mInitialized = false;
-
-        static public CLIface.Interface CLI
-        {
-            get
-            {
-                return mCLI;
-            }
-        }
 
         static public UserModuleManager UserModuleManager
         {
@@ -51,7 +42,6 @@ namespace LukeBot.Globals
             if (mInitialized)
                 return;
 
-            mCLI = new CLIface.Interface();
             mModuleManager = new UserModuleManager();
 
             mTwitchMainModule = new TwitchMainModule();
@@ -79,15 +69,14 @@ namespace LukeBot.Globals
 
             mTwitchMainModule.WaitForShutdown();
             mWidgetMainModule.WaitForShutdown();
-
-            mCLI.Terminate();
         }
 
         static public void Teardown()
         {
             mTwitchMainModule = null;
             mWidgetMainModule = null;
-            mCLI = null;
+
+            CLI.Instance.Terminate();
 
             mInitialized = false;
         }

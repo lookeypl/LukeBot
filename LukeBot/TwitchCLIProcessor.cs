@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using LukeBot.Common;
 using LukeBot.Globals;
+using LukeBot.Interface;
 using CommandLine;
 
 
@@ -67,7 +68,7 @@ namespace LukeBot
             mCommandCLIProcessor = new TwitchCommandCLIProcessor();
             mLukeBot = lb;
 
-            GlobalModules.CLI.AddCommand(Constants.TWITCH_MODULE_NAME, (string[] args) =>
+            CLI.Instance.AddCommand(Constants.TWITCH_MODULE_NAME, (string[] args) =>
             {
                 string result = "";
                 string[] cmdArgs = args.Take(2).ToArray(); // filters out any additional options/commands that might confuse CommandLine

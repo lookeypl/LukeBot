@@ -5,11 +5,14 @@ using System.Threading;
 using LukeBot.Common;
 
 
-namespace LukeBot.CLI
+namespace LukeBot.Interface
 {
-    public class Interface
+    public class CLI
     {
         public delegate string CmdDelegate(string[] args);
+
+        private static CLI mInstance = null;
+        private static readonly object mLock = new();
 
         private readonly string PROMPT = "> ";
 
@@ -19,6 +22,21 @@ namespace LukeBot.CLI
         private Dictionary<string, Command> mCommands = new Dictionary<string, Command>();
         private string mPostCommandMessage = "";
         private string mSelectedUser = "";
+
+
+        public static CLI Instance
+        {
+            get
+            {
+                lock (mLock)
+                {
+                    if (mInstance == null)
+                        mInstance = new CLI();
+
+                    return mInstance;
+                }
+            }
+        }
 
 
         private void PreLogMessageEvent(object sender, LogMessageArgs args)
@@ -69,7 +87,7 @@ namespace LukeBot.CLI
             }
         }
 
-        public Interface()
+        public CLI()
         {
             Logger.AddPreMessageEvent(PreLogMessageEvent);
             Logger.AddPostMessageEvent(PostLogMessageEvent);
@@ -77,7 +95,7 @@ namespace LukeBot.CLI
             AddCommand("echo", new EchoCommand());
         }
 
-        ~Interface()
+        ~CLI()
         {
         }
 

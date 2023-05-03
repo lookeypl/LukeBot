@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace LukeBot.CLI
+namespace LukeBot.Interface
 {
     class Utils
     {

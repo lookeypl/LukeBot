@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using LukeBot.Globals;
+using LukeBot.Interface;
 using LukeBot.Twitch.Common.Command;
 using Command = LukeBot.Twitch.Common.Command;
 using CommandLine;
@@ -106,7 +107,7 @@ namespace LukeBot
     {
         private bool ValidateSelectedUser(out string lbUser)
         {
-            lbUser = GlobalModules.CLI.GetSelectedUser();
+            lbUser = CLI.Instance.GetSelectedUser();
             return (lbUser.Length > 0);
         }
 

@@ -4,6 +4,7 @@ using System.Net.WebSockets;
 using System.Threading.Tasks;
 using LukeBot.Common;
 using LukeBot.Config;
+using LukeBot.Module;
 using LukeBot.Widget.Common;
 using Intercom = LukeBot.Communication.Events.Intercom;
 using CommonUtils = LukeBot.Common.Utils;
@@ -11,7 +12,7 @@ using CommonUtils = LukeBot.Common.Utils;
 
 namespace LukeBot.Widget
 {
-    public class WidgetUserModule: IModule
+    public class WidgetUserModule: IUserModule
     {
         private Dictionary<string, IWidget> mWidgets = new();
         private string mLBUser;
@@ -114,6 +115,9 @@ namespace LukeBot.Widget
             return widget.AcquireWS(ws);
         }
 
+
+        // Public methods //
+
         public WidgetUserModule(string lbUser)
         {
             mLBUser = lbUser;
@@ -123,11 +127,6 @@ namespace LukeBot.Widget
 
         ~WidgetUserModule()
         {
-        }
-
-        public string GetModuleName()
-        {
-            return LukeBot.Common.Constants.WIDGET_MODULE_NAME;
         }
 
         public void Init()

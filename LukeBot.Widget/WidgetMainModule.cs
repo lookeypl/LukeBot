@@ -4,13 +4,14 @@ using System.Diagnostics;
 using System.Threading;
 using LukeBot.Common;
 using LukeBot.Communication;
+using LukeBot.Module;
 using LukeBot.Widget.Common;
 using Intercom = LukeBot.Communication.Events.Intercom;
 
 
 namespace LukeBot.Widget
 {
-    public class WidgetMainModule
+    public class WidgetMainModule: IMainModule
     {
         private Dictionary<string, WidgetUserModule> mUsers = new();
         private Dictionary<string, string> mWidgetIDToUser = new();
@@ -79,6 +80,18 @@ namespace LukeBot.Widget
             resp.SignalSuccess();
         }
 
+
+        // User Module Descriptor delegates //
+
+        private IUserModule UserModuleLoader(string lbUser)
+        {
+            return LoadWidgetUserModule(lbUser);
+        }
+
+
+
+        // Public methods //
+
         public WidgetMainModule()
         {
             Intercom::EndpointInfo widgetManagerInfo = new Intercom::EndpointInfo(Endpoints.WIDGET_MANAGER, ResponseAllocator);
@@ -127,6 +140,15 @@ namespace LukeBot.Widget
         public void DeleteWidget(string lbUser, string id)
         {
             mUsers[lbUser].DeleteWidget(id);
+        }
+
+        public UserModuleDescriptor GetUserModuleDescriptor()
+        {
+            UserModuleDescriptor umd = new UserModuleDescriptor();
+            umd.ModuleName = LukeBot.Common.Constants.WIDGET_MODULE_NAME;
+            umd.LoadPrerequisite = null;
+            umd.Loader = UserModuleLoader;
+            return umd;
         }
 
         public void Run()

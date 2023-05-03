@@ -5,6 +5,7 @@ using LukeBot.API;
 using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Config;
+using LukeBot.Module;
 using LukeBot.Twitch.Common;
 
 using CommonUtils = LukeBot.Common.Utils;
@@ -14,7 +15,7 @@ using Intercom = LukeBot.Communication.Events.Intercom;
 
 namespace LukeBot.Twitch
 {
-    public class TwitchMainModule
+    public class TwitchMainModule: IMainModule
     {
         private string mBotLogin;
         private Token mToken;
@@ -164,6 +165,21 @@ namespace LukeBot.Twitch
         }
 
 
+        // User Module Descriptor delegates //
+
+        private bool UserModuleLoadPrerequisites()
+        {
+
+
+            return true;
+        }
+
+        private IUserModule UserModuleLoader(string lbUser)
+        {
+            return JoinChannel(lbUser);
+        }
+
+
         // Public methods //
 
         public TwitchMainModule()
@@ -292,6 +308,15 @@ namespace LukeBot.Twitch
             string twitchChannel = GetTwitchChannel(lbUser);
             mIRC.DenyPrivilegeInCommand(twitchChannel, name, privilege);
             UpdateCommandInConfig(twitchChannel, name);
+        }
+
+        public UserModuleDescriptor GetUserModuleDescriptor()
+        {
+            UserModuleDescriptor umd = new UserModuleDescriptor();
+            umd.ModuleName = LukeBot.Common.Constants.TWITCH_MODULE_NAME;
+            umd.LoadPrerequisite = UserModuleLoadPrerequisites;
+            umd.Loader = UserModuleLoader;
+            return umd;
         }
 
         public void Run()

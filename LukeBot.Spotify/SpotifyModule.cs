@@ -6,11 +6,12 @@ using LukeBot.Common;
 using LukeBot.API;
 using LukeBot.Communication;
 using LukeBot.Config;
+using LukeBot.Module;
 
 
 namespace LukeBot.Spotify
 {
-    public class SpotifyModule : IModule
+    public class SpotifyModule : IMainModule
     {
         private string mLBUser;
         private Token mToken;
@@ -52,6 +53,23 @@ namespace LukeBot.Spotify
             }
         }
 
+        // User Module Descriptor delegates //
+
+        private bool UserModuleLoadPrerequisites()
+        {
+            // TODO
+            return true;
+        }
+
+        private IUserModule UserModuleLoader(string lbUser)
+        {
+            // TODO
+            return null;
+        }
+
+
+        // Public methods //
+
         public SpotifyModule(string lbUser)
         {
             mLBUser = lbUser;
@@ -80,24 +98,24 @@ namespace LukeBot.Spotify
             mNowPlaying = null;
         }
 
-        public string GetModuleName()
+        public UserModuleDescriptor GetUserModuleDescriptor()
         {
-            return LukeBot.Common.Constants.SPOTIFY_MODULE_NAME;
+            UserModuleDescriptor umd = new UserModuleDescriptor();
+            umd.ModuleName = LukeBot.Common.Constants.SPOTIFY_MODULE_NAME;
+            umd.LoadPrerequisite = null;
+            umd.Loader = UserModuleLoader;
+            return umd;
         }
 
-        public void Init()
+        public void Run()
         {
+            mNowPlaying.Run();
         }
 
         public void RequestShutdown()
         {
             mNowPlaying.RequestShutdown();
             mNowPlayingTextFile.Cleanup();
-        }
-
-        public void Run()
-        {
-            mNowPlaying.Run();
         }
 
         public void WaitForShutdown()

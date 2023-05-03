@@ -1,12 +1,13 @@
 ﻿using System;
 using LukeBot.Common;
 using LukeBot.API;
+using LukeBot.Module;
 using Widget = LukeBot.Widget;
 
 
 namespace LukeBot.Twitch
 {
-    public class TwitchUserModule: IModule
+    public class TwitchUserModule: IUserModule
     {
         private string mLBUser;
         private string mName;
@@ -42,12 +43,7 @@ namespace LukeBot.Twitch
             return mUserData;
         }
 
-        // IModule overrides
-
-        public string GetModuleName()
-        {
-            return LukeBot.Common.Constants.TWITCH_MODULE_NAME;
-        }
+        // IUserModule overrides
 
         public void Run()
         {

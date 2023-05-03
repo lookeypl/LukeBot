@@ -29,6 +29,7 @@
     <ProjectReference Include="..\LukeBot.Spotify.Common\LukeBot.Spotify.Common.csproj" />
     <ProjectReference Include="..\LukeBot.Communication.Events\LukeBot.Communication.Events.csproj" />
     <ProjectReference Include="..\LukeBot.Config\LukeBot.Config.csproj" />
+    <ProjectReference Include="..\LukeBot.Module\LukeBot.Module.csproj" />
   </ItemGroup>
 
 </Project>

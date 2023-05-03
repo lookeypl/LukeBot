@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Globals;
+using LukeBot.Module;
 
 
 namespace LukeBot
@@ -14,19 +15,7 @@ namespace LukeBot
         private const string PROP_STORE_MODULES_DOMAIN = "modules";
         private const string PROP_STORE_WIDGETS_DOMAIN = "widgets";
 
-        private readonly Dictionary<string, Func<string, IModule>> mModuleAllocators = new Dictionary<string, Func<string, IModule>>
-        {
-            {"twitch", (string user) => GlobalModules.Twitch.JoinChannel(user)},
-            {"spotify", (string user) => null /* TODO */},
-            {"widget", (string user) => GlobalModules.Widget.LoadWidgetUserModule(user)},
-        };
-
-        private List<IModule> mModules = null;
-
-        private class ModuleDesc
-        {
-            public string moduleType { get; set; }
-        }
+        private Dictionary<string, IUserModule> mModules = new();
 
 
         private void AddModuleToConfig(string module)
@@ -99,11 +88,26 @@ namespace LukeBot
                 Conf.Modify<string[]>(modulesProp, modules);
         }
 
+        private IUserModule LoadModule(string moduleType)
+        {
+            IUserModule m = GlobalModules.UserModuleManager.Allocate(moduleType, Username);
+            mModules.Add(moduleType, m);
+            return m;
+        }
+
+        private void UnloadModule(string moduleType)
+        {
+            IUserModule m = mModules[moduleType];
+            m.RequestShutdown();
+            m.WaitForShutdown();
+
+            mModules.Remove(moduleType);
+        }
+
 
         public UserContext(string user)
         {
             Username = user;
-            mModules = new List<IModule>();
 
             Logger.Log().Info("Loading required modules for user {0}", Username);
             LoadModulesFromConfig();
@@ -111,30 +115,14 @@ namespace LukeBot
             Logger.Log().Info("Loaded LukeBot user {0}", Username);
         }
 
-        private IModule LoadModule(string moduleType)
-        {
-            IModule m = mModuleAllocators[moduleType](Username);
-            mModules.Add(m);
-            return m;
-        }
-
-        private void UnloadModule(string moduleType)
-        {
-            IModule m = mModules.Find(m => m.GetModuleName() == moduleType);
-            m.RequestShutdown();
-            m.WaitForShutdown();
-
-            mModules.Remove(m);
-        }
-
         public void EnableModule(string module)
         {
-            if (mModules.Exists(m => m.GetModuleName() == module))
+            if (mModules.ContainsKey(module))
             {
                 throw new ModuleEnabledException(module, Username);
             }
 
-            IModule m = LoadModule(module);
+            IUserModule m = LoadModule(module);
             AddModuleToConfig(module);
 
             m.Run();
@@ -142,7 +130,7 @@ namespace LukeBot
 
         public void DisableModule(string module)
         {
-            if (!mModules.Exists(m => m.GetModuleName() == module))
+            if (!mModules.ContainsKey(module))
             {
                 throw new ModuleDisabledException(module, Username);
             }
@@ -154,19 +142,19 @@ namespace LukeBot
         public void RunModules()
         {
             Logger.Log().Info("Running LukeBot modules for user {0}", Username);
-            foreach (IModule m in mModules)
+            foreach (IUserModule m in mModules.Values)
                 m.Run();
         }
 
         public void RequestModuleShutdown()
         {
-            foreach (IModule m in mModules)
+            foreach (IUserModule m in mModules.Values)
                 m.RequestShutdown();
         }
 
         public void WaitForModulesShutdown()
         {
-            foreach (IModule m in mModules)
+            foreach (IUserModule m in mModules.Values)
                 m.WaitForShutdown();
         }
     }

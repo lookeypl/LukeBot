@@ -1,4 +1,5 @@
 using CLIface = LukeBot.CLI;
+using LukeBot.Module;
 using LukeBot.Twitch;
 using LukeBot.Widget;
 
@@ -8,8 +9,9 @@ namespace LukeBot.Globals
     public class GlobalModules
     {
         static private CLIface.Interface mCLI = null;
-        static private TwitchMainModule mTwitchModule = null;
-        static private WidgetMainModule mWidgetModule = null;
+        static private UserModuleManager mModuleManager = null;
+        static private TwitchMainModule mTwitchMainModule = null;
+        static private WidgetMainModule mWidgetMainModule = null;
         static private bool mInitialized = false;
 
         static public CLIface.Interface CLI
@@ -20,11 +22,19 @@ namespace LukeBot.Globals
             }
         }
 
+        static public UserModuleManager UserModuleManager
+        {
+            get
+            {
+                return mModuleManager;
+            }
+        }
+
         static public TwitchMainModule Twitch
         {
             get
             {
-                return mTwitchModule;
+                return mTwitchMainModule;
             }
         }
 
@@ -32,7 +42,7 @@ namespace LukeBot.Globals
         {
             get
             {
-                return mWidgetModule;
+                return mWidgetMainModule;
             }
         }
 
@@ -42,36 +52,41 @@ namespace LukeBot.Globals
                 return;
 
             mCLI = new CLIface.Interface();
+            mModuleManager = new UserModuleManager();
 
-            mTwitchModule = new TwitchMainModule();
-            mWidgetModule = new WidgetMainModule();
+            mTwitchMainModule = new TwitchMainModule();
+            mWidgetMainModule = new WidgetMainModule();
+
+            mModuleManager.RegisterUserModule(mTwitchMainModule.GetUserModuleDescriptor());
+            mModuleManager.RegisterUserModule(mWidgetMainModule.GetUserModuleDescriptor());
 
             mInitialized = true;
         }
 
         static public void Run()
         {
-            mTwitchModule.Run();
-            mWidgetModule.Run();
+            mTwitchMainModule.Run();
+            mWidgetMainModule.Run();
 
             // wait until modules are ready
-            mTwitchModule.AwaitIRCLoggedIn(60 * 1000);
+            mTwitchMainModule.AwaitIRCLoggedIn(60 * 1000);
         }
 
         static public void Stop()
         {
-            mTwitchModule.RequestShutdown();
-            mWidgetModule.RequestShutdown();
+            mTwitchMainModule.RequestShutdown();
+            mWidgetMainModule.RequestShutdown();
 
-            mTwitchModule.WaitForShutdown();
-            mWidgetModule.WaitForShutdown();
+            mTwitchMainModule.WaitForShutdown();
+            mWidgetMainModule.WaitForShutdown();
 
             mCLI.Terminate();
         }
 
         static public void Teardown()
         {
-            mTwitchModule = null;
+            mTwitchMainModule = null;
+            mWidgetMainModule = null;
             mCLI = null;
 
             mInitialized = false;

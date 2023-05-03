@@ -1,8 +1,7 @@
-﻿namespace LukeBot.Common
+﻿namespace LukeBot.Module
 {
-    public interface IModule
+    public interface IUserModule
     {
-        public string GetModuleName();
         public void Run();
         public void RequestShutdown();
         public void WaitForShutdown();

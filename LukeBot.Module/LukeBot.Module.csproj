@@ -2,22 +2,18 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <RootNamespace>LukeBot.Globals</RootNamespace>
-    <PackageId>LukeBot.Globals</PackageId>
-    <AssemblyName>LukeBot.Globals</AssemblyName>
     <Version>0.0.1</Version>
-    <NeutralLanguage>en-US</NeutralLanguage>
     <Configurations>Debug;Release;SecureDebug</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <OutputPath>$(SolutionDir)Bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)Obj\$(MSBuildProjectName)\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SecureDebug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG;ENABLE_SECURE_LOGS</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;ENABLE_SECURE_LOGS</DefineConstants>
     <OutputPath>$(SolutionDir)Bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)Obj\$(MSBuildProjectName)\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
@@ -28,12 +24,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LukeBot.CLI\LukeBot.CLI.csproj" />
     <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
-    <ProjectReference Include="..\LukeBot.Module\LukeBot.Module.csproj" />
-    <ProjectReference Include="..\LukeBot.Spotify\LukeBot.Spotify.csproj" />
-    <ProjectReference Include="..\LukeBot.Twitch\LukeBot.Twitch.csproj" />
-    <ProjectReference Include="..\LukeBot.Widget\LukeBot.Widget.csproj" />
   </ItemGroup>
 
 </Project>

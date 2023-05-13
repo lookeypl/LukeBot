@@ -76,8 +76,6 @@ namespace LukeBot.Globals
             mTwitchMainModule = null;
             mWidgetMainModule = null;
 
-            CLI.Instance.Terminate();
-
             mInitialized = false;
         }
     }

@@ -2,7 +2,7 @@ namespace LukeBot.Module
 {
     public class UserModuleDescriptor
     {
-        public delegate bool LoadPrerequisiteCheckDelegate();
+        public delegate bool LoadPrerequisiteCheckDelegate(string lbUser);
         public delegate IUserModule ModuleLoader(string lbUser);
 
         /**

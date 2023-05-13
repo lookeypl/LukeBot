@@ -30,10 +30,11 @@
   <ItemGroup>
     <ProjectReference Include="..\LukeBot.API\LukeBot.API.csproj" />
     <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
-    <ProjectReference Include="..\LukeBot.Twitch.Common\LukeBot.Twitch.Common.csproj" />
     <ProjectReference Include="..\LukeBot.Communication\LukeBot.Communication.csproj" />
     <ProjectReference Include="..\LukeBot.Communication.Events\LukeBot.Communication.Events.csproj" />
+    <ProjectReference Include="..\LukeBot.Interface\LukeBot.Interface.csproj" />
     <ProjectReference Include="..\LukeBot.Module\LukeBot.Module.csproj" />
+    <ProjectReference Include="..\LukeBot.Twitch.Common\LukeBot.Twitch.Common.csproj" />
     <ProjectReference Include="..\LukeBot.Widget\LukeBot.Widget.csproj" />
   </ItemGroup>
 

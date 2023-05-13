@@ -122,6 +122,10 @@ namespace LukeBot.Interface
             Console.WriteLine(message);
         }
 
+        /**
+         * Ask a simple yes/no question. Returns true if user responded "y", false if user
+         * responded "n".
+         */
         public bool Ask(string message)
         {
             string response = "";
@@ -135,6 +139,15 @@ namespace LukeBot.Interface
             }
 
             return (response == "y");
+        }
+
+        /**
+         * Query user for a specific answer. Returns 1:1 what user typed in.
+         */
+        public string Query(string message)
+        {
+            Console.Write(message + ": ");
+            return Console.ReadLine();
         }
 
         public void SaveSelectedUser(string username)
@@ -193,7 +206,7 @@ namespace LukeBot.Interface
             }
         }
 
-        public void Terminate()
+        public void Teardown()
         {
             mDone = true;
             Utils.CancelConsoleIO();

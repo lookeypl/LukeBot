@@ -5,6 +5,7 @@ using LukeBot.API;
 using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Config;
+using LukeBot.Interface;
 using LukeBot.Module;
 using LukeBot.Twitch.Common;
 
@@ -167,10 +168,24 @@ namespace LukeBot.Twitch
 
         // User Module Descriptor delegates //
 
-        private bool UserModuleLoadPrerequisites()
+        private bool UserModuleLoadPrerequisites(string lbUser)
         {
+            string userTwitchLoginProp = LukeBot.Common.Utils.FormConfName(
+                LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN, lbUser, LukeBot.Common.Constants.TWITCH_MODULE_NAME, Constants.PROP_TWITCH_USER_LOGIN
+            );
+            string login;
+            if (Conf.TryGet<string>(userTwitchLoginProp, out login))
+                return true; // quietly exit - login is already there, prerequisites are met
 
+            // User login does not exist - query for it
+            login = CLI.Instance.Query("Twitch login for user " + lbUser);
+            if (login.Length == 0)
+            {
+                CLI.Instance.Message("No login provided");
+                return false;
+            }
 
+            Conf.Add(userTwitchLoginProp, Property.Create<string>(login));
             return true;
         }
 

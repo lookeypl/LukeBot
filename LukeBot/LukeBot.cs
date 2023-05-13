@@ -139,6 +139,8 @@ namespace LukeBot
 
         void Shutdown()
         {
+            CLI.Instance.Teardown();
+
             UnloadUsers();
 
             Logger.Log().Info("Stopping Global Modules...");

@@ -90,7 +90,7 @@ namespace LukeBot
 
         private IUserModule LoadModule(string moduleType)
         {
-            IUserModule m = GlobalModules.UserModuleManager.Allocate(moduleType, Username);
+            IUserModule m = GlobalModules.UserModuleManager.Create(moduleType, Username);
             mModules.Add(moduleType, m);
             return m;
         }

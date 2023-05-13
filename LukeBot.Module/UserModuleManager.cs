@@ -7,7 +7,11 @@ namespace LukeBot.Module
     {
         private Dictionary<string, UserModuleDescriptor> mDescriptors = new();
 
-        public IUserModule Allocate(string moduleName, string lbUser)
+        /**
+         * Create a new Module. This is called when enabling a new module for
+         * already existing user.
+         */
+        public IUserModule Create(string moduleName, string lbUser)
         {
             if (!mDescriptors.ContainsKey(moduleName))
             {
@@ -18,7 +22,7 @@ namespace LukeBot.Module
 
             if (umd.LoadPrerequisite != null)
             {
-                if (umd.LoadPrerequisite() == false)
+                if (umd.LoadPrerequisite(lbUser) == false)
                 {
                     throw new PrerequisiteNotMetException(moduleName);
                 }

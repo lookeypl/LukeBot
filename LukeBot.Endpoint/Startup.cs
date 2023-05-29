@@ -62,10 +62,13 @@ namespace LukeBot.Endpoint
         async Task HandleServiceCallback(string service, HttpContext context)
         {
             Logger.Log().Info("Received callback for service " + service + ": " + context.Request.Path.Value);
-            Logger.Log().Info("We have " + context.Request.Query.Count + " queries:");
-            foreach (var query in context.Request.Query)
+            Logger.Log().Debug("We have " + context.Request.Query.Count + " queries");
+            if (Logger.IsLogLevelEnabled(LogLevel.Secure))
             {
-                Logger.Log().Info("  -> " + query.Key + " = " + query.Value);
+                foreach (var query in context.Request.Query)
+                {
+                    Logger.Log().Secure("  -> " + query.Key + " = " + query.Value);
+                }
             }
 
             Intermediary srv = Comms.Communication.GetIntermediary(service);
@@ -77,6 +80,17 @@ namespace LukeBot.Endpoint
             }
 
             string state = context.Request.Query["state"];
+
+            if (context.Request.Query.ContainsKey("error"))
+            {
+                srv.Reject(state);
+                await context.Response.WriteAsync(
+                    "<html><body style=\"font-family: sans-serif; margin-left: 30px; margin-top: 30px;\">" +
+                        "Login to " + service + " rejected: " + context.Request.Query["error_description"] + '\n' +
+                    "</body></html>"
+                );
+                return;
+            }
 
             try
             {

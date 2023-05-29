@@ -9,6 +9,16 @@ namespace LukeBot.Interface
 {
     public class CLI
     {
+        private enum State
+        {
+            INIT = 0,
+            NEED_PROMPT,
+            PROMPT,
+            COMMAND,
+            LOG,
+            DONE,
+        };
+
         public delegate string CmdDelegate(string[] args);
 
         private static CLI mInstance = null;
@@ -16,8 +26,7 @@ namespace LukeBot.Interface
 
         private readonly string PROMPT = "> ";
 
-        private bool mDone = false;
-        private bool mPromptWritten = false;
+        private State mState = State.INIT;
         private Mutex mMessageMutex = new Mutex();
         private Dictionary<string, Command> mCommands = new Dictionary<string, Command>();
         private string mPostCommandMessage = "";
@@ -43,17 +52,18 @@ namespace LukeBot.Interface
         {
             mMessageMutex.WaitOne();
 
-            if (!mDone)
+            if (mState == State.PROMPT)
             {
-                mPromptWritten = false;
+                mState = State.LOG;
                 Console.Write('\r');
             }
         }
 
         private void PostLogMessageEvent(object sender, LogMessageArgs args)
         {
-            if (!mDone)
+            if (mState == State.LOG)
             {
+                mState = State.NEED_PROMPT;
                 WritePrompt();
             }
 
@@ -64,7 +74,7 @@ namespace LukeBot.Interface
         {
             if (cmd == "quit")
             {
-                mDone = true;
+                mState = State.DONE;
             }
 
             Command c;
@@ -78,12 +88,13 @@ namespace LukeBot.Interface
             mPostCommandMessage = c.Execute(cmdTokens.Skip(1).ToArray());
         }
 
+        // Ensure this call is done only inside mMessageMutex
         private void WritePrompt()
         {
-            if (!mPromptWritten)
+            if (mState == State.NEED_PROMPT)
             {
                 Console.Write(mSelectedUser + PROMPT);
-                mPromptWritten = true;
+                mState = State.PROMPT;
             }
         }
 
@@ -115,6 +126,12 @@ namespace LukeBot.Interface
         // To be used inside CLI commands to query user for a yes/no choice
         public void Message(string message)
         {
+            if (mState != State.COMMAND)
+            {
+                Logger.Log().Error("This call can only be used in the middle of CLI Command execution");
+                return;
+            }
+
             // TODO this looks over-engineered, but I want to improve CLI vastly over the course
             // of some patches (ex. control the Console Buffer directly to create a pseudo-UI)
             // so it's better to use this now than later replace all Console.WriteLine()-s in
@@ -128,6 +145,12 @@ namespace LukeBot.Interface
          */
         public bool Ask(string message)
         {
+            if (mState != State.COMMAND)
+            {
+                Logger.Log().Error("This call can only be used in the middle of CLI Command execution");
+                return false;
+            }
+
             string response = "";
             while (response != "y" && response != "n")
             {
@@ -146,6 +169,12 @@ namespace LukeBot.Interface
          */
         public string Query(string message)
         {
+            if (mState != State.COMMAND)
+            {
+                Logger.Log().Error("This call can only be used in the middle of CLI Command execution");
+                return "";
+            }
+
             Console.Write(message + ": ");
             return Console.ReadLine();
         }
@@ -164,16 +193,20 @@ namespace LukeBot.Interface
         {
             try
             {
-                while (!mDone)
+                mState = State.NEED_PROMPT;
+
+                while (mState != State.DONE)
                 {
                     mMessageMutex.WaitOne();
 
                     if (mPostCommandMessage.Length > 0)
                     {
-                        Console.Write('\r');
+                        if (mState == State.PROMPT)
+                            Console.Write('\r');
+
                         Console.WriteLine(mPostCommandMessage);
                         mPostCommandMessage = "";
-                        mPromptWritten = false;
+                        mState = State.NEED_PROMPT;
                     }
 
                     WritePrompt();
@@ -186,14 +219,13 @@ namespace LukeBot.Interface
 
                     mMessageMutex.WaitOne();
 
-                    mPromptWritten = false;
-
                     if (response != null)
-                    {
-                        ProcessCommand(response);
-                    }
+                        mState = State.COMMAND;
 
                     mMessageMutex.ReleaseMutex();
+
+                    if (mState == State.COMMAND)
+                        ProcessCommand(response);
                 }
             }
             catch (System.OperationCanceledException)
@@ -208,7 +240,7 @@ namespace LukeBot.Interface
 
         public void Teardown()
         {
-            mDone = true;
+            mState = State.DONE;
             Utils.CancelConsoleIO();
         }
     }

@@ -20,7 +20,7 @@ namespace LukeBot.Twitch
         private const string PUBSUB_MSG_TYPE_RESPONSE = "RESPONSE";
         private const string PUBSUB_MSG_TYPE_LISTEN = "LISTEN";
         private const string PUBSUB_MSG_TYPE_PING = "PING";
-        private const string PUBSUB_MSG_TYPE_RECONNECT = "RECONNECT"; // TODO SUPPORT THIS
+        private const string PUBSUB_MSG_TYPE_RECONNECT = "RECONNECT";
 
         private const string PUBSUB_CHANNEL_POINTS_TOPIC = "channel-points-channel-v1";
 
@@ -63,6 +63,7 @@ namespace LukeBot.Twitch
 
 
         private Token mToken;
+        private API.Twitch.GetUserResponse mUserData;
         private ClientWebSocket mSocket;
         private Thread mReceiveThread;
         private Thread mSendThread;
@@ -84,6 +85,14 @@ namespace LukeBot.Twitch
                 true,
                 cancelToken
             );
+        }
+
+        private async void Reconnect()
+        {
+            CancellationToken cancellationToken = new CancellationToken();
+            await mSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, cancellationToken);
+
+            Connect();
         }
 
         private async Task<PubSubReceiveStatus> SocketReceive()
@@ -174,8 +183,11 @@ namespace LukeBot.Twitch
                     PubSubReceivedMessageData rmData = (PubSubReceivedMessageData)tm.data;
                     ProcessReceivedMessageData(rmData);
                     break;
+                case PUBSUB_MSG_TYPE_RECONNECT:
+                    Logger.Log().Warning("RECONNECT message received - attempting reconnect...");
+                    Reconnect();
+                    break;
                 default:
-                    // TODO this also handles PONG and RECONNECT, which probably should be handled better
                     continue;
                 }
             }
@@ -214,9 +226,10 @@ namespace LukeBot.Twitch
             Send(new PubSubMessage(PUBSUB_MSG_TYPE_PING));
         }
 
-        public PubSub(Token token)
+        public PubSub(Token token, API.Twitch.GetUserResponse userData)
         {
             mToken = token;
+            mUserData = userData;
             mSocket = new ClientWebSocket();
             mDone = false;
 
@@ -252,7 +265,7 @@ namespace LukeBot.Twitch
         {
         }
 
-        public async void Listen(API.Twitch.GetUserResponse user)
+        public async void Connect()
         {
             CancellationToken cancelToken = new CancellationToken();
             if (mSocket.State == WebSocketState.None)
@@ -263,7 +276,7 @@ namespace LukeBot.Twitch
             PubSubCommand command = new PubSubCommand(
                 PUBSUB_MSG_TYPE_LISTEN,
                 new PubSubListenCommandData(
-                    PUBSUB_CHANNEL_POINTS_TOPIC + '.' + user.data[0].id,
+                    PUBSUB_CHANNEL_POINTS_TOPIC + '.' + mUserData.data[0].id,
                     mToken.Get()
                 )
             );
@@ -301,7 +314,7 @@ namespace LukeBot.Twitch
             mReceiveThread.Start();
             mSendThread.Start();
             mPingPongTimer.Enabled = true;
-            Logger.Log().Debug("Listening successfully started");
+            Logger.Log().Debug("PubSub listening successfully started");
         }
 
         public void RequestShutdown()

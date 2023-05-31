@@ -37,11 +37,21 @@ namespace LukeBot
 
         void LoadUsers()
         {
+            string usersProp = Utils.FormConfName(
+                Constants.PROP_STORE_LUKEBOT_DOMAIN, Constants.PROP_STORE_USERS_PROP
+            );
+
+            if (!Conf.Exists(usersProp))
+            {
+                Logger.Log().Info("No users found");
+                return;
+            }
+
             string[] users = Conf.Get<string[]>("lukebot.users");
 
             if (users.Length == 0)
             {
-                Logger.Log().Info("No users found");
+                Logger.Log().Info("Users array is empty");
                 return;
             }
 
@@ -157,12 +167,14 @@ namespace LukeBot
 
         public void AddUser(string lbUsername)
         {
-            AddUserToConfig(lbUsername);
+            if (mUsers.ContainsKey(lbUsername) || lbUsername == Constants.PROP_STORE_LUKEBOT_DOMAIN)
+                throw new UsernameNotAvailableException(lbUsername);
 
             UserContext uc = new UserContext(lbUsername);
             uc.RunModules();
 
             mUsers.Add(lbUsername, uc);
+            AddUserToConfig(lbUsername);
         }
 
         public void RemoveUser(string lbUsername)
@@ -172,7 +184,7 @@ namespace LukeBot
             u.WaitForModulesShutdown();
 
             // deselect current user if it is the one we remove
-            if (mCurrentUser.Username == lbUsername)
+            if (mCurrentUser != null && mCurrentUser.Username == lbUsername)
                 SelectUser("");
 
             RemoveUserFromConfig(lbUsername);

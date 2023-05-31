@@ -13,6 +13,11 @@ namespace LukeBot
     {
     }
 
+    [Verb("login", HelpText = "Set login to Twitch servers. This will invalidate current auth token if it exists.")]
+    public class TwitchLoginSubverb
+    {
+    }
+
     [Verb("enable", HelpText = "Enable Twitch module")]
     public class TwitchEnableSubverb
     {
@@ -31,6 +36,19 @@ namespace LukeBot
         private void HandleCommandSubverb(TwitchCommandSubverb arg, string[] args, out string result)
         {
             result = mCommandCLIProcessor.Parse(args);
+        }
+
+        private void HandleLoginSubverb(TwitchLoginSubverb arg, string[] args, out string result)
+        {
+            result = "";
+
+            if (args.Length != 1)
+            {
+                result = "Too many arguments - provide one argument being your Twitch login";
+                return;
+            }
+
+            // TODO
         }
 
         public void HandleEnableSubverb(TwitchEnableSubverb arg, out string msg)
@@ -72,8 +90,9 @@ namespace LukeBot
             {
                 string result = "";
                 string[] cmdArgs = args.Take(2).ToArray(); // filters out any additional options/commands that might confuse CommandLine
-                Parser.Default.ParseArguments<TwitchCommandSubverb, TwitchEnableSubverb, TwitchDisableSubverb>(cmdArgs)
+                Parser.Default.ParseArguments<TwitchCommandSubverb, TwitchLoginSubverb, TwitchEnableSubverb, TwitchDisableSubverb>(cmdArgs)
                     .WithParsed<TwitchCommandSubverb>((TwitchCommandSubverb arg) => HandleCommandSubverb(arg, args.Skip(1).ToArray(), out result))
+                    .WithParsed<TwitchLoginSubverb>((TwitchLoginSubverb arg) => HandleLoginSubverb(arg, args.Skip(1).ToArray(), out result))
                     .WithParsed<TwitchEnableSubverb>((TwitchEnableSubverb arg) => HandleEnableSubverb(arg, out result))
                     .WithParsed<TwitchDisableSubverb>((TwitchDisableSubverb arg) => HandleDisableSubverb(arg, out result))
                     .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, Constants.TWITCH_MODULE_NAME, out result));

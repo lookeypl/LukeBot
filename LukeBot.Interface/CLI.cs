@@ -201,14 +201,11 @@ namespace LukeBot.Interface
 
                     if (mPostCommandMessage.Length > 0)
                     {
-                        if (mState == State.PROMPT)
-                            Console.Write('\r');
-
                         Console.WriteLine(mPostCommandMessage);
                         mPostCommandMessage = "";
-                        mState = State.NEED_PROMPT;
                     }
 
+                    mState = State.NEED_PROMPT;
                     WritePrompt();
 
                     mMessageMutex.ReleaseMutex();

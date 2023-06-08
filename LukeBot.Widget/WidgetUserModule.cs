@@ -193,5 +193,10 @@ namespace LukeBot.Widget
                 w.Value.WaitForShutdown();
             }
         }
+
+        public ModuleType GetModuleType()
+        {
+            return ModuleType.Widget;
+        }
     }
 }

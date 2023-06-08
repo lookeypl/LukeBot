@@ -101,7 +101,7 @@ namespace LukeBot.Spotify
         public UserModuleDescriptor GetUserModuleDescriptor()
         {
             UserModuleDescriptor umd = new UserModuleDescriptor();
-            umd.ModuleName = LukeBot.Common.Constants.SPOTIFY_MODULE_NAME;
+            umd.Type = ModuleType.Spotify;
             umd.LoadPrerequisite = null;
             umd.Loader = UserModuleLoader;
             return umd;

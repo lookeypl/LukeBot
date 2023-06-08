@@ -59,6 +59,10 @@ namespace LukeBot.Common
             {
                 return mInput.ReadLine();
             }
+            catch (IOException)
+            {
+                return "";
+            }
             catch (System.Exception ex)
             {
                 return "Error while reading message: " + ex.Message;

@@ -179,8 +179,8 @@ namespace LukeBot
 
             try
             {
-                mLukeBot.GetCurrentUser().EnableModule(Constants.WIDGET_MODULE_NAME);
-                msg = "Enabled module " + Constants.WIDGET_MODULE_NAME;
+                mLukeBot.GetCurrentUser().EnableModule(Module.ModuleType.Widget);
+                msg = "Enabled module " + Module.ModuleType.Widget;
             }
             catch (System.Exception e)
             {
@@ -194,8 +194,8 @@ namespace LukeBot
 
             try
             {
-                mLukeBot.GetCurrentUser().DisableModule(Constants.WIDGET_MODULE_NAME);
-                msg = "Disabled module " + Constants.WIDGET_MODULE_NAME;
+                mLukeBot.GetCurrentUser().DisableModule(Module.ModuleType.Widget);
+                msg = "Disabled module " + Module.ModuleType.Widget;
             }
             catch (System.Exception e)
             {

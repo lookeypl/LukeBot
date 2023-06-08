@@ -88,6 +88,11 @@ namespace LukeBot.Widget
             return LoadWidgetUserModule(lbUser);
         }
 
+        private void UserModuleUnloader(IUserModule module)
+        {
+            // ...
+        }
+
 
 
         // Public methods //
@@ -145,9 +150,10 @@ namespace LukeBot.Widget
         public UserModuleDescriptor GetUserModuleDescriptor()
         {
             UserModuleDescriptor umd = new UserModuleDescriptor();
-            umd.ModuleName = LukeBot.Common.Constants.WIDGET_MODULE_NAME;
+            umd.Type = ModuleType.Widget;
             umd.LoadPrerequisite = null;
             umd.Loader = UserModuleLoader;
+            umd.Unloader = UserModuleUnloader;
             return umd;
         }
 

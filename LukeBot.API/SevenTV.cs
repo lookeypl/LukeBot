@@ -1,3 +1,4 @@
+using LukeBot.Common;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 
@@ -34,6 +35,12 @@ namespace LukeBot.API
             public EmoteSet(ResponseJArray data)
             {
                 emotes = new List<Emote>();
+
+                if (data.array == null)
+                {
+                    Logger.Log().Warning("7TV: Invalid response from API (emote array is null)");
+                    return;
+                }
 
                 foreach (var e in data.array)
                 {

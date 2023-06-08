@@ -3,6 +3,7 @@ using System.Linq;
 using LukeBot.Common;
 using LukeBot.Globals;
 using LukeBot.Interface;
+using LukeBot.Module;
 using CommandLine;
 
 
@@ -57,8 +58,8 @@ namespace LukeBot
 
             try
             {
-                mLukeBot.GetCurrentUser().EnableModule(Constants.TWITCH_MODULE_NAME);
-                msg = "Enabled module " + Constants.TWITCH_MODULE_NAME;
+                mLukeBot.GetCurrentUser().EnableModule(ModuleType.Twitch);
+                msg = "Enabled module " + ModuleType.Twitch;
             }
             catch (System.Exception e)
             {
@@ -72,8 +73,8 @@ namespace LukeBot
 
             try
             {
-                mLukeBot.GetCurrentUser().DisableModule(Constants.TWITCH_MODULE_NAME);
-                msg = "Disabled module " + Constants.TWITCH_MODULE_NAME;
+                mLukeBot.GetCurrentUser().DisableModule(ModuleType.Twitch);
+                msg = "Disabled module " + ModuleType.Twitch;
             }
             catch (System.Exception e)
             {

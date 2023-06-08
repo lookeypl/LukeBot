@@ -1,6 +1,7 @@
 ﻿using LukeBot.Common;
 using LukeBot.API;
 using LukeBot.Communication;
+using LukeBot.Config;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -8,12 +9,22 @@ using System.Threading;
 using LukeBot.Communication.Events;
 
 using Command = LukeBot.Twitch.Common.Command;
+using CommonUtils = LukeBot.Common.Utils;
+using CommonConstants = LukeBot.Common.Constants;
 
 
 namespace LukeBot.Twitch
 {
     public class TwitchIRC: IEventPublisher
     {
+        private enum ConnectionState
+        {
+            DISCONNECTED,
+            CONNECTED,
+            QUIT,
+            BROKEN
+        }
+
         private string mName;
         private Token mToken;
         private IRCClient mIRCClient = null;
@@ -24,7 +35,7 @@ namespace LukeBot.Twitch
         private EventCallback mMessageClearEventCallback;
         private EventCallback mUserClearEventCallback;
 
-        private bool mRunning = false;
+        private ConnectionState mConnectionState = ConnectionState.DISCONNECTED;
         private AutoResetEvent mLoggedInEvent;
         private int mMsgIDCounter = 0; // backup for when we don't have metadata
 
@@ -205,7 +216,7 @@ namespace LukeBot.Twitch
             m.Print(LogLevel.Secure);
         }
 
-        bool ProcessMessage(IRCMessage m)
+        void ProcessMessage(IRCMessage m)
         {
             switch (m.Command)
             {
@@ -244,11 +255,14 @@ namespace LukeBot.Twitch
                 ProcessCAP(m);
                 break;
             case IRCCommand.QUIT:
+                mConnectionState = ConnectionState.QUIT;
+                break;
             case IRCCommand.INVALID:
-                return false;
+                // only mark the connection as broken if we didn't switch to quitting already
+                if (mConnectionState != ConnectionState.QUIT)
+                    mConnectionState = ConnectionState.BROKEN;
+                break;
             }
-
-            return true;
         }
 
         bool CheckIfLoginSuccessful()
@@ -286,45 +300,85 @@ namespace LukeBot.Twitch
             return true;
         }
 
+        void TryConnect()
+        {
+            int reconnectTimeout = 1; // in seconds
+            int reconnectAttempt = 0;
+            int reconnectCount = Constants.RECONNECT_ATTEMPTS;
+            bool successful = false;
+
+            string reconnectCountProp = CommonUtils.FormConfName(
+                CommonConstants.PROP_STORE_LUKEBOT_DOMAIN, CommonConstants.PROP_STORE_RECONNECT_COUNT_PROP
+            );
+            int reconnectCountConf = 0;
+            if (Conf.TryGet(reconnectCountProp, out reconnectCountConf))
+            {
+                Logger.Log().Debug("Custom reconnect count set in config: {0}", reconnectCountConf);
+                reconnectCount = reconnectCountConf;
+            }
+
+            while (reconnectAttempt < reconnectCount)
+            {
+                if (reconnectAttempt > 0)
+                {
+                    Logger.Log().Info("TwitchIRC reconnect attempt #{0}", reconnectAttempt);
+                }
+
+                mIRCClient = new IRCClient("irc.chat.twitch.tv", 6697, true);
+                mIRCClient.Login(mName, mToken);
+
+                successful = CheckIfLoginSuccessful();
+                if (successful)
+                    break;
+
+                // connection failed - close, wait, retry
+                Logger.Log().Warning("Login to Twitch IRC server failed - retrying in {0} seconds...", reconnectTimeout);
+                mIRCClient.Close();
+
+                Thread.Sleep(reconnectTimeout * 1000); // converted to ms
+                reconnectTimeout *= 2;
+                reconnectAttempt++;
+            }
+
+            if (!successful)
+            {
+                throw new LoginFailedException("Login to Twitch IRC server failed");
+            }
+
+            Logger.Log().Info("Login to Twitch IRC server successful, acquiring caps");
+
+            mIRCClient.Send(IRCMessage.CAPRequest("twitch.tv/tags"));
+            mIRCClient.Send(IRCMessage.CAPRequest("twitch.tv/commands"));
+
+            mChannelsMutex.WaitOne();
+
+            foreach (string channelLogin in mChannels.Keys)
+            {
+                mIRCClient.Send(IRCMessage.JOIN(channelLogin));
+            }
+
+            mChannelsMutex.ReleaseMutex();
+
+            mConnectionState = ConnectionState.CONNECTED;
+            Logger.Log().Info("Twitch IRC connected");
+        }
+
         void Login()
         {
             if (!mToken.Loaded)
                 throw new InvalidOperationException("Provided token was not loaded properly");
 
-            // log in
             Logger.Log().Debug("Bot login account: {0}", mName);
-
-            mIRCClient = new IRCClient("irc.chat.twitch.tv", 6697, true);
-            mIRCClient.Login(mName, mToken);
-
-            if (!CheckIfLoginSuccessful())
-            {
-                Logger.Log().Warning("Login to Twitch IRC server failed - retrying in 2 seconds...");
-                mIRCClient.Close();
-
-                Thread.Sleep(2000);
-
-                mIRCClient = new IRCClient("irc.chat.twitch.tv", 6697, true);
-                mIRCClient.Login(mName, mToken);
-
-                if (!CheckIfLoginSuccessful())
-                {
-                    throw new LoginFailedException("Login to Twitch IRC server failed");
-                }
-            }
-
-            // TODO check if caps were properly enabled before using
-            mIRCClient.Send(IRCMessage.CAPRequest("twitch.tv/tags"));
-            mIRCClient.Send(IRCMessage.CAPRequest("twitch.tv/commands"));
+            TryConnect();
         }
 
         void WorkerMain()
         {
             Logger.Log().Info("TwitchIRC Worker thread started.");
+
             try
             {
                 Login();
-                mRunning = true;
             }
             catch (LukeBot.Common.Exception e)
             {
@@ -333,20 +387,33 @@ namespace LukeBot.Twitch
                 throw e;
             }
 
-            Logger.Log().Info("Listening for response...");
+            while (mConnectionState == ConnectionState.CONNECTED)
+            {
+                ProcessMessage(mIRCClient.Receive());
 
-            while (mRunning)
-                mRunning = ProcessMessage(mIRCClient.Receive());
+                if (mIRCClient.Connected && mConnectionState == ConnectionState.BROKEN)
+                {
+                    Logger.Log().Warning("Connection was broken - attempting reconnect");
+                    TryConnect();
+                }
+            }
+
+            mIRCClient.Close();
+            mIRCClient = null;
+
+            Logger.Log().Info("TwitchIRC Worker thread completed.");
         }
 
         void Disconnect()
         {
-            if (mRunning)
+            if (mConnectionState == ConnectionState.CONNECTED)
             {
                 foreach (var c in mChannels)
                 {
                     mIRCClient.Send(IRCMessage.PART(c.Key));
                 }
+
+                mConnectionState = ConnectionState.QUIT;
                 mIRCClient.Send(IRCMessage.QUIT());
             }
         }
@@ -355,6 +422,7 @@ namespace LukeBot.Twitch
         {
             mName = username;
             mWorker = new Thread(this.WorkerMain);
+            mWorker.Name = "TwitchIRC Worker";
             mChannelsMutex = new Mutex();
             mLoggedInEvent = new AutoResetEvent(false);
             mChannels = new Dictionary<string, IRCChannel>();
@@ -400,15 +468,33 @@ namespace LukeBot.Twitch
             if (mChannels.ContainsKey(user.data[0].login))
             {
                 mChannelsMutex.ReleaseMutex();
-                throw new ArgumentException(String.Format("Cannot join channel {0} - already joined", user.data[0].login));
+                throw new ChannelAlreadyJoinedException(user.data[0].login);
             }
 
             mIRCClient.Send(IRCMessage.JOIN(user.data[0].login));
 
             mChannels.Add(user.data[0].login, new IRCChannel(user.data[0].login));
 
+            // TODO External Emotes are in the way - should have some way of being per-channel, not per IRC session
             mExternalEmotes.AddEmoteSource(new FFZEmoteSource(user.data[0].id));
             mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(user.data[0].login));
+
+            mChannelsMutex.ReleaseMutex();
+        }
+
+        public void PartChannel(API.Twitch.GetUserResponse user)
+        {
+            mChannelsMutex.WaitOne();
+
+            if (!mChannels.ContainsKey(user.data[0].login))
+            {
+                mChannelsMutex.ReleaseMutex();
+                throw new UnknownChannelException(user.data[0].login);
+            }
+
+            mIRCClient.Send(IRCMessage.PART(user.data[0].login));
+
+            mChannels.Remove(user.data[0].login);
 
             mChannelsMutex.ReleaseMutex();
         }
@@ -420,7 +506,7 @@ namespace LukeBot.Twitch
             if (!mChannels.ContainsKey(channel))
             {
                 mChannelsMutex.ReleaseMutex();
-                throw new ArgumentException(String.Format("Invalid channel name {0}", channel));
+                throw new UnknownChannelException(channel);
             }
 
             mChannels[channel].AddCommand(commandName, command);
@@ -440,7 +526,7 @@ namespace LukeBot.Twitch
             if (!mChannels.ContainsKey(channel))
             {
                 mChannelsMutex.ReleaseMutex();
-                throw new ArgumentException(String.Format("Invalid channel name {0}", channel));
+                throw new UnknownChannelException(channel);
             }
 
             mChannels[channel].DeleteCommand(commandName);
@@ -455,7 +541,7 @@ namespace LukeBot.Twitch
             if (!mChannels.ContainsKey(channel))
             {
                 mChannelsMutex.ReleaseMutex();
-                throw new ArgumentException(String.Format("Invalid channel name {0}", channel));
+                throw new UnknownChannelException(channel);
             }
 
             mChannels[channel].EditCommand(commandName, newValue);
@@ -472,7 +558,7 @@ namespace LukeBot.Twitch
             if (!mChannels.ContainsKey(channel))
             {
                 mChannelsMutex.ReleaseMutex();
-                throw new ArgumentException(String.Format("Invalid channel name {0}", channel));
+                throw new UnknownChannelException(channel);
             }
 
             Dictionary<string, Command.ICommand> cmds = mChannels[channel].GetCommands();
@@ -491,7 +577,7 @@ namespace LukeBot.Twitch
             if (!mChannels.ContainsKey(channel))
             {
                 mChannelsMutex.ReleaseMutex();
-                throw new ArgumentException(String.Format("Invalid channel name {0}", channel));
+                throw new UnknownChannelException(channel);
             }
 
             Command::Descriptor d = mChannels[channel].GetCommand(name).ToDescriptor();
@@ -508,7 +594,7 @@ namespace LukeBot.Twitch
             if (!mChannels.ContainsKey(channel))
             {
                 mChannelsMutex.ReleaseMutex();
-                throw new ArgumentException(String.Format("Invalid channel name {0}", channel));
+                throw new UnknownChannelException(channel);
             }
 
             mChannels[channel].GetCommand(name).AllowUsers(privilege);
@@ -523,7 +609,7 @@ namespace LukeBot.Twitch
             if (!mChannels.ContainsKey(channel))
             {
                 mChannelsMutex.ReleaseMutex();
-                throw new ArgumentException(String.Format("Invalid channel name {0}", channel));
+                throw new UnknownChannelException(channel);
             }
 
             mChannels[channel].GetCommand(name).DenyUsers(privilege);
@@ -548,10 +634,11 @@ namespace LukeBot.Twitch
                 mWorker.Join();
             }
 
-            if (mIRCClient != null)
+            if (mIRCClient != null && mIRCClient.Connected)
             {
                 mIRCClient.Close();
                 mIRCClient = null;
+                mConnectionState = ConnectionState.DISCONNECTED;
             }
         }
     }

@@ -10,7 +10,7 @@ namespace LukeBot.Twitch
     public class TwitchUserModule: IUserModule
     {
         private string mLBUser;
-        private string mName;
+        private string mChannelName;
         private Token mUserToken;
         private API.Twitch.GetUserResponse mUserData;
         private PubSub mPubSub;
@@ -19,8 +19,8 @@ namespace LukeBot.Twitch
         public TwitchUserModule(string lbUser, Token botToken, string channelName)
         {
             mLBUser = lbUser;
-            mName = channelName;
-            mUserData = API.Twitch.GetUser(botToken, mName);
+            mChannelName = channelName;
+            mUserData = API.Twitch.GetUser(botToken, mChannelName);
 
             string tokenScope = "user:read:email channel:read:redemptions";
             mUserToken = AuthManager.Instance.GetToken(ServiceType.Twitch, channelName);
@@ -43,6 +43,16 @@ namespace LukeBot.Twitch
             return mUserData;
         }
 
+        internal string GetLBUser()
+        {
+            return mLBUser;
+        }
+
+        internal string GetChannelName()
+        {
+            return mChannelName;
+        }
+
         // IUserModule overrides
 
         public void Run()
@@ -57,6 +67,11 @@ namespace LukeBot.Twitch
         public void WaitForShutdown()
         {
             if (mPubSub != null) mPubSub.WaitForShutdown();
+        }
+
+        public ModuleType GetModuleType()
+        {
+            return ModuleType.Twitch;
         }
     }
 }

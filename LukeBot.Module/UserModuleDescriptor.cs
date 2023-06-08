@@ -4,11 +4,12 @@ namespace LukeBot.Module
     {
         public delegate bool LoadPrerequisiteCheckDelegate(string lbUser);
         public delegate IUserModule ModuleLoader(string lbUser);
+        public delegate void ModuleUnloader(IUserModule module);
 
         /**
          * Name of the module that's being loaded.
          */
-        public string ModuleName { get; set; }
+        public ModuleType Type { get; set; }
 
         /**
          * Delegate checking for any prerequisites a module might need before loading
@@ -30,9 +31,18 @@ namespace LukeBot.Module
          */
         public ModuleLoader Loader { get; set; }
 
+        /**
+         * Delegate unloading a user module.
+         *
+         * Called when a module is disabled in User Context.
+         *
+         * This function is required.
+         */
+        public ModuleUnloader Unloader { get; set; }
+
         public UserModuleDescriptor()
         {
-            ModuleName = "";
+            Type = ModuleType.Unknown;
             LoadPrerequisite = null;
             Loader = null;
         }

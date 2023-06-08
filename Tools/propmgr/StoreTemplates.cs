@@ -21,6 +21,7 @@ public class DefaultStoreTemplate: StoreTemplate
     {
         store.Add("lukebot.server_ip", Property.Create<string>("127.0.0.1"));
         store.Add("lukebot.users", Property.Create<string[]>(new string[] { "admin" }));
+        store.Add("lukebot.reconnect_count", Property.Create<int>(10));
 
         store.Add("twitch.login", Property.Create<string>(Constants.DEFAULT_LOGIN_NAME));
         store.Add("twitch.client_id", Property.Create<string>(Constants.DEFAULT_CLIENT_ID_NAME, true));

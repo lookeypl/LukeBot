@@ -15,8 +15,7 @@ namespace LukeBot
         private const string PROP_STORE_MODULES_DOMAIN = "modules";
         private const string PROP_STORE_WIDGETS_DOMAIN = "widgets";
 
-        private Dictionary<string, IUserModule> mModules = new();
-
+        private Dictionary<ModuleType, IUserModule> mModules = new();
 
         private void AddModuleToConfig(string module)
         {
@@ -57,7 +56,7 @@ namespace LukeBot
                 {
                     // here we ignore the returned module and do not start it
                     // RunModules() will be called later and will kickstart it for us
-                    LoadModule(m);
+                    LoadModule(m.GetModuleTypeEnum());
                 }
                 catch (System.Exception e)
                 {
@@ -88,20 +87,22 @@ namespace LukeBot
                 Conf.Modify<string[]>(modulesProp, modules);
         }
 
-        private IUserModule LoadModule(string moduleType)
+        private IUserModule LoadModule(ModuleType type)
         {
-            IUserModule m = GlobalModules.UserModuleManager.Create(moduleType, Username);
-            mModules.Add(moduleType, m);
+            IUserModule m = GlobalModules.UserModuleManager.Create(type, Username);
+            mModules.Add(type, m);
             return m;
         }
 
-        private void UnloadModule(string moduleType)
+        private void UnloadModule(ModuleType type)
         {
-            IUserModule m = mModules[moduleType];
+            IUserModule m = mModules[type];
+
+            GlobalModules.UserModuleManager.Unload(m);
             m.RequestShutdown();
             m.WaitForShutdown();
 
-            mModules.Remove(moduleType);
+            mModules.Remove(type);
         }
 
 
@@ -115,7 +116,7 @@ namespace LukeBot
             Logger.Log().Info("Loaded LukeBot user {0}", Username);
         }
 
-        public void EnableModule(string module)
+        public void EnableModule(ModuleType module)
         {
             if (mModules.ContainsKey(module))
             {
@@ -123,12 +124,12 @@ namespace LukeBot
             }
 
             IUserModule m = LoadModule(module);
-            AddModuleToConfig(module);
+            AddModuleToConfig(module.ToConfString());
 
             m.Run();
         }
 
-        public void DisableModule(string module)
+        public void DisableModule(ModuleType module)
         {
             if (!mModules.ContainsKey(module))
             {
@@ -136,7 +137,7 @@ namespace LukeBot
             }
 
             UnloadModule(module);
-            RemoveModuleFromConfig(module);
+            RemoveModuleFromConfig(module.ToConfString());
         }
 
         public void RunModules()

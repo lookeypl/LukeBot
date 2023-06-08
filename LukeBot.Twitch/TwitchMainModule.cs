@@ -194,6 +194,11 @@ namespace LukeBot.Twitch
             return JoinChannel(lbUser);
         }
 
+        private void UserModuleUnloader(IUserModule module)
+        {
+            PartChannel(module as TwitchUserModule);
+        }
+
 
         // Public methods //
 
@@ -238,7 +243,7 @@ namespace LukeBot.Twitch
 
             if (mUsers.ContainsKey(channel))
             {
-                throw new ChannelAlreadyJoinedException("Cannot join channel {0} - already joined", channel);
+                throw new ChannelAlreadyJoinedException(channel);
             }
 
             Logger.Log().Debug("Joining channel {0}", channel);
@@ -253,6 +258,17 @@ namespace LukeBot.Twitch
 
             Logger.Log().Secure("Joined channel twitch ID: {0}", user.GetUserData().data[0].id);
             return user;
+        }
+
+        public void PartChannel(TwitchUserModule module)
+        {
+            Logger.Log().Debug("Parting channel {0}", module.GetChannelName());
+
+            mIRC.PartChannel(module.GetUserData());
+
+            mUsers.Remove(module.GetChannelName());
+
+            Logger.Log().Secure("Parted channel twitch ID: {0}", module.GetUserData().data[0].id);
         }
 
         public void AddCommandToChannel(string lbUser, string commandName, Command.ICommand command)
@@ -328,9 +344,10 @@ namespace LukeBot.Twitch
         public UserModuleDescriptor GetUserModuleDescriptor()
         {
             UserModuleDescriptor umd = new UserModuleDescriptor();
-            umd.ModuleName = LukeBot.Common.Constants.TWITCH_MODULE_NAME;
+            umd.Type = ModuleType.Twitch;
             umd.LoadPrerequisite = UserModuleLoadPrerequisites;
             umd.Loader = UserModuleLoader;
+            umd.Unloader = UserModuleUnloader;
             return umd;
         }
 

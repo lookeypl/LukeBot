@@ -193,8 +193,6 @@ namespace LukeBot.Interface
         {
             try
             {
-                mState = State.NEED_PROMPT;
-
                 while (mState != State.DONE)
                 {
                     mMessageMutex.WaitOne();

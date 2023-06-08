@@ -4,8 +4,8 @@ namespace LukeBot.Module
 {
     public class ModuleAlreadyRegisteredException: Exception
     {
-        public ModuleAlreadyRegisteredException(string moduleName)
-            : base(string.Format("Module {0} already registered", moduleName))
+        public ModuleAlreadyRegisteredException(ModuleType type)
+            : base(string.Format("Module {0} already registered", type))
         {
         }
     }

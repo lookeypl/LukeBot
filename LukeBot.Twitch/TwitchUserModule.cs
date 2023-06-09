@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using LukeBot.Common;
 using LukeBot.API;
 using LukeBot.Module;
@@ -12,7 +13,7 @@ namespace LukeBot.Twitch
         private string mLBUser;
         private string mChannelName;
         private Token mUserToken;
-        private API.Twitch.GetUserResponse mUserData;
+        private API.Twitch.GetUserData mUserData;
         private PubSub mPubSub;
 
 
@@ -20,7 +21,13 @@ namespace LukeBot.Twitch
         {
             mLBUser = lbUser;
             mChannelName = channelName;
-            mUserData = API.Twitch.GetUser(botToken, mChannelName);
+            API.Twitch.GetUserResponse resp = API.Twitch.GetUser(botToken, mChannelName);
+            if (resp.code != HttpStatusCode.OK)
+            {
+                Logger.Log().Error("Failed to fetch user data from Twitch - received error code {0}", resp.code.ToString());
+                throw new APIResponseErrorException(resp.code);
+            }
+            mUserData = resp.data[0];
 
             string tokenScope = "user:read:email channel:read:redemptions";
             mUserToken = AuthManager.Instance.GetToken(ServiceType.Twitch, channelName);
@@ -38,7 +45,7 @@ namespace LukeBot.Twitch
             mPubSub.Connect();
         }
 
-        internal API.Twitch.GetUserResponse GetUserData()
+        internal API.Twitch.GetUserData GetUserData()
         {
             return mUserData;
         }

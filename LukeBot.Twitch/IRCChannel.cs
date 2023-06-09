@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System;
 using LukeBot.Common;
+using LukeBot.Communication.Events;
 using Command = LukeBot.Twitch.Common.Command;
 
 
@@ -9,12 +10,19 @@ namespace LukeBot.Twitch
     class IRCChannel
     {
         private string mChannelName;
+        private API.Twitch.GetUserData mUserData;
         private Dictionary<string, Command.ICommand> mCommands;
+        private EmoteProvider mExternalEmotes;
 
-        public IRCChannel(string name)
+        public IRCChannel(API.Twitch.GetUserData userData)
         {
-            mChannelName = name;
+            mChannelName = userData.login;
+            mUserData = userData;
             mCommands = new Dictionary<string, Command.ICommand>();
+            mExternalEmotes = new EmoteProvider();
+
+            mExternalEmotes.AddEmoteSource(new FFZEmoteSource(userData.id));
+            mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(userData.login));
         }
 
         public string ProcessMessage(string cmd, Command::User userIdentity, string[] args)
@@ -61,6 +69,11 @@ namespace LukeBot.Twitch
                 throw new ArgumentException(String.Format("Command {0} does not exist for channel {1}", name, mChannelName));
 
             cmd.Edit(newValue);
+        }
+
+        public void AddExternalEmotesToMessage(TwitchChatMessageArgs message)
+        {
+            message.AddExternalEmotes(mExternalEmotes.ParseEmotes(message.Message));
         }
 
         public Dictionary<string, Command.ICommand> GetCommands()

@@ -63,7 +63,7 @@ namespace LukeBot.Twitch
 
 
         private Token mToken;
-        private API.Twitch.GetUserResponse mUserData;
+        private API.Twitch.GetUserData mUserData;
         private ClientWebSocket mSocket;
         private Thread mReceiveThread;
         private Thread mSendThread;
@@ -226,7 +226,7 @@ namespace LukeBot.Twitch
             Send(new PubSubMessage(PUBSUB_MSG_TYPE_PING));
         }
 
-        public PubSub(Token token, API.Twitch.GetUserResponse userData)
+        public PubSub(Token token, API.Twitch.GetUserData userData)
         {
             mToken = token;
             mUserData = userData;
@@ -276,7 +276,7 @@ namespace LukeBot.Twitch
             PubSubCommand command = new PubSubCommand(
                 PUBSUB_MSG_TYPE_LISTEN,
                 new PubSubListenCommandData(
-                    PUBSUB_CHANNEL_POINTS_TOPIC + '.' + mUserData.data[0].id,
+                    PUBSUB_CHANNEL_POINTS_TOPIC + '.' + mUserData.id,
                     mToken.Get()
                 )
             );

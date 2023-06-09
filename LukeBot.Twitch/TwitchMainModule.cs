@@ -256,7 +256,7 @@ namespace LukeBot.Twitch
 
             mUsers.Add(channel, user);
 
-            Logger.Log().Secure("Joined channel twitch ID: {0}", user.GetUserData().data[0].id);
+            Logger.Log().Secure("Joined channel twitch ID: {0}", user.GetUserData().id);
             return user;
         }
 
@@ -268,7 +268,7 @@ namespace LukeBot.Twitch
 
             mUsers.Remove(module.GetChannelName());
 
-            Logger.Log().Secure("Parted channel twitch ID: {0}", module.GetUserData().data[0].id);
+            Logger.Log().Secure("Parted channel twitch ID: {0}", module.GetUserData().id);
         }
 
         public void AddCommandToChannel(string lbUser, string commandName, Command.ICommand command)

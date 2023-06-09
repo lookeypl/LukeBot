@@ -30,7 +30,6 @@ namespace LukeBot.Twitch
         private IRCClient mIRCClient = null;
         private Dictionary<string, IRCChannel> mChannels;
         private bool mTagsEnabled = false;
-        private EmoteProvider mExternalEmotes;
         private EventCallback mMessageEventCallback;
         private EventCallback mMessageClearEventCallback;
         private EventCallback mUserClearEventCallback;
@@ -137,7 +136,7 @@ namespace LukeBot.Twitch
                 message.DisplayName = m.User;
             }
 
-            message.AddExternalEmotes(mExternalEmotes.ParseEmotes(message.Message));
+            mChannels[m.Channel].AddExternalEmotesToMessage(message);
 
             mMessageEventCallback.PublishEvent(message);
 
@@ -427,7 +426,6 @@ namespace LukeBot.Twitch
             mLoggedInEvent = new AutoResetEvent(false);
             mChannels = new Dictionary<string, IRCChannel>();
             mToken = token;
-            mExternalEmotes = new EmoteProvider();
 
             List<EventCallback> events = Communication.Comms.Event.RegisterEventPublisher(
                 this, Communication.Events.Type.TwitchChatMessage | Communication.Events.Type.TwitchChatMessageClear | Communication.Events.Type.TwitchChatUserClear
@@ -461,40 +459,36 @@ namespace LukeBot.Twitch
             WaitForShutdown();
         }
 
-        public void JoinChannel(API.Twitch.GetUserResponse user)
+        public void JoinChannel(API.Twitch.GetUserData user)
         {
             mChannelsMutex.WaitOne();
 
-            if (mChannels.ContainsKey(user.data[0].login))
+            if (mChannels.ContainsKey(user.login))
             {
                 mChannelsMutex.ReleaseMutex();
-                throw new ChannelAlreadyJoinedException(user.data[0].login);
+                throw new ChannelAlreadyJoinedException(user.login);
             }
 
-            mIRCClient.Send(IRCMessage.JOIN(user.data[0].login));
+            mIRCClient.Send(IRCMessage.JOIN(user.login));
 
-            mChannels.Add(user.data[0].login, new IRCChannel(user.data[0].login));
-
-            // TODO External Emotes are in the way - should have some way of being per-channel, not per IRC session
-            mExternalEmotes.AddEmoteSource(new FFZEmoteSource(user.data[0].id));
-            mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(user.data[0].login));
+            mChannels.Add(user.login, new IRCChannel(user));
 
             mChannelsMutex.ReleaseMutex();
         }
 
-        public void PartChannel(API.Twitch.GetUserResponse user)
+        public void PartChannel(API.Twitch.GetUserData user)
         {
             mChannelsMutex.WaitOne();
 
-            if (!mChannels.ContainsKey(user.data[0].login))
+            if (!mChannels.ContainsKey(user.login))
             {
                 mChannelsMutex.ReleaseMutex();
-                throw new UnknownChannelException(user.data[0].login);
+                throw new UnknownChannelException(user.login);
             }
 
-            mIRCClient.Send(IRCMessage.PART(user.data[0].login));
+            mIRCClient.Send(IRCMessage.PART(user.login));
 
-            mChannels.Remove(user.data[0].login);
+            mChannels.Remove(user.login);
 
             mChannelsMutex.ReleaseMutex();
         }

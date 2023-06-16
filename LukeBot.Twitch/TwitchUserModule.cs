@@ -30,7 +30,7 @@ namespace LukeBot.Twitch
             mUserData = resp.data[0];
 
             string tokenScope = "user:read:email channel:read:redemptions";
-            mUserToken = AuthManager.Instance.GetToken(ServiceType.Twitch, channelName);
+            mUserToken = AuthManager.Instance.GetToken(ServiceType.Twitch, lbUser, channelName);
 
             bool tokenFromFile = mUserToken.Loaded;
             if (!mUserToken.Loaded)

@@ -16,8 +16,9 @@ namespace LukeBot
         private UserContext mCurrentUser = null;
         private List<ICLIProcessor> mCommandProcessors = new List<ICLIProcessor>{
             new UserCLIProcessor(),
+            new SpotifyCLIProcessor(),
             new TwitchCLIProcessor(),
-            new WidgetCLIProcessor()
+            new WidgetCLIProcessor(),
         };
 
         void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)

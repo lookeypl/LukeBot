@@ -29,7 +29,7 @@ namespace LukeBot.Twitch.Command
 
             try
             {
-                Token t = AuthManager.Instance.GetToken(ServiceType.Twitch, "lukebot");
+                Token t = AuthManager.Instance.GetToken(ServiceType.Twitch, "lukebot", "lukebot");
                 API.Twitch.GetUserResponse userDataResponse = API.Twitch.GetUser(t, args[1]);
                 if (userDataResponse.data == null || userDataResponse.data.Count == 0)
                 {

@@ -1,5 +1,6 @@
 using LukeBot.Interface;
 using LukeBot.Module;
+using LukeBot.Spotify;
 using LukeBot.Twitch;
 using LukeBot.Widget;
 
@@ -9,6 +10,7 @@ namespace LukeBot.Globals
     public class GlobalModules
     {
         static private UserModuleManager mModuleManager = null;
+        static private SpotifyMainModule mSpotifyMainModule = null;
         static private TwitchMainModule mTwitchMainModule = null;
         static private WidgetMainModule mWidgetMainModule = null;
         static private bool mInitialized = false;
@@ -18,6 +20,14 @@ namespace LukeBot.Globals
             get
             {
                 return mModuleManager;
+            }
+        }
+
+        static public SpotifyMainModule Spotify
+        {
+            get
+            {
+                return mSpotifyMainModule;
             }
         }
 
@@ -44,9 +54,11 @@ namespace LukeBot.Globals
 
             mModuleManager = new UserModuleManager();
 
+            mSpotifyMainModule = new SpotifyMainModule();
             mTwitchMainModule = new TwitchMainModule();
             mWidgetMainModule = new WidgetMainModule();
 
+            mModuleManager.RegisterUserModule(mSpotifyMainModule.GetUserModuleDescriptor());
             mModuleManager.RegisterUserModule(mTwitchMainModule.GetUserModuleDescriptor());
             mModuleManager.RegisterUserModule(mWidgetMainModule.GetUserModuleDescriptor());
 
@@ -73,6 +85,7 @@ namespace LukeBot.Globals
 
         static public void Teardown()
         {
+            mSpotifyMainModule = null;
             mTwitchMainModule = null;
             mWidgetMainModule = null;
 

@@ -213,7 +213,7 @@ namespace LukeBot.Twitch
             }
 
             string tokenScope = "chat:read chat:edit user:read:email"; // TODO should also be from Config...
-            mToken = AuthManager.Instance.GetToken(ServiceType.Twitch, mBotLogin);
+            mToken = AuthManager.Instance.GetToken(ServiceType.Twitch, mBotLogin, mBotLogin);
 
             bool tokenFromFile = mToken.Loaded;
             if (!mToken.Loaded)
@@ -346,6 +346,7 @@ namespace LukeBot.Twitch
             // TODO:
             // - Part from current channel
             // - Add a new channel
+            throw new NotImplementedException("Updating login for Twitch modules not yet implemented");
         }
 
         public UserModuleDescriptor GetUserModuleDescriptor()

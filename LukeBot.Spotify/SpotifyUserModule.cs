@@ -1,26 +1,27 @@
 ﻿using System;
 using System.IO;
 using System.Net;
-using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.API;
-using LukeBot.Communication;
 using LukeBot.Config;
 using LukeBot.Module;
+using CommonUtils = LukeBot.Common.Utils;
+using CommonConstants = LukeBot.Common.Constants;
 
 
 namespace LukeBot.Spotify
 {
-    public class SpotifyModule : IMainModule
+    public class SpotifyUserModule: IUserModule
     {
-        private string mLBUser;
+        internal string LBUser { get; private set; }
+        private string mSpotifyUsername;
         private Token mToken;
         private API.Spotify.UserProfile mProfile;
         private NowPlaying mNowPlaying;
         private NowPlayingTextFile mNowPlayingTextFile;
 
 
-        bool CheckIfLoginSuccessful()
+        private bool CheckIfLoginSuccessful()
         {
             mProfile = API.Spotify.GetCurrentUserProfile(mToken);
             if (mProfile.code == HttpStatusCode.OK)
@@ -37,10 +38,10 @@ namespace LukeBot.Spotify
                 throw new LoginFailedException("Failed to login to Spotify service: " + mProfile.code.ToString());
         }
 
-        void Login(string username)
+        private void Login(string username)
         {
             string scope = "user-read-currently-playing user-read-playback-state user-read-email";
-            mToken = AuthManager.Instance.GetToken(ServiceType.Spotify, username);
+            mToken = AuthManager.Instance.GetToken(ServiceType.Spotify, LBUser, username);
 
             bool tokenFromFile = mToken.Loaded;
 
@@ -53,58 +54,33 @@ namespace LukeBot.Spotify
             }
         }
 
-        // User Module Descriptor delegates //
-
-        private bool UserModuleLoadPrerequisites()
-        {
-            // TODO
-            return true;
-        }
-
-        private IUserModule UserModuleLoader(string lbUser)
-        {
-            // TODO
-            return null;
-        }
-
 
         // Public methods //
 
-        public SpotifyModule(string lbUser)
+        public SpotifyUserModule(string lbUser)
         {
-            mLBUser = lbUser;
+            LBUser = lbUser;
 
-            Comms.Communication.Register(LukeBot.Common.Constants.SPOTIFY_MODULE_NAME);
-            string storagePath = "Outputs/" + LukeBot.Common.Constants.SPOTIFY_MODULE_NAME;
-            if (!Directory.Exists(storagePath))
-                Directory.CreateDirectory(storagePath);
+            string storagePath = "Outputs/" + CommonConstants.SPOTIFY_MODULE_NAME + "/" + LBUser;
+            Directory.CreateDirectory(storagePath);
 
-            string spotifyUsername = Conf.Get<string>(
-                LukeBot.Common.Utils.FormConfName(LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN, mLBUser, Constants.PROP_STORE_SPOTIFY_DOMAIN, Constants.PROP_STORE_SPOTIFY_LOGIN)
+            mSpotifyUsername = Conf.Get<string>(
+                CommonUtils.FormConfName(CommonConstants.PROP_STORE_USER_DOMAIN, LBUser, CommonConstants.SPOTIFY_MODULE_NAME, Constants.PROP_STORE_SPOTIFY_LOGIN_PROP)
             );
 
-            Login(spotifyUsername);
+            Login(mSpotifyUsername);
 
             mNowPlaying = new NowPlaying(mToken);
             mNowPlayingTextFile = new NowPlayingTextFile(
-                "Outputs/" + LukeBot.Common.Constants.SPOTIFY_MODULE_NAME + "/" + mLBUser + "/nowplaying_artist.txt",
-                "Outputs/" + LukeBot.Common.Constants.SPOTIFY_MODULE_NAME + "/" + mLBUser +  "/nowplaying_title.txt"
+                "Outputs/" + CommonConstants.SPOTIFY_MODULE_NAME + "/" + LBUser + "/nowplaying_artist.txt",
+                "Outputs/" + CommonConstants.SPOTIFY_MODULE_NAME + "/" + LBUser +  "/nowplaying_title.txt"
             );
         }
 
-        ~SpotifyModule()
+        ~SpotifyUserModule()
         {
             mNowPlayingTextFile = null;
             mNowPlaying = null;
-        }
-
-        public UserModuleDescriptor GetUserModuleDescriptor()
-        {
-            UserModuleDescriptor umd = new UserModuleDescriptor();
-            umd.Type = ModuleType.Spotify;
-            umd.LoadPrerequisite = null;
-            umd.Loader = UserModuleLoader;
-            return umd;
         }
 
         public void Run()
@@ -121,6 +97,11 @@ namespace LukeBot.Spotify
         public void WaitForShutdown()
         {
             mNowPlaying.Wait();
+        }
+
+        public ModuleType GetModuleType()
+        {
+            return ModuleType.Spotify;
         }
     }
 }

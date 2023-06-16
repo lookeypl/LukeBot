@@ -47,7 +47,7 @@ namespace LukeBot.API
             Loaded = true;
         }
 
-        public Token(string service, string userId, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)
+        public Token(string service, string lbUser, string userId, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)
         {
             switch (flow)
             {
@@ -64,7 +64,7 @@ namespace LukeBot.API
             mMutex = new Mutex();
 
             mTokenPath = Utils.FormConfName(
-                Common.Constants.PROP_STORE_USER_DOMAIN, userId, service, Common.Constants.PROP_STORE_TOKEN_PROP
+                Common.Constants.PROP_STORE_USER_DOMAIN, lbUser, service, Common.Constants.PROP_STORE_TOKEN_PROP
             );
 
             if (Conf.Exists(mTokenPath)) {

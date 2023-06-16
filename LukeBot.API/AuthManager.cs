@@ -15,20 +15,20 @@ namespace LukeBot.API
         Dictionary<string, Token> mTokens;
         Mutex mMutex;
 
-        private Token NewTokenForService(ServiceType service, string id)
+        private Token NewTokenForService(ServiceType service, string lbUser, string userId)
         {
             switch (service)
             {
-            case ServiceType.Twitch: return new TwitchToken(AuthFlow.AuthorizationCode, id);
-            case ServiceType.Spotify: return new SpotifyToken(AuthFlow.AuthorizationCode, id);
+            case ServiceType.Twitch: return new TwitchToken(AuthFlow.AuthorizationCode, lbUser, userId);
+            case ServiceType.Spotify: return new SpotifyToken(AuthFlow.AuthorizationCode, lbUser, userId);
             default:
                 throw new ArgumentOutOfRangeException();
             }
         }
 
-        private string FormTokenDictionaryKey(ServiceType service, string id)
+        private string FormTokenDictionaryKey(ServiceType service, string lbUser, string id)
         {
-            return service.ToString() + "." + id;
+            return service.ToString() + "." + lbUser + id;
         }
 
         private AuthManager()
@@ -38,16 +38,16 @@ namespace LukeBot.API
         }
 
 
-        public Token GetToken(ServiceType service, string id)
+        public Token GetToken(ServiceType service, string lbUser, string userId)
         {
-            string tokenKey = FormTokenDictionaryKey(service, id);
+            string tokenKey = FormTokenDictionaryKey(service, lbUser, userId);
 
             mMutex.WaitOne();
 
             Token ret;
             if (!mTokens.TryGetValue(tokenKey, out ret))
             {
-                ret = NewTokenForService(service, id);
+                ret = NewTokenForService(service, lbUser, userId);
                 mTokens[tokenKey] = ret;
             }
 
@@ -55,9 +55,9 @@ namespace LukeBot.API
             return ret;
         }
 
-        public void InvalidateToken(ServiceType service, string id)
+        public void InvalidateToken(ServiceType service, string lbUser, string id)
         {
-            string tokenKey = FormTokenDictionaryKey(service, id);
+            string tokenKey = FormTokenDictionaryKey(service, lbUser, id);
 
             mMutex.WaitOne();
 

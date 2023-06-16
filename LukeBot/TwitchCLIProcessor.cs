@@ -49,7 +49,15 @@ namespace LukeBot
                 return;
             }
 
-            // TODO
+            try
+            {
+                GlobalModules.Twitch.UpdateLoginForUser(mLukeBot.GetCurrentUser().Username, args[0]);
+                result = "Successfully updated Twitch login.";
+            }
+            catch (System.Exception e)
+            {
+                result = "Failed to update Twitch login: " + e.Message;
+            }
         }
 
         public void HandleEnableSubverb(TwitchEnableSubverb arg, out string msg)

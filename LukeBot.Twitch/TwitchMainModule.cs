@@ -341,6 +341,13 @@ namespace LukeBot.Twitch
             UpdateCommandInConfig(twitchChannel, name);
         }
 
+        public void UpdateLoginForUser(string lbUser, string newLogin)
+        {
+            // TODO:
+            // - Part from current channel
+            // - Add a new channel
+        }
+
         public UserModuleDescriptor GetUserModuleDescriptor()
         {
             UserModuleDescriptor umd = new UserModuleDescriptor();

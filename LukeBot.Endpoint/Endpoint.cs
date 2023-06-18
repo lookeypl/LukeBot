@@ -61,14 +61,25 @@ namespace LukeBot.Endpoint
             string IP = Conf.Get<string>(Common.Constants.PROP_STORE_SERVER_IP_PROP);
             if (IP != Common.Constants.DEFAULT_SERVER_IP)
             {
-                string[] URLs = new string[]
+                string[] URLs;
+                if (IP.Contains("localhost"))
                 {
-                    // TODO readd below with certificates
-                    //"https://" + IP + "/",
-                    "http://" + IP + "/",
-                    //"https://localhost:5001/",
-                    "http://localhost:5000/",
-                };
+                    URLs = new string[]
+                    {
+                        "http://" + IP + "/",
+                    };
+                }
+                else
+                {
+                    URLs = new string[]
+                    {
+                        // TODO readd below with certificates
+                        //"https://" + IP + "/",
+                        "http://" + IP + "/",
+                        //"https://localhost:5001/",
+                        "http://localhost:5000/",
+                    };
+                }
                 Logger.Log().Debug("Using host IP " + IP);
                 builder.UseUrls(URLs);
             }

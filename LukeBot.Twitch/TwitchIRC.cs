@@ -1,12 +1,12 @@
 ﻿using LukeBot.Common;
 using LukeBot.API;
 using LukeBot.Communication;
+using LukeBot.Communication.Events;
 using LukeBot.Config;
 using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading;
-using LukeBot.Communication.Events;
 
 using Command = LukeBot.Twitch.Common.Command;
 using CommonUtils = LukeBot.Common.Utils;
@@ -427,7 +427,7 @@ namespace LukeBot.Twitch
             mChannels = new Dictionary<string, IRCChannel>();
             mToken = token;
 
-            List<EventCallback> events = Communication.Comms.Event.RegisterEventPublisher(
+            List<EventCallback> events = Comms.Event.RegisterEventPublisher(
                 this, Communication.Events.Type.TwitchChatMessage | Communication.Events.Type.TwitchChatMessageClear | Communication.Events.Type.TwitchChatUserClear
             );
 

@@ -49,6 +49,12 @@ namespace LukeBot.API
 
         public Token(string service, string lbUser, string userId, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)
         {
+            if (callbackURL.StartsWith("https://localhost"))
+            {
+                // HACK - localhost doesn't require https and it might break some logins sometimes
+                callbackURL = callbackURL.Replace("https://localhost", "http://localhost");
+            }
+
             switch (flow)
             {
             case AuthFlow.AuthorizationCode:

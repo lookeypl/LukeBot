@@ -250,11 +250,22 @@ namespace LukeBot.Twitch
 
             TwitchUserModule user = new TwitchUserModule(lbUser, mToken, channel);
 
-            mIRC.JoinChannel(user.GetUserData());
+            try
+            {
+                mIRC.JoinChannel(user.GetUserData());
 
-            LoadCommandsFromConfig(lbUser);
+                LoadCommandsFromConfig(lbUser);
 
-            mUsers.Add(channel, user);
+                mUsers.Add(channel, user);
+            }
+            catch (System.Exception)
+            {
+                // get rid of our just created user module, as we might've already started something
+                user.RequestShutdown();
+                user.WaitForShutdown();
+                user = null;
+                throw;
+            }
 
             Logger.Log().Secure("Joined channel twitch ID: {0}", user.GetUserData().id);
             return user;

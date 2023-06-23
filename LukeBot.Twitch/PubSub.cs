@@ -242,6 +242,7 @@ namespace LukeBot.Twitch
             mPingPongTimer.Interval = 5 * 60 * 1000;
             mPingPongTimer.Elapsed += OnPingPongTimerEvent;
             mSendThread = new Thread(SendThreadMain);
+            mSendThread.Name = string.Format("PubSub Send Thread ({0})", mUserData.login);
 
             List<EventCallback> events = Comms.Event.RegisterEventPublisher(
                 this, Communication.Events.Type.TwitchChannelPointsRedemption

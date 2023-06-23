@@ -50,10 +50,7 @@ namespace LukeBot.API
         {
             EmoteSet set = EmoteSet.Empty();
 
-            Logger.Log().Secure("7TV: Requesting URI {0}", URI);
-
             ResponseJObject resp = Request.GetJObject(URI);
-
             if (resp.code != HttpStatusCode.OK)
             {
                 Logger.Log().Warning("7TV: Failed to fetch emotes from URI {0} - {1}", URI, resp.code.ToString());

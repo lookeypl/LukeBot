@@ -22,6 +22,7 @@ namespace LukeBot.Twitch
             mExternalEmotes = new EmoteProvider();
 
             mExternalEmotes.AddEmoteSource(new FFZEmoteSource(userData.id));
+            mExternalEmotes.AddEmoteSource(new BTTVEmoteSource(userData.id));
             mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(userData.id));
         }
 

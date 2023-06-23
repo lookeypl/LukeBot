@@ -75,6 +75,7 @@
 
     const TWITCH_EMOTE_URL_SCHEME = ["//static-cdn.jtvnw.net/emoticons/v2/", "/default/dark/1.0", "/default/dark/2.0", "/default/dark/3.0"];
     const FFZ_EMOTE_URL_SCHEME = ["//cdn.frankerfacez.com/emote/", "/1", "/2", "/4"];
+    const BTTV_EMOTE_URL_SCHEME = ["//cdn.betterttv.net/emote/", "/1x", "/2x", "/3x"];
     const SEVENTV_EMOTE_URL_SCHEME = ["//cdn.7tv.app/emote/", "/1x.webp", "/2x.webp", "/4x.webp"];
 
     class Emote {
@@ -155,7 +156,9 @@
                         scheme = TWITCH_EMOTE_URL_SCHEME;
                     } else if (e.mSource == "FFZ") {
                         scheme = FFZ_EMOTE_URL_SCHEME;
-                    } else if (e.mSource = "SevenTV") {
+                    } else if (e.mSource == "BTTV") {
+                        scheme = BTTV_EMOTE_URL_SCHEME;
+                    } else if (e.mSource == "SevenTV") {
                         scheme = SEVENTV_EMOTE_URL_SCHEME;
                     } else {
                         printDebug("Invalid emote source - skipping");
@@ -167,7 +170,12 @@
                     img.srcset =
                         url + scheme[1] + " 1x, " +
                         url + scheme[2] + " 2x, " +
-                        url + scheme[3] + " 4x";
+                        url + scheme[3];
+                    if (e.mSource == "BTTV")
+                        img.srcset = img.srcset + " 3x";
+                    else
+                        img.srcset = img.srcset + " 4x";
+
                     img.classList.add("chat-emote");
 
                     let imgDiv = document.createElement("div");

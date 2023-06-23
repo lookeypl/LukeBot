@@ -110,7 +110,6 @@ namespace LukeBot.API
 
             Task<string> retContentStrTask = response.Content.ReadAsStringAsync();
             retContentStrTask.Wait();
-            Logger.Log().Secure(retContentStrTask.Result);
             return new ResponseJArray(response.StatusCode, retContentStrTask.Result);
         }
     }

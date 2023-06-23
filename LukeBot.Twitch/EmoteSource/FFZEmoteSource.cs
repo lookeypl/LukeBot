@@ -8,11 +8,9 @@ using LukeBot.Twitch.Common;
 
 namespace LukeBot.Twitch
 {
-
     class FFZEmoteSource: IEmoteSource
     {
         private string mUserID;
-
 
         public FFZEmoteSource(string twitchID)
         {

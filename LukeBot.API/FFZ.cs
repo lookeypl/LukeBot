@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Net;
+using LukeBot.Common;
 using Newtonsoft.Json.Linq;
 
 
@@ -66,17 +68,38 @@ namespace LukeBot.API
 
                 return set;
             }
+
+            public static EmoteSet Empty()
+            {
+                return new EmoteSet();
+            }
         }
 
 
         public static EmoteSet GetGlobalEmotes()
         {
-            return EmoteSet.FromGlobalEmotes(Request.GetJObject(FFZ_API_GLOBAL_SET_URI));
+            ResponseJObject resp = Request.GetJObject(FFZ_API_GLOBAL_SET_URI);
+
+            if (resp.code != HttpStatusCode.OK)
+            {
+                Logger.Log().Warning("FFZ: Failed to fetch Global emotes - {0}", resp.code.ToString());
+                return EmoteSet.Empty();
+            }
+
+            return EmoteSet.FromGlobalEmotes(resp);
         }
 
         public static EmoteSet GetUserEmotes(string userID)
         {
-            return EmoteSet.FromUserEmotes(Request.GetJObject(FFZ_API_ROOM_URI + userID));
+            ResponseJObject resp = Request.GetJObject(FFZ_API_ROOM_URI + userID);
+
+            if (resp.code != HttpStatusCode.OK)
+            {
+                Logger.Log().Warning("FFZ: Failed to fetch User {0} emotes - {1}", userID, resp.code.ToString());
+                return EmoteSet.Empty();
+            }
+
+            return EmoteSet.FromUserEmotes(resp);
         }
     }
 }

@@ -19,19 +19,19 @@ namespace LukeBot.Twitch
             mUserID = twitchID;
         }
 
-        public void FetchEmoteSet(ref Dictionary<string, Emote> emoteSet)
+        public void FetchEmoteSet(ref Dictionary<string, Twitch.Common.Emote> emoteSet)
         {
-            API.FFZ.EmoteSet globalEmotes = API.FFZ.GetGlobalEmotes();
-            API.FFZ.EmoteSet userEmotes = API.FFZ.GetUserEmotes(mUserID);
+            API.EmoteSet globalEmotes = API.FFZ.GetGlobalEmotes();
+            API.EmoteSet userEmotes = API.FFZ.GetUserEmotes(mUserID);
 
             foreach (var e in globalEmotes.emotes)
             {
-                emoteSet.Add(e.name, new Emote(EmoteSource.FFZ, e.name, e.id, e.width, e.height));
+                emoteSet.Add(e.name, new Twitch.Common.Emote(EmoteSource.FFZ, e.name, e.id, e.width, e.height));
             }
 
             foreach (var e in userEmotes.emotes)
             {
-                emoteSet.Add(e.name, new Emote(EmoteSource.FFZ, e.name, e.id, e.width, e.height));
+                emoteSet.Add(e.name, new Twitch.Common.Emote(EmoteSource.FFZ, e.name, e.id, e.width, e.height));
             }
         }
 

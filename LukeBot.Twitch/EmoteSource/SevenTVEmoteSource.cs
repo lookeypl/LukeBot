@@ -18,7 +18,7 @@ namespace LukeBot.Twitch
             mUser = user;
         }
 
-        private void AddEmoteDataToSet(API.SevenTV.EmoteSet fetchedSet, ref Dictionary<string, Emote> emoteSet)
+        private void AddEmoteDataToSet(API.EmoteSet fetchedSet, ref Dictionary<string, Twitch.Common.Emote> emoteSet)
         {
             foreach (var o in fetchedSet.emotes)
             {
@@ -28,15 +28,15 @@ namespace LukeBot.Twitch
                 }
                 else
                 {
-                    emoteSet.Add(o.name, new Emote(EmoteSource.SevenTV, o.name, o.id, o.width, o.height));
+                    emoteSet.Add(o.name, new Twitch.Common.Emote(EmoteSource.SevenTV, o.name, o.id, o.width, o.height));
                 }
             }
         }
 
-        public void FetchEmoteSet(ref Dictionary<string, Emote> emoteSet)
+        public void FetchEmoteSet(ref Dictionary<string, Twitch.Common.Emote> emoteSet)
         {
-            API.SevenTV.EmoteSet globalSet = API.SevenTV.GetGlobalEmotes();
-            API.SevenTV.EmoteSet userSet = API.SevenTV.GetUserEmotes(mUser);
+            API.EmoteSet globalSet = API.SevenTV.GetGlobalEmotes();
+            API.EmoteSet userSet = API.SevenTV.GetUserEmotes(mUser);
 
             AddEmoteDataToSet(globalSet, ref emoteSet);
             AddEmoteDataToSet(userSet, ref emoteSet);
@@ -47,5 +47,4 @@ namespace LukeBot.Twitch
             throw new System.NotImplementedException();
         }
     }
-
 }

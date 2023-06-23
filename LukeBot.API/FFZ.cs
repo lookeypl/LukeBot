@@ -12,15 +12,9 @@ namespace LukeBot.API
         private const string FFZ_API_GLOBAL_SET_URI  = FFZ_API_BASE_URI + "set/global";
         private const string FFZ_API_ROOM_URI = FFZ_API_BASE_URI + "room/id/";
 
-        public struct Emote
+        private class FFZEmote: Emote
         {
-            // name, id, width, height, ...?
-            public string name { get; private set; }
-            public string id { get; private set; }
-            public int width { get; private set; }
-            public int height { get; private set; }
-
-            public Emote(JObject e)
+            public FFZEmote(JObject e)
             {
                 name = (string)e["name"];
                 id = (string)e["id"];
@@ -29,68 +23,49 @@ namespace LukeBot.API
             }
         }
 
-        public class EmoteSet
+        private static void AddEmotes(JArray recvSet, ref EmoteSet set)
         {
-            public List<Emote> emotes { get; private set; }
-
-            public EmoteSet()
+            foreach (var e in recvSet)
             {
-                emotes = new List<Emote>();
-            }
-
-            private void AddEmotes(JArray set)
-            {
-                foreach (var e in set)
-                {
-                    emotes.Add(new Emote(e as JObject));
-                }
-            }
-
-            public static EmoteSet FromGlobalEmotes(ResponseJObject data)
-            {
-                EmoteSet set = new EmoteSet();
-
-                JArray defaultSets = data.obj["default_sets"] as JArray;
-                foreach (string globalSetID in defaultSets)
-                {
-                    set.AddEmotes(data.obj["sets"][globalSetID]["emoticons"] as JArray);
-                }
-
-                return set;
-            }
-
-            public static EmoteSet FromUserEmotes(ResponseJObject data)
-            {
-                EmoteSet set = new EmoteSet();
-
-                string setID = (string)data.obj["room"]["set"];
-                set.AddEmotes(data.obj["sets"][setID]["emoticons"] as JArray);
-
-                return set;
-            }
-
-            public static EmoteSet Empty()
-            {
-                return new EmoteSet();
+                set.AddEmote(new FFZEmote(e as JObject));
             }
         }
 
+        private static void FillSetFromGlobalEmotes(ResponseJObject data, ref EmoteSet set)
+        {
+            JArray defaultSets = data.obj["default_sets"] as JArray;
+            foreach (string globalSetID in defaultSets)
+            {
+                AddEmotes(data.obj["sets"][globalSetID]["emoticons"] as JArray, ref set);
+            }
+        }
+
+        private static void FillSetFromUserEmotes(ResponseJObject data, ref EmoteSet set)
+        {
+            string setID = (string)data.obj["room"]["set"];
+            AddEmotes(data.obj["sets"][setID]["emoticons"] as JArray, ref set);
+        }
 
         public static EmoteSet GetGlobalEmotes()
         {
+            EmoteSet set = EmoteSet.Empty();
+
             ResponseJObject resp = Request.GetJObject(FFZ_API_GLOBAL_SET_URI);
 
             if (resp.code != HttpStatusCode.OK)
             {
                 Logger.Log().Warning("FFZ: Failed to fetch Global emotes - {0}", resp.code.ToString());
-                return EmoteSet.Empty();
+                return set;
             }
 
-            return EmoteSet.FromGlobalEmotes(resp);
+            FillSetFromGlobalEmotes(resp, ref set);
+            return set;
         }
 
         public static EmoteSet GetUserEmotes(string userID)
         {
+            EmoteSet set = EmoteSet.Empty();
+
             ResponseJObject resp = Request.GetJObject(FFZ_API_ROOM_URI + userID);
 
             if (resp.code != HttpStatusCode.OK)
@@ -99,7 +74,8 @@ namespace LukeBot.API
                 return EmoteSet.Empty();
             }
 
-            return EmoteSet.FromUserEmotes(resp);
+            FillSetFromUserEmotes(resp, ref set);
+            return set;
         }
     }
 }

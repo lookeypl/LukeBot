@@ -12,7 +12,7 @@ namespace LukeBot.Twitch
         {
         }
 
-        public void FetchEmoteSet(ref Dictionary<string, Emote> emoteSet)
+        public void FetchEmoteSet(ref Dictionary<string, Twitch.Common.Emote> emoteSet)
         {
             throw new System.NotImplementedException();
         }

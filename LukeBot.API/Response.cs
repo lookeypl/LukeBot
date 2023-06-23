@@ -13,41 +13,64 @@ namespace LukeBot.API
         {
             code = HttpStatusCode.OK;
         }
+
+        public Response(HttpStatusCode c)
+        {
+            code = c;
+        }
     }
 
-    public class ResponseJObject
+    public class ResponseJObject: Response
     {
-        public HttpStatusCode code { get; private set; }
         public JObject obj { get; private set; }
 
         public ResponseJObject(HttpStatusCode c)
+            : base(c)
         {
-            code = c;
             obj = null;
         }
 
         public ResponseJObject(HttpStatusCode c, string jsonStr)
+            : base(c)
         {
-            code = c;
             obj = JObject.Parse(jsonStr);
+        }
+
+        public override string ToString()
+        {
+            string r = "code = " + code.ToString();
+            if (code == HttpStatusCode.OK)
+            {
+                r += ", data = " + obj.ToString();
+            }
+            return r;
         }
     }
 
-    public class ResponseJArray
+    public class ResponseJArray: Response
     {
-        public HttpStatusCode code { get; private set; }
         public JArray array { get; private set; }
 
         public ResponseJArray(HttpStatusCode c)
+            : base(c)
         {
-            code = c;
             array = null;
         }
 
         public ResponseJArray(HttpStatusCode c, string jsonStr)
+            : base(c)
         {
-            code = c;
             array = JArray.Parse(jsonStr);
+        }
+
+        public override string ToString()
+        {
+            string r = "code = " + code.ToString();
+            if (code == HttpStatusCode.OK)
+            {
+                r += ", data = " + array.ToString();
+            }
+            return r;
         }
     }
 }

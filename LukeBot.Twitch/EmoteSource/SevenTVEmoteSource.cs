@@ -11,11 +11,11 @@ namespace LukeBot.Twitch
 
     class SevenTVEmoteSource: IEmoteSource
     {
-        private string mUser;
+        private string mUserID;
 
-        public SevenTVEmoteSource(string user)
+        public SevenTVEmoteSource(string twitchID)
         {
-            mUser = user;
+            mUserID = twitchID;
         }
 
         private void AddEmoteDataToSet(API.EmoteSet fetchedSet, ref Dictionary<string, Twitch.Common.Emote> emoteSet)
@@ -36,7 +36,7 @@ namespace LukeBot.Twitch
         public void FetchEmoteSet(ref Dictionary<string, Twitch.Common.Emote> emoteSet)
         {
             API.EmoteSet globalSet = API.SevenTV.GetGlobalEmotes();
-            API.EmoteSet userSet = API.SevenTV.GetUserEmotes(mUser);
+            API.EmoteSet userSet = API.SevenTV.GetUserEmotes(mUserID);
 
             AddEmoteDataToSet(globalSet, ref emoteSet);
             AddEmoteDataToSet(userSet, ref emoteSet);

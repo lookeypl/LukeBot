@@ -8,10 +8,9 @@ namespace LukeBot.API
 {
     public class SevenTV
     {
-        private const string SEVENTV_API_BASE_URI = "https://7tv.io/v3/";
-        private const string SEVENTV_API_GLOBAL_EMOTES_URI = SEVENTV_API_BASE_URI + "emotes/global";
-        private const string SEVENTV_API_EMOTES_URI = SEVENTV_API_BASE_URI + "users/";
-        private const string SEVENTV_API_EMOTES_URI_TAIL = "/emotes";
+        private const string SEVENTV_API_BASE_URI = "https://7tv.io/v3";
+        private const string SEVENTV_API_USERS_URI = SEVENTV_API_BASE_URI + "/users";
+        private const string SEVENTV_API_TWITCH_EMOTES_URI = SEVENTV_API_USERS_URI + "/twitch";
 
         private class SevenTVEmote: Emote
         {
@@ -19,14 +18,29 @@ namespace LukeBot.API
             {
                 name = (string)e["name"];
                 id = (string)e["id"];
-                width = (int)e["width"][0];
-                height = (int)e["height"][0];
+                width = 0;
+                height = 0;
+
+                JArray files = (JArray)e["data"]["host"]["files"];
+                foreach (JObject o in files)
+                {
+                    if (((string)o["format"]).Equals("WEBP"))
+                    {
+                        int w = (int)o["width"];
+                        int h = (int)o["height"];
+                        if (w > width && h > height)
+                        {
+                            width = w;
+                            height = h;
+                        }
+                    }
+                }
             }
         }
 
-        private static void FillEmotes(ResponseJArray resp, ref EmoteSet set)
+        private static void FillEmotes(ResponseJObject resp, ref EmoteSet set)
         {
-            foreach (var e in resp.array)
+            foreach (var e in resp.obj["emote_set"]["emotes"])
             {
                 set.AddEmote(new SevenTVEmote(e as JObject));
             }
@@ -36,7 +50,9 @@ namespace LukeBot.API
         {
             EmoteSet set = EmoteSet.Empty();
 
-            ResponseJArray resp = Request.GetJArray(URI);
+            Logger.Log().Secure("7TV: Requesting URI {0}", URI);
+
+            ResponseJObject resp = Request.GetJObject(URI);
 
             if (resp.code != HttpStatusCode.OK)
             {
@@ -50,12 +66,12 @@ namespace LukeBot.API
 
         public static EmoteSet GetGlobalEmotes()
         {
-            return GetEmotes(SEVENTV_API_GLOBAL_EMOTES_URI);
+            return EmoteSet.Empty();
         }
 
-        public static EmoteSet GetUserEmotes(string user)
+        public static EmoteSet GetUserEmotes(string userID)
         {
-            return GetEmotes(SEVENTV_API_EMOTES_URI + user + SEVENTV_API_EMOTES_URI_TAIL);
+            return GetEmotes(SEVENTV_API_TWITCH_EMOTES_URI + "/" + userID);
         }
     }
 }

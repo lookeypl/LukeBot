@@ -291,15 +291,21 @@ namespace LukeBot.Twitch
 
         public Twitch.Command.ICommand AllocateCommand(string lbUser, Command::Descriptor d)
         {
+            Twitch.Command.ICommand cmd = null;
+
             switch (d.Type)
             {
-            case Command::Type.print: return new Command.Print(d);
-            case Command::Type.shoutout: return new Command.Shoutout(d);
-            case Command::Type.addcom: return new Command.AddCommand(d, lbUser);
-            case Command::Type.editcom: return new Command.EditCommand(d, lbUser);
-            case Command::Type.delcom: return new Command.DeleteCommand(d, lbUser);
+            case Command::Type.print: cmd = new Command.Print(d); break;
+            case Command::Type.shoutout: cmd = new Command.Shoutout(d); break;
+            case Command::Type.addcom: cmd = new Command.AddCommand(d, lbUser); break;
+            case Command::Type.editcom: cmd = new Command.EditCommand(d, lbUser); break;
+            case Command::Type.delcom: cmd = new Command.DeleteCommand(d, lbUser); break;
+            case Command::Type.counter: cmd = new Command.Counter(d); break;
             default: return null;
             }
+
+            cmd.SetUpdateConfigDelegate((string name) => UpdateCommandInConfig(lbUser, name));
+            return cmd;
         }
 
         public Twitch.Command.ICommand AllocateCommand(string lbUser, string name, Command::Type type, string value)

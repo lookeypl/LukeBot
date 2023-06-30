@@ -8,5 +8,6 @@ namespace LukeBot.Twitch.Common.Command
         addcom,
         delcom,
         editcom,
+        counter,
     }
 }

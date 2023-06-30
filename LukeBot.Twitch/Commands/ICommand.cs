@@ -5,8 +5,11 @@ namespace LukeBot.Twitch.Command
 {
     public abstract class ICommand
     {
+        internal delegate void UpdateConfigDelegate(string commandName);
+
         protected string mName;
         protected User mPrivilegeLevel;
+        private UpdateConfigDelegate mUpdateConfig;
 
         protected ICommand(Descriptor d)
         {
@@ -20,9 +23,24 @@ namespace LukeBot.Twitch.Command
             mPrivilegeLevel = privilegeLevel;
         }
 
-        // Provided args from a chat message; returns a message to send back
-        // That way TwitchIRC will send it further back to Twitch servers
-        public abstract string Execute(string[] args);
+        // To be called from within Command's Execute() call. Triggers a Config update.
+        protected void UpdateConfig()
+        {
+            mUpdateConfig(mName);
+        }
+
+        internal void SetUpdateConfigDelegate(UpdateConfigDelegate d)
+        {
+            mUpdateConfig = d;
+        }
+
+        // Provides:
+        //  * args - arguments from a chat message incl. called command name;
+        //  * callerPrivilege - caller's (person who called the command) User privilege flags.
+        //
+        // Returns a string - response that TwitchIRC will send further back to Twitch servers
+        // assuming it's not empty (empty string will keep bot silent)
+        public abstract string Execute(User callerPrivilege, string[] args);
 
         // Edit command output based on newValue param
         public abstract void Edit(string newValue);

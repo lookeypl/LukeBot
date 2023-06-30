@@ -44,7 +44,7 @@ namespace LukeBot.Twitch
                 return "";
             }
 
-            return mCommands[cmd].Execute(args);
+            return mCommands[cmd].Execute(userIdentity, args);
         }
 
         public void AddCommand(string name, Command.ICommand command)

@@ -13,7 +13,7 @@ namespace LukeBot.Twitch.Command
             mMessage = d.Value;
         }
 
-        public override string Execute(string[] args)
+        public override string Execute(Command::User callerPrivilege, string[] args)
         {
             return mMessage;
         }

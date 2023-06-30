@@ -92,6 +92,9 @@ namespace LukeBot.Twitch
             CancellationToken cancellationToken = new CancellationToken();
             await mSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, cancellationToken);
 
+            // mSocket has to be recreated here - CloseAsync() puts it in 'Closed' state
+            // which by C# standards is illegal to call ConnectAsync() on
+            mSocket = new ClientWebSocket();
             Connect();
         }
 

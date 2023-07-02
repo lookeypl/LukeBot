@@ -307,7 +307,7 @@ namespace LukeBot.Twitch
             bool successful = false;
 
             string reconnectCountProp = CommonUtils.FormConfName(
-                CommonConstants.PROP_STORE_LUKEBOT_DOMAIN, CommonConstants.PROP_STORE_RECONNECT_COUNT_PROP
+                CommonConstants.LUKEBOT_USER_ID, CommonConstants.PROP_STORE_RECONNECT_COUNT_PROP
             );
             int reconnectCountConf = 0;
             if (Conf.TryGet(reconnectCountProp, out reconnectCountConf))

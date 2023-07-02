@@ -213,7 +213,7 @@ namespace LukeBot.Twitch
             }
 
             string tokenScope = "chat:read chat:edit user:read:email"; // TODO should also be from Config...
-            mToken = AuthManager.Instance.GetToken(ServiceType.Twitch, mBotLogin, mBotLogin);
+            mToken = AuthManager.Instance.GetToken(ServiceType.Twitch, mBotLogin);
 
             bool tokenFromFile = mToken.Loaded;
             if (!mToken.Loaded)

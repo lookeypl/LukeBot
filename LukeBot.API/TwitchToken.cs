@@ -5,11 +5,10 @@ namespace LukeBot.API
 {
     public class TwitchToken: Token
     {
-        public TwitchToken(AuthFlow flow, string lbUser, string userId)
+        public TwitchToken(AuthFlow flow, string lbUser)
             : base(
                 Constants.TWITCH_SERVICE_NAME,
                 lbUser,
-                userId,
                 flow,
                 "https://id.twitch.tv/oauth2/authorize",
                 "https://id.twitch.tv/oauth2/token",

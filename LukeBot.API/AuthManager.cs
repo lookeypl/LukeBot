@@ -15,20 +15,22 @@ namespace LukeBot.API
         Dictionary<string, Token> mTokens;
         Mutex mMutex;
 
-        private Token NewTokenForService(ServiceType service, string lbUser, string userId)
+        private Token NewTokenForService(ServiceType service, string lbUser)
         {
             switch (service)
             {
-            case ServiceType.Twitch: return new TwitchToken(AuthFlow.AuthorizationCode, lbUser, userId);
-            case ServiceType.Spotify: return new SpotifyToken(AuthFlow.AuthorizationCode, lbUser, userId);
+            case ServiceType.Twitch: return new TwitchToken(AuthFlow.AuthorizationCode, lbUser);
+            case ServiceType.Spotify: return new SpotifyToken(AuthFlow.AuthorizationCode, lbUser);
             default:
                 throw new ArgumentOutOfRangeException();
             }
         }
 
-        private string FormTokenDictionaryKey(ServiceType service, string lbUser, string id)
+        private string FormTokenDictionaryKey(ServiceType service, string lbUser)
         {
-            return service.ToString() + "." + lbUser + id;
+            return Utils.FormConfName(
+                Common.Constants.PROP_STORE_USER_DOMAIN, lbUser, service.ToString().ToLower(), Common.Constants.PROP_STORE_TOKEN_PROP
+            );
         }
 
         private AuthManager()
@@ -38,16 +40,16 @@ namespace LukeBot.API
         }
 
 
-        public Token GetToken(ServiceType service, string lbUser, string userId)
+        public Token GetToken(ServiceType service, string lbUser)
         {
-            string tokenKey = FormTokenDictionaryKey(service, lbUser, userId);
+            string tokenKey = FormTokenDictionaryKey(service, lbUser);
 
             mMutex.WaitOne();
 
             Token ret;
             if (!mTokens.TryGetValue(tokenKey, out ret))
             {
-                ret = NewTokenForService(service, lbUser, userId);
+                ret = NewTokenForService(service, lbUser);
                 mTokens[tokenKey] = ret;
             }
 
@@ -55,9 +57,9 @@ namespace LukeBot.API
             return ret;
         }
 
-        public void InvalidateToken(ServiceType service, string lbUser, string id)
+        public void InvalidateToken(ServiceType service, string lbUser)
         {
-            string tokenKey = FormTokenDictionaryKey(service, lbUser, id);
+            string tokenKey = FormTokenDictionaryKey(service, lbUser);
 
             mMutex.WaitOne();
 

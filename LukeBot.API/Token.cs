@@ -47,7 +47,7 @@ namespace LukeBot.API
             Loaded = true;
         }
 
-        public Token(string service, string lbUser, string userId, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)
+        public Token(string service, string lbUser, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)
         {
             if (callbackURL.StartsWith("https://localhost"))
             {

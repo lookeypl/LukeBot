@@ -39,7 +39,7 @@ namespace LukeBot
         void LoadUsers()
         {
             string usersProp = Utils.FormConfName(
-                Constants.PROP_STORE_LUKEBOT_DOMAIN, Constants.PROP_STORE_USERS_PROP
+                Constants.LUKEBOT_USER_ID, Constants.PROP_STORE_USERS_PROP
             );
 
             if (!Conf.Exists(usersProp))
@@ -91,7 +91,7 @@ namespace LukeBot
             string[] users;
 
             string propName = Utils.FormConfName(
-                Constants.PROP_STORE_LUKEBOT_DOMAIN, Constants.PROP_STORE_USERS_PROP
+                Constants.LUKEBOT_USER_ID, Constants.PROP_STORE_USERS_PROP
             );
             if (!Conf.TryGet<string[]>(propName, out users))
             {
@@ -111,7 +111,7 @@ namespace LukeBot
             string[] users;
 
             string propName = Utils.FormConfName(
-                Constants.PROP_STORE_LUKEBOT_DOMAIN, Constants.PROP_STORE_USERS_PROP
+                Constants.LUKEBOT_USER_ID, Constants.PROP_STORE_USERS_PROP
             );
             if (!Conf.TryGet<string[]>(propName, out users))
             {
@@ -168,7 +168,7 @@ namespace LukeBot
 
         public void AddUser(string lbUsername)
         {
-            if (mUsers.ContainsKey(lbUsername) || lbUsername == Constants.PROP_STORE_LUKEBOT_DOMAIN)
+            if (mUsers.ContainsKey(lbUsername) || lbUsername == Constants.LUKEBOT_USER_ID)
                 throw new UsernameNotAvailableException(lbUsername);
 
             UserContext uc = new UserContext(lbUsername);

@@ -5,11 +5,10 @@ namespace LukeBot.API
 {
     public class SpotifyToken: Token
     {
-        public SpotifyToken(AuthFlow flow, string lbUser, string userId)
+        public SpotifyToken(AuthFlow flow, string lbUser)
             : base(
                 Constants.SPOTIFY_SERVICE_NAME,
                 lbUser,
-                userId,
                 flow,
                 "https://accounts.spotify.com/authorize",
                 "https://accounts.spotify.com/api/token",

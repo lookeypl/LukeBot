@@ -1,8 +1,7 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Threading;
 using System.Collections.Generic;
-using LukeBot.Common;
+using LukeBot.Logging;
 using LukeBot.API;
 using LukeBot.Spotify.Common;
 using LukeBot.Communication;

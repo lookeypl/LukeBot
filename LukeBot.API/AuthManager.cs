@@ -1,7 +1,9 @@
-﻿using LukeBot.Common;
-using System;
+﻿using System;
 using System.Threading;
 using System.Collections.Generic;
+using LukeBot.Common;
+using LukeBot.Config;
+using LukeBot.Logging;
 
 
 namespace LukeBot.API
@@ -12,8 +14,8 @@ namespace LukeBot.API
             new Lazy<AuthManager>(() => new AuthManager());
         public static AuthManager Instance { get { return mInstance.Value; } }
 
-        Dictionary<string, Token> mTokens;
-        Mutex mMutex;
+        Dictionary<Path, Token> mTokens = new();
+        Mutex mMutex = new();
 
         private Token NewTokenForService(ServiceType service, string lbUser)
         {
@@ -26,23 +28,23 @@ namespace LukeBot.API
             }
         }
 
-        private string FormTokenDictionaryKey(ServiceType service, string lbUser)
+        private Path FormTokenDictionaryKey(ServiceType service, string lbUser)
         {
-            return Utils.FormConfName(
-                Common.Constants.PROP_STORE_USER_DOMAIN, lbUser, service.ToString().ToLower(), Common.Constants.PROP_STORE_TOKEN_PROP
-            );
+            return Path.Start()
+                .Push(Common.Constants.PROP_STORE_USER_DOMAIN)
+                .Push(lbUser)
+                .Push(service.ToString().ToLower())
+                .Push(Common.Constants.PROP_STORE_TOKEN_PROP);
         }
 
         private AuthManager()
         {
-            mTokens = new Dictionary<string, Token>();
-            mMutex = new Mutex();
         }
 
 
         public Token GetToken(ServiceType service, string lbUser)
         {
-            string tokenKey = FormTokenDictionaryKey(service, lbUser);
+            Path tokenKey = FormTokenDictionaryKey(service, lbUser);
 
             mMutex.WaitOne();
 
@@ -59,7 +61,7 @@ namespace LukeBot.API
 
         public void InvalidateToken(ServiceType service, string lbUser)
         {
-            string tokenKey = FormTokenDictionaryKey(service, lbUser);
+            Path tokenKey = FormTokenDictionaryKey(service, lbUser);
 
             mMutex.WaitOne();
 

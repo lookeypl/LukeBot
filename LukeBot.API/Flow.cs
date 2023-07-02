@@ -26,7 +26,7 @@ namespace LukeBot.API
 
         private string ReadFromConfig(string type)
         {
-            string configPath = Utils.FormConfName(mService, type);
+            Config.Path configPath = Config.Path.Form(mService, type);
             return Conf.Get<string>(configPath);
         }
 

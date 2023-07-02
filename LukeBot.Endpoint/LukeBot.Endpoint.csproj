@@ -37,6 +37,7 @@
     <ProjectReference Include="../LukeBot.Common/LukeBot.Common.csproj" />
     <ProjectReference Include="../LukeBot.Communication/LukeBot.Communication.csproj" />
     <ProjectReference Include="../LukeBot.Config/LukeBot.Config.csproj" />
+    <ProjectReference Include="../LukeBot.Logging/LukeBot.Logging.csproj" />
     <ProjectReference Include="../LukeBot.Widget.Common/LukeBot.Widget.Common.csproj" />
   </ItemGroup>
 

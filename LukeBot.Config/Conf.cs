@@ -1,4 +1,4 @@
-using LukeBot.Common;
+using LukeBot.Logging;
 
 
 namespace LukeBot.Config
@@ -12,39 +12,39 @@ namespace LukeBot.Config
             mStore = new PropertyStore(storeDir);
         }
 
-        public static void Add(string name, Property p)
+        public static void Add(Path path, Property p)
         {
-            mStore.Add(name, p);
+            mStore.Add(path, p);
         }
 
-        public static bool Exists(string name)
+        public static bool Exists(Path path)
         {
-            return mStore.Exists(name);
+            return mStore.Exists(path);
         }
 
-        public static bool Exists<T>(string name)
+        public static bool Exists<T>(Path path)
         {
-            return mStore.Exists<T>(name);
+            return mStore.Exists<T>(path);
         }
 
-        public static Property Get(string name)
+        public static Property Get(Path path)
         {
-            return mStore.Get(name);
+            return mStore.Get(path);
         }
 
-        public static T Get<T>(string name)
+        public static T Get<T>(Path path)
         {
-            return mStore.Get(name).Get<T>();
+            return mStore.Get(path).Get<T>();
         }
 
-        public static void Modify<T>(string name, T value)
+        public static void Modify<T>(Path path, T value)
         {
-            mStore.Modify<T>(name, value);
+            mStore.Modify<T>(path, value);
         }
 
-        public static void Remove(string name)
+        public static void Remove(Path path)
         {
-            mStore.Remove(name);
+            mStore.Remove(path);
         }
 
         public static void Save()
@@ -52,11 +52,11 @@ namespace LukeBot.Config
             mStore.Save();
         }
 
-        public static bool TryGet<T>(string name, out T val)
+        public static bool TryGet<T>(Path path, out T val)
         {
             try
             {
-                val = Get<T>(name);
+                val = Get<T>(path);
                 return true;
             }
             catch (PropertyNotFoundException)

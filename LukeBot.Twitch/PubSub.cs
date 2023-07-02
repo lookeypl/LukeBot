@@ -5,7 +5,7 @@ using System.Text;
 using System.Timers;
 using System.Threading;
 using System.Threading.Tasks;
-using LukeBot.Common;
+using LukeBot.Logging;
 using LukeBot.API;
 using LukeBot.Communication;
 using LukeBot.Communication.Events;

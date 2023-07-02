@@ -1,4 +1,5 @@
 ﻿using LukeBot.Common;
+using LukeBot.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;

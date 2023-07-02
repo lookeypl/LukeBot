@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using LukeBot.Common;
+using LukeBot.Logging;
 
 
 namespace LukeBot.Common

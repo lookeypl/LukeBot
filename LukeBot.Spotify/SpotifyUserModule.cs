@@ -1,11 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Net;
-using LukeBot.Common;
+using LukeBot.Logging;
 using LukeBot.API;
 using LukeBot.Config;
 using LukeBot.Module;
-using CommonUtils = LukeBot.Common.Utils;
 using CommonConstants = LukeBot.Common.Constants;
 
 
@@ -65,7 +64,11 @@ namespace LukeBot.Spotify
             Directory.CreateDirectory(storagePath);
 
             mSpotifyUsername = Conf.Get<string>(
-                CommonUtils.FormConfName(CommonConstants.PROP_STORE_USER_DOMAIN, LBUser, CommonConstants.SPOTIFY_MODULE_NAME, Constants.PROP_STORE_SPOTIFY_LOGIN_PROP)
+                Config.Path.Start()
+                    .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
+                    .Push(LBUser)
+                    .Push(CommonConstants.SPOTIFY_MODULE_NAME)
+                    .Push(Constants.PROP_STORE_SPOTIFY_LOGIN_PROP)
             );
 
             Login(mSpotifyUsername);

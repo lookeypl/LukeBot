@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Globals;
+using LukeBot.Logging;
 using LukeBot.Module;
 
 
@@ -19,9 +20,10 @@ namespace LukeBot
 
         private void AddModuleToConfig(string module)
         {
-            string modulesProp = Utils.FormConfName(
-                Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_MODULES_DOMAIN
-            );
+            Path modulesProp = Path.Start()
+                .Push(Constants.PROP_STORE_USER_DOMAIN)
+                .Push(Username)
+                .Push(PROP_STORE_MODULES_DOMAIN);
 
             string[] modules;
             if (!Conf.TryGet<string[]>(modulesProp, out modules))
@@ -40,9 +42,10 @@ namespace LukeBot
 
         private void LoadModulesFromConfig()
         {
-            string modulesProp = Utils.FormConfName(
-                Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_MODULES_DOMAIN
-            );
+            Path modulesProp = Path.Start()
+                .Push(Constants.PROP_STORE_USER_DOMAIN)
+                .Push(Username)
+                .Push(PROP_STORE_MODULES_DOMAIN);
 
             string[] modules;
             if (!Conf.TryGet<string[]>(modulesProp, out modules))
@@ -70,9 +73,10 @@ namespace LukeBot
 
         private void RemoveModuleFromConfig(string module)
         {
-            string modulesProp = Utils.FormConfName(
-                Constants.PROP_STORE_USER_DOMAIN, Username, PROP_STORE_MODULES_DOMAIN
-            );
+            Path modulesProp = Path.Start()
+                .Push(Constants.PROP_STORE_USER_DOMAIN)
+                .Push(Username)
+                .Push(PROP_STORE_MODULES_DOMAIN);
 
             string[] modules;
             if (!Conf.TryGet<string[]>(modulesProp, out modules))

@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading;
 using LukeBot.Common;
 using LukeBot.Config;
+using LukeBot.Logging;
 
 
 namespace LukeBot.API
@@ -17,7 +18,7 @@ namespace LukeBot.API
     public class Token
     {
         private Flow mFlow = null;
-        private string mTokenPath = null;
+        private Config.Path mTokenPath = null;
         private AuthToken mToken = null;
         private Mutex mMutex = null;
 
@@ -69,9 +70,11 @@ namespace LukeBot.API
 
             mMutex = new Mutex();
 
-            mTokenPath = Utils.FormConfName(
-                Common.Constants.PROP_STORE_USER_DOMAIN, lbUser, service, Common.Constants.PROP_STORE_TOKEN_PROP
-            );
+            mTokenPath = Config.Path.Start()
+                .Push(Common.Constants.PROP_STORE_USER_DOMAIN)
+                .Push(lbUser)
+                .Push(service)
+                .Push(Common.Constants.PROP_STORE_TOKEN_PROP);
 
             if (Conf.Exists(mTokenPath)) {
                 Logger.Log().Debug("Found token at config {0}", mTokenPath);

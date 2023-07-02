@@ -1,5 +1,5 @@
 using MSLogging = Microsoft.Extensions.Logging;
-using LukeBot.Common;
+using LukeBot.Logging;
 using System;
 
 namespace LukeBot.Endpoint
@@ -17,17 +17,17 @@ namespace LukeBot.Endpoint
             Logger.Log().Debug("Created LBLogger {0} for Kestrel with category {0}", mName, mCategory);
         }
 
-        private LukeBot.Common.LogLevel MSLogLevelToLBLogLevel(MSLogging.LogLevel level)
+        private LukeBot.Logging.LogLevel MSLogLevelToLBLogLevel(MSLogging.LogLevel level)
         {
             switch (level)
             {
-            case MSLogging.LogLevel.Trace: return LukeBot.Common.LogLevel.Trace;
-            case MSLogging.LogLevel.Debug: return LukeBot.Common.LogLevel.Debug;
-            case MSLogging.LogLevel.Information: return LukeBot.Common.LogLevel.Info;
-            case MSLogging.LogLevel.Warning: return LukeBot.Common.LogLevel.Warning;
-            case MSLogging.LogLevel.Error: return LukeBot.Common.LogLevel.Error;
-            case MSLogging.LogLevel.Critical: return LukeBot.Common.LogLevel.Error;
-            default: return LukeBot.Common.LogLevel.None;
+            case MSLogging.LogLevel.Trace: return LukeBot.Logging.LogLevel.Trace;
+            case MSLogging.LogLevel.Debug: return LukeBot.Logging.LogLevel.Debug;
+            case MSLogging.LogLevel.Information: return LukeBot.Logging.LogLevel.Info;
+            case MSLogging.LogLevel.Warning: return LukeBot.Logging.LogLevel.Warning;
+            case MSLogging.LogLevel.Error: return LukeBot.Logging.LogLevel.Error;
+            case MSLogging.LogLevel.Critical: return LukeBot.Logging.LogLevel.Error;
+            default: return LukeBot.Logging.LogLevel.None;
             }
         }
 

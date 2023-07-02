@@ -2,6 +2,12 @@ namespace LukeBot.Config
 {
     public class PropertyTypeInvalidException: System.Exception
     {
-        public PropertyTypeInvalidException(string fmt, params object[] args): base(string.Format(fmt, args)) {}
+        public PropertyTypeInvalidException(System.Type type)
+            : this(type.ToString())
+        {}
+
+        public PropertyTypeInvalidException(string type)
+            : base(string.Format("Invalid property type {0}", type))
+        {}
     }
 }

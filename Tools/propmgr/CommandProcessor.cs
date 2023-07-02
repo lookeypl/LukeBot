@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using LukeBot.Common;
 using LukeBot.Config;
+using LukeBot.Logging;
 using CommandLine;
 
 namespace propmgr;
@@ -149,7 +150,7 @@ public class CommandProcessor
     {
         Logger.Log().Info("Adding Property {0} {1} to store {2}", cmd.Type, cmd.Name, cmd.StoreDir);
         PropertyStore store = OpenStore(cmd);
-        store.Add(cmd.Name, Property.Create(cmd.Type, cmd.Value));
+        store.Add(LukeBot.Config.Path.Parse(cmd.Name), Property.Create(cmd.Type, cmd.Value));
         store.Save();
     }
 
@@ -157,7 +158,7 @@ public class CommandProcessor
     {
         Logger.Log().Info("Removing Property {0} from store {1}", cmd.Name, cmd.StoreDir);
         PropertyStore store = OpenStore(cmd);
-        store.Remove(cmd.Name);
+        store.Remove(LukeBot.Config.Path.Parse(cmd.Name));
         store.Save();
     }
 
@@ -165,7 +166,7 @@ public class CommandProcessor
     {
         Logger.Log().Info("Modify Property {0} in store {1}", cmd.Name, cmd.StoreDir);
         PropertyStore store = OpenStore(cmd);
-        store.Modify(cmd.Name, cmd.Value);
+        store.Modify(LukeBot.Config.Path.Parse(cmd.Name), cmd.Value);
         store.Save();
     }
 

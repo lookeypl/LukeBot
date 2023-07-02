@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
-using LukeBot.Common;
+using LukeBot.Logging;
 
 
 namespace LukeBot.Interface

@@ -2,7 +2,7 @@
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using LukeBot.Common;
+using LukeBot.Logging;
 
 
 namespace LukeBot.Config
@@ -26,9 +26,9 @@ namespace LukeBot.Config
             return p;
         }
 
-        private void Load_WalkNode(PropertyStore store, string fullName, JObject o)
+        private void Load_WalkNode(PropertyStore store, Path path, JObject o)
         {
-            Logger.Log().Secure("Walking node fullName {0}", fullName);
+            Logger.Log().Secure("Walking node fullName {0}", path.ToString());
 
             if ((string)o["type"] == typeof(PropertyDomain).ToString())
             {
@@ -36,12 +36,12 @@ namespace LukeBot.Config
 
                 foreach (JObject val in values)
                 {
-                    Load_WalkNode(store, fullName + "." + (string)val["name"], val);
+                    Load_WalkNode(store, path.Copy().Push((string)val["name"]), val);
                 }
             }
             else
             {
-                store.Add(fullName, JObjectToProperty(o));
+                store.Add(path, JObjectToProperty(o));
             }
         }
 
@@ -62,7 +62,7 @@ namespace LukeBot.Config
 
             foreach (JObject val in (JArray)rootObject["value"])
             {
-                Load_WalkNode(store, (string)val["name"], val);
+                Load_WalkNode(store, Path.Start().Push((string)val["name"]), val);
             }
         }
 

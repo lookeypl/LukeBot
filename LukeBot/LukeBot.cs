@@ -1,6 +1,7 @@
 ﻿using LukeBot.Interface;
 using LukeBot.Common;
 using LukeBot.Config;
+using LukeBot.Logging;
 using LukeBot.Globals;
 using LukeBot.Communication;
 using System.Collections.Generic;
@@ -38,9 +39,9 @@ namespace LukeBot
 
         void LoadUsers()
         {
-            string usersProp = Utils.FormConfName(
-                Constants.LUKEBOT_USER_ID, Constants.PROP_STORE_USERS_PROP
-            );
+            Path usersProp = Path.Start()
+                .Push(Constants.LUKEBOT_USER_ID)
+                .Push(Constants.PROP_STORE_USERS_PROP);
 
             if (!Conf.Exists(usersProp))
             {
@@ -48,7 +49,7 @@ namespace LukeBot
                 return;
             }
 
-            string[] users = Conf.Get<string[]>("lukebot.users");
+            string[] users = Conf.Get<string[]>(usersProp);
 
             if (users.Length == 0)
             {
@@ -90,9 +91,10 @@ namespace LukeBot
         {
             string[] users;
 
-            string propName = Utils.FormConfName(
-                Constants.LUKEBOT_USER_ID, Constants.PROP_STORE_USERS_PROP
-            );
+            Path propName = Path.Start()
+                .Push(Constants.LUKEBOT_USER_ID)
+                .Push(Constants.PROP_STORE_USERS_PROP);
+
             if (!Conf.TryGet<string[]>(propName, out users))
             {
                 users = new string[1];
@@ -110,9 +112,10 @@ namespace LukeBot
         {
             string[] users;
 
-            string propName = Utils.FormConfName(
-                Constants.LUKEBOT_USER_ID, Constants.PROP_STORE_USERS_PROP
-            );
+            Path propName = Path.Start()
+                .Push(Constants.LUKEBOT_USER_ID)
+                .Push(Constants.PROP_STORE_USERS_PROP);
+
             if (!Conf.TryGet<string[]>(propName, out users))
             {
                 return;
@@ -131,9 +134,9 @@ namespace LukeBot
                 Conf.Modify<string[]>(propName, users);
 
             // also clear entire branch of user-related settings
-            string userConfDomain = Utils.FormConfName(
-                Constants.PROP_STORE_USER_DOMAIN, name
-            );
+            Path userConfDomain = Path.Start()
+                .Push(Constants.PROP_STORE_USER_DOMAIN)
+                .Push(name);
 
             if (Conf.Exists(userConfDomain))
                 Conf.Remove(userConfDomain);

@@ -4,7 +4,6 @@ using LukeBot.Communication;
 using LukeBot.Config;
 using LukeBot.Interface;
 using LukeBot.Module;
-using CommonUtils = LukeBot.Common.Utils;
 using CommonConstants = LukeBot.Common.Constants;
 
 
@@ -17,9 +16,12 @@ namespace LukeBot.Spotify
 
         private bool UserModuleLoadPrerequisites(string lbUser)
         {
-            string userSpotifyLoginProp = CommonUtils.FormConfName(
-                CommonConstants.PROP_STORE_USER_DOMAIN, lbUser, CommonConstants.SPOTIFY_MODULE_NAME, Constants.PROP_STORE_SPOTIFY_LOGIN_PROP
-            );
+            Path userSpotifyLoginProp = Path.Start()
+                .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
+                .Push(lbUser)
+                .Push(CommonConstants.SPOTIFY_MODULE_NAME)
+                .Push(Constants.PROP_STORE_SPOTIFY_LOGIN_PROP);
+
             string login;
             if (Conf.TryGet<string>(userSpotifyLoginProp, out login))
                 return true; // quietly exit - login is already there, prerequisites are met

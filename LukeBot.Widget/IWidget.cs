@@ -5,8 +5,8 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using LukeBot.Common;
 using LukeBot.Config;
+using LukeBot.Logging;
 using LukeBot.Widget.Common;
 
 

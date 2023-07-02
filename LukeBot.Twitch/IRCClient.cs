@@ -1,6 +1,6 @@
-using System.Collections.Generic;
-using LukeBot.Common;
 using LukeBot.API;
+using LukeBot.Common;
+using LukeBot.Logging;
 
 
 namespace LukeBot.Twitch

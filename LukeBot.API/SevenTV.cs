@@ -1,4 +1,4 @@
-using LukeBot.Common;
+using LukeBot.Logging;
 using System.Collections.Generic;
 using System.Net;
 using Newtonsoft.Json.Linq;

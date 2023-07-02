@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using LukeBot.Common;
 using LukeBot.Communication;
+using LukeBot.Logging;
 
 
 namespace LukeBot.API

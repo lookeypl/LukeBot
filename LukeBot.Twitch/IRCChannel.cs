@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System;
-using LukeBot.Common;
+using LukeBot.Logging;
 using LukeBot.Communication.Events;
 using Command = LukeBot.Twitch.Common.Command;
 

@@ -2,12 +2,9 @@
 using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
-using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Module;
 using LukeBot.Widget.Common;
-using Intercom = LukeBot.Communication.Events.Intercom;
-using CommonUtils = LukeBot.Common.Utils;
 
 
 namespace LukeBot.Widget
@@ -18,19 +15,18 @@ namespace LukeBot.Widget
         private string mLBUser;
 
 
-        private string GetWidgetCollectionPropertyName()
+        private Path GetWidgetCollectionPropertyName()
         {
-            return CommonUtils.FormConfName(
-                LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN,
-                mLBUser,
-                LukeBot.Common.Constants.WIDGET_MODULE_NAME,
-                Constants.PROP_WIDGETS
-            );
+            return Path.Start()
+                .Push(LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN)
+                .Push(mLBUser)
+                .Push(LukeBot.Common.Constants.WIDGET_MODULE_NAME)
+                .Push(Constants.PROP_WIDGETS);
         }
 
         private void LoadWidgetsFromConfig()
         {
-            string widgetCollectionProp = GetWidgetCollectionPropertyName();
+            Path widgetCollectionProp = GetWidgetCollectionPropertyName();
 
             WidgetDesc[] widgets;
             if (!Conf.TryGet<WidgetDesc[]>(widgetCollectionProp, out widgets))
@@ -42,7 +38,7 @@ namespace LukeBot.Widget
 
         private void SaveWidgetToConfig(IWidget w)
         {
-            string widgetCollectionProp = GetWidgetCollectionPropertyName();
+            Path widgetCollectionProp = GetWidgetCollectionPropertyName();
 
             WidgetDesc wd = w.GetDesc();
 
@@ -63,7 +59,7 @@ namespace LukeBot.Widget
 
         private void RemoveWidgetFromConfig(string id)
         {
-            string widgetCollectionProp = GetWidgetCollectionPropertyName();
+            Path widgetCollectionProp = GetWidgetCollectionPropertyName();
 
             WidgetDesc[] commands;
             if (!Conf.TryGet<WidgetDesc[]>(widgetCollectionProp, out commands))

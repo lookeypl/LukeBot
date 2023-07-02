@@ -3,6 +3,7 @@ using LukeBot.API;
 using LukeBot.Communication;
 using LukeBot.Communication.Events;
 using LukeBot.Config;
+using LukeBot.Logging;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -306,9 +307,10 @@ namespace LukeBot.Twitch
             int reconnectCount = Constants.RECONNECT_ATTEMPTS;
             bool successful = false;
 
-            string reconnectCountProp = CommonUtils.FormConfName(
-                CommonConstants.LUKEBOT_USER_ID, CommonConstants.PROP_STORE_RECONNECT_COUNT_PROP
-            );
+            Config.Path reconnectCountProp = Config.Path.Start()
+                .Push(CommonConstants.LUKEBOT_USER_ID)
+                .Push(CommonConstants.PROP_STORE_RECONNECT_COUNT_PROP);
+
             int reconnectCountConf = 0;
             if (Conf.TryGet(reconnectCountProp, out reconnectCountConf))
             {

@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Net;
-using LukeBot.Common;
 using LukeBot.API;
+using LukeBot.Common;
+using LukeBot.Logging;
 using LukeBot.Module;
 using Widget = LukeBot.Widget;
 

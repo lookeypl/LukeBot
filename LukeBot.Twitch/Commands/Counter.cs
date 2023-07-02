@@ -1,4 +1,4 @@
-using LukeBot.Common;
+using LukeBot.Logging;
 using Command = LukeBot.Twitch.Common.Command;
 
 

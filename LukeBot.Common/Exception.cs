@@ -1,4 +1,4 @@
-﻿using System;
+﻿using LukeBot.Logging;
 
 namespace LukeBot.Common
 {

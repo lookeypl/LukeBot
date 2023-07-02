@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using LukeBot.Common;
+using LukeBot.Logging;
 using LukeBot.Twitch.Common;
 
 

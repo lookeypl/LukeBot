@@ -1,14 +1,14 @@
 using System;
-using System.Net;
 using System.Collections.Generic;
 using LukeBot.API;
-using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Config;
 using LukeBot.Interface;
+using LukeBot.Logging;
 using LukeBot.Module;
 using LukeBot.Twitch.Common;
 
+using CommonConstants = LukeBot.Common.Constants;
 using CommonUtils = LukeBot.Common.Utils;
 using Command = LukeBot.Twitch.Common.Command;
 using Intercom = LukeBot.Communication.Events.Intercom;
@@ -27,29 +27,28 @@ namespace LukeBot.Twitch
 
         // Config interactions //
 
-        private string GetCommandCollectionPropertyName(string lbUser)
+        private Path GetCommandCollectionPropertyName(string lbUser)
         {
-            return CommonUtils.FormConfName(
-                LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN,
-                lbUser,
-                LukeBot.Common.Constants.TWITCH_MODULE_NAME,
-                Constants.PROP_TWITCH_COMMANDS
-            );
+            return Path.Start()
+                .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
+                .Push(lbUser)
+                .Push(CommonConstants.TWITCH_MODULE_NAME)
+                .Push(Constants.PROP_TWITCH_COMMANDS);
         }
 
         private string GetTwitchChannel(string lbUser)
         {
-            return Conf.Get<string>(CommonUtils.FormConfName(
-                LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN,
-                lbUser,
-                LukeBot.Common.Constants.TWITCH_MODULE_NAME,
-                Constants.PROP_TWITCH_USER_LOGIN
-            ));
+            return Conf.Get<string>(Path.Start()
+                .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
+                .Push(lbUser)
+                .Push(CommonConstants.TWITCH_MODULE_NAME)
+                .Push(Constants.PROP_TWITCH_USER_LOGIN)
+            );
         }
 
         private void UpdateCommandInConfig(string lbUser, string commandName)
         {
-            string cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
+            Path cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
 
             Command::Descriptor[] commands = Conf.Get<Command::Descriptor[]>(cmdCollectionProp);
 
@@ -60,7 +59,7 @@ namespace LukeBot.Twitch
 
         private void LoadCommandsFromConfig(string lbUser)
         {
-            string cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
+            Path cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
 
             Command::Descriptor[] commands;
             if (!Conf.TryGet<Command::Descriptor[]>(cmdCollectionProp, out commands))
@@ -75,7 +74,7 @@ namespace LukeBot.Twitch
 
         private void SaveCommandToConfig(string lbUser, string name, Command.ICommand cmd)
         {
-            string cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
+            Path cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
 
             Command::Descriptor desc = cmd.ToDescriptor();
 
@@ -96,7 +95,7 @@ namespace LukeBot.Twitch
 
         private void RemoveCommandFromConfig(string lbUser, string name)
         {
-            string cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
+            Path cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
 
             Command::Descriptor[] commands;
             if (!Conf.TryGet<Command::Descriptor[]>(cmdCollectionProp, out commands))
@@ -170,9 +169,12 @@ namespace LukeBot.Twitch
 
         private bool UserModuleLoadPrerequisites(string lbUser)
         {
-            string userTwitchLoginProp = LukeBot.Common.Utils.FormConfName(
-                LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN, lbUser, LukeBot.Common.Constants.TWITCH_MODULE_NAME, Constants.PROP_TWITCH_USER_LOGIN
-            );
+            Path userTwitchLoginProp = Path.Start()
+                .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
+                .Push(lbUser)
+                .Push(CommonConstants.TWITCH_MODULE_NAME)
+                .Push(Constants.PROP_TWITCH_USER_LOGIN);
+
             string login;
             if (Conf.TryGet<string>(userTwitchLoginProp, out login))
                 return true; // quietly exit - login is already there, prerequisites are met
@@ -204,10 +206,14 @@ namespace LukeBot.Twitch
 
         public TwitchMainModule()
         {
-            Comms.Communication.Register(LukeBot.Common.Constants.TWITCH_MODULE_NAME);
+            Comms.Communication.Register(CommonConstants.TWITCH_MODULE_NAME);
 
-            mBotLogin = Conf.Get<string>("twitch.login");
-            if (mBotLogin == LukeBot.Common.Constants.DEFAULT_LOGIN_NAME)
+            mBotLogin = Conf.Get<string>(Path.Start()
+                .Push(CommonConstants.TWITCH_MODULE_NAME)
+                .Push(Constants.PROP_TWITCH_USER_LOGIN)
+            );
+
+            if (mBotLogin == CommonConstants.DEFAULT_LOGIN_NAME)
             {
                 throw new PropertyFileInvalidException("Bot's Twitch login has not been provided in Property Store");
             }
@@ -237,8 +243,11 @@ namespace LukeBot.Twitch
 
         public TwitchUserModule JoinChannel(string lbUser)
         {
-            string channel = Conf.Get<string>(
-                CommonUtils.FormConfName(LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN, lbUser, LukeBot.Common.Constants.TWITCH_MODULE_NAME, Constants.PROP_TWITCH_USER_LOGIN)
+            string channel = Conf.Get<string>(Path.Start()
+                .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
+                .Push(lbUser)
+                .Push(CommonConstants.TWITCH_MODULE_NAME)
+                .Push(Constants.PROP_TWITCH_USER_LOGIN)
             );
 
             if (mUsers.ContainsKey(channel))

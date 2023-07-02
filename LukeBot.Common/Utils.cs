@@ -65,15 +65,5 @@ namespace LukeBot.Common
 
             return result;
         }
-
-        public static string FormConfName(params string[] names)
-        {
-            string s = names[0];
-            for (int i = 1; i < names.Length; ++i)
-            {
-                s = s + "." + names[i];
-            }
-            return s;
-        }
     }
 }

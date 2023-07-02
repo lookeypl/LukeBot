@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Reflection;
-using LukeBot.Common;
+using LukeBot.Logging;
 using Newtonsoft.Json;
 using System.Linq;
 
@@ -60,7 +60,7 @@ namespace LukeBot.Config
         public T Get<T>()
         {
             if (!IsType(typeof(T)))
-                throw new PropertyTypeInvalidException("Invalid type {0} for property {1}", typeof(T).ToString(), Name);
+                throw new PropertyTypeInvalidException(typeof(T));
 
             return (this as PropertyType<T>).Value;
         }
@@ -68,7 +68,7 @@ namespace LukeBot.Config
         public void Set<T>(T v)
         {
             if (!IsType(typeof(T)))
-                throw new PropertyTypeInvalidException("Invalid type {0} for property {1}", typeof(T).ToString(), Name);
+                throw new PropertyTypeInvalidException(typeof(T));
 
             (this as PropertyType<T>).Value = v;
         }
@@ -107,7 +107,7 @@ namespace LukeBot.Config
             Type t = FindValueType(p.mTypeStr);
             if (t == null)
             {
-                throw new PropertyTypeInvalidException("Property type {0} is invalid", p.mTypeStr);
+                throw new PropertyTypeInvalidException(p.mTypeStr);
             }
 
             return AllocateProperty(t, p.mSerializedVal);

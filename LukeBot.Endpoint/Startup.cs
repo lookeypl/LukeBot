@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Text.Json;
 using LukeBot.Common;
+using LukeBot.Logging;
 using LukeBot.API;
 using LukeBot.Communication;
 using Intercom = LukeBot.Communication.Events.Intercom;

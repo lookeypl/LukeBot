@@ -1,6 +1,5 @@
-using System.Collections.Generic;
 using System.Net;
-using LukeBot.Common;
+using LukeBot.Logging;
 using Newtonsoft.Json.Linq;
 
 

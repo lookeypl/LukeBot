@@ -65,6 +65,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Widget.Common", "Lu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Module", "LukeBot.Module\LukeBot.Module.csproj", "{5C353428-854A-4F96-BF05-5C64690D3006}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Logging", "LukeBot.Logging\LukeBot.Logging.csproj", "{C97344BC-C3DB-4080-8DDE-E3EDB755061B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -136,8 +138,8 @@ Global
 		{283EE86E-47C6-4248-BC2D-BA185CF37A80}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{283EE86E-47C6-4248-BC2D-BA185CF37A80}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{283EE86E-47C6-4248-BC2D-BA185CF37A80}.Release|Any CPU.Build.0 = Release|Any CPU
-		{283EE86E-47C6-4248-BC2D-BA185CF37A80}.SecureDebug|Any CPU.ActiveCfg = Debug|Any CPU
-		{283EE86E-47C6-4248-BC2D-BA185CF37A80}.SecureDebug|Any CPU.Build.0 = Debug|Any CPU
+		{283EE86E-47C6-4248-BC2D-BA185CF37A80}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{283EE86E-47C6-4248-BC2D-BA185CF37A80}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 		{5A13C2EA-88E6-4691-986F-57C337DE1EFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5A13C2EA-88E6-4691-986F-57C337DE1EFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A13C2EA-88E6-4691-986F-57C337DE1EFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -148,8 +150,8 @@ Global
 		{8F60A7EE-B21A-4323-B587-DD171F1A0DFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8F60A7EE-B21A-4323-B587-DD171F1A0DFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8F60A7EE-B21A-4323-B587-DD171F1A0DFE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8F60A7EE-B21A-4323-B587-DD171F1A0DFE}.SecureDebug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8F60A7EE-B21A-4323-B587-DD171F1A0DFE}.SecureDebug|Any CPU.Build.0 = Debug|Any CPU
+		{8F60A7EE-B21A-4323-B587-DD171F1A0DFE}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{8F60A7EE-B21A-4323-B587-DD171F1A0DFE}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 		{70859DAB-A460-4119-88CA-A5994408328B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{70859DAB-A460-4119-88CA-A5994408328B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{70859DAB-A460-4119-88CA-A5994408328B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -166,8 +168,8 @@ Global
 		{EA80514F-0F69-4894-9077-572D9522851B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EA80514F-0F69-4894-9077-572D9522851B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EA80514F-0F69-4894-9077-572D9522851B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EA80514F-0F69-4894-9077-572D9522851B}.SecureDebug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EA80514F-0F69-4894-9077-572D9522851B}.SecureDebug|Any CPU.Build.0 = Debug|Any CPU
+		{EA80514F-0F69-4894-9077-572D9522851B}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{EA80514F-0F69-4894-9077-572D9522851B}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 		{D10E2AA7-867C-45F8-A600-764E58A608FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D10E2AA7-867C-45F8-A600-764E58A608FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D10E2AA7-867C-45F8-A600-764E58A608FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -178,8 +180,14 @@ Global
 		{5C353428-854A-4F96-BF05-5C64690D3006}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C353428-854A-4F96-BF05-5C64690D3006}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C353428-854A-4F96-BF05-5C64690D3006}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5C353428-854A-4F96-BF05-5C64690D3006}.SecureDebug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5C353428-854A-4F96-BF05-5C64690D3006}.SecureDebug|Any CPU.Build.0 = Debug|Any CPU
+		{5C353428-854A-4F96-BF05-5C64690D3006}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{5C353428-854A-4F96-BF05-5C64690D3006}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
+		{C97344BC-C3DB-4080-8DDE-E3EDB755061B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C97344BC-C3DB-4080-8DDE-E3EDB755061B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C97344BC-C3DB-4080-8DDE-E3EDB755061B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C97344BC-C3DB-4080-8DDE-E3EDB755061B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C97344BC-C3DB-4080-8DDE-E3EDB755061B}.SecureDebug|Any CPU.ActiveCfg = SecureDebug|Any CPU
+		{C97344BC-C3DB-4080-8DDE-E3EDB755061B}.SecureDebug|Any CPU.Build.0 = SecureDebug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

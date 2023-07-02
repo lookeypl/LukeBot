@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 
-namespace LukeBot.Common
+namespace LukeBot.Logging
 {
-    public class Timer
+    internal class Timer
     {
         private double mFreq = 0;
         private long mStart = 0;

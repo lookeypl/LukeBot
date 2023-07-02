@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Threading;
-using LukeBot.Common;
 using System;
 
 
@@ -28,17 +27,17 @@ namespace LukeBot.Config
         }
 
         // throws error if property already exists
-        public void Add(Queue<string> path, Property p)
+        public void Add(Path path, Property p)
         {
-            string name = path.Dequeue();
+            string name = path.Pop();
 
-            if (path.Count == 0)
+            if (path.Empty)
             {
                 // end of path, our prop should be added to this domain
                 p.SetName(name);
                 if (!mProperties.TryAdd(name, p))
                 {
-                    throw new PropertyAlreadyExistsException("Failed to add property");
+                    throw new PropertyAlreadyExistsException(name);
                 }
 
                 // added successfully
@@ -56,16 +55,16 @@ namespace LukeBot.Config
 
             if (!prop.IsType(typeof(PropertyDomain)))
             {
-                throw new PropertyNotADomainException("Expected property {0} to be a Domain", name);
+                throw new PropertyNotADomainException(name);
             }
 
             PropertyDomain domain = prop.Get<PropertyDomain>();
             domain.Add(path, p);
         }
 
-        public bool Exists(Queue<string> path)
+        public bool Exists(Path path)
         {
-            string name = path.Dequeue();
+            string name = path.Pop();
 
             Property p;
 
@@ -74,7 +73,7 @@ namespace LukeBot.Config
                 return false;
             }
 
-            if (path.Count == 0)
+            if (path.Empty)
             {
                 return true;
             }
@@ -87,9 +86,9 @@ namespace LukeBot.Config
             return false;
         }
 
-        public bool Exists<T>(Queue<string> path)
+        public bool Exists<T>(Path path)
         {
-            string name = path.Dequeue();
+            string name = path.Pop();
 
             Property p;
 
@@ -98,7 +97,7 @@ namespace LukeBot.Config
                 return false;
             }
 
-            if (path.Count == 0)
+            if (path.Empty)
             {
                 return p.IsType(typeof(T));
             }
@@ -111,22 +110,22 @@ namespace LukeBot.Config
             return false;
         }
 
-        public Property Get(Queue<string> path)
+        public Property Get(Path path)
         {
-            string name = path.Dequeue();
+            string name = path.Pop();
 
             Property p;
 
             if (!mProperties.TryGetValue(name, out p))
             {
-                throw new PropertyNotFoundException("Property \"{0}\" not found", name);
+                throw new PropertyNotFoundException(name);
             }
 
-            if (path.Count == 0)
+            if (path.Empty)
             {
                 if (p.IsType(typeof(PropertyDomain)))
                 {
-                    throw new PropertyNotFoundException("Requested property {0} is a domain", name);
+                    throw new PropertyIsADomainException(name);
                 }
 
                 if (p.IsType(typeof(LazyProperty)))
@@ -152,18 +151,18 @@ namespace LukeBot.Config
                 return p.Get<PropertyDomain>().Get(path);
             }
 
-            throw new PropertyNotFoundException("Property of name {0} is a domain, not a Property", name);
+            throw new PropertyIsADomainException(name);
         }
 
-        public void Remove(Queue<string> path)
+        public void Remove(Path path)
         {
-            string name = path.Dequeue();
+            string name = path.Pop();
 
-            if (path.Count == 0)
+            if (path.Empty)
             {
                 if (!mProperties.Remove(name))
                 {
-                    throw new PropertyNotFoundException("Couldn't find property to remove: {0}", name);
+                    throw new PropertyNotFoundException(name);
                 }
 
                 return;
@@ -173,12 +172,12 @@ namespace LukeBot.Config
 
             if (!mProperties.TryGetValue(name, out p))
             {
-                throw new PropertyNotFoundException("Couldn't find property domain to access for removal: {0}", name);
+                throw new PropertyNotFoundException(name);
             }
 
             if (!p.IsType(typeof(PropertyDomain)))
             {
-                throw new PropertyNotADomainException("Property mid-path is not a domain: {0}", name);
+                throw new PropertyNotADomainException( name);
             }
 
             p.Get<PropertyDomain>().Remove(path);

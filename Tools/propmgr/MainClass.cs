@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using LukeBot.Common;
+using LukeBot.Logging;
 using CommandLine;
 
 namespace propmgr;

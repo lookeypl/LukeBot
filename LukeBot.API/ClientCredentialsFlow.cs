@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
-using LukeBot.Common;
+using LukeBot.Logging;
 
 
 namespace LukeBot.API

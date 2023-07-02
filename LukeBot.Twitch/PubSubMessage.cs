@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using LukeBot.Common;
+using LukeBot.Logging;
 using Newtonsoft.Json.Converters;
 
 

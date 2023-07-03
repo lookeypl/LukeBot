@@ -1,8 +1,5 @@
 using System;
-using System.IO;
-using System.Text.Json;
 using System.Threading;
-using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Logging;
 
@@ -112,6 +109,13 @@ namespace LukeBot.API
             return ret;
         }
 
+        public void EnsureValid()
+        {
+            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            if (now > mToken.acquiredTimestamp + mToken.expires_in)
+                Refresh();
+        }
+
         public string Refresh()
         {
             mMutex.WaitOne();
@@ -123,7 +127,7 @@ namespace LukeBot.API
             mToken = mFlow.Refresh(mToken);
 
             // preserve refresh token - some services (ex. Spotify) don't provide it in refresh response
-            if (mToken.refresh_token == null)
+            if (mToken.refresh_token == null || mToken.refresh_token.Length == 0)
                 mToken.refresh_token = oldToken.refresh_token;
 
             ExportToConfig();

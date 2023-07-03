@@ -1,4 +1,6 @@
-﻿using LukeBot.Common;
+﻿using System;
+using System.Text.Json;
+using LukeBot.Common;
 
 namespace LukeBot.API
 {
@@ -6,9 +8,10 @@ namespace LukeBot.API
     {
         public string access_token { get; set; }
         public string refresh_token { get; set; }
-        //public List<string> scope { get; set; }
+        //public string scope { get; set; }
         public int expires_in { get; set; }
         public string token_type { get; set; }
+        public long acquiredTimestamp { get; set; }
 
         public override void Fill(PromiseData data)
         {
@@ -19,6 +22,13 @@ namespace LukeBot.API
             //scope = r.scope;
             expires_in = r.expires_in;
             token_type = r.token_type;
+        }
+
+        static public AuthToken FromJson(string jsonString)
+        {
+            AuthToken token = JsonSerializer.Deserialize<AuthToken>(jsonString);
+            token.acquiredTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            return token;
         }
     }
 }

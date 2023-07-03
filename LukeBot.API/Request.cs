@@ -41,13 +41,16 @@ namespace LukeBot.API
 
         private static HttpResponseMessage Send(string uri, Token token, Dictionary<string, string> uriQuery, Dictionary<string, string> contentQuery)
         {
+            if (token != null)
+                token.EnsureValid();
+
             HttpClient client = new HttpClient();
             Task<HttpResponseMessage> responseTask = client.SendAsync(FormRequestMessage(uri, token, uriQuery, contentQuery));
             responseTask.Wait(RESPONSE_WAIT_TIMEOUT);
             HttpResponseMessage response = responseTask.Result;
 
             // refresh token and retry if we got unauthorized
-            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            if (response.StatusCode == HttpStatusCode.Unauthorized && token != null)
             {
                 token.Refresh();
 

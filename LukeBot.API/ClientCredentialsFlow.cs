@@ -47,11 +47,12 @@ namespace LukeBot.API
             retContentStrTask.Wait();
             string retContentStr = retContentStrTask.Result;
 
-            AuthToken token = JsonSerializer.Deserialize<AuthToken>(retContentStr);
+            AuthToken token = AuthToken.FromJson(retContentStr);
 
-            Logger.Log().Debug("Response from Twitch OAuth:");
+            Logger.Log().Debug("Response from {0} OAuth:", mService);
             Logger.Log().Secure("  Access token: {0}", token.access_token);
             Logger.Log().Secure("  Refresh token: {0}", token.refresh_token);
+            Logger.Log().Debug("  Timestamp: {0}", token.acquiredTimestamp);
             Logger.Log().Debug("  Expires in: {0}", token.expires_in);
             /*Logger.Log().Debug("  Scope: ");
             foreach (var s in token.scope)

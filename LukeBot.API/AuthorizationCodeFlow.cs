@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Text.Json;
 using LukeBot.Common;
@@ -23,8 +24,13 @@ namespace LukeBot.API
             Logger.Log().Info("Requesting OAuth user token...");
             Dictionary<string, string> query = new Dictionary<string, string>();
 
-            // TODO this MUST be random!
-            string state = "CHANGEMETOSOMETHINGRANDOM";
+            string state;
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            {
+                byte[] nonceData = new byte[32];
+                rng.GetBytes(nonceData);
+                state = Convert.ToBase64String(nonceData);
+            }
 
             query.Add("client_id", mClientID);
             query.Add("redirect_uri", mCallbackURL);
@@ -103,10 +109,11 @@ namespace LukeBot.API
 
             Logger.Log().Secure("Returned content {0}", retContentStr);
 
-            AuthToken authResponse = JsonSerializer.Deserialize<AuthToken>(retContentStr);
+            AuthToken authResponse = AuthToken.FromJson(retContentStr);
             Logger.Log().Debug("Response from OAuth service {0}:", mService);
             Logger.Log().Secure("  Access token: {0}", authResponse.access_token);
             Logger.Log().Secure("  Refresh token: {0}", authResponse.refresh_token);
+            Logger.Log().Debug("  Timestamp: {0}", authResponse.acquiredTimestamp);
             Logger.Log().Debug("  Expires in: {0}", authResponse.expires_in);
             /*Logger.Log().Debug("  Scope: ");
             foreach (var s in authResponse.scope)
@@ -151,10 +158,11 @@ namespace LukeBot.API
             retContentStrTask.Wait();
             string retContentStr = retContentStrTask.Result;
 
-            AuthToken refreshResponse = JsonSerializer.Deserialize<AuthToken>(retContentStr);
+            AuthToken refreshResponse = AuthToken.FromJson(retContentStr);
             Logger.Log().Debug("Response from OAuth service {0}:", mService);
             Logger.Log().Secure("  Access token: {0}", refreshResponse.access_token);
             Logger.Log().Secure("  Refresh token: {0}", refreshResponse.refresh_token);
+            Logger.Log().Debug("  Timestamp: {0}", refreshResponse.acquiredTimestamp);
             Logger.Log().Debug("  Expires in: {0}", refreshResponse.expires_in);
             Logger.Log().Debug("  Token type: {0}", refreshResponse.token_type);
             /*Logger.Log().Debug("  Scope: ");

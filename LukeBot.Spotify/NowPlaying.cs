@@ -15,7 +15,7 @@ namespace LukeBot.Spotify
         private readonly int DEFAULT_EVENT_TIMEOUT = 5 * 1000; // 5 seconds
         private readonly int EXTRA_EVENT_TIMEOUT = 2000; // see FetchData() for details
 
-
+        private string mLBUser;
         private Token mToken;
         private Thread mThread;
         private Mutex mDataAccessMutex;
@@ -27,8 +27,9 @@ namespace LukeBot.Spotify
         private EventCallback mTrackChangedCallback;
         private EventCallback mStateUpdateCallback;
 
-        public NowPlaying(Token token)
+        public NowPlaying(string lbUser, Token token)
         {
+            mLBUser = lbUser;
             mToken = token;
             mThread = new Thread(new ThreadStart(ThreadMain));
             mDataAccessMutex = new Mutex();
@@ -38,18 +39,18 @@ namespace LukeBot.Spotify
             mCurrentPlaybackState = null;
             mCurrentStateUpdate = new SpotifyMusicStateUpdateArgs();
 
-            List<EventCallback> events = Comms.Event.RegisterEventPublisher(
-                this, Communication.Events.Type.SpotifyMusicStateUpdate | Communication.Events.Type.SpotifyMusicTrackChanged
+            List<EventCallback> events = Comms.Event.User(mLBUser).RegisterEventPublisher(
+                this, UserEventType.SpotifyMusicStateUpdate | UserEventType.SpotifyMusicTrackChanged
             );
 
             foreach (EventCallback e in events)
             {
-                switch (e.type)
+                switch (e.userType)
                 {
-                case Communication.Events.Type.SpotifyMusicStateUpdate:
+                case UserEventType.SpotifyMusicStateUpdate:
                     mStateUpdateCallback = e;
                     break;
-                case Communication.Events.Type.SpotifyMusicTrackChanged:
+                case UserEventType.SpotifyMusicTrackChanged:
                     mTrackChangedCallback = e;
                     break;
                 default:

@@ -73,8 +73,9 @@ namespace LukeBot.Spotify
 
             Login(mSpotifyUsername);
 
-            mNowPlaying = new NowPlaying(mToken);
+            mNowPlaying = new NowPlaying(LBUser, mToken);
             mNowPlayingTextFile = new NowPlayingTextFile(
+                LBUser,
                 "Outputs/" + CommonConstants.SPOTIFY_MODULE_NAME + "/" + LBUser + "/nowplaying_artist.txt",
                 "Outputs/" + CommonConstants.SPOTIFY_MODULE_NAME + "/" + LBUser +  "/nowplaying_title.txt"
             );

@@ -17,10 +17,10 @@ namespace LukeBot.Widget
             SendToWSAsync(msg);
         }
 
-        public Alerts(string id, string name)
+        public Alerts(string lbUser, string id, string name)
             : base("LukeBot.Widget/Widgets/Alerts.html", id, name)
         {
-            Comms.Event.TwitchChannelPointsRedemption += OnChannelPointsEvent;
+            Comms.Event.User(lbUser).TwitchChannelPointsRedemption += OnChannelPointsEvent;
         }
 
         public override WidgetType GetWidgetType()

@@ -1,7 +1,12 @@
-﻿namespace LukeBot.Communication
+﻿using LukeBot.Communication.Events;
+
+
+namespace LukeBot.Communication
 {
     public class EventTypeNotFoundException: System.Exception
     {
-        public EventTypeNotFoundException(string fmt, params object[] args): base(string.Format(fmt, args)) {}
+        public EventTypeNotFoundException(string type)
+            : base(string.Format("Not found event type: {0}", type))
+        {}
     }
 }

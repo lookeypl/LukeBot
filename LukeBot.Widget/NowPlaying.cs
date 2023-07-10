@@ -40,14 +40,14 @@ namespace LukeBot.Widget
             }
         }
 
-        public NowPlaying(string id, string name)
+        public NowPlaying(string lbUser, string id, string name)
             : base("LukeBot.Widget/Widgets/NowPlaying.html", id, name)
         {
             mState = null;
             mCurrentTrack = null;
 
-            Comms.Event.SpotifyMusicStateUpdate += OnStateUpdate;
-            Comms.Event.SpotifyMusicTrackChanged += OnTrackChanged;
+            Comms.Event.User(lbUser).SpotifyMusicStateUpdate += OnStateUpdate;
+            Comms.Event.User(lbUser).SpotifyMusicTrackChanged += OnTrackChanged;
 
             OnConnectedEvent += OnConnected;
         }

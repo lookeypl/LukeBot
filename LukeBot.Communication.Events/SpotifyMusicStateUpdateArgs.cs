@@ -4,7 +4,7 @@ using LukeBot.Spotify.Common;
 
 namespace LukeBot.Communication.Events
 {
-    public class SpotifyMusicStateUpdateArgs: EventArgsBase
+    public class SpotifyMusicStateUpdateArgs: UserEventArgsBase
     {
         private const string NOW_PLAYING_STATE_UPDATE_TYPE_STR = "NowPlayingStateUpdate";
 
@@ -12,14 +12,14 @@ namespace LukeBot.Communication.Events
         public float Progress { get; private set; }
 
         public SpotifyMusicStateUpdateArgs()
-            : base(Events.Type.SpotifyMusicStateUpdate, NOW_PLAYING_STATE_UPDATE_TYPE_STR)
+            : base(UserEventType.SpotifyMusicStateUpdate, NOW_PLAYING_STATE_UPDATE_TYPE_STR)
         {
             State = PlayerState.Unloaded;
             Progress = 0.0f;
         }
 
         public SpotifyMusicStateUpdateArgs(PlayerState state, float progress)
-            : base(Events.Type.SpotifyMusicStateUpdate, NOW_PLAYING_STATE_UPDATE_TYPE_STR)
+            : base(UserEventType.SpotifyMusicStateUpdate, NOW_PLAYING_STATE_UPDATE_TYPE_STR)
         {
             State = state;
             Progress = progress;

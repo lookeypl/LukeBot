@@ -1,32 +1,52 @@
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
+using LukeBot.Common;
 using LukeBot.Logging;
+using LukeBot.Communication;
 using LukeBot.Communication.Events;
 using Command = LukeBot.Twitch.Common.Command;
 
 
 namespace LukeBot.Twitch
 {
-    class IRCChannel
+    class IRCChannel: IEventPublisher
     {
+        private string mLBUser;
         private string mChannelName;
         private API.Twitch.GetUserData mUserData;
-        private Dictionary<string, Command.ICommand> mCommands;
-        private EmoteProvider mExternalEmotes;
+        private Dictionary<string, Command.ICommand> mCommands = new();
+        private EmoteProvider mExternalEmotes = new();
+        private int mMsgIDCounter = 0; // backup for when we don't have metadata
+        private EventCallback mMessageEventCallback;
+        private EventCallback mMessageClearEventCallback;
+        private EventCallback mUserClearEventCallback;
 
-        public IRCChannel(API.Twitch.GetUserData userData)
+        private Command::User EstablishUserIdentity(IRCMessage m, bool tagsEnabled)
         {
-            mChannelName = userData.login;
-            mUserData = userData;
-            mCommands = new Dictionary<string, Command.ICommand>();
-            mExternalEmotes = new EmoteProvider();
+            Command::User identity = Command::User.Chatter;
 
-            mExternalEmotes.AddEmoteSource(new FFZEmoteSource(userData.id));
-            mExternalEmotes.AddEmoteSource(new BTTVEmoteSource(userData.id));
-            mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(userData.id));
+            if (m.User == m.Channel)
+                identity |= Command::User.Broadcaster;
+
+            if (tagsEnabled)
+            {
+                string isMod;
+                if (m.GetTag("mod", out isMod) && Int32.Parse(isMod) == 1)
+                    identity |= Command::User.Moderator;
+
+                string isVIP;
+                if (m.GetTag("vip", out isVIP) && Int32.Parse(isVIP) == 1)
+                    identity |= Command::User.VIP;
+
+                string isSub;
+                if (m.GetTag("subscriber", out isSub) && Int32.Parse(isSub) == 1)
+                    identity |= Command::User.Subscriber;
+            }
+
+            return identity;
         }
 
-        public string ProcessMessage(string cmd, Command::User userIdentity, string[] args)
+        public string ProcessMessageCommand(string cmd, Command::User userIdentity, string[] args)
         {
             if (!mCommands.ContainsKey(cmd))
             {
@@ -45,6 +65,112 @@ namespace LukeBot.Twitch
             }
 
             return mCommands[cmd].Execute(userIdentity, args);
+        }
+
+        public IRCChannel(string lbUser, API.Twitch.GetUserData userData)
+        {
+            mLBUser = lbUser;
+            mChannelName = userData.login;
+            mUserData = userData;
+
+            mExternalEmotes.AddEmoteSource(new FFZEmoteSource(userData.id));
+            mExternalEmotes.AddEmoteSource(new BTTVEmoteSource(userData.id));
+            mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(userData.id));
+
+            List<EventCallback> events = Comms.Event.User(mLBUser).RegisterEventPublisher(
+                this, UserEventType.TwitchChatMessage | UserEventType.TwitchChatMessageClear | UserEventType.TwitchChatUserClear
+            );
+
+            foreach (EventCallback e in events)
+            {
+                switch (e.userType)
+                {
+                case UserEventType.TwitchChatMessage:
+                    mMessageEventCallback = e;
+                    break;
+                case UserEventType.TwitchChatMessageClear:
+                    mMessageClearEventCallback = e;
+                    break;
+                case UserEventType.TwitchChatUserClear:
+                    mUserClearEventCallback = e;
+                    break;
+                default:
+                    Logger.Log().Warning("Received unknown event type from Event system");
+                    break;
+                }
+            }
+        }
+
+        public string ProcessMSG(IRCMessage m, bool tagsEnabled)
+        {
+            string chatMsg = m.GetTrailingParam();
+
+            // Message related tags pulled from metadata (if available)
+            string msgID;
+            if (!tagsEnabled || !m.GetTag("id", out msgID))
+                msgID = String.Format("{0}", mMsgIDCounter++);
+
+            TwitchChatMessageArgs message = new TwitchChatMessageArgs(msgID);
+            message.Nick = m.User;
+            message.Message = chatMsg;
+
+            if (tagsEnabled)
+            {
+                string userID;
+                if (m.GetTag("user-id", out userID))
+                    message.UserID = userID;
+
+                string color;
+                if (m.GetTag("color", out color))
+                    message.Color = color;
+
+                string displayName;
+                if (m.GetTag("display-name", out displayName))
+                    message.DisplayName = displayName;
+
+                // Twitch global/sub emotes - taken from IRC tags
+                string emotes;
+                if (m.GetTag("emotes", out emotes))
+                {
+                    message.ParseEmotesString(chatMsg, emotes);
+                }
+            }
+            else
+            {
+                message.UserID = m.User;
+                message.DisplayName = m.User;
+            }
+
+            AddExternalEmotesToMessage(message);
+
+            mMessageEventCallback.PublishEvent(message);
+
+            string[] chatMsgTokens = chatMsg.Split(' ');
+            string cmd = chatMsgTokens[0];
+            Command::User userIdentity = EstablishUserIdentity(m, tagsEnabled);
+
+            string response = ProcessMessageCommand(cmd, userIdentity, chatMsgTokens);
+
+            // TODO post LukeBot's response if desired
+            //  - Has to re-do this path - the smartest would be to re-call this method
+            //  - Also check the config if this is a wanted behavior
+            //if (response.Length > 0)
+            //    ...
+
+            return response;
+        }
+
+        public void ProcessCLEARCHAT(string nick)
+        {
+            TwitchChatUserClearArgs message = new TwitchChatUserClearArgs(nick);
+            mUserClearEventCallback.PublishEvent(message);
+        }
+
+        public void ProcessCLEARMSG(string msg, string msgID)
+        {
+            TwitchChatMessageClearArgs message = new TwitchChatMessageClearArgs(msg);
+            message.MessageID = msgID;
+            mMessageClearEventCallback.PublishEvent(message);
         }
 
         public void AddCommand(string name, Command.ICommand command)

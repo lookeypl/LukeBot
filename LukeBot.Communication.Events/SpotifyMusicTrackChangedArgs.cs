@@ -3,7 +3,7 @@ using System;
 
 namespace LukeBot.Communication.Events
 {
-    public class SpotifyMusicTrackChangedArgs: EventArgsBase
+    public class SpotifyMusicTrackChangedArgs: UserEventArgsBase
     {
         public string Artists { get; private set; }
         public string Title { get; private set; }
@@ -11,7 +11,7 @@ namespace LukeBot.Communication.Events
         public float Duration { get; private set; }
 
         public SpotifyMusicTrackChangedArgs(string artists, string title, string label, float duration)
-            : base(Events.Type.SpotifyMusicTrackChanged, "NowPlayingTrackChanged")
+            : base(UserEventType.SpotifyMusicTrackChanged, "NowPlayingTrackChanged")
         {
             Artists = artists;
             Title = title;

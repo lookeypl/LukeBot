@@ -42,7 +42,7 @@ namespace LukeBot.Twitch
                 throw new InvalidOperationException("Failed to login to Twitch");
             }
 
-            mPubSub = new PubSub(mUserToken, mUserData);
+            mPubSub = new PubSub(lbUser, mUserToken, mUserData);
             mPubSub.Connect();
         }
 

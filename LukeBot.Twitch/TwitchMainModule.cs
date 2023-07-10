@@ -261,7 +261,7 @@ namespace LukeBot.Twitch
 
             try
             {
-                mIRC.JoinChannel(user.GetUserData());
+                mIRC.JoinChannel(lbUser, user.GetUserData());
 
                 LoadCommandsFromConfig(lbUser);
 

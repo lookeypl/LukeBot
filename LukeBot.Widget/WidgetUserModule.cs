@@ -77,9 +77,9 @@ namespace LukeBot.Widget
             switch (type)
             {
             case WidgetType.echo: return new Echo(id, name);
-            case WidgetType.nowplaying: return new NowPlaying(id, name);
-            case WidgetType.chat: return new Chat(id, name);
-            case WidgetType.alerts: return new Alerts(id, name);
+            case WidgetType.nowplaying: return new NowPlaying(mLBUser, id, name);
+            case WidgetType.chat: return new Chat(mLBUser, id, name);
+            case WidgetType.alerts: return new Alerts(mLBUser, id, name);
             default:
                 throw new InvalidWidgetTypeException("Invalid widget type: {0}", type);
             }

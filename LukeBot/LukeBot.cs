@@ -60,13 +60,7 @@ namespace LukeBot
             foreach (string user in users)
             {
                 Logger.Log().Info("Loading LukeBot user " + user);
-                mUsers.Add(user, new UserContext(user));
-            }
-
-            foreach (UserContext u in mUsers.Values)
-            {
-                Logger.Log().Info("Running modules for User " + u.Username);
-                u.RunModules();
+                CreateAndRunUser(user);
             }
         }
 
@@ -143,7 +137,7 @@ namespace LukeBot
         }
 
 
-        void AddCLICommands()
+        private void AddCLICommands()
         {
             foreach (ICLIProcessor cp in mCommandProcessors)
             {
@@ -151,7 +145,7 @@ namespace LukeBot
             }
         }
 
-        void Shutdown()
+        private void Shutdown()
         {
             CLI.Instance.Teardown();
 
@@ -169,15 +163,22 @@ namespace LukeBot
             Conf.Teardown();
         }
 
-        public void AddUser(string lbUsername)
+        private void CreateAndRunUser(string lbUsername)
         {
             if (mUsers.ContainsKey(lbUsername) || lbUsername == Constants.LUKEBOT_USER_ID)
                 throw new UsernameNotAvailableException(lbUsername);
+
+            Comms.Event.AddUser(lbUsername);
 
             UserContext uc = new UserContext(lbUsername);
             uc.RunModules();
 
             mUsers.Add(lbUsername, uc);
+        }
+
+        public void AddUser(string lbUsername)
+        {
+            CreateAndRunUser(lbUsername);
             AddUserToConfig(lbUsername);
         }
 
@@ -193,6 +194,7 @@ namespace LukeBot
 
             RemoveUserFromConfig(lbUsername);
             mUsers.Remove(lbUsername);
+            Comms.Event.RemoveUser(lbUsername);
         }
 
         public void SelectUser(string lbUsername)

@@ -6,7 +6,7 @@ using LukeBot.Twitch.Common;
 
 namespace LukeBot.Communication.Events
 {
-    public class TwitchChatMessageArgs: EventArgsBase
+    public class TwitchChatMessageArgs: UserEventArgsBase
     {
         public string MessageID { get; private set; }
         public string UserID { get; set; }
@@ -17,7 +17,7 @@ namespace LukeBot.Communication.Events
         public string Message { get; set; }
 
         public TwitchChatMessageArgs(string msgID)
-            : base(Events.Type.TwitchChatMessage, "TwitchIRCMessage")
+            : base(UserEventType.TwitchChatMessage, "TwitchIRCMessage")
         {
             MessageID = msgID;
             UserID = "";
@@ -75,25 +75,25 @@ namespace LukeBot.Communication.Events
         }
     }
 
-    public class TwitchChatMessageClearArgs: EventArgsBase
+    public class TwitchChatMessageClearArgs: UserEventArgsBase
     {
         public string Message { get; private set; }
         public string MessageID { get; set; }
 
         public TwitchChatMessageClearArgs(string message)
-            : base(Events.Type.TwitchChatMessageClear, "TwitchIRCClearMsg")
+            : base(UserEventType.TwitchChatMessageClear, "TwitchIRCClearMsg")
         {
             Message = message;
             MessageID = "";
         }
     }
 
-    public class TwitchChatUserClearArgs: EventArgsBase
+    public class TwitchChatUserClearArgs: UserEventArgsBase
     {
         public string Nick { get; private set; }
 
         public TwitchChatUserClearArgs(string nick)
-            : base(Events.Type.TwitchChatUserClear, "TwitchIRCClearChat")
+            : base(UserEventType.TwitchChatUserClear, "TwitchIRCClearChat")
         {
             Nick = nick;
         }

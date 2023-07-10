@@ -9,19 +9,21 @@ namespace LukeBot.Spotify
 {
     class NowPlayingTextFile
     {
+        private string mLBUser;
         private string mArtistFilePath;
         private string mTitleFilePath;
         private bool mNeedsUpdate;
         private SpotifyMusicTrackChangedArgs mCurrentTrack;
 
-        public NowPlayingTextFile(string artistPath, string titlePath)
+        public NowPlayingTextFile(string lbUser, string artistPath, string titlePath)
         {
+            mLBUser = lbUser;
             mArtistFilePath = artistPath;
             mTitleFilePath = titlePath;
             mNeedsUpdate = false;
 
-            Comms.Event.SpotifyMusicStateUpdate += OnStateUpdate;
-            Comms.Event.SpotifyMusicTrackChanged += OnTrackChanged;
+            Comms.Event.User(mLBUser).SpotifyMusicStateUpdate += OnStateUpdate;
+            Comms.Event.User(mLBUser).SpotifyMusicTrackChanged += OnTrackChanged;
         }
 
         ~NowPlayingTextFile()

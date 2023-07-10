@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using LukeBot.Common;
 using LukeBot.Communication.Events;
 
@@ -12,34 +13,11 @@ namespace LukeBot.Communication
     {
     }
 
-    public delegate void PublishEventDelegate(EventArgsBase args);
-
-    public struct EventCallback
+    public abstract class EventCollection
     {
-        public Events.Type type { get; private set; }
-        public PublishEventDelegate PublishEvent { get; private set; }
-
-        public EventCallback(Events.Type t, PublishEventDelegate pe)
-        {
-            type = t;
-            PublishEvent = pe;
-        }
-    }
-
-    public class EventSystem
-    {
-        public event EventHandler<EventArgsBase> TwitchChatMessage;
-        public event EventHandler<EventArgsBase> TwitchChatMessageClear;
-        public event EventHandler<EventArgsBase> TwitchChatUserClear;
-        public event EventHandler<EventArgsBase> SpotifyMusicStateUpdate;
-        public event EventHandler<EventArgsBase> SpotifyMusicTrackChanged;
-        public event EventHandler<EventArgsBase> TwitchChannelPointsRedemption;
-        public event EventHandler<EventArgsBase> TwitchSubscription;
-        public event EventHandler<EventArgsBase> TwitchBitsCheer;
-
-        private List<IEventPublisher> mPublishers;
-        private Dictionary<string, Func<EventSystem, EventHandler<EventArgsBase>>> mEvents; // maps EventHandler's generic type (args struct) name to EventInfo
-
+        private List<IEventPublisher> mPublishers = new();
+        // maps EventHandler's generic type (args struct) name to EventInfo
+        protected Dictionary<string, Func<EventCollection, EventHandler<EventArgsBase>>> mEvents = new();
 
         private EventHandler<EventArgsBase> GetHandler(string name)
         {
@@ -59,57 +37,194 @@ namespace LukeBot.Communication
             }
         }
 
-        private EventCallback CreateEventCallback(Events.Type type)
+        protected void AddPublisher(IEventPublisher p)
+        {
+            mPublishers.Add(p);
+        }
+
+        private MethodInfo GetEventMethodInfo(string typeStr)
         {
             System.Type argsBaseType = typeof(EventArgsBase);
-            System.Type argsType = EventUtils.GetEventTypeArgs(type.ToString());
-            if (argsType == null)
+            System.Type argsType = EventUtils.GetEventTypeArgs(typeStr);
+            MethodInfo inf = typeof(EventCollection).GetMethod(nameof(EventCollection.OnEvent), 1, new System.Type[] { argsBaseType });
+            if (inf == null)
             {
-                throw new EventTypeNotFoundException("Could not acquire arguments for event type: {0}", type);
+                throw new EventArgsNotFoundException(typeStr);
             }
 
-            MethodInfo eventMethod = typeof(EventSystem).GetMethod(nameof(EventSystem.OnEvent), 1, new System.Type[] { argsBaseType }).MakeGenericMethod(argsType);
+            return inf.MakeGenericMethod(argsType);
+        }
+
+        protected EventCallback CreateEventCallback(UserEventType type)
+        {
+            MethodInfo eventMethod = GetEventMethodInfo(type.ToString());
             return new EventCallback(type, Delegate.CreateDelegate(typeof(PublishEventDelegate), this, eventMethod) as PublishEventDelegate);
         }
+
+        protected EventCallback CreateEventCallback(GlobalEventType type)
+        {
+            MethodInfo eventMethod = GetEventMethodInfo(type.ToString());
+            return new EventCallback(type, Delegate.CreateDelegate(typeof(PublishEventDelegate), this, eventMethod) as PublishEventDelegate);
+        }
+    }
+
+    public delegate void PublishEventDelegate(EventArgsBase args);
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct EventCallback
+    {
+        [FieldOffset(0)] public GlobalEventType globalType;
+        [FieldOffset(0)] public UserEventType userType;
+        [FieldOffset(8)] public PublishEventDelegate PublishEvent;
+
+        public EventCallback(UserEventType t, PublishEventDelegate pe)
+        {
+            globalType = 0;
+            userType = t;
+            PublishEvent = pe;
+        }
+
+        public EventCallback(GlobalEventType t, PublishEventDelegate pe)
+        {
+            userType = 0;
+            globalType = t;
+            PublishEvent = pe;
+        }
+    }
+
+    public class GlobalEventCollection: EventCollection
+    {
+        // For test purposes
+        public event EventHandler<EventArgsBase> Test;
+
+        // TODO in case we need something to be evented...
+
+        public GlobalEventCollection()
+        {
+            mEvents.Add("GlobalTestArgs", x => ((GlobalEventCollection)x).Test);
+        }
+
+        protected List<EventCallback> GenerateEventCallbacks(GlobalEventType type)
+        {
+            List<EventCallback> callbacks = new();
+
+            if (type == GlobalEventType.None)
+                throw new NoEventTypeProvidedException();
+
+            foreach (GlobalEventType t in Enum.GetValues(typeof(GlobalEventType)))
+            {
+                if ((t & type) != GlobalEventType.None)
+                {
+                    callbacks.Add(CreateEventCallback(t));
+                }
+            }
+
+            return callbacks;
+        }
+
+        // Register an Event Publisher for Global events.
+        // Returns a list of callbacks which should be called to emit an event + for what event type it is for.
+        // Returned List will have as many callbacks as there were EventType's provided in @p type
+        public List<EventCallback> RegisterEventPublisher(IEventPublisher publisher, GlobalEventType type)
+        {
+            AddPublisher(publisher);
+            return GenerateEventCallbacks(type);
+        }
+    }
+
+    public class UserEventCollection: EventCollection
+    {
+        // For test purposes
+        public event EventHandler<EventArgsBase> Test;
+
+        public event EventHandler<EventArgsBase> TwitchChatMessage;
+        public event EventHandler<EventArgsBase> TwitchChatMessageClear;
+        public event EventHandler<EventArgsBase> TwitchChatUserClear;
+        public event EventHandler<EventArgsBase> SpotifyMusicStateUpdate;
+        public event EventHandler<EventArgsBase> SpotifyMusicTrackChanged;
+        public event EventHandler<EventArgsBase> TwitchChannelPointsRedemption;
+        public event EventHandler<EventArgsBase> TwitchSubscription;
+        public event EventHandler<EventArgsBase> TwitchBitsCheer;
+
+        private string mLBUser;
+
+        public UserEventCollection(string lbUser)
+        {
+            mLBUser = lbUser;
+
+            mEvents.Add("UserTestArgs", x => ((UserEventCollection)x).Test);
+            mEvents.Add("TwitchChatMessageArgs", x => ((UserEventCollection)x).TwitchChatMessage);
+            mEvents.Add("TwitchChatMessageClearArgs", x => ((UserEventCollection)x).TwitchChatMessageClear);
+            mEvents.Add("TwitchChatUserClearArgs", x => ((UserEventCollection)x).TwitchChatUserClear);
+            mEvents.Add("SpotifyMusicStateUpdateArgs", x => ((UserEventCollection)x).SpotifyMusicStateUpdate);
+            mEvents.Add("SpotifyMusicTrackChangedArgs", x => ((UserEventCollection)x).SpotifyMusicTrackChanged);
+            mEvents.Add("TwitchChannelPointsRedemptionArgs", x => ((UserEventCollection)x).TwitchChannelPointsRedemption);
+            mEvents.Add("TwitchSubscriptionArgs", x => ((UserEventCollection)x).TwitchSubscription);
+            mEvents.Add("TwitchBitsCheerArgs", x => ((UserEventCollection)x).TwitchBitsCheer);
+        }
+
+        protected List<EventCallback> GenerateEventCallbacks(UserEventType type)
+        {
+            // TODO UserEventType has to be split, figure this thing out please
+            List<EventCallback> callbacks = new();
+
+            if (type == UserEventType.None)
+                throw new NoEventTypeProvidedException();
+
+            foreach (UserEventType t in Enum.GetValues(typeof(UserEventType)))
+            {
+                if ((t & type) != UserEventType.None)
+                {
+                    callbacks.Add(CreateEventCallback(t));
+                }
+            }
+
+            return callbacks;
+        }
+
+        // Register an Event Publisher for User events.
+        // Returns a list of callbacks which should be called to emit an event + for what event type it is for.
+        // Returned List will have as many callbacks as there were EventType's provided in @p type
+        public List<EventCallback> RegisterEventPublisher(IEventPublisher publisher, UserEventType type)
+        {
+            AddPublisher(publisher);
+            return GenerateEventCallbacks(type);
+        }
+    }
+
+    public class EventSystem
+    {
+        private Dictionary<string, EventCollection> mUserToCollection = new();
 
 
         public EventSystem()
         {
-            mPublishers = new List<IEventPublisher>();
-
-            mEvents = new Dictionary<string, Func<EventSystem, EventHandler<EventArgsBase>>>();
-            mEvents.Add("TwitchChatMessageArgs", x => x.TwitchChatMessage);
-            mEvents.Add("TwitchChatMessageClearArgs", x => x.TwitchChatMessageClear);
-            mEvents.Add("TwitchChatUserClearArgs", x => x.TwitchChatUserClear);
-            mEvents.Add("SpotifyMusicStateUpdateArgs", x => x.SpotifyMusicStateUpdate);
-            mEvents.Add("SpotifyMusicTrackChangedArgs", x => x.SpotifyMusicTrackChanged);
-            mEvents.Add("TwitchChannelPointsRedemptionArgs", x => x.TwitchChannelPointsRedemption);
-            mEvents.Add("TwitchSubscriptionArgs", x => x.TwitchSubscription);
-            mEvents.Add("TwitchBitsCheerArgs", x => x.TwitchBitsCheer);
+            // for Global events
+            mUserToCollection.Add(Common.Constants.LUKEBOT_USER_ID, new GlobalEventCollection());
         }
 
         ~EventSystem()
         {
         }
 
-        // Register an Event Publisher.
-        // Returns a list of callbacks which should be called to emit an event + for what event type it is for.
-        // Returned List will have as many callbacks as there were EventType's provided in @p type
-        public List<EventCallback> RegisterEventPublisher(IEventPublisher publisher, Events.Type type)
+        public void AddUser(string lbUser)
         {
-            mPublishers.Add(publisher);
+            mUserToCollection.Add(lbUser, new UserEventCollection(lbUser));
+        }
 
-            List<EventCallback> callbackList = new List<EventCallback>();
+        public void RemoveUser(string lbUser)
+        {
+            mUserToCollection.Remove(lbUser);
+        }
 
-            foreach (Events.Type t in Enum.GetValues(typeof(Events.Type)))
-            {
-                if ((t & type) != Events.Type.None)
-                {
-                    callbackList.Add(CreateEventCallback(t));
-                }
-            }
+        public UserEventCollection User(string lbUser)
+        {
+            return (UserEventCollection)mUserToCollection[lbUser];
+        }
 
-            return callbackList;
+        public GlobalEventCollection Global()
+        {
+            return (GlobalEventCollection)mUserToCollection[Common.Constants.LUKEBOT_USER_ID];
         }
     }
 }

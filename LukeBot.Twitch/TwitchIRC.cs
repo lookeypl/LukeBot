@@ -1,7 +1,6 @@
 ﻿using LukeBot.Common;
 using LukeBot.API;
 using LukeBot.Communication;
-using LukeBot.Communication.Events;
 using LukeBot.Config;
 using LukeBot.Logging;
 using System;
@@ -16,7 +15,7 @@ using CommonConstants = LukeBot.Common.Constants;
 
 namespace LukeBot.Twitch
 {
-    public class TwitchIRC: IEventPublisher
+    public class TwitchIRC
     {
         private enum ConnectionState
         {
@@ -31,41 +30,12 @@ namespace LukeBot.Twitch
         private IRCClient mIRCClient = null;
         private Dictionary<string, IRCChannel> mChannels;
         private bool mTagsEnabled = false;
-        private EventCallback mMessageEventCallback;
-        private EventCallback mMessageClearEventCallback;
-        private EventCallback mUserClearEventCallback;
 
         private ConnectionState mConnectionState = ConnectionState.DISCONNECTED;
         private AutoResetEvent mLoggedInEvent;
-        private int mMsgIDCounter = 0; // backup for when we don't have metadata
 
         private Thread mWorker;
         private Mutex mChannelsMutex;
-
-        private Command::User EstablishUserIdentity(IRCMessage m)
-        {
-            Command::User identity = Command::User.Chatter;
-
-            if (m.User == m.Channel)
-                identity |= Command::User.Broadcaster;
-
-            if (mTagsEnabled)
-            {
-                string isMod;
-                if (m.GetTag("mod", out isMod) && Int32.Parse(isMod) == 1)
-                    identity |= Command::User.Moderator;
-
-                string isVIP;
-                if (m.GetTag("vip", out isVIP) && Int32.Parse(isVIP) == 1)
-                    identity |= Command::User.VIP;
-
-                string isSub;
-                if (m.GetTag("subscriber", out isSub) && Int32.Parse(isSub) == 1)
-                    identity |= Command::User.Subscriber;
-            }
-
-            return identity;
-        }
 
         void ProcessReply(IRCMessage m)
         {
@@ -97,69 +67,22 @@ namespace LukeBot.Twitch
 
         void ProcessPRIVMSG(IRCMessage m)
         {
-            string chatMsg = m.GetTrailingParam();
-
-            Logger.Log().Info("({0} tags) #{1} {2}: {3}", m.GetTagCount(), m.Channel, m.User, chatMsg);
-
-            // Message related tags pulled from metadata (if available)
-            string msgID;
-            if (!mTagsEnabled || !m.GetTag("id", out msgID))
-                msgID = String.Format("{0}", mMsgIDCounter++);
-
-            TwitchChatMessageArgs message = new TwitchChatMessageArgs(msgID);
-            message.Nick = m.User;
-            message.Message = chatMsg;
-
-            if (mTagsEnabled)
-            {
-                string userID;
-                if (m.GetTag("user-id", out userID))
-                    message.UserID = userID;
-
-                string color;
-                if (m.GetTag("color", out color))
-                    message.Color = color;
-
-                string displayName;
-                if (m.GetTag("display-name", out displayName))
-                    message.DisplayName = displayName;
-
-                // Twitch global/sub emotes - taken from IRC tags
-                string emotes;
-                if (m.GetTag("emotes", out emotes))
-                {
-                    message.ParseEmotesString(chatMsg, emotes);
-                }
-            }
-            else
-            {
-                message.UserID = m.User;
-                message.DisplayName = m.User;
-            }
-
-            mChannels[m.Channel].AddExternalEmotesToMessage(message);
-
-            mMessageEventCallback.PublishEvent(message);
-
-            string[] chatMsgTokens = chatMsg.Split(' ');
-            string cmd = chatMsgTokens[0];
-            Command::User userIdentity = EstablishUserIdentity(m);
             string response = "";
+            Logger.Log().Info("({0} tags) #{1} {2}: {3}", m.GetTagCount(), m.Channel, m.User, m.GetTrailingParam());
 
             mChannelsMutex.WaitOne();
 
             try
             {
                 if (!mChannels.ContainsKey(m.Channel))
-                    throw new InvalidDataException(String.Format("Unknown channel: {0}", m.Channel));
+                    throw new UnknownChannelException(m.Channel);
 
-                response = mChannels[m.Channel].ProcessMessage(cmd, userIdentity, chatMsgTokens);
+                response = mChannels[m.Channel].ProcessMSG(m, mTagsEnabled);
             }
-            catch (LukeBot.Common.Exception e)
+            catch (System.Exception)
             {
-                Logger.Log().Error("Failed to process command: {0}", e.Message);
                 mChannelsMutex.ReleaseMutex();
-                return;
+                throw;
             }
 
             mChannelsMutex.ReleaseMutex();
@@ -170,27 +93,29 @@ namespace LukeBot.Twitch
 
         void ProcessCLEARCHAT(IRCMessage m)
         {
-            string msg = m.GetTrailingParam();
-            Logger.Log().Warning("CLEARCHAT ({0} tags) #{1} :{2}", m.GetTagCount(), m.Channel, msg);
-            TwitchChatUserClearArgs message = new TwitchChatUserClearArgs(msg);
-            mUserClearEventCallback.PublishEvent(message);
+            if (!mChannels.ContainsKey(m.Channel))
+                throw new UnknownChannelException(m.Channel);
+
+            string nick = m.GetTrailingParam();
+            Logger.Log().Warning("CLEARCHAT ({0} tags) #{1} :{2}", m.GetTagCount(), m.Channel, nick);
+            mChannels[m.Channel].ProcessCLEARCHAT(nick);
         }
 
         void ProcessCLEARMSG(IRCMessage m)
         {
+            if (!mChannels.ContainsKey(m.Channel))
+                throw new UnknownChannelException(m.Channel);
+
             string msg = m.GetTrailingParam();
             Logger.Log().Warning("CLEARMSG ({0} tags) #{1} :{2}", m.GetTagCount(), m.Channel, msg);
 
-            TwitchChatMessageClearArgs message = new TwitchChatMessageClearArgs(msg);
-
+            string msgID = "";
             if (mTagsEnabled)
             {
-                string msgID;
-                if (m.GetTag("target-msg-id", out msgID))
-                    message.MessageID = msgID;
+                m.GetTag("target-msg-id", out msgID);
             }
 
-            mMessageClearEventCallback.PublishEvent(message);
+            mChannels[m.Channel].ProcessCLEARMSG(msg, msgID);
         }
 
         void ProcessCAP(IRCMessage m)
@@ -429,29 +354,6 @@ namespace LukeBot.Twitch
             mChannels = new Dictionary<string, IRCChannel>();
             mToken = token;
 
-            List<EventCallback> events = Comms.Event.RegisterEventPublisher(
-                this, Communication.Events.Type.TwitchChatMessage | Communication.Events.Type.TwitchChatMessageClear | Communication.Events.Type.TwitchChatUserClear
-            );
-
-            foreach (EventCallback e in events)
-            {
-                switch (e.type)
-                {
-                case Communication.Events.Type.TwitchChatMessage:
-                    mMessageEventCallback = e;
-                    break;
-                case Communication.Events.Type.TwitchChatMessageClear:
-                    mMessageClearEventCallback = e;
-                    break;
-                case Communication.Events.Type.TwitchChatUserClear:
-                    mUserClearEventCallback = e;
-                    break;
-                default:
-                    Logger.Log().Warning("Received unknown event type from Event system");
-                    break;
-                }
-            }
-
             Logger.Log().Info("Twitch IRC module initialized");
         }
 
@@ -461,7 +363,7 @@ namespace LukeBot.Twitch
             WaitForShutdown();
         }
 
-        public void JoinChannel(API.Twitch.GetUserData user)
+        public void JoinChannel(string lbUser, API.Twitch.GetUserData user)
         {
             mChannelsMutex.WaitOne();
 
@@ -473,7 +375,7 @@ namespace LukeBot.Twitch
 
             mIRCClient.Send(IRCMessage.JOIN(user.login));
 
-            mChannels.Add(user.login, new IRCChannel(user));
+            mChannels.Add(user.login, new IRCChannel(lbUser, user));
 
             mChannelsMutex.ReleaseMutex();
         }

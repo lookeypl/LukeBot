@@ -62,6 +62,7 @@ namespace LukeBot.Twitch
         }
 
 
+        private string mLBUser;
         private Token mToken;
         private API.Twitch.GetUserData mUserData;
         private ClientWebSocket mSocket;
@@ -229,8 +230,9 @@ namespace LukeBot.Twitch
             Send(new PubSubMessage(PUBSUB_MSG_TYPE_PING));
         }
 
-        public PubSub(Token token, API.Twitch.GetUserData userData)
+        public PubSub(string lbUser, Token token, API.Twitch.GetUserData userData)
         {
+            mLBUser = lbUser;
             mToken = token;
             mUserData = userData;
             mSocket = new ClientWebSocket();
@@ -247,15 +249,15 @@ namespace LukeBot.Twitch
             mSendThread = new Thread(SendThreadMain);
             mSendThread.Name = string.Format("PubSub Send Thread ({0})", mUserData.login);
 
-            List<EventCallback> events = Comms.Event.RegisterEventPublisher(
-                this, Communication.Events.Type.TwitchChannelPointsRedemption
+            List<EventCallback> events = Comms.Event.User(mLBUser).RegisterEventPublisher(
+                this, UserEventType.TwitchChannelPointsRedemption
             );
 
             foreach (EventCallback e in events)
             {
-                switch (e.type)
+                switch (e.userType)
                 {
-                case Communication.Events.Type.TwitchChannelPointsRedemption:
+                case UserEventType.TwitchChannelPointsRedemption:
                     mChannelPointsRedemptionCallback = e;
                     break;
                 default:

@@ -4,16 +4,25 @@ using System;
 namespace LukeBot.Communication.Events
 {
     [Flags]
-    public enum Type
+    public enum UserEventType: uint
     {
         None = 0,
-        TwitchChatMessage = 0x1,
-        TwitchChatMessageClear = 0x2,
-        TwitchChatUserClear = 0x4,
-        SpotifyMusicStateUpdate = 0x8,
-        SpotifyMusicTrackChanged = 0x10,
-        TwitchChannelPointsRedemption = 0x20,
-        TwitchSubscription = 0x40,
-        TwitchBitsCheer = 0x80,
+
+        UserTest = 0x1, // for testing, not used otherwise
+        TwitchChatMessage = 0x2,
+        TwitchChatMessageClear = 0x4,
+        TwitchChatUserClear = 0x8,
+        SpotifyMusicStateUpdate = 0x10,
+        SpotifyMusicTrackChanged = 0x20,
+        TwitchChannelPointsRedemption = 0x40,
+        TwitchSubscription = 0x80,
+        TwitchBitsCheer = 0x100,
+    }
+
+    [Flags]
+    public enum GlobalEventType: uint
+    {
+        None = 0,
+        GlobalTest = 0x1, // for testing, not used otherwise
     }
 }

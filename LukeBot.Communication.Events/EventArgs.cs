@@ -3,13 +3,33 @@ namespace LukeBot.Communication.Events
 {
     public class EventArgsBase
     {
-        public Events.Type eventType { get; private set; }
-        public string Type { get; private set; }
+        public string Type  { get; private set; }
 
-        public EventArgsBase(Events.Type type, string typeStr)
+        public EventArgsBase(string typeStr)
+        {
+            Type = typeStr;
+        }
+    }
+
+    public class UserEventArgsBase: EventArgsBase
+    {
+        public UserEventType eventType { get; private set; }
+
+        public UserEventArgsBase(UserEventType type, string typeStr)
+            : base(typeStr)
         {
             eventType = type;
-            Type = typeStr;
+        }
+    }
+
+    public class GlobalEventArgsBase: EventArgsBase
+    {
+        public GlobalEventType eventType  { get; private set; }
+
+        public GlobalEventArgsBase(GlobalEventType type, string typeStr)
+            : base(typeStr)
+        {
+            eventType = type;
         }
     }
 }

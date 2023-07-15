@@ -52,6 +52,11 @@ namespace LukeBot.Config
             mStore.Save();
         }
 
+        public static void Clear()
+        {
+            mStore.Clear();
+        }
+
         public static bool TryGet<T>(Path path, out T val)
         {
             try

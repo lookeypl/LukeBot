@@ -74,40 +74,16 @@ namespace LukeBot.Twitch
 
         private void SaveCommandToConfig(string lbUser, string name, Command.ICommand cmd)
         {
-            Path cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
-
             Command::Descriptor desc = cmd.ToDescriptor();
 
-            Command::Descriptor[] commands;
-            if (!Conf.TryGet<Command::Descriptor[]>(cmdCollectionProp, out commands))
-            {
-                commands = new Command::Descriptor[1];
-                commands[0] = desc;
-                Conf.Add(cmdCollectionProp, Property.Create<Command::Descriptor[]>(commands));
-                return;
-            }
-
-            Array.Resize(ref commands, commands.Length + 1);
-            commands[commands.Length - 1] = desc;
-            Array.Sort<Command::Descriptor>(commands, new Command::DescriptorComparer());
-            Conf.Modify<Command::Descriptor[]>(cmdCollectionProp, commands);
+            Path cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
+            ConfUtil.ArrayAppend(cmdCollectionProp, desc, new Command::DescriptorComparer());
         }
 
         private void RemoveCommandFromConfig(string lbUser, string name)
         {
             Path cmdCollectionProp = GetCommandCollectionPropertyName(lbUser);
-
-            Command::Descriptor[] commands;
-            if (!Conf.TryGet<Command::Descriptor[]>(cmdCollectionProp, out commands))
-            {
-                return;
-            }
-
-            commands = Array.FindAll<Command::Descriptor>(commands, (Command::Descriptor d) => d.Name != name);
-            if (commands.Length == 0)
-                Conf.Remove(cmdCollectionProp);
-            else
-                Conf.Modify<Command::Descriptor[]>(cmdCollectionProp, commands);
+            ConfUtil.ArrayRemove<Command::Descriptor>(cmdCollectionProp, (Command::Descriptor d) => d.Name != name);
         }
 
 

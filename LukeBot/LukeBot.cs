@@ -83,49 +83,25 @@ namespace LukeBot
 
         void AddUserToConfig(string name)
         {
-            string[] users;
-
             Path propName = Path.Start()
                 .Push(Constants.LUKEBOT_USER_ID)
                 .Push(Constants.PROP_STORE_USERS_PROP);
 
-            if (!Conf.TryGet<string[]>(propName, out users))
-            {
-                users = new string[1];
-                users[0] = name;
-                Conf.Add(propName, Property.Create<string[]>(users));
-                return;
-            }
-
-            Array.Resize(ref users, users.Length + 1);
-            users[users.Length - 1] = name;
-            Conf.Modify<string[]>(propName, users);
+            ConfUtil.ArrayAppend(propName, name);
         }
 
         void RemoveUserFromConfig(string name)
         {
-            string[] users;
-
-            Path propName = Path.Start()
-                .Push(Constants.LUKEBOT_USER_ID)
-                .Push(Constants.PROP_STORE_USERS_PROP);
-
-            if (!Conf.TryGet<string[]>(propName, out users))
-            {
-                return;
-            }
-
             if (!mUsers.ContainsKey(name))
             {
                 throw new ArgumentException("User " + name + " does not exist.");
             }
 
-            users = Array.FindAll<string>(users, s => s != name);
+            Path propName = Path.Start()
+                .Push(Constants.LUKEBOT_USER_ID)
+                .Push(Constants.PROP_STORE_USERS_PROP);
 
-            if (users.Length == 0)
-                Conf.Remove(propName);
-            else
-                Conf.Modify<string[]>(propName, users);
+            ConfUtil.ArrayRemove(propName, name);
 
             // also clear entire branch of user-related settings
             Path userConfDomain = Path.Start()

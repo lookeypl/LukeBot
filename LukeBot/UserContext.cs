@@ -25,19 +25,7 @@ namespace LukeBot
                 .Push(Username)
                 .Push(PROP_STORE_MODULES_DOMAIN);
 
-            string[] modules;
-            if (!Conf.TryGet<string[]>(modulesProp, out modules))
-            {
-                modules = new string[1];
-                modules[0] = module;
-                Conf.Add(modulesProp, Property.Create<string[]>(modules));
-                return;
-            }
-
-            Array.Resize(ref modules, modules.Length + 1);
-            modules[modules.Length - 1] = module;
-            Array.Sort<string>(modules);
-            Conf.Modify<string[]>(modulesProp, modules);
+            ConfUtil.ArrayAppend(modulesProp, module);
         }
 
         private void LoadModulesFromConfig()
@@ -78,17 +66,7 @@ namespace LukeBot
                 .Push(Username)
                 .Push(PROP_STORE_MODULES_DOMAIN);
 
-            string[] modules;
-            if (!Conf.TryGet<string[]>(modulesProp, out modules))
-            {
-                return;
-            }
-
-            modules = Array.FindAll<string>(modules, m => m != module);
-            if (modules.Length == 0)
-                Conf.Remove(modulesProp);
-            else
-                Conf.Modify<string[]>(modulesProp, modules);
+            ConfUtil.ArrayRemove(modulesProp, module);
         }
 
         private IUserModule LoadModule(ModuleType type)

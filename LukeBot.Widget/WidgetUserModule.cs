@@ -38,38 +38,16 @@ namespace LukeBot.Widget
 
         private void SaveWidgetToConfig(IWidget w)
         {
-            Path widgetCollectionProp = GetWidgetCollectionPropertyName();
-
             WidgetDesc wd = w.GetDesc();
 
-            WidgetDesc[] widgets;
-            if (!Conf.TryGet<WidgetDesc[]>(widgetCollectionProp, out widgets))
-            {
-                widgets = new WidgetDesc[1];
-                widgets[0] = wd;
-                Conf.Add(widgetCollectionProp, Property.Create<WidgetDesc[]>(widgets));
-                return;
-            }
-
-            Array.Resize(ref widgets, widgets.Length + 1);
-            widgets[widgets.Length - 1] = wd;
-            Array.Sort<WidgetDesc>(widgets, new WidgetDesc.Comparer());
-            Conf.Modify<WidgetDesc[]>(widgetCollectionProp, widgets);
+            Path widgetCollectionProp = GetWidgetCollectionPropertyName();
+            ConfUtil.ArrayAppend(widgetCollectionProp, wd, new WidgetDesc.Comparer());
         }
 
         private void RemoveWidgetFromConfig(string id)
         {
             Path widgetCollectionProp = GetWidgetCollectionPropertyName();
-
-            WidgetDesc[] commands;
-            if (!Conf.TryGet<WidgetDesc[]>(widgetCollectionProp, out commands))
-                return;
-
-            commands = Array.FindAll<WidgetDesc>(commands, (WidgetDesc d) => d.Id != id);
-            if (commands.Length == 0)
-                Conf.Remove(widgetCollectionProp);
-            else
-                Conf.Modify<WidgetDesc[]>(widgetCollectionProp, commands);
+            ConfUtil.ArrayRemove<WidgetDesc>(widgetCollectionProp, (WidgetDesc d) => d.Id != id);
         }
 
         private IWidget AllocateWidget(WidgetType type, string id, string name)

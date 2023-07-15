@@ -122,6 +122,14 @@ namespace LukeBot
             RemoveModuleFromConfig(module.ToConfString());
         }
 
+        public List<ModuleType> GetEnabledModules()
+        {
+            List<ModuleType> enabledModules = new(mModules.Keys.Count);
+            foreach (ModuleType m in mModules.Keys)
+                enabledModules.Add(m);
+            return enabledModules;
+        }
+
         public void RunModules()
         {
             Logger.Log().Info("Running LukeBot modules for user {0}", Username);

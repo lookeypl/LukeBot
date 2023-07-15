@@ -17,6 +17,7 @@ namespace LukeBot
         private UserContext mCurrentUser = null;
         private List<ICLIProcessor> mCommandProcessors = new List<ICLIProcessor>{
             new UserCLIProcessor(),
+            new ModuleCLIProcessor(),
             new SpotifyCLIProcessor(),
             new TwitchCLIProcessor(),
             new WidgetCLIProcessor(),

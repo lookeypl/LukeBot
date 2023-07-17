@@ -83,7 +83,7 @@ namespace LukeBot
         {
             mLukeBot = lb;
 
-            CLI.Instance.AddCommand(Constants.SPOTIFY_MODULE_NAME, (string[] args) =>
+            UserInterface.CommandLine.AddCommand(Constants.SPOTIFY_MODULE_NAME, (string[] args) =>
             {
                 string result = "";
                 Parser.Default.ParseArguments<SpotifyLoginSubverb, SpotifyEnableSubverb, SpotifyDisableSubverb>(args)

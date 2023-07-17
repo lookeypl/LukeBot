@@ -77,7 +77,7 @@ namespace LukeBot
 
         void HandleRemoveUserCommand(UserRemoveCommand args, out string msg)
         {
-            if (!CLI.Instance.Ask("Are you sure you want to remove user " + args.Name + "? This will remove all associated data!"))
+            if (!UserInterface.CommandLine.Ask("Are you sure you want to remove user " + args.Name + "? This will remove all associated data!"))
             {
                 msg = "User removal aborted";
                 return;
@@ -119,7 +119,7 @@ namespace LukeBot
         {
             mLukeBot = lb;
 
-            CLI.Instance.AddCommand(COMMAND_NAME, (string[] args) =>
+            UserInterface.CommandLine.AddCommand(COMMAND_NAME, (string[] args) =>
             {
                 string result = "";
                 Parser.Default.ParseArguments<UserAddCommand, UserListCommand, UserRemoveCommand, UserSelectCommand>(args)

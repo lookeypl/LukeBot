@@ -124,7 +124,7 @@ namespace LukeBot
 
         private void Shutdown()
         {
-            CLI.Instance.Teardown();
+            UserInterface.Teardown();
 
             UnloadUsers();
 
@@ -179,12 +179,12 @@ namespace LukeBot
             if (lbUsername.Length == 0)
             {
                 mCurrentUser = null;
-                CLI.Instance.SaveSelectedUser("");
+                UserInterface.CommandLine.SetPromptPrefix("");
                 return;
             }
 
             mCurrentUser = mUsers[lbUsername];
-            CLI.Instance.SaveSelectedUser(mCurrentUser.Username);
+            UserInterface.CommandLine.SetPromptPrefix(mCurrentUser.Username);
         }
 
         public List<string> GetUsernames()
@@ -224,10 +224,14 @@ namespace LukeBot
 
                 LoadUsers();
 
-                // We'll get stuck here until the end
-                Logger.Log().Info("Giving control to CLI");
+                // TODO fetch from command line parameters
+                InterfaceType uiType = InterfaceType.BasicCLI;
+                Logger.Log().Info("Initializing UI {0}...", uiType.ToString());
+                UserInterface.Initialize(uiType);
+
+                Logger.Log().Info("Giving control to UI");
                 AddCLICommands();
-                CLI.Instance.MainLoop();
+                UserInterface.Instance.MainLoop();
             }
             catch (Common.Exception e)
             {

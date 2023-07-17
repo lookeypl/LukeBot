@@ -92,10 +92,10 @@ namespace LukeBot
 
         public void AddCLICommands(LukeBot lb)
         {
-            mCommandCLIProcessor = new TwitchCommandCLIProcessor();
             mLukeBot = lb;
+            mCommandCLIProcessor = new TwitchCommandCLIProcessor(mLukeBot);
 
-            CLI.Instance.AddCommand(Constants.TWITCH_MODULE_NAME, (string[] args) =>
+            UserInterface.CommandLine.AddCommand(Constants.TWITCH_MODULE_NAME, (string[] args) =>
             {
                 string result = "";
                 string[] cmdArgs = args.Take(2).ToArray(); // filters out any additional options/commands that might confuse CommandLine

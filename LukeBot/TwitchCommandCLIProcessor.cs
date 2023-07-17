@@ -1,8 +1,6 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using LukeBot.Globals;
-using LukeBot.Interface;
 using LukeBot.Twitch.Common.Command;
 using Command = LukeBot.Twitch.Common.Command;
 using CommandLine;
@@ -105,23 +103,19 @@ namespace LukeBot
 
     public class TwitchCommandCLIProcessor
     {
-        private bool ValidateSelectedUser(out string lbUser)
+        private LukeBot mLukeBot;
+
+        internal TwitchCommandCLIProcessor(LukeBot lb)
         {
-            lbUser = CLI.Instance.GetSelectedUser();
-            return (lbUser.Length > 0);
+            mLukeBot = lb;
         }
 
         public void HandleAddcom(TwitchAddCommand cmd, out string msg)
         {
-            string lbUser;
-            if (!ValidateSelectedUser(out lbUser))
-            {
-                msg = "User is not selected";
-                return;
-            }
-
             try
             {
+                string lbUser = mLukeBot.GetCurrentUser().Username;
+
                 Twitch.Command.ICommand twCmd = GlobalModules.Twitch.AllocateCommand(lbUser, cmd.Name, cmd.Type, string.Join(' ', cmd.Value));
                 if (twCmd == null)
                 {
@@ -137,20 +131,14 @@ namespace LukeBot
                 return;
             }
 
-            msg = "Added " + cmd.Type + " command " + cmd.Name + " for user " + lbUser;
+            msg = "Added " + cmd.Type + " twitch command " + cmd.Name;
         }
 
         public void HandleDelcom(TwitchDeleteCommand cmd, out string msg)
         {
-            string lbUser;
-            if (!ValidateSelectedUser(out lbUser))
-            {
-                msg = "User is not selected";
-                return;
-            }
-
             try
             {
+                string lbUser = mLukeBot.GetCurrentUser().Username;
                 GlobalModules.Twitch.DeleteCommandFromChannel(lbUser, cmd.Name);
             }
             catch (System.Exception e)
@@ -159,20 +147,14 @@ namespace LukeBot
                 return;
             }
 
-            msg = "Command " + cmd.Name + " for user " + lbUser + " deleted.";
+            msg = "Twitch command " + cmd.Name + " deleted.";
         }
 
         public void HandleEditcom(TwitchEditCommand cmd, out string msg)
         {
-            string lbUser;
-            if (!ValidateSelectedUser(out lbUser))
-            {
-                msg = "User is not selected";
-                return;
-            }
-
             try
             {
+                string lbUser = mLukeBot.GetCurrentUser().Username;
                 GlobalModules.Twitch.EditCommandFromChannel(lbUser, cmd.Name, string.Join(' ', cmd.Value));
             }
             catch (System.Exception e)
@@ -181,20 +163,15 @@ namespace LukeBot
                 return;
             }
 
-            msg = "Edited twitch command " + cmd.Name + " for user " + lbUser;
+            msg = "Edited twitch command " + cmd.Name;
         }
 
         public void HandleListcom(TwitchListCommand cmd, out string msg)
         {
-            string lbUser;
-            if (!ValidateSelectedUser(out lbUser))
-            {
-                msg = "User is not selected";
-                return;
-            }
-
             try
             {
+                string lbUser = mLukeBot.GetCurrentUser().Username;
+
                 msg = "Available commands:\n";
 
                 List<Command::Descriptor> cmds = GlobalModules.Twitch.GetCommandDescriptors(lbUser);
@@ -212,15 +189,10 @@ namespace LukeBot
 
         public void HandleModcom(TwitchModifyCommand cmd, out string msg)
         {
-            string lbUser;
-            if (!ValidateSelectedUser(out lbUser))
-            {
-                msg = "User is not selected";
-                return;
-            }
-
             try
             {
+                string lbUser = mLukeBot.GetCurrentUser().Username;
+
                 if (cmd.List)
                 {
                     Command::Descriptor d = GlobalModules.Twitch.GetCommandDescriptor(lbUser, cmd.Name);

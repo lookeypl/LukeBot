@@ -156,10 +156,10 @@ namespace LukeBot.Twitch
                 return true; // quietly exit - login is already there, prerequisites are met
 
             // User login does not exist - query for it
-            login = CLI.Instance.Query("Twitch login for user " + lbUser);
+            login = UserInterface.Instance.Query("Twitch login for user " + lbUser);
             if (login.Length == 0)
             {
-                CLI.Instance.Message("No login provided");
+                UserInterface.Instance.Message("No login provided");
                 return false;
             }
 

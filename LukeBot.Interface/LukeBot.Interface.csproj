@@ -34,6 +34,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
     <ProjectReference Include="..\LukeBot.Logging\LukeBot.Logging.csproj" />
   </ItemGroup>
 

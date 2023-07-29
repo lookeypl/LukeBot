@@ -14,14 +14,8 @@ using Newtonsoft.Json;
 
 namespace LukeBot.Twitch
 {
-    class PubSub: IEventPublisher
+    public class PubSub: IEventPublisher
     {
-        private const string PUBSUB_MSG_TYPE_MESSAGE = "MESSAGE";
-        private const string PUBSUB_MSG_TYPE_RESPONSE = "RESPONSE";
-        private const string PUBSUB_MSG_TYPE_LISTEN = "LISTEN";
-        private const string PUBSUB_MSG_TYPE_PING = "PING";
-        private const string PUBSUB_MSG_TYPE_RECONNECT = "RECONNECT";
-
         private const string PUBSUB_CHANNEL_POINTS_TOPIC = "channel-points-channel-v1";
 
         private struct PubSubReceiveStatus
@@ -65,6 +59,7 @@ namespace LukeBot.Twitch
         private string mLBUser;
         private Token mToken;
         private API.Twitch.GetUserData mUserData;
+        private Uri mServerUri;
         private ClientWebSocket mSocket;
         private Thread mReceiveThread;
         private Thread mSendThread;
@@ -90,13 +85,16 @@ namespace LukeBot.Twitch
 
         private async void Reconnect()
         {
-            CancellationToken cancellationToken = new CancellationToken();
-            await mSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, cancellationToken);
+            if (mSocket.State == WebSocketState.Open)
+            {
+                CancellationToken cancellationToken = new CancellationToken();
+                await mSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, cancellationToken);
+            }
 
             // mSocket has to be recreated here - CloseAsync() puts it in 'Closed' state
             // which by C# standards is illegal to call ConnectAsync() on
             mSocket = new ClientWebSocket();
-            Connect();
+            Connect(mServerUri);
         }
 
         private async Task<PubSubReceiveStatus> SocketReceive()
@@ -125,10 +123,10 @@ namespace LukeBot.Twitch
             PubSubMessage baseMsg = JsonConvert.DeserializeObject<PubSubMessage>(recvMsgString);
             switch (baseMsg.type)
             {
-            case PUBSUB_MSG_TYPE_RESPONSE:
+            case PubSubMsgType.RESPONSE:
                 result.obj = JsonConvert.DeserializeObject<PubSubResponse>(recvMsgString);
                 break;
-            case PUBSUB_MSG_TYPE_MESSAGE:
+            case PubSubMsgType.MESSAGE:
                 result.obj = JsonConvert.DeserializeObject<PubSubTopicMessage>(
                     recvMsgString, new PubSubMessageDataCreationConverter()
                 );
@@ -172,27 +170,37 @@ namespace LukeBot.Twitch
         {
             while (!mDone)
             {
-                PubSubReceiveStatus msg = await SocketReceive();
-                if (msg.closed)
-                    break;
-
-                Logger.Log().Debug("Received message: ");
-                PubSubMessage m = msg.obj;
-                m.Print(LogLevel.Debug);
-
-                switch (m.type)
+                try
                 {
-                case PUBSUB_MSG_TYPE_MESSAGE:
-                    PubSubTopicMessage tm = (PubSubTopicMessage)m;
-                    PubSubReceivedMessageData rmData = (PubSubReceivedMessageData)tm.data;
-                    ProcessReceivedMessageData(rmData);
-                    break;
-                case PUBSUB_MSG_TYPE_RECONNECT:
-                    Logger.Log().Warning("RECONNECT message received - attempting reconnect...");
+                    PubSubReceiveStatus msg = await SocketReceive();
+                    if (msg.closed)
+                        break;
+
+                    Logger.Log().Debug("Received message: ");
+                    PubSubMessage m = msg.obj;
+                    m.Print(LogLevel.Debug);
+
+                    switch (m.type)
+                    {
+                    case PubSubMsgType.MESSAGE:
+                        PubSubTopicMessage tm = (PubSubTopicMessage)m;
+                        PubSubReceivedMessageData rmData = (PubSubReceivedMessageData)tm.data;
+                        ProcessReceivedMessageData(rmData);
+                        break;
+                    case PubSubMsgType.RECONNECT:
+                        Logger.Log().Warning("RECONNECT message received - attempting reconnect...");
+                        Reconnect();
+                        Logger.Log().Warning("Reconnected");
+                        break;
+                    default:
+                        continue;
+                    }
+                }
+                catch (WebSocketException wse)
+                {
+                    Logger.Log().Warning("WebSocketException caught: {0}", wse.Message);
+                    Logger.Log().Warning("Attempting to reconnect...");
                     Reconnect();
-                    break;
-                default:
-                    continue;
                 }
             }
         }
@@ -227,7 +235,7 @@ namespace LukeBot.Twitch
 
         private void OnPingPongTimerEvent(Object o, ElapsedEventArgs e)
         {
-            Send(new PubSubMessage(PUBSUB_MSG_TYPE_PING));
+            Send(new PubSubMessage(PubSubMsgType.PING));
         }
 
         public PubSub(string lbUser, Token token, API.Twitch.GetUserData userData)
@@ -249,20 +257,23 @@ namespace LukeBot.Twitch
             mSendThread = new Thread(SendThreadMain);
             mSendThread.Name = string.Format("PubSub Send Thread ({0})", mUserData.login);
 
-            List<EventCallback> events = Comms.Event.User(mLBUser).RegisterEventPublisher(
-                this, UserEventType.TwitchChannelPointsRedemption
-            );
-
-            foreach (EventCallback e in events)
+            if (Comms.Initialized)
             {
-                switch (e.userType)
+                List<EventCallback> events = Comms.Event.User(mLBUser).RegisterEventPublisher(
+                    this, UserEventType.TwitchChannelPointsRedemption
+                );
+
+                foreach (EventCallback e in events)
                 {
-                case UserEventType.TwitchChannelPointsRedemption:
-                    mChannelPointsRedemptionCallback = e;
-                    break;
-                default:
-                    Logger.Log().Warning("Received unknown event type from Event system");
-                    break;
+                    switch (e.userType)
+                    {
+                    case UserEventType.TwitchChannelPointsRedemption:
+                        mChannelPointsRedemptionCallback = e;
+                        break;
+                    default:
+                        Logger.Log().Warning("Received unknown event type from Event system");
+                        break;
+                    }
                 }
             }
         }
@@ -271,19 +282,22 @@ namespace LukeBot.Twitch
         {
         }
 
-        public async void Connect()
+        public async void Connect(Uri address)
         {
             CancellationToken cancelToken = new CancellationToken();
             if (mSocket.State == WebSocketState.None)
             {
-                await mSocket.ConnectAsync(new Uri("wss://pubsub-edge.twitch.tv"), cancelToken);
+                await mSocket.ConnectAsync(address, cancelToken);
             }
 
+            // mostly a workaround for tests to not generate auth tokens for no reason
+            string tokenValue = mToken != null ? mToken.Get() : "";
+
             PubSubCommand command = new PubSubCommand(
-                PUBSUB_MSG_TYPE_LISTEN,
+                PubSubMsgType.LISTEN,
                 new PubSubListenCommandData(
                     PUBSUB_CHANNEL_POINTS_TOPIC + '.' + mUserData.id,
-                    mToken.Get()
+                    tokenValue
                 )
             );
             await SocketSend(command);
@@ -295,7 +309,7 @@ namespace LukeBot.Twitch
                 return;
             }
 
-            if (r.obj.type != PUBSUB_MSG_TYPE_RESPONSE)
+            if (r.obj.type != PubSubMsgType.RESPONSE)
             {
                 Logger.Log().Error("Invalid response type received");
                 await mSocket.CloseAsync(WebSocketCloseStatus.Empty, "", cancelToken);
@@ -317,6 +331,7 @@ namespace LukeBot.Twitch
                 return;
             }
 
+            mServerUri = address;
             mReceiveThread.Start();
             mSendThread.Start();
             mPingPongTimer.Enabled = true;

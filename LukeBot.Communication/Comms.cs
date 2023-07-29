@@ -31,6 +31,14 @@
             }
         }
 
+        static public bool Initialized
+        {
+            get
+            {
+                return mInitialized;
+            }
+        }
+
         static public void Initialize()
         {
             if (mInitialized)

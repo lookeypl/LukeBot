@@ -165,7 +165,6 @@ namespace LukeBot.Communication
 
         protected List<EventCallback> GenerateEventCallbacks(UserEventType type)
         {
-            // TODO UserEventType has to be split, figure this thing out please
             List<EventCallback> callbacks = new();
 
             if (type == UserEventType.None)

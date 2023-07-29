@@ -43,7 +43,7 @@ namespace LukeBot.Twitch
             }
 
             mPubSub = new PubSub(lbUser, mUserToken, mUserData);
-            mPubSub.Connect();
+            mPubSub.Connect(new Uri("wss://pubsub-edge.twitch.tv"));
         }
 
         internal API.Twitch.GetUserData GetUserData()

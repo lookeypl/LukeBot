@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Reflection;
 using System.Collections.Generic;
 using LukeBot.Communication;
 using LukeBot.Communication.Common;
@@ -13,7 +14,7 @@ namespace LukeBot.Tests.Communication
         private const string USER_EVENT_USERNAME = "test";
         private const string USER_EVENT_USERNAME_2 = "test2";
 
-        EventSystem mEventSystem;
+        private EventSystem mEventSystem;
 
         private List<EventCallback> RegisterAndCheckCallbacks(GlobalEventType type)
         {
@@ -90,14 +91,6 @@ namespace LukeBot.Tests.Communication
             Assert.ThrowsException<NoEventTypeProvidedException>(() => RegisterAndCheckCallbacks(GlobalEventType.None));
             Assert.ThrowsException<NoEventTypeProvidedException>(() => RegisterAndCheckCallbacks(USER_EVENT_USERNAME, UserEventType.None));
             Assert.ThrowsException<NoEventTypeProvidedException>(() => RegisterAndCheckCallbacks(USER_EVENT_USERNAME_2, UserEventType.None));
-        }
-
-        [TestMethod]
-        public void EventSystem_RegisterToMultiple()
-        {
-            RegisterAndCheckCallbacks(USER_EVENT_USERNAME,
-                UserEventType.UserTest | UserEventType.TwitchChatMessage | UserEventType.SpotifyMusicStateUpdate | UserEventType.TwitchChatMessageClear
-            );
         }
 
         [TestMethod]

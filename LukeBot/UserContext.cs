@@ -55,6 +55,7 @@ namespace LukeBot
                         m, Username, e.Message));
                     Logger.Log().Error(String.Format("Module {0} for user {1} will be skipped on this load.",
                         m, Username));
+                    Logger.Log().Debug(String.Format("Stack trace:\n{0}", e.StackTrace));
                 }
             }
         }

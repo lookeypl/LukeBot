@@ -44,9 +44,14 @@ namespace LukeBot.Communication
 
         private MethodInfo GetEventMethodInfo(string typeStr)
         {
-            System.Type argsBaseType = typeof(EventArgsBase);
-            System.Type argsType = EventUtils.GetEventTypeArgs(typeStr);
-            MethodInfo inf = typeof(EventCollection).GetMethod(nameof(EventCollection.OnEvent), 1, new System.Type[] { argsBaseType });
+            Type argsBaseType = typeof(EventArgsBase);
+            Type argsType = EventUtils.GetEventTypeArgs(typeStr);
+            if (argsType == null)
+            {
+                throw new EventArgsNotFoundException(typeStr);
+            }
+
+            MethodInfo inf = typeof(EventCollection).GetMethod(nameof(OnEvent), 1, new Type[] { argsBaseType });
             if (inf == null)
             {
                 throw new EventArgsNotFoundException(typeStr);

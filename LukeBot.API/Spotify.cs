@@ -2,7 +2,7 @@ using System;
 using System.Net;
 using System.Collections.Generic;
 using LukeBot.Common;
-
+using System.Net.Http;
 
 namespace LukeBot.API
 {
@@ -11,7 +11,9 @@ namespace LukeBot.API
         private const string REQUEST_URI_BASE = "https://api.spotify.com/v1";
         private const string REQUEST_CURRENT_USER_PROFILE = REQUEST_URI_BASE + "/me" ;
         private const string REQUEST_PLAYER_STATE = REQUEST_CURRENT_USER_PROFILE + "/player";
+        private const string REQUEST_QUEUE = REQUEST_PLAYER_STATE + "/queue";
         private const string REQUEST_ALBUM = REQUEST_URI_BASE + "/albums/"; // needs ID at the end!
+        private const string REQUEST_TRACK = REQUEST_URI_BASE + "/tracks/"; // needs ID at the end!
 
 
         public class AlbumCopyright
@@ -40,11 +42,11 @@ namespace LukeBot.API
             }
         }
 
-        public class PlaybackStateArtists
+        public class Artist
         {
             public string name { get; set; }
 
-            public PlaybackStateArtists()
+            public Artist()
             {
                 name = "";
             }
@@ -66,7 +68,7 @@ namespace LukeBot.API
 
         public class PlaybackStateItem
         {
-            public List<PlaybackStateArtists> artists { get; set; }
+            public List<Artist> artists { get; set; }
             public PlaybackStateAlbum album { get; set; }
             public int duration_ms { get; set; }
             public string id { get; set; }
@@ -74,13 +76,25 @@ namespace LukeBot.API
 
             public PlaybackStateItem()
             {
-                artists = new List<PlaybackStateArtists>();
+                artists = new List<Artist>();
                 album = new PlaybackStateAlbum();
                 duration_ms = 0;
                 id = "";
                 name = "";
             }
         };
+
+        public class Track: Response
+        {
+            public List<Artist> artists { get; set; }
+            public string name { get; set; }
+
+            public Track()
+            {
+                artists = new List<Artist>();
+                name = "";
+            }
+        }
 
         public class PlaybackState: Response
         {
@@ -117,9 +131,24 @@ namespace LukeBot.API
             return Request.Get<Album>(REQUEST_ALBUM + albumID, token);
         }
 
+        public static Track GetTrack(Token token, string trackID)
+        {
+            return Request.Get<Track>(REQUEST_TRACK + trackID, token);
+        }
+
         public static PlaybackState GetPlaybackState(Token token)
         {
             return Request.Get<PlaybackState>(REQUEST_PLAYER_STATE, token);
+        }
+
+        public static HttpResponseMessage AddItemToPlaybackQueue(Token token, string itemID)
+        {
+            Dictionary<string, string> queries = new()
+            {
+                { "uri", "spotify:track:" + itemID }
+            };
+
+            return Request.Post(REQUEST_QUEUE, token, queries);
         }
     }
 }

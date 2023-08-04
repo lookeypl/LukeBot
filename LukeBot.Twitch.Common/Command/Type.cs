@@ -9,5 +9,6 @@ namespace LukeBot.Twitch.Common.Command
         delcom,
         editcom,
         counter,
+        songrequest,
     }
 }

@@ -16,7 +16,7 @@ namespace LukeBot
 
         [Value(1, MetaName = "type", Required = true, HelpText =
             "Type of command to add. Available command types: " +
-            "  print, shoutout, addcom, editcom, delcom"
+            "  print, shoutout, addcom, editcom, delcom, counter, songrequest"
         )]
         public Command::Type Type { get; set; }
 

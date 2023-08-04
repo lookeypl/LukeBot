@@ -11,7 +11,7 @@ using LukeBot.Twitch.Common;
 using CommonConstants = LukeBot.Common.Constants;
 using CommonUtils = LukeBot.Common.Utils;
 using Command = LukeBot.Twitch.Common.Command;
-using Intercom = LukeBot.Communication.Events.Intercom;
+using Intercom = LukeBot.Communication.Common.Intercom;
 
 
 namespace LukeBot.Twitch

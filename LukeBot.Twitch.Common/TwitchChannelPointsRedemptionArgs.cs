@@ -1,4 +1,7 @@
-namespace LukeBot.Communication.Events
+using LukeBot.Communication.Common;
+
+
+namespace LukeBot.Twitch.Common
 {
     public class TwitchChannelPointsRedemptionArgs: UserEventArgsBase
     {

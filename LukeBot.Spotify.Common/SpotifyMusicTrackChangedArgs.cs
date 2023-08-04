@@ -1,7 +1,7 @@
 using System;
 
 
-namespace LukeBot.Communication.Events
+namespace LukeBot.Communication.Common
 {
     public class SpotifyMusicTrackChangedArgs: UserEventArgsBase
     {

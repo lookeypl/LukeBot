@@ -1,8 +1,8 @@
 using System;
-using LukeBot.Spotify.Common;
+using LukeBot.Communication.Common;
 
 
-namespace LukeBot.Communication.Events
+namespace LukeBot.Spotify.Common
 {
     public class SpotifyMusicStateUpdateArgs: UserEventArgsBase
     {

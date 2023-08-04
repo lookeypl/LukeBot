@@ -5,7 +5,7 @@ using LukeBot.Logging;
 using LukeBot.API;
 using LukeBot.Spotify.Common;
 using LukeBot.Communication;
-using LukeBot.Communication.Events;
+using LukeBot.Communication.Common;
 
 
 namespace LukeBot.Spotify

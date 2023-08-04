@@ -2,7 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using LukeBot.Communication;
-using LukeBot.Communication.Events;
+using LukeBot.Communication.Common;
 
 
 namespace LukeBot.Tests.Communication

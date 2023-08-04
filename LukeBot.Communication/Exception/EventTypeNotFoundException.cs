@@ -1,4 +1,4 @@
-﻿using LukeBot.Communication.Events;
+﻿using LukeBot.Communication.Common;
 
 
 namespace LukeBot.Communication

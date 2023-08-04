@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System;
 using System.Threading;
-using Intercom = LukeBot.Communication.Events.Intercom;
+using Intercom = LukeBot.Communication.Common.Intercom;
 
 
 namespace LukeBot.Tests.Communication

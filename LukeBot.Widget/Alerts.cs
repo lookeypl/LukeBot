@@ -1,7 +1,8 @@
 ﻿using Newtonsoft.Json;
 using LukeBot.Communication;
-using LukeBot.Communication.Events;
+using LukeBot.Communication.Common;
 using LukeBot.Logging;
+using LukeBot.Twitch.Common;
 using LukeBot.Widget.Common;
 
 

@@ -6,7 +6,7 @@ using LukeBot.Communication;
 using LukeBot.Logging;
 using LukeBot.Module;
 using LukeBot.Widget.Common;
-using Intercom = LukeBot.Communication.Events.Intercom;
+using Intercom = LukeBot.Communication.Common.Intercom;
 
 
 namespace LukeBot.Widget

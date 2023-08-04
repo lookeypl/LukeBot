@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using LukeBot.Common;
-using LukeBot.Communication.Events;
+using LukeBot.Communication.Common;
 
 
 namespace LukeBot.Communication
@@ -199,7 +199,7 @@ namespace LukeBot.Communication
         public EventSystem()
         {
             // for Global events
-            mUserToCollection.Add(Common.Constants.LUKEBOT_USER_ID, new GlobalEventCollection());
+            mUserToCollection.Add(Constants.LUKEBOT_USER_ID, new GlobalEventCollection());
         }
 
         ~EventSystem()
@@ -223,7 +223,7 @@ namespace LukeBot.Communication
 
         public GlobalEventCollection Global()
         {
-            return (GlobalEventCollection)mUserToCollection[Common.Constants.LUKEBOT_USER_ID];
+            return (GlobalEventCollection)mUserToCollection[Constants.LUKEBOT_USER_ID];
         }
     }
 }

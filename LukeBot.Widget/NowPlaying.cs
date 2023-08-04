@@ -4,7 +4,7 @@ using System.Threading;
 using System.Text.Json;
 using LukeBot.Common;
 using LukeBot.Communication;
-using LukeBot.Communication.Events;
+using LukeBot.Communication.Common;
 using LukeBot.Spotify.Common;
 using LukeBot.Widget.Common;
 

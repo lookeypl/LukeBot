@@ -12,7 +12,7 @@ using LukeBot.Common;
 using LukeBot.Logging;
 using LukeBot.API;
 using LukeBot.Communication;
-using Intercom = LukeBot.Communication.Events.Intercom;
+using Intercom = LukeBot.Communication.Common.Intercom;
 using LukeBot.Widget.Common;
 
 

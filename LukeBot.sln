@@ -51,7 +51,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Twitch.Common", "Lu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Spotify.Common", "LukeBot.Spotify.Common\LukeBot.Spotify.Common.csproj", "{283EE86E-47C6-4248-BC2D-BA185CF37A80}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Communication.Events", "LukeBot.Communication.Events\LukeBot.Communication.Events.csproj", "{5A13C2EA-88E6-4691-986F-57C337DE1EFF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Communication.Common", "LukeBot.Communication.Common\LukeBot.Communication.Common.csproj", "{5A13C2EA-88E6-4691-986F-57C337DE1EFF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LukeBot.Widget", "LukeBot.Widget\LukeBot.Widget.csproj", "{8F60A7EE-B21A-4323-B587-DD171F1A0DFE}"
 EndProject

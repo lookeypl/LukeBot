@@ -1,11 +1,11 @@
 
-namespace LukeBot.Communication.Events
+namespace LukeBot.Communication.Common
 {
     public class EventUtils
     {
         public static System.Type GetEventTypeArgs(string typeStr)
         {
-            return System.Type.GetType("LukeBot.Communication.Events." + typeStr + "Args");
+            return System.Type.GetType("LukeBot.Communication.Common." + typeStr + "Args");
         }
     }
 }

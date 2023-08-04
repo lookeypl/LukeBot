@@ -4,7 +4,8 @@ using System.Net.WebSockets;
 using System.Text.Json;
 using LukeBot.Common;
 using LukeBot.Communication;
-using LukeBot.Communication.Events;
+using LukeBot.Communication.Common;
+using LukeBot.Twitch.Common;
 using LukeBot.Widget.Common;
 
 

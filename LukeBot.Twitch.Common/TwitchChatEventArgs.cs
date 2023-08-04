@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using LukeBot.Logging;
-using LukeBot.Twitch.Common;
+using LukeBot.Communication.Common;
 
 
-namespace LukeBot.Communication.Events
+namespace LukeBot.Twitch.Common
 {
     public class TwitchChatMessageArgs: UserEventArgsBase
     {

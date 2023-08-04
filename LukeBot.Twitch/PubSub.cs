@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 using LukeBot.Logging;
 using LukeBot.API;
 using LukeBot.Communication;
-using LukeBot.Communication.Events;
+using LukeBot.Communication.Common;
+using LukeBot.Twitch.Common;
 using Newtonsoft.Json;
 
 

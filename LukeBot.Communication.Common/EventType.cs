@@ -1,7 +1,7 @@
 using System;
 
 
-namespace LukeBot.Communication.Events
+namespace LukeBot.Communication.Common
 {
     [Flags]
     public enum UserEventType: uint

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Intercom = LukeBot.Communication.Events.Intercom;
+using Intercom = LukeBot.Communication.Common.Intercom;
 
 
 namespace LukeBot.Communication
@@ -28,16 +28,14 @@ namespace LukeBot.Communication
             where TResp: Intercom::ResponseBase, new()
             where TMsg: Intercom::MessageBase
         {
-            Intercom::EndpointInfo endpointInfo;
-            if (!mIntercomEndpoints.TryGetValue(message.Endpoint, out endpointInfo))
+            if (!mIntercomEndpoints.TryGetValue(message.Endpoint, out Intercom.EndpointInfo endpointInfo))
             {
                 TResp r = new TResp();
                 r.SignalError(string.Format("Intercom Endpoint {0} not found", message.Endpoint));
                 return r;
             }
 
-            Intercom::Delegate endpointDelegate;
-            if (!endpointInfo.mMethods.TryGetValue(message.Message, out endpointDelegate))
+            if (!endpointInfo.mMethods.TryGetValue(message.Message, out Intercom.Delegate endpointDelegate))
             {
                 TResp r = new TResp();
                 r.SignalError(string.Format("Intercom Endpoint {0}: Message {1} not found", message.Endpoint, message.Message));

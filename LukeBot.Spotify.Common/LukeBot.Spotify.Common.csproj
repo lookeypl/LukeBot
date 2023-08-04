@@ -23,4 +23,8 @@
     <IntermediateOutputPath>$(SolutionDir)Obj\$(MSBuildProjectName)\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\LukeBot.Communication.Common\LukeBot.Communication.Common.csproj" />
+  </ItemGroup>
+
 </Project>

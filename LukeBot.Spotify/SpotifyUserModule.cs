@@ -37,12 +37,10 @@ namespace LukeBot.Spotify
                 throw new LoginFailedException("Failed to login to Spotify service: " + mProfile.code.ToString());
         }
 
-        private void Login(string username)
+        private void Login()
         {
             string scope = "user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-email";
             mToken = AuthManager.Instance.GetToken(ServiceType.Spotify, LBUser);
-
-            bool tokenFromFile = mToken.Loaded;
 
             if (!mToken.Loaded)
                 mToken.Request(scope);
@@ -71,7 +69,7 @@ namespace LukeBot.Spotify
                     .Push(Constants.PROP_STORE_SPOTIFY_LOGIN_PROP)
             );
 
-            Login(mSpotifyUsername);
+            Login();
 
             mNowPlaying = new NowPlaying(LBUser, mToken);
             mNowPlayingTextFile = new NowPlayingTextFile(

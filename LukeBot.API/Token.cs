@@ -19,6 +19,22 @@ namespace LukeBot.API
         private AuthToken mToken = null;
         private Mutex mMutex = null;
 
+        // Check if token is valid. This can be false when Token is either
+        // not loaded, or loaded but past its expiration period.
+        private bool IsValid
+        {
+            get
+            {
+                if (!Loaded)
+                    return false;
+
+                long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                return now < mToken.acquiredTimestamp + mToken.expires_in;
+            }
+        }
+
+        // Check if token is loaded. This ensures it has been loaded from
+        // ex. Config, but it still might be an old (expired) token.
         public bool Loaded { get; private set; }
         public string ClientID
         {
@@ -31,7 +47,6 @@ namespace LukeBot.API
         private void ImportFromConfig()
         {
             mToken = Conf.Get<AuthToken>(mTokenPath);
-            Loaded = true;
         }
 
         private void ExportToConfig()
@@ -42,7 +57,6 @@ namespace LukeBot.API
             // Auth tokens should always be created hidden
             Conf.Add(mTokenPath, Property.Create<AuthToken>(mToken, true));
             Conf.Save();
-            Loaded = true;
         }
 
         public Token(string service, string lbUser, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)
@@ -73,9 +87,11 @@ namespace LukeBot.API
                 .Push(service)
                 .Push(Common.Constants.PROP_STORE_TOKEN_PROP);
 
+            Loaded = false;
             if (Conf.Exists(mTokenPath)) {
                 Logger.Log().Debug("Found token at config {0}", mTokenPath);
                 ImportFromConfig();
+                Loaded = true;
             }
         }
 
@@ -88,7 +104,10 @@ namespace LukeBot.API
             mMutex.WaitOne();
 
             if (mToken == null)
+            {
+                mMutex.ReleaseMutex();
                 throw new InvalidTokenException("Token is not acquired");
+            }
 
             string ret = mToken.access_token;
             mMutex.ReleaseMutex();
@@ -98,12 +117,23 @@ namespace LukeBot.API
 
         public string Request(string scope)
         {
+            string ret;
+
             mMutex.WaitOne();
+
+            // re-check validity, in case other thread already requested a Token for us
+            if (IsValid)
+            {
+                ret = mToken.access_token;
+                mMutex.ReleaseMutex();
+                return ret;
+            }
 
             mToken = mFlow.Request(scope);
             ExportToConfig();
+            Loaded = true;
 
-            string ret = mToken.access_token;
+            ret = mToken.access_token;
             mMutex.ReleaseMutex();
 
             return ret;
@@ -111,17 +141,26 @@ namespace LukeBot.API
 
         public void EnsureValid()
         {
-            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            if (now > mToken.acquiredTimestamp + mToken.expires_in)
+            if (!IsValid)
                 Refresh();
         }
 
         public string Refresh()
         {
+            string ret;
+
             mMutex.WaitOne();
 
             if (mToken == null)
                 throw new InvalidTokenException("Token has not been acquired yet");
+
+            // re-check validity, in case other thread already refreshed the Token for us
+            if (IsValid)
+            {
+                ret = mToken.access_token;
+                mMutex.ReleaseMutex();
+                return ret;
+            }
 
             AuthToken oldToken = mToken;
             mToken = mFlow.Refresh(mToken);
@@ -131,8 +170,9 @@ namespace LukeBot.API
                 mToken.refresh_token = oldToken.refresh_token;
 
             ExportToConfig();
+            Loaded = true;
 
-            string ret = mToken.access_token;
+            ret = mToken.access_token;
             mMutex.ReleaseMutex();
 
             return ret;

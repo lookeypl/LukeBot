@@ -64,14 +64,21 @@ namespace LukeBot.Spotify
         {
         }
 
-        void FetchData()
+        async void FetchData()
         {
             API.Spotify.PlaybackState state = API.Spotify.GetPlaybackState(mToken);
 
             if (state.code != HttpStatusCode.OK)
             {
                 if (state.code != HttpStatusCode.NoContent)
+                {
                     Logger.Log().Error("Failed to fetch Now Playing playback state: {0}", state.code);
+                    if (Logger.IsLogLevelEnabled(LogLevel.Secure))
+                    {
+                        string msg = await state.message.Content.ReadAsStringAsync();
+                        Logger.Log().Secure("Received message: {0}", msg);
+                    }
+                }
 
                 mEventTimeout = DEFAULT_EVENT_TIMEOUT;
                 mChangeExpected = false;

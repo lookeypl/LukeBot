@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http;
 using Newtonsoft.Json.Linq;
 
 
@@ -8,6 +9,7 @@ namespace LukeBot.API
     public class Response
     {
         public HttpStatusCode code { get; set; }
+        public HttpResponseMessage message { get; set; }
 
         public Response()
         {
@@ -17,6 +19,12 @@ namespace LukeBot.API
         public Response(HttpStatusCode c)
         {
             code = c;
+        }
+
+        public Response(HttpResponseMessage msg)
+        {
+            code = msg.StatusCode;
+            message = msg;
         }
     }
 

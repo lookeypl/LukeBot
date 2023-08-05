@@ -76,6 +76,7 @@ namespace LukeBot.API
             {
                 TResp r = new TResp();
                 r.code = response.StatusCode;
+                r.message = response;
                 return r;
             }
 

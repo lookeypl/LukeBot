@@ -9,24 +9,26 @@ namespace LukeBot.Twitch.Common.Command
         public string Name { get; private set; }
         public Type Type { get; private set; }
         public User Privilege { get; private set; }
+        public bool Enabled { get; private set; }
         public string Value { get; private set; }
 
         public Descriptor(string name)
-            : this(name, Type.invalid, User.Everyone, "")
+            : this(name, Type.invalid, User.Everyone, true, "")
         {
         }
 
         public Descriptor(string name, Type type, string value)
-            : this(name, type, User.Everyone, value)
+            : this(name, type, User.Everyone, true, value)
         {
         }
 
         [JsonConstructor]
-        public Descriptor(string name, Type type, User privilege, string value)
+        public Descriptor(string name, Type type, User privilege, bool enabled, string value)
         {
             Name = name;
             Type = type;
             Privilege = privilege;
+            Enabled = enabled;
             Value = value;
         }
 

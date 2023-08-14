@@ -9,18 +9,21 @@ namespace LukeBot.Twitch.Command
 
         protected string mName;
         protected User mPrivilegeLevel;
+        protected bool mEnabled;
         private UpdateConfigDelegate mUpdateConfig;
 
         protected ICommand(Descriptor d)
         {
             mName = d.Name;
             mPrivilegeLevel = d.Privilege;
+            mEnabled = d.Enabled;
         }
 
         protected ICommand(string name, User privilegeLevel)
         {
             mName = name;
             mPrivilegeLevel = privilegeLevel;
+            mEnabled = true;
         }
 
         // To be called from within Command's Execute() call. Triggers a Config update.
@@ -62,6 +65,16 @@ namespace LukeBot.Twitch.Command
             //   B M V S C
             //   1 0 0 0 0  priv
             return (userIdentity & mPrivilegeLevel) > 0;
+        }
+
+        public void SetEnabled(bool enabled)
+        {
+            mEnabled = enabled;
+        }
+
+        public bool IsEnabled()
+        {
+            return mEnabled;
         }
     }
 }

@@ -59,6 +59,12 @@ namespace LukeBot.Twitch
             Logger.Log().Debug("Processing command {0}", cmd);
             Command.ICommand c = mCommands[cmd];
 
+            if (!c.IsEnabled())
+            {
+                Logger.Log().Debug("Command {0} is disabled", cmd);
+                return "";
+            }
+
             if (!c.CheckPrivilege(userIdentity))
             {
                 Logger.Log().Debug("Privilege check denied for command {0}", cmd);

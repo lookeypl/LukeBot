@@ -515,6 +515,21 @@ namespace LukeBot.Twitch
             mChannelsMutex.ReleaseMutex();
         }
 
+        public void SetCommandEnabled(string channel, string name, bool enabled)
+        {
+            mChannelsMutex.WaitOne();
+
+            if (!mChannels.ContainsKey(channel))
+            {
+                mChannelsMutex.ReleaseMutex();
+                throw new UnknownChannelException(channel);
+            }
+
+            mChannels[channel].GetCommand(name).SetEnabled(enabled);
+
+            mChannelsMutex.ReleaseMutex();
+        }
+
         public void Run()
         {
             mWorker.Start();

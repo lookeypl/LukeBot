@@ -66,7 +66,18 @@ namespace LukeBot.Spotify
 
         async void FetchData()
         {
-            API.Spotify.PlaybackState state = API.Spotify.GetPlaybackState(mToken);
+            API.Spotify.PlaybackState state;
+
+            try
+            {
+                state = API.Spotify.GetPlaybackState(mToken);
+            }
+            catch (System.Exception e)
+            {
+                Logger.Log().Error("Caught exception while fetching playback state: {0}", e.Message);
+                Logger.Log().Debug("Stack trace:\n{0}", e.StackTrace);
+                return;
+            }
 
             if (state.code != HttpStatusCode.OK)
             {

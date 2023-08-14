@@ -6,7 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using LukeBot.Common;
+using LukeBot.Logging;
 
 
 namespace LukeBot.API
@@ -82,6 +82,7 @@ namespace LukeBot.API
 
             Task<string> retContentStrTask = response.Content.ReadAsStringAsync();
             retContentStrTask.Wait();
+            //Logger.Log().Secure("Get: {0}", retContentStrTask.Result);
             return JsonConvert.DeserializeObject<TResp>(retContentStrTask.Result);
         }
 

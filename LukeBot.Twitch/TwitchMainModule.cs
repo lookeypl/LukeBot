@@ -344,6 +344,13 @@ namespace LukeBot.Twitch
             UpdateCommandInConfig(twitchChannel, name);
         }
 
+        public void SetCommandEnabled(string lbUser, string name, bool enabled)
+        {
+            string twitchChannel = GetTwitchChannel(lbUser);
+            mIRC.SetCommandEnabled(twitchChannel, name, enabled);
+            UpdateCommandInConfig(twitchChannel, name);
+        }
+
         public void UpdateLoginForUser(string lbUser, string newLogin)
         {
             // TODO:

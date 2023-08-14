@@ -58,7 +58,7 @@ namespace LukeBot.Twitch.Command
 
         public override Command::Descriptor ToDescriptor()
         {
-            return new Command::Descriptor(mName, Command::Type.shoutout, mPrivilegeLevel, "");
+            return new Command::Descriptor(mName, Command::Type.shoutout, mPrivilegeLevel, mEnabled, "");
         }
     }
 }

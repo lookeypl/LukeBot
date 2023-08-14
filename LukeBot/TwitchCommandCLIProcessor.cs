@@ -93,6 +93,11 @@ namespace LukeBot
         )]
         public string Denied { get; set; }
 
+        [Option('e', "enabled", HelpText =
+            "Set if command is enabled. This decides whether LukeBot will respond to a command in chat."
+        )]
+        public bool? Enabled { get; set; }
+
         [Option('l', "list", SetName = "list", HelpText = "List current command modifiers")]
         public bool List { get; set; }
 
@@ -226,6 +231,11 @@ namespace LukeBot
                     GlobalModules.Twitch.DenyPrivilegeInCommand(lbUser, cmd.Name, priv);
                     msg = "Command " + cmd.Name + " modified";
                     return;
+                }
+                else if (cmd.Enabled != null)
+                {
+                    GlobalModules.Twitch.SetCommandEnabled(lbUser, cmd.Name, (bool)cmd.Enabled);
+                    msg = "Command " + cmd.Name + " " + ((bool)cmd.Enabled ? "enabled" : "disabled");
                 }
                 else
                 {

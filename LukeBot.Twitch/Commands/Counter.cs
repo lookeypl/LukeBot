@@ -82,7 +82,7 @@ namespace LukeBot.Twitch.Command
         public override Command::Descriptor ToDescriptor()
         {
             Logger.Log().Debug("Saving counter {0}", mCounter.ToString());
-            return new Command::Descriptor(mName, Command::Type.counter, mPrivilegeLevel, mCounter.ToString());
+            return new Command::Descriptor(mName, Command::Type.counter, mPrivilegeLevel, mEnabled, mCounter.ToString());
         }
     }
 }

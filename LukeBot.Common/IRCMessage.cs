@@ -79,13 +79,21 @@ namespace LukeBot.Common
             string[] tagsArray = token.Split(';');
             foreach (string t in tagsArray)
             {
-                string[] tArray = t.Split('=');
+                string[] tArray = t.Split('=', 2, StringSplitOptions.RemoveEmptyEntries);
+
                 if (tArray.Length == 1)
                     tags.Add(tArray[0], "");
                 else if (tArray.Length == 2)
-                    tags.Add(tArray[0], tArray[1]);
+                    tags.Add(tArray[0], tArray[1].Replace("\\s", " "));
                 else
-                    throw new InvalidOperationException("Split a key-value tag into more than 2 elements; should not happen");
+                {
+                    string elements = "";
+                    foreach (string subtok in tArray)
+                    {
+                        elements += subtok + ";";
+                    }
+                    throw new ParsingErrorException("Split a key-value tag into more than 2 elements ({0}); should not happen", elements);
+                }
             }
 
             return tags;
@@ -418,6 +426,11 @@ namespace LukeBot.Common
         public bool GetTag(string tag, out string value)
         {
             return mTags.TryGetValue(tag, out value);
+        }
+
+        public string GetTag(string tag)
+        {
+            return mTags[tag];
         }
 
         public int GetTagCount()

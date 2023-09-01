@@ -10,5 +10,6 @@ namespace LukeBot.Twitch.Common.Command
         editcom,
         counter,
         songrequest,
+        speak,
     }
 }

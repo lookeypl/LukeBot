@@ -287,6 +287,7 @@ namespace LukeBot.Twitch
             case Command::Type.delcom: cmd = new Command.DeleteCommand(d, lbUser); break;
             case Command::Type.counter: cmd = new Command.Counter(d); break;
             case Command::Type.songrequest: cmd = new Command.SongRequest(d, lbUser); break;
+            case Command::Type.speak: cmd = new Command.Speak(d); break;
             default: return null;
             }
 

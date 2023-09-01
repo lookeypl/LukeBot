@@ -100,7 +100,7 @@ namespace LukeBot.API
         {
             public PlaybackStateItem item { get; set; }
             public bool is_playing { get; set; }
-            public int progress_ms { get; set; }
+            public int? progress_ms { get; set; }
 
             public override string ToString()
             {

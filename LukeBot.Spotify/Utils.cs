@@ -62,14 +62,14 @@ namespace LukeBot.Spotify
             float progress;
             PlayerState state;
 
-            if (data.code == HttpStatusCode.NoContent)
+            if (data.code == HttpStatusCode.NoContent || data.progress_ms == null)
             {
                 progress = 0.0f;
                 state = PlayerState.Unloaded;
             }
             else
             {
-                progress = data.progress_ms / 1000.0f; // conversion from ms to s
+                progress = (float)data.progress_ms / 1000.0f; // conversion from ms to s
                 state = data.is_playing ? PlayerState.Playing : PlayerState.Stopped;
             }
 

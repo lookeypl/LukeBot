@@ -24,6 +24,7 @@ namespace LukeBot.Spotify
         private SpotifyMusicStateUpdateArgs mCurrentStateUpdate;
         private int mEventTimeout;
         private bool mChangeExpected;
+        private bool mNoItemWarningEmitted;
         private EventCallback mTrackChangedCallback;
         private EventCallback mStateUpdateCallback;
 
@@ -36,6 +37,7 @@ namespace LukeBot.Spotify
             mShutdownEvent = new ManualResetEvent(false);
             mEventTimeout = DEFAULT_EVENT_TIMEOUT;
             mChangeExpected = false;
+            mNoItemWarningEmitted = false;
             mCurrentPlaybackState = null;
             mCurrentStateUpdate = new SpotifyMusicStateUpdateArgs();
 
@@ -97,13 +99,20 @@ namespace LukeBot.Spotify
                 return;
             }
 
-            if (state.item == null)
+            if (state.item == null || state.progress_ms == null)
             {
-                Logger.Log().Warning("No track item received");
+                if (!mNoItemWarningEmitted)
+                    Logger.Log().Warning("No track item received (null item or progress_ms). Private session might be enabled.");
+
+                mEventTimeout = DEFAULT_EVENT_TIMEOUT;
+                mChangeExpected = false;
+                mNoItemWarningEmitted = true;
                 return;
             }
 
             mDataAccessMutex.WaitOne();
+
+            mNoItemWarningEmitted = false;
 
             // Track change
             if ((mCurrentPlaybackState == null) || (state.item.id != mCurrentPlaybackState.item.id))
@@ -135,7 +144,7 @@ namespace LukeBot.Spotify
                 }
                 else
                 {
-                    int trackLeftMs = mCurrentPlaybackState.item.duration_ms - mCurrentPlaybackState.progress_ms;
+                    int trackLeftMs = mCurrentPlaybackState.item.duration_ms - (int)mCurrentPlaybackState.progress_ms;
                     if (trackLeftMs < DEFAULT_EVENT_TIMEOUT)
                     {
                         // We are close to switch to new track.

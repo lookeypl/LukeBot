@@ -62,7 +62,7 @@ namespace LukeBot.API
 
             TTSRequest request = new TTSRequest(voice, text);
 
-            HttpResponseMessage ret = Request.PostJson(STREAMLABS_POLLY_SPEAK_URI, null, null, request);
+            HttpResponseMessage ret = Request.Post(STREAMLABS_POLLY_SPEAK_URI, null, null, new JsonRequestContent(request));
 
             if (!ret.IsSuccessStatusCode)
             {

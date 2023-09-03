@@ -10,18 +10,25 @@ namespace LukeBot.API
     {
         public HttpStatusCode code { get; set; }
         public HttpResponseMessage message { get; set; }
+        public bool IsSuccess
+        {
+            get
+            {
+                return message != null && message.IsSuccessStatusCode;
+            }
+        }
 
         public Response()
         {
             code = HttpStatusCode.OK;
         }
 
-        public Response(HttpStatusCode c)
+        public Response(HttpResponseMessage msg)
         {
-            code = c;
+            Fill(msg);
         }
 
-        public Response(HttpResponseMessage msg)
+        public void Fill(HttpResponseMessage msg)
         {
             code = msg.StatusCode;
             message = msg;
@@ -32,14 +39,14 @@ namespace LukeBot.API
     {
         public JObject obj { get; private set; }
 
-        public ResponseJObject(HttpStatusCode c)
-            : base(c)
+        public ResponseJObject(HttpResponseMessage msg)
+            : base(msg)
         {
             obj = null;
         }
 
-        public ResponseJObject(HttpStatusCode c, string jsonStr)
-            : base(c)
+        public ResponseJObject(HttpResponseMessage msg, string jsonStr)
+            : base(msg)
         {
             obj = JObject.Parse(jsonStr);
         }
@@ -59,14 +66,14 @@ namespace LukeBot.API
     {
         public JArray array { get; private set; }
 
-        public ResponseJArray(HttpStatusCode c)
-            : base(c)
+        public ResponseJArray(HttpResponseMessage msg)
+            : base(msg)
         {
             array = null;
         }
 
-        public ResponseJArray(HttpStatusCode c, string jsonStr)
-            : base(c)
+        public ResponseJArray(HttpResponseMessage msg, string jsonStr)
+            : base(msg)
         {
             array = JArray.Parse(jsonStr);
         }

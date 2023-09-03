@@ -1,4 +1,8 @@
+using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using LukeBot.Logging;
 
 
 namespace LukeBot.API
@@ -8,6 +12,14 @@ namespace LukeBot.API
         private const string API_URI = "https://api.twitch.tv/helix/";
         private const string GET_USERS_API_URI = API_URI + "users";
         private const string GET_CHANNEL_INFORMATION_API_URI = API_URI + "channels";
+
+        private const string EVENTSUB_BASE_URI = API_URI + "eventsub/";
+        private const string EVENTSUB_SUBSCRIPTIONS_API_URI = EVENTSUB_BASE_URI + "subscriptions";
+
+        public class PaginationData
+        {
+            public string cursor { get; set; }
+        }
 
         public struct GetUserData
         {
@@ -45,6 +57,71 @@ namespace LukeBot.API
             public List<GetChannelInformationData> data { get; set; }
         }
 
+        public class EventSubSubscriptionCondition
+        {
+            public string user_id { get; set; }
+
+            public EventSubSubscriptionCondition(string userId)
+            {
+                user_id = userId;
+            }
+        }
+
+        public class EventSubSubscriptionTransport
+        {
+            public string method { get; set; }
+            public string session_id { get; set; }
+            public DateTime? connected_at { get; set; }
+            public DateTime? disconnected_at { get; set; }
+
+            public EventSubSubscriptionTransport(string sessionId)
+            {
+                // we only support websockets as transport method
+                method = "websocket";
+                session_id = sessionId;
+                // below fields are only returned by EventSub
+                connected_at = null;
+                disconnected_at = null;
+            }
+        }
+
+        public class EventSubSubscriptionData
+        {
+            public string id { get; set; }
+            public string status { get; set; }
+            public string type { get; set; }
+            public string version { get; set; }
+            public EventSubSubscriptionCondition condition { get; set; }
+            public DateTime created_at { get; set; }
+            public EventSubSubscriptionTransport transport { get; set; }
+            public int cost { get; set; }
+
+            public EventSubSubscriptionData(string type, string version, string userId, string sessionId)
+            {
+                this.type = type;
+                this.version = version;
+                condition = new(userId);
+                transport = new(sessionId);
+            }
+        }
+
+        public class CreateEventSubSubscriptionResponse: Response
+        {
+            public List<EventSubSubscriptionData> data { get; set; }
+            public int total { get; set; }
+            public int total_cost { get; set; }
+            public int max_total_cost { get; set; }
+        }
+
+        public class GetEventSubSubscriptionsResponse: Response
+        {
+            public List<EventSubSubscriptionData> data { get; set; }
+            public int total { get; set; }
+            public int total_cost { get; set; }
+            public int max_total_cost { get; set; }
+            public PaginationData pagination { get; set; }
+        }
+
 
         // Get data about specified user. If login field is empty, gets data about user
         // based on provided Token.
@@ -69,6 +146,72 @@ namespace LukeBot.API
             uriQuery.Add("broadcaster_id", id);
 
             return Request.Get<GetChannelInformationResponse>(GET_CHANNEL_INFORMATION_API_URI, token, uriQuery);
+        }
+
+        /**
+         * @p type subscription type to create
+         * @p version version of subscription to create
+         * @p userId Twitch user ID aka. "to which channel subscribe to"
+         * @p sessionId EventSub WebSocket session ID
+         */
+        public static CreateEventSubSubscriptionResponse CreateEventSubSubscription(Token token,
+                                                                                    string type,
+                                                                                    string version,
+                                                                                    string userId,
+                                                                                    string sessionId)
+        {
+            EventSubSubscriptionData subData = new EventSubSubscriptionData(type, version, userId, sessionId);
+            JsonRequestContent content = new(subData);
+
+            return Request.Post<CreateEventSubSubscriptionResponse>(EVENTSUB_SUBSCRIPTIONS_API_URI, token, null, content);
+        }
+
+        public static Response DeleteEventSubSubscription(Token token, string id)
+        {
+            if (id.Length == 0)
+                throw new System.ArgumentException("Subscription ID has to be provided");
+
+            Dictionary<string, string> query = new();
+            query.Add("id", id);
+
+            return Request.Delete<Response>(EVENTSUB_SUBSCRIPTIONS_API_URI, token, query);
+        }
+
+        public static GetEventSubSubscriptionsResponse GetEventSubSubscriptions(Token token,
+                                                                                string status = null,
+                                                                                string type = null,
+                                                                                string userId = null,
+                                                                                string after = null)
+        {
+            bool filterAdded = false;
+            Dictionary<string, string> uriQuery = new();
+
+            if (status != null)
+            {
+                uriQuery.Add("status", status);
+                filterAdded = true;
+            }
+
+            if (type != null)
+            {
+                if (filterAdded)
+                    throw new ArgumentException("GetEventSub API call filters are mutually exclusive. Add only one filter.");
+                uriQuery.Add("type", type);
+                filterAdded = true;
+            }
+
+            if (userId != null)
+            {
+                if (filterAdded)
+                    throw new ArgumentException("GetEventSub API call filters are mutually exclusive. Add only one filter.");
+                uriQuery.Add("user_id", userId);
+            }
+
+            // pagination is not a filter and can always be added if needed
+            if (after != null)
+                uriQuery.Add("after", after);
+
+            return Request.Get<GetEventSubSubscriptionsResponse>(EVENTSUB_SUBSCRIPTIONS_API_URI, token, uriQuery);
         }
     }
 }

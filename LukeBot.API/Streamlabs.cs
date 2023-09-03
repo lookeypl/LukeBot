@@ -37,7 +37,7 @@ namespace LukeBot.API
             }
         };
 
-        public struct TTS
+        public class TTS: Response
         {
             public bool success { get; set; }
             public string speak_url { get; set; }
@@ -62,23 +62,7 @@ namespace LukeBot.API
 
             TTSRequest request = new TTSRequest(voice, text);
 
-            HttpResponseMessage ret = Request.Post(STREAMLABS_POLLY_SPEAK_URI, null, null, new JsonRequestContent(request));
-
-            if (!ret.IsSuccessStatusCode)
-            {
-                Logger.Log().Error("SL TTS request failed: {0} ({1})", ret.StatusCode, ret.ReasonPhrase);
-                return new TTS();
-            }
-
-            TTS r = JsonSerializer.Deserialize<TTS>(ret.Content.ReadAsStream());
-            if (!r.success)
-            {
-                Logger.Log().Error("SL TTS request invalid");
-                return new TTS();
-            }
-
-            Logger.Log().Debug("SL TTS returned URL: {0}", r.speak_url);
-            return r;
+            return Request.Post<TTS>(STREAMLABS_POLLY_SPEAK_URI, null, null, new JsonRequestContent(request));
         }
     }
 }

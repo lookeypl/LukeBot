@@ -20,6 +20,18 @@ namespace LukeBot.Twitch.Command
             string text = string.Join(' ', args.Skip(1).ToArray());
 
             Streamlabs.TTS tts = Streamlabs.GetTTS(voice, text);
+            if (!tts.IsSuccess)
+            {
+                Logger.Log().Error("SL TTS request failed: {0} ({1})", tts.code, tts.message.ReasonPhrase);
+                return "";
+            }
+
+            if (!tts.success)
+            {
+                Logger.Log().Error("SL TTS request invalid");
+                return "";
+            }
+
             Logger.Log().Debug("{0}", tts.speak_url);
             return "";
         }

@@ -69,6 +69,42 @@ namespace LukeBot.API
             return response;
         }
 
+        private static TResp RequestCommon<TResp>(HttpMethod method,
+                                                  string uri,
+                                                  Token token = null,
+                                                  Dictionary<string, string> uriQuery = null,
+                                                  RequestContent content = null)
+                                                  where TResp: Response, new()
+        {
+            HttpResponseMessage response = Send(method, uri, token, uriQuery, content);
+            if (!response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NoContent)
+            {
+                TResp r = new TResp();
+                r.Fill(response);
+                return r;
+            }
+
+            Task<string> retContentStrTask = response.Content.ReadAsStringAsync();
+            retContentStrTask.Wait();
+            //Logger.Log().Secure("{0}: {1}", method.ToString(), retContentStrTask.Result);
+            TResp ret = JsonConvert.DeserializeObject<TResp>(retContentStrTask.Result);
+            ret.Fill(response);
+            return ret;
+        }
+
+
+        /***************************
+         * Public APIs
+         ***************************/
+
+        /**
+         * Call a Get Http Request. Returns a serialized string with response data.
+         *
+         * @p uri URI to submit a request to
+         * @p token Authorization token acquired via AuthManager
+         * @p uriQuery Additional queries to be added to @p URI
+         * @p content Additional content added to the request (see RequestContent)
+         */
         public static string Get(string uri,
                                  Token token = null,
                                  Dictionary<string, string> uriQuery = null,
@@ -86,73 +122,121 @@ namespace LukeBot.API
             return retContentStrTask.Result;
         }
 
-        public static TResp Get<TResp>(string uri,
-                                       Token token = null,
-                                       Dictionary<string, string> uriQuery = null,
-                                       RequestContent content = null)
-                                       where TResp: Response, new()
-        {
-            HttpResponseMessage response = Send(HttpMethod.Get, uri, token, uriQuery, content);
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                TResp r = new TResp();
-                r.code = response.StatusCode;
-                r.message = response;
-                return r;
-            }
-
-            Task<string> retContentStrTask = response.Content.ReadAsStringAsync();
-            retContentStrTask.Wait();
-            //Logger.Log().Secure("Get: {0}", retContentStrTask.Result);
-            return JsonConvert.DeserializeObject<TResp>(retContentStrTask.Result);
-        }
-
+        /**
+         * Call a Get Http Request. Returns a JSON object in form of Newtonsoft JObject
+         *
+         * @p uri URI to submit a request to
+         * @p token Authorization token acquired via AuthManager
+         * @p uriQuery Additional queries to be added to @p URI
+         * @p content Additional content added to the request (see RequestContent)
+         */
         public static ResponseJObject GetJObject(string uri,
                                                  Token token = null,
                                                  Dictionary<string, string> uriQuery = null,
                                                  RequestContent content = null)
         {
             HttpResponseMessage response = Send(HttpMethod.Get, uri, token, uriQuery, content);
-            if (response.StatusCode != HttpStatusCode.OK)
+            if (!response.IsSuccessStatusCode)
             {
-                return new ResponseJObject(response.StatusCode);
+                return new ResponseJObject(response);
             }
 
             Task<string> retContentStrTask = response.Content.ReadAsStringAsync();
             retContentStrTask.Wait();
-            return new ResponseJObject(response.StatusCode, retContentStrTask.Result);
+            return new ResponseJObject(response, retContentStrTask.Result);
         }
 
+        /**
+         * Call a Get Http Request. Returns a JArray representing multiple JSON JObject-s
+         *
+         * @p uri URI to submit a request to
+         * @p token Authorization token acquired via AuthManager
+         * @p uriQuery Additional queries to be added to @p URI
+         * @p content Additional content added to the request (see RequestContent)
+         */
         public static ResponseJArray GetJArray(string uri,
                                                Token token = null,
                                                Dictionary<string, string> uriQuery = null,
                                                RequestContent content = null)
         {
             HttpResponseMessage response = Send(HttpMethod.Get, uri, token, uriQuery, content);
-            if (response.StatusCode != HttpStatusCode.OK)
+            if (!response.IsSuccessStatusCode)
             {
-                return new ResponseJArray(response.StatusCode);
+                return new ResponseJArray(response);
             }
 
             Task<string> retContentStrTask = response.Content.ReadAsStringAsync();
             retContentStrTask.Wait();
-            return new ResponseJArray(response.StatusCode, retContentStrTask.Result);
+            return new ResponseJArray(response, retContentStrTask.Result);
         }
 
-        public static HttpResponseMessage Post(string uri,
-                                               Token token = null,
-                                               Dictionary<string, string> uriQuery = null,
-                                               RequestContent content = null)
+        /**
+         * Call a Get Http request and, if successful, deserialize the response to generic type TResp.
+         *
+         * TResp must be derived from (or be) a Response class.
+         *
+         * If the call fails, return type will be a base Response class containing HTTP error code and
+         * received HttpResponseMessage for further handling. Remember to first check if request
+         * was successful before accessing TResp fields from derived class.
+         *
+         * @p uri URI to submit a request to
+         * @p token Authorization token acquired via AuthManager
+         * @p uriQuery Additional queries to be added to @p URI
+         * @p content Additional content added to the request (see RequestContent)
+         */
+        public static TResp Get<TResp>(string uri,
+                                       Token token = null,
+                                       Dictionary<string, string> uriQuery = null,
+                                       RequestContent content = null)
+                                       where TResp: Response, new()
         {
-            return Send(HttpMethod.Post, uri, token, uriQuery, content);
+            return RequestCommon<TResp>(HttpMethod.Get, uri, token, uriQuery, content);
         }
 
-        public static HttpResponseMessage Delete(string uri,
-                                                Token token = null,
-                                                Dictionary<string, string> uriQuery = null,
-                                                RequestContent content = null)
+        /**
+         * Call a Post Http request and, if successful, deserialize the response to generic type TResp.
+         *
+         * TResp must be derived from (or be) a Response class.
+         *
+         * If the call fails, return type will be a base Response class containing HTTP error code and
+         * received HttpResponseMessage for further handling. Remember to first check if request
+         * was successful before accessing TResp fields from derived class.
+         *
+         * @p uri URI to submit a request to
+         * @p token Authorization token acquired via AuthManager
+         * @p uriQuery Additional queries to be added to @p URI
+         * @p content Additional content added to the request (see RequestContent)
+         */
+        public static TResp Post<TResp>(string uri,
+                                        Token token = null,
+                                        Dictionary<string, string> uriQuery = null,
+                                        RequestContent content = null)
+                                        where TResp: Response, new()
         {
-            return Send(HttpMethod.Delete, uri, token, uriQuery, content);
+            return RequestCommon<TResp>(HttpMethod.Post, uri, token, uriQuery, content);
+        }
+
+        /**
+         * Call a Delete Http request and, if successful, deserialize the response to generic type TResp.
+         *
+         * TResp must be derived from (or be) a Response class.
+         *
+         * If the call fails, return type will be a base Response class containing HTTP error code and
+         * received HttpResponseMessage for further handling. Remember to first check if request
+         * was successful before accessing TResp fields from derived class.
+         *
+         * @p uri URI to submit a request to
+         * @p token Authorization token acquired via AuthManager
+         * @p uriQuery Additional queries to be added to @p URI
+         * @p content Additional content added to the request (see RequestContent)
+         */
+        public static TResp Delete<TResp>(string uri,
+                                          Token token = null,
+                                          Dictionary<string, string> uriQuery = null,
+                                          RequestContent content = null)
+                                          where TResp: Response, new()
+        {
+            return RequestCommon<TResp>(HttpMethod.Delete, uri, token, uriQuery, content);
         }
     }
 }

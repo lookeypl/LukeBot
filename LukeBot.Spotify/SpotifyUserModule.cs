@@ -120,11 +120,11 @@ namespace LukeBot.Spotify
                 throw new SpotifyQueueAddFailedException(track.code);
             }
 
-            HttpResponseMessage resp = API.Spotify.AddItemToPlaybackQueue(mToken, trackID);
-            if (!resp.IsSuccessStatusCode)
+            Response resp = API.Spotify.AddItemToPlaybackQueue(mToken, trackID);
+            if (!resp.IsSuccess)
             {
-                Logger.Log().Error("Failed to add Track to queue: {0}", resp.StatusCode);
-                throw new SpotifyQueueAddFailedException(resp.StatusCode);
+                Logger.Log().Error("Failed to add Track to queue: {0}", resp.code);
+                throw new SpotifyQueueAddFailedException(resp.code);
             }
 
             Logger.Log().Debug("Added {0} - {1} to play queue successfully", track.artists[0].name, track.name);

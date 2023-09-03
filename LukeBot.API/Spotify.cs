@@ -141,14 +141,14 @@ namespace LukeBot.API
             return Request.Get<PlaybackState>(REQUEST_PLAYER_STATE, token);
         }
 
-        public static HttpResponseMessage AddItemToPlaybackQueue(Token token, string itemID)
+        public static Response AddItemToPlaybackQueue(Token token, string itemID)
         {
             Dictionary<string, string> queries = new()
             {
                 { "uri", "spotify:track:" + itemID }
             };
 
-            return Request.Post(REQUEST_QUEUE, token, queries);
+            return Request.Post<Response>(REQUEST_QUEUE, token, queries);
         }
     }
 }

@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using LukeBot.API;
 using LukeBot.Common;
 using LukeBot.Logging;
 using LukeBot.Module;
+using LukeBot.Twitch.EventSub;
 using Widget = LukeBot.Widget;
 
 
@@ -15,7 +17,7 @@ namespace LukeBot.Twitch
         private string mChannelName;
         private Token mUserToken;
         private API.Twitch.GetUserData mUserData;
-        private PubSub mPubSub;
+        private EventSubClient mEventSub;
 
 
         public TwitchUserModule(string lbUser, Token botToken, string channelName)
@@ -42,8 +44,12 @@ namespace LukeBot.Twitch
                 throw new InvalidOperationException("Failed to login to Twitch");
             }
 
-            mPubSub = new PubSub(lbUser, mUserToken, mUserData);
-            mPubSub.Connect(new Uri("wss://pubsub-edge.twitch.tv"));
+            //mEventSub = new();
+            //mEventSub.Connect(mUserToken, mUserData.id);
+
+            List<string> events = new();
+            events.Add(EventSubClient.SUB_CHANNEL_POINTS_REDEMPTION_ADD);
+            //mEventSub.Subscribe(events);
         }
 
         internal API.Twitch.GetUserData GetUserData()
@@ -69,12 +75,12 @@ namespace LukeBot.Twitch
 
         public void RequestShutdown()
         {
-            if (mPubSub != null) mPubSub.RequestShutdown();
+            if (mEventSub != null) mEventSub.RequestShutdown();
         }
 
         public void WaitForShutdown()
         {
-            if (mPubSub != null) mPubSub.WaitForShutdown();
+            if (mEventSub != null) mEventSub.WaitForShutdown();
         }
 
         public ModuleType GetModuleType()

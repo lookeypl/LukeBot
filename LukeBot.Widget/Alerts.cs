@@ -12,7 +12,15 @@ namespace LukeBot.Widget
     {
         public void OnChannelPointsEvent(object o, EventArgsBase args)
         {
-            TwitchChannelPointsRedemptionArgs a = (TwitchChannelPointsRedemptionArgs)args;
+            TwitchChannelPointsRedemptionArgs a = args as TwitchChannelPointsRedemptionArgs;
+            string msg = JsonConvert.SerializeObject(a);
+            Logger.Log().Debug("{0}", msg);
+            SendToWSAsync(msg);
+        }
+
+        public void OnSubscriptionEvent(object o, EventArgsBase args)
+        {
+            TwitchSubscriptionArgs a = args as TwitchSubscriptionArgs;
             string msg = JsonConvert.SerializeObject(a);
             Logger.Log().Debug("{0}", msg);
             SendToWSAsync(msg);

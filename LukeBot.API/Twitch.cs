@@ -2,19 +2,34 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using LukeBot.Config;
 using LukeBot.Logging;
+using Newtonsoft.Json;
 
 
 namespace LukeBot.API
 {
     public class Twitch
     {
-        private const string API_URI = "https://api.twitch.tv/helix/";
-        private const string GET_USERS_API_URI = API_URI + "users";
-        private const string GET_CHANNEL_INFORMATION_API_URI = API_URI + "channels";
+        public const string DEFAULT_API_URI = "https://api.twitch.tv/helix";
 
-        private const string EVENTSUB_BASE_URI = API_URI + "eventsub/";
-        private const string EVENTSUB_SUBSCRIPTIONS_API_URI = EVENTSUB_BASE_URI + "subscriptions";
+        private static readonly string API_URI = GetEndpoint();
+        private static readonly string GET_USERS_API_URI = API_URI + "/users";
+        private static readonly string GET_CHANNEL_INFORMATION_API_URI = API_URI + "/channels";
+
+        private static readonly string EVENTSUB_BASE_URI = API_URI + "/eventsub";
+        private static readonly string EVENTSUB_SUBSCRIPTIONS_API_URI = EVENTSUB_BASE_URI + "/subscriptions";
+
+        private static string GetEndpoint()
+        {
+            if (Conf.TryGet<string>(Path.Parse("twitch.api_endpoint"), out string ret))
+            {
+                Logger.Log().Debug("Hostname: {0}", ret);
+                return ret;
+            }
+            else
+                return DEFAULT_API_URI;
+        }
 
         public class PaginationData
         {
@@ -71,7 +86,10 @@ namespace LukeBot.API
         {
             public string method { get; set; }
             public string session_id { get; set; }
+
+            [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]
             public DateTime? connected_at { get; set; }
+            [JsonProperty(NullValueHandling=NullValueHandling.Ignore)]
             public DateTime? disconnected_at { get; set; }
 
             public EventSubSubscriptionTransport(string sessionId)
@@ -87,14 +105,10 @@ namespace LukeBot.API
 
         public class EventSubSubscriptionData
         {
-            public string id { get; set; }
-            public string status { get; set; }
             public string type { get; set; }
             public string version { get; set; }
             public EventSubSubscriptionCondition condition { get; set; }
-            public DateTime created_at { get; set; }
             public EventSubSubscriptionTransport transport { get; set; }
-            public int cost { get; set; }
 
             public EventSubSubscriptionData(string type, string version, string userId, string sessionId)
             {
@@ -105,9 +119,21 @@ namespace LukeBot.API
             }
         }
 
+        public class EventSubSubscriptionResponseData
+        {
+            public string id { get; set; }
+            public string status { get; set; }
+            public string type { get; set; }
+            public string version { get; set; }
+            public EventSubSubscriptionCondition condition { get; set; }
+            public DateTime created_at { get; set; }
+            public EventSubSubscriptionTransport transport { get; set; }
+            public int cost { get; set; }
+        }
+
         public class CreateEventSubSubscriptionResponse: Response
         {
-            public List<EventSubSubscriptionData> data { get; set; }
+            public List<EventSubSubscriptionResponseData> data { get; set; }
             public int total { get; set; }
             public int total_cost { get; set; }
             public int max_total_cost { get; set; }

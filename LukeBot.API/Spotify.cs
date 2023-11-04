@@ -2,18 +2,29 @@ using System;
 using System.Net;
 using System.Collections.Generic;
 using LukeBot.Common;
+using LukeBot.Config;
 using System.Net.Http;
 
 namespace LukeBot.API
 {
     public class Spotify
     {
-        private const string REQUEST_URI_BASE = "https://api.spotify.com/v1";
-        private const string REQUEST_CURRENT_USER_PROFILE = REQUEST_URI_BASE + "/me" ;
-        private const string REQUEST_PLAYER_STATE = REQUEST_CURRENT_USER_PROFILE + "/player";
-        private const string REQUEST_QUEUE = REQUEST_PLAYER_STATE + "/queue";
-        private const string REQUEST_ALBUM = REQUEST_URI_BASE + "/albums/"; // needs ID at the end!
-        private const string REQUEST_TRACK = REQUEST_URI_BASE + "/tracks/"; // needs ID at the end!
+        public const string DEFAULT_API_URI = "https://api.spotify.com/v1";
+
+        private static readonly string API_URI_BASE = GetEndpoint();
+        private static readonly string REQUEST_CURRENT_USER_PROFILE = API_URI_BASE + "/me" ;
+        private static readonly string REQUEST_PLAYER_STATE = REQUEST_CURRENT_USER_PROFILE + "/player";
+        private static readonly string REQUEST_QUEUE = REQUEST_PLAYER_STATE + "/queue";
+        private static readonly string REQUEST_ALBUM = API_URI_BASE + "/albums/"; // needs ID at the end!
+        private static readonly string REQUEST_TRACK = API_URI_BASE + "/tracks/"; // needs ID at the end!
+
+        private static string GetEndpoint()
+        {
+            if (Conf.TryGet<string>(Path.Parse("spotify.api_endpoint"), out string ret))
+                return ret;
+            else
+                return DEFAULT_API_URI;
+        }
 
 
         public class AlbumCopyright

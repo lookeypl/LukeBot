@@ -35,6 +35,13 @@ namespace LukeBot.API
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Get());
                 request.Headers.Add("Client-Id", token.ClientID);
             }
+            else
+            {
+                // TEST PATH - this should mostly be used in tests
+                // Added because Twitch CLI requires it to properly receive API requests
+                // TODO when refactoring this area, might be a good idea to help it in a different way...
+                request.Headers.Add("Client-Id", "0lukebot1test2client3id4");
+            }
 
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 

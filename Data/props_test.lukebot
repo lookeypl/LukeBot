@@ -1,0 +1,49 @@
+{
+    "name": "root",
+    "type": "LukeBot.Config.PropertyDomain",
+    "value": [
+        {
+            "name": "store",
+            "type": "LukeBot.Config.PropertyDomain",
+            "value": [
+                {
+                    "name": "version",
+                    "type": "System.Int32",
+                    "value": "1"
+                }
+            ]
+        },
+        {
+            "name": "lukebot",
+            "type": "LukeBot.Config.PropertyDomain",
+            "value": [
+                {
+                    "name": "server_ip",
+                    "type": "System.String",
+                    "value": "\"127.0.0.1\""
+                },
+                {
+                    "name": "users",
+                    "type": "System.String[]",
+                    "value": "[\"admin\"]"
+                },
+                {
+                    "name": "reconnect_count",
+                    "type": "System.Int32",
+                    "value": "10"
+                }
+            ]
+        },
+        {
+            "name": "twitch",
+            "type": "LukeBot.Config.PropertyDomain",
+            "value": [
+                {
+                    "name": "api_endpoint",
+                    "type": "System.String",
+                    "value": "\"http://127.0.0.1:8080\""
+                }
+            ]
+        }
+    ]
+}

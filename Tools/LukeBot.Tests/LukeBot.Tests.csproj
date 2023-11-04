@@ -33,13 +33,13 @@
     <ProjectReference Include="..\..\LukeBot.Config\LukeBot.Config.csproj" />
     <ProjectReference Include="..\..\LukeBot.Communication\LukeBot.Communication.csproj" />
     <ProjectReference Include="..\..\LukeBot.Twitch\LukeBot.Twitch.csproj" />
+    <ProjectReference Include="..\..\LukeBot.Twitch.Common\LukeBot.Twitch.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="2.2.8" />
     <PackageReference Include="MSTest.TestFramework" Version="2.2.8" />
-    <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" />
   </ItemGroup>
 
 </Project>

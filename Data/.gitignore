@@ -1,4 +1,8 @@
 # LukeBot files which should be kept locally (not on repo)
 # These include OAuth keys acquired from services we connect to
-# plus some other minor custom details
+# plus some other user-specific details which should remain private.
+#
+# The only exception from this rule is props_test.lukebot, which
+# is necessary for test runs.
 /*.lukebot
+!/props_test.lukebot

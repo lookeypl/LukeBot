@@ -17,7 +17,7 @@ namespace LukeBot.Interface
      */
     public class UserInterface
     {
-        private static InterfaceType mType = InterfaceType.None;
+        private static InterfaceType mType = InterfaceType.none;
         private static InterfaceBase mInterface = null;
         private static readonly object mLock = new();
 
@@ -64,7 +64,7 @@ namespace LukeBot.Interface
                     if (mInterface == null)
                         throw new InterfaceNotInitializedException();
 
-                    if ((mType & InterfaceType.CommandLine) != InterfaceType.None)
+                    if ((mType & InterfaceType.CommandLine) != InterfaceType.none)
                         return mInterface as CLI;
                     else
                         // Assuming we are right now not working under CLI mode,
@@ -92,7 +92,7 @@ namespace LukeBot.Interface
                     if (mInterface == null)
                         throw new InterfaceNotInitializedException();
 
-                    if ((mType & InterfaceType.Graphical) != InterfaceType.None)
+                    if ((mType & InterfaceType.Graphical) != InterfaceType.none)
                         return mInterface as GUI;
                     else
                         // Assuming we are right now not working under GUI mode,
@@ -116,8 +116,14 @@ namespace LukeBot.Interface
 
             switch (mType)
             {
-            case InterfaceType.BasicCLI:
+            case InterfaceType.none:
+                mInterface = mDummyCLI;
+                break;
+            case InterfaceType.basic:
                 mInterface = new BasicCLI();
+                break;
+            case InterfaceType.server:
+                mInterface = new ServerCLI();
                 break;
             default:
                 throw new UnrecognizedInterfaceTypeException(mType);
@@ -126,9 +132,13 @@ namespace LukeBot.Interface
 
         public static void Teardown()
         {
-            mInterface.Teardown();
-            mInterface = null;
-            mType = InterfaceType.None;
+            if (mInterface != null)
+            {
+                mInterface.Teardown();
+                mInterface = null;
+            }
+
+            mType = InterfaceType.none;
         }
     }
 }

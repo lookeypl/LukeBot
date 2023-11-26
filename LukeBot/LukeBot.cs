@@ -23,13 +23,6 @@ namespace LukeBot
             new WidgetCLIProcessor(),
         };
 
-        void OnCancelKeyPress(object sender, ConsoleCancelEventArgs args)
-        {
-            // UI is not handled here; it captures Ctrl+C on its own
-            Logger.Log().Info("Ctrl+C handled: Requested shutdown");
-            Shutdown();
-        }
-
         public LukeBot()
         {
         }
@@ -202,8 +195,6 @@ namespace LukeBot
 
         public void Run(ProgramOptions opts)
         {
-            Console.CancelKeyPress += OnCancelKeyPress;
-
             try
             {
                 Logger.Log().Info("LukeBot v0.0.1 starting");
@@ -224,8 +215,7 @@ namespace LukeBot
 
                 LoadUsers();
 
-                // TODO fetch from command line parameters
-                InterfaceType uiType = InterfaceType.BasicCLI;
+                InterfaceType uiType = opts.CLI;
                 Logger.Log().Info("Initializing UI {0}...", uiType.ToString());
                 UserInterface.Initialize(uiType);
 

@@ -168,6 +168,13 @@ namespace LukeBot.Interface
         {
             try
             {
+                Console.CancelKeyPress += delegate
+                {
+                    Logger.Log().Info("Ctrl+C handled: Requested shutdown");
+                    mState = State.DONE;
+                    Utils.CancelConsoleIO();
+                };
+
                 while (mState != State.DONE)
                 {
                     mMessageMutex.WaitOne();
@@ -210,8 +217,6 @@ namespace LukeBot.Interface
 
         public void Teardown()
         {
-            mState = State.DONE;
-            Utils.CancelConsoleIO();
         }
     }
 }

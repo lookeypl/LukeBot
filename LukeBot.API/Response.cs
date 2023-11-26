@@ -1,20 +1,59 @@
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 
 // TODO this probably should be moved to separate DLL like LukeBot.Network
 namespace LukeBot.API
 {
+    public class ResponseData
+    {
+        public HttpResponseMessage httpMessage;
+        public string error;
+        public string message;
+
+        internal ResponseData(HttpResponseMessage msg)
+        {
+            httpMessage = msg;
+            error = "OK";
+            message = "";
+
+            // try and read the content and see if we can parse it
+            // if it is a JSON response, it might have error/message fields available
+            if (!msg.IsSuccessStatusCode)
+            {
+                if (msg.Content.Headers.ContentType.MediaType == "application/json")
+                {
+                    Task<string> respStringTask = msg.Content.ReadAsStringAsync();
+                    respStringTask.Wait();
+
+                    JObject errObj = JObject.Parse(respStringTask.Result);
+                    if (errObj.ContainsKey("error"))
+                        error = (string)errObj["error"];
+
+                    if (errObj.ContainsKey("message"))
+                        message = (string)errObj["message"];
+                }
+                else
+                {
+                    error = msg.StatusCode.ToString();
+                    message = msg.ReasonPhrase;
+                }
+            }
+        }
+    };
+
     public class Response
     {
         public HttpStatusCode code { get; set; }
-        public HttpResponseMessage message { get; set; }
+        public ResponseData responseData { get; set; }
         public bool IsSuccess
         {
             get
             {
-                return message != null && message.IsSuccessStatusCode;
+                return responseData != null && responseData.httpMessage.IsSuccessStatusCode;
             }
         }
 
@@ -31,7 +70,7 @@ namespace LukeBot.API
         public void Fill(HttpResponseMessage msg)
         {
             code = msg.StatusCode;
-            message = msg;
+            responseData = new ResponseData(msg);
         }
     }
 

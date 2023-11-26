@@ -54,6 +54,15 @@ namespace LukeBot.Twitch.EventSub
                 case EventSubClient.SUB_CHANNEL_POINTS_REDEMPTION_ADD:
                     message.Payload.Event = obj["payload"]["event"].ToObject<PayloadChannelPointRedemptionEvent>();
                     break;
+                case EventSubClient.SUB_SUBSCRIBE:
+                    message.Payload.Event = obj["payload"]["event"].ToObject<PayloadSubEvent>();
+                    break;
+                case EventSubClient.SUB_SUBSCRIPTION_GIFT:
+                    message.Payload.Event = obj["payload"]["event"].ToObject<PayloadSubGiftEvent>();
+                    break;
+                case EventSubClient.SUB_SUBSCRIPTION_MESSAGE:
+                    message.Payload.Event = obj["payload"]["event"].ToObject<PayloadSubMessageEvent>();
+                    break;
                 default:
                     Logger.Log().Error("Unsupported subscription type: {0}", message.Payload.Subscription.type);
                     return null;

@@ -88,7 +88,7 @@ namespace LukeBot.Spotify
                     Logger.Log().Error("Failed to fetch Now Playing playback state: {0}", state.code);
                     if (Logger.IsLogLevelEnabled(LogLevel.Secure))
                     {
-                        string msg = await state.message.Content.ReadAsStringAsync();
+                        string msg = await state.responseData.httpMessage.Content.ReadAsStringAsync();
                         Logger.Log().Secure("Received message: {0}", msg);
                     }
                 }

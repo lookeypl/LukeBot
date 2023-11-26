@@ -223,42 +223,40 @@ namespace LukeBot.Twitch
 
         private void EmitSubscriptionEvent(TwitchSubscriptionType type, EventSub.PayloadEvent eventData)
         {
-            TwitchSubscriptionArgs subArgs = new(eventData.user_login, eventData.user_name);
-
-            TwitchSubscriptionDetail detail;
+            TwitchSubscriptionDetails details;
 
             switch (type)
             {
             case TwitchSubscriptionType.New:
             {
                 EventSub.PayloadSubEvent data = eventData as EventSub.PayloadSubEvent;
-                detail = new TwitchSubscriptionDetail();
-                detail.Tier = Int32.Parse(data.tier);
-                // TODO
+                details = new TwitchSubscriptionDetails(data.tier);
                 break;
             }
             case TwitchSubscriptionType.Resubscription:
             {
                 EventSub.PayloadSubMessageEvent data = eventData as EventSub.PayloadSubMessageEvent;
-                detail = new TwitchResubscriptionDetail();
-                detail.Tier = Int32.Parse(data.tier);
-                detail.Streak = (data.streak_months != null) ? (int)data.streak_months : 0;
-                // TODO
+                details = new TwitchResubscriptionDetails(
+                    data.tier,
+                    data.cumulative_months,
+                    (data.streak_months != null) ? (int)data.streak_months : 0,
+                    data.duration_months
+                );
                 break;
             }
             case TwitchSubscriptionType.Gift:
             {
+                // TODO I wanna make this smarter. I'd love to set up a "gift pending" situation here
+                // and then fetch next data.total subscription
                 EventSub.PayloadSubGiftEvent data = eventData as EventSub.PayloadSubGiftEvent;
-                detail = new TwitchGiftSubscriptionDetail();
-                detail.Tier = Int32.Parse(data.tier);
-                // TODO
+                details = new TwitchGiftSubscriptionDetails(data.tier, data.total);
                 break;
             }
             default:
                 throw new ArgumentException();
             }
 
-            subArgs.Details = detail;
+            TwitchSubscriptionArgs subArgs = new(eventData.user_login, eventData.user_name, details);
 
             mSubscriptionCallback.PublishEvent(subArgs);
         }
@@ -288,7 +286,7 @@ namespace LukeBot.Twitch
             // Its purpose is to clear the keepalive timeout timer when no other message came through.
             // If we don't get it within mKeepaliveTimeoutSeconds seconds, we should reconnect. This is
             // handled inside ReceiveAsync as a timeout.
-            Logger.Log().Debug("EventSub: Keepalive");
+            //Logger.Log().Debug("EventSub: Keepalive");
         }
 
         private async Task HandleSessionReconnect(EventSub.PayloadSession sessionReconnect)
@@ -299,7 +297,7 @@ namespace LukeBot.Twitch
 
         private void HandleNotification(EventSub.PayloadSubscription subscription, EventSub.PayloadEvent eventData)
         {
-            Logger.Log().Debug("EventSub: Notification");
+            Logger.Log().Debug("EventSub: Notification: {0}", subscription.type);
 
             switch (subscription.type)
             {
@@ -424,7 +422,10 @@ namespace LukeBot.Twitch
                 );
 
                 if (!resp.IsSuccess)
-                    throw new EventSubSubscriptionFailedException(sub, resp.code);
+                {
+
+                    throw new EventSubSubscriptionFailedException(sub, resp.code, resp.responseData.message);
+                }
 
                 mSubscriptions.Add(resp.data[0].id, resp.data[0]);
             }
@@ -435,7 +436,14 @@ namespace LukeBot.Twitch
             mReceiveThreadDone = true;
             if (mSocket != null)
             {
-                await mSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
+                try
+                {
+                    await mSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
+                }
+                catch (System.Exception e)
+                {
+                    Logger.Log().Error("Error during EventSub shutdown request: {0}", e.Message);
+                }
             }
         }
 

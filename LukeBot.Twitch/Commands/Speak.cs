@@ -22,7 +22,7 @@ namespace LukeBot.Twitch.Command
             Streamlabs.TTS tts = Streamlabs.GetTTS(voice, text);
             if (!tts.IsSuccess)
             {
-                Logger.Log().Error("SL TTS request failed: {0} ({1})", tts.code, tts.message.ReasonPhrase);
+                Logger.Log().Error("SL TTS request failed: {0} ({1})", tts.code, tts.responseData.message);
                 return "";
             }
 

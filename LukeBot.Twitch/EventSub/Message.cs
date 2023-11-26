@@ -98,7 +98,6 @@ namespace LukeBot.Twitch.EventSub
 
     internal class PayloadEvent
     {
-        public string id { get; set; }
         public string broadcaster_user_id { get; set; }
         public string broadcaster_user_login { get; set; }
         public string broadcaster_user_name { get; set; }
@@ -153,6 +152,7 @@ namespace LukeBot.Twitch.EventSub
 
     internal class PayloadChannelPointRedemptionEvent: PayloadEvent
     {
+        public string id { get; set; }
         public string user_input { get; set; }
         public string status { get; set; }
         public PayloadRewardEvent reward { get; set; }

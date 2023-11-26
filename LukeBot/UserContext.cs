@@ -38,6 +38,8 @@ namespace LukeBot
             string[] modules;
             if (!Conf.TryGet<string[]>(modulesProp, out modules))
             {
+                // Couldn't find the config entry, meaning there is no enabled modules.
+                // Not considered an error.
                 modules = new string[0];
             }
 
@@ -51,11 +53,11 @@ namespace LukeBot
                 }
                 catch (System.Exception e)
                 {
-                    Logger.Log().Error(String.Format("Failed to initialize module {0} for user {1}: {2}",
-                        m, Username, e.Message));
-                    Logger.Log().Error(String.Format("Module {0} for user {1} will be skipped on this load.",
-                        m, Username));
-                    Logger.Log().Debug(String.Format("Stack trace:\n{0}", e.StackTrace));
+                    Logger.Log().Error("Failed to initialize module {0} for user {1}: {2}",
+                        m, Username, e.Message);
+                    Logger.Log().Error("Module {0} for user {1} will be skipped on this load.",
+                        m, Username);
+                    Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
                 }
             }
         }

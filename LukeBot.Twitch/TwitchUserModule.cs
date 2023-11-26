@@ -32,7 +32,7 @@ namespace LukeBot.Twitch
             }
             mUserData = resp.data[0];
 
-            string tokenScope = "user:read:email channel:read:redemptions";
+            string tokenScope = "user:read:email channel:read:redemptions channel:read:subscriptions";
             mUserToken = AuthManager.Instance.GetToken(ServiceType.Twitch, lbUser);
 
             bool tokenFromFile = mUserToken.Loaded;
@@ -44,12 +44,8 @@ namespace LukeBot.Twitch
                 throw new InvalidOperationException("Failed to login to Twitch");
             }
 
-            //mEventSub = new();
-            //mEventSub.Connect(mUserToken, mUserData.id);
-
-            List<string> events = new();
-            events.Add(EventSubClient.SUB_CHANNEL_POINTS_REDEMPTION_ADD);
-            //mEventSub.Subscribe(events);
+            mEventSub = new(mLBUser);
+            mEventSub.Connect(mUserToken, mUserData.id);
         }
 
         internal API.Twitch.GetUserData GetUserData()
@@ -71,6 +67,21 @@ namespace LukeBot.Twitch
 
         public void Run()
         {
+            try
+            {
+                List<string> events = new();
+                events.Add(EventSubClient.SUB_CHANNEL_POINTS_REDEMPTION_ADD);
+                events.Add(EventSubClient.SUB_SUBSCRIBE);
+                events.Add(EventSubClient.SUB_SUBSCRIPTION_GIFT);
+                events.Add(EventSubClient.SUB_SUBSCRIPTION_MESSAGE);
+                mEventSub.Subscribe(events);
+            }
+            catch (System.Exception e)
+            {
+                Logger.Log().Error("Failed to subscribe to EventSub for user {0}: {1}",
+                    mLBUser, e.Message);
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
+            }
         }
 
         public void RequestShutdown()

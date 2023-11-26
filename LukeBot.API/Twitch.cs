@@ -74,11 +74,11 @@ namespace LukeBot.API
 
         public class EventSubSubscriptionCondition
         {
-            public string user_id { get; set; }
+            public string broadcaster_user_id { get; set; }
 
             public EventSubSubscriptionCondition(string userId)
             {
-                user_id = userId;
+                broadcaster_user_id = userId;
             }
         }
 

@@ -57,7 +57,7 @@ namespace LukeBot.Config
             if (((string)rootObject["name"]) != PropertyStore.PROP_STORE_DOMAIN_ROOT ||
                 ((string)rootObject["type"]) != typeof(PropertyDomain).ToString())
             {
-                throw new PropertyFileInvalidException("Property file doesn't start with a root domain");
+                throw new PropertyFileInvalidException(mPath);
             }
 
             foreach (JObject val in (JArray)rootObject["value"])

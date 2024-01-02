@@ -219,8 +219,6 @@ namespace LukeBot.Twitch
         public EventSubClient(string lbUser)
         {
             mLBUser = lbUser;
-            mReceiveThread = new(ReceiveThreadMain);
-            mReceiveThread.Name = "EventSub Receive Thread";
 
             List<EventCallback> events = Comms.Event.User(mLBUser).RegisterPublisher(this);
 
@@ -524,6 +522,8 @@ namespace LukeBot.Twitch
             mSocket = mSocketTask.Result;
 
             // fire the receive thread
+            mReceiveThread = new(ReceiveThreadMain);
+            mReceiveThread.Name = "EventSub Receive Thread";
             mReceiveThread.Start();
         }
 
@@ -536,6 +536,12 @@ namespace LukeBot.Twitch
 
         public void Subscribe(List<string> events)
         {
+            if (mReceiveThread == null)
+            {
+                Logger.Log().Warning("EventSub: Cannot subscribe to events, EventSub was not connected.");
+                return;
+            }
+
             ValidateEventList(events);
 
             // wait for welcome message to appear

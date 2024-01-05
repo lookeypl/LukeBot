@@ -16,8 +16,12 @@ namespace LukeBot
         private Dictionary<string, UserContext> mUsers = new();
         private UserContext mCurrentUser = null;
         private List<ICLIProcessor> mCommandProcessors = new List<ICLIProcessor>{
-            new UserCLIProcessor(),
+            new EventCLIProcessor(),
             new ModuleCLIProcessor(),
+            new UserCLIProcessor(),
+
+            // module CLI commands
+            // TODO this should be added by modules themselves on Main Module initialization
             new SpotifyCLIProcessor(),
             new TwitchCLIProcessor(),
             new WidgetCLIProcessor(),

@@ -40,6 +40,11 @@ namespace LukeBot
     {
     }
 
+    [Verb("skip", HelpText = "Skip currently handled event from the Queue.")]
+    internal class EventSkipCommand: EventCommandBase
+    {
+    }
+
     [Verb("list", HelpText = "List available events and their statuses.")]
     internal class EventListCommand
     {

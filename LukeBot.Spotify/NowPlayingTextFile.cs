@@ -13,7 +13,7 @@ namespace LukeBot.Spotify
         private string mArtistFilePath;
         private string mTitleFilePath;
         private bool mNeedsUpdate;
-        private SpotifyMusicTrackChangedArgs mCurrentTrack;
+        private SpotifyTrackChangedArgs mCurrentTrack;
 
         public NowPlayingTextFile(string lbUser, string artistPath, string titlePath)
         {
@@ -22,8 +22,8 @@ namespace LukeBot.Spotify
             mTitleFilePath = titlePath;
             mNeedsUpdate = false;
 
-            Comms.Event.User(mLBUser).SpotifyMusicStateUpdate += OnStateUpdate;
-            Comms.Event.User(mLBUser).SpotifyMusicTrackChanged += OnTrackChanged;
+            Comms.Event.User(mLBUser).Event(Events.SPOTIFY_STATE_UPDATE).Endpoint += OnStateUpdate;
+            Comms.Event.User(mLBUser).Event(Events.SPOTIFY_TRACK_CHANGED).Endpoint += OnTrackChanged;
         }
 
         ~NowPlayingTextFile()
@@ -53,7 +53,7 @@ namespace LukeBot.Spotify
 
         private void OnTrackChanged(object o, EventArgsBase args)
         {
-            SpotifyMusicTrackChangedArgs a = (SpotifyMusicTrackChangedArgs)args;
+            SpotifyTrackChangedArgs a = (SpotifyTrackChangedArgs)args;
 
             try
             {
@@ -68,7 +68,7 @@ namespace LukeBot.Spotify
 
         private void OnStateUpdate(object o, EventArgsBase args)
         {
-            SpotifyMusicStateUpdateArgs a = (SpotifyMusicStateUpdateArgs)args;
+            SpotifyStateUpdateArgs a = (SpotifyStateUpdateArgs)args;
 
             try
             {

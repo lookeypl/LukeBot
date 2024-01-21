@@ -109,24 +109,46 @@ namespace LukeBot.Twitch
             }
         }
 
+        // IEventPublisher APIs
+        public string GetName()
+        {
+            return "EventSubClient";
+        }
+
+        public List<EventDescriptor> GetEvents()
+        {
+            List<EventDescriptor> events = new();
+
+            events.Add(new EventDescriptor()
+            {
+                Name = Events.TWITCH_CHANNEL_POINT_REDEMPTION,
+                TargetDispatcher = null // TODO SHOULD BE A QUEUED DISPATCHER
+            });
+            events.Add(new EventDescriptor()
+            {
+                Name = Events.TWITCH_SUBSCRIPTION,
+                TargetDispatcher = null // TODO SHOULD BE A QUEUED DISPATCHER
+            });
+
+            return events;
+        }
+
         public EventSubClient(string lbUser)
         {
             mLBUser = lbUser;
             mReceiveThread = new(ReceiveThreadMain);
             mReceiveThread.Name = "EventSub Receive Thread";
 
-            List<EventCallback> events = Comms.Event.User(mLBUser).RegisterEventPublisher(
-                this, UserEventType.TwitchChannelPointsRedemption | UserEventType.TwitchSubscription
-            );
+            List<EventCallback> events = Comms.Event.User(mLBUser).RegisterPublisher(this);
 
             foreach (EventCallback e in events)
             {
-                switch (e.userType)
+                switch (e.eventName)
                 {
-                case UserEventType.TwitchChannelPointsRedemption:
+                case Events.TWITCH_CHANNEL_POINT_REDEMPTION:
                     mChannelPointsRedemptionCallback = e;
                     break;
-                case UserEventType.TwitchSubscription:
+                case Events.TWITCH_SUBSCRIPTION:
                     mSubscriptionCallback = e;
                     break;
                 default:
@@ -453,6 +475,7 @@ namespace LukeBot.Twitch
                 mReceiveThread.Join();
 
             mSocket = null;
+            Comms.Event.User(mLBUser).UnregisterPublisher(this);
         }
     }
 }

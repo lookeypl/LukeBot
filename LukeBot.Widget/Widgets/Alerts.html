@@ -59,8 +59,12 @@
         try {
             let obj = JSON.parse(event.data);
 
-            if (obj.Type != null) {
-                alert.innerHTML += obj.DisplayName + " redeemed " + obj.Title + "!!!<br />";
+            if (obj.EventName != null) {
+                if (obj.EventName == "TwitchChannelPointsRedemption") {
+                    alert.innerHTML += obj.DisplayName + " redeemed " + obj.Title + "!!!<br />";
+                } else if (obj.EventName == "TwitchSubscription") {
+                    alert.innerHTML += obj.DisplayName + " subscribed!!!<br />";
+                }
             } else {
                 printDebug(`Received unknown obj: ${obj}`);
             }

@@ -219,11 +219,11 @@
         try {
             let obj = JSON.parse(event.data);
 
-            if (obj.Type != null) {
-                if (obj.Type == "NowPlayingTrackChanged") {
+            if (obj.EventName != null) {
+                if (obj.EventName == "SpotifyTrackChanged") {
                     currentTrack = obj;
                     trackChanged = true;
-                } else if (obj.Type == "NowPlayingStateUpdate") {
+                } else if (obj.EventName == "SpotifyStateUpdate") {
                     oldPlaybackState = playbackState;
                     playbackState = obj.State;
                     update();

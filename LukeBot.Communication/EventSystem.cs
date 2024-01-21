@@ -3,208 +3,230 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 using LukeBot.Common;
 using LukeBot.Communication.Common;
 
 
 namespace LukeBot.Communication
 {
+    /**
+     * Interface that event publishers should inherit from. Provides us
+     * with necessary information regarding who publishes events.
+     */
     public interface IEventPublisher
     {
+        public string GetName();
+        public List<EventDescriptor> GetEvents();
     }
 
-    public abstract class EventCollection
+    /**
+     * A collection of events.
+     *
+     * This class stores all registered publishers, their events and
+     * all dispatchers that were added.
+     *
+     * By default, an Immediate dispatcher is created, which can
+     * be referred to by either not providing any target dispatcher
+     * name (null or empty), or specifying "DEFAULT" dispatcher.
+     *
+     * One Publisher can only register once to one specific collection.
+     * Events cannot have duplicate names within one collection, even
+     * if they are provided by separate publishers. By design, the "evented"
+     * end is not aware who is publishing events. However, this restriction
+     * only applies within one collection - separate collections can have
+     * same-named events provided by same publishers.
+     */
+    public class EventCollection
     {
-        private List<IEventPublisher> mPublishers = new();
-        // maps EventHandler's generic type (args struct) name to EventInfo
-        protected Dictionary<string, Func<EventCollection, EventHandler<EventArgsBase>>> mEvents = new();
-
-        private EventHandler<EventArgsBase> GetHandler(string name)
-        {
-            return mEvents[name](this);
-        }
-
-        public void OnEvent<T>(EventArgsBase args) where T: EventArgsBase
-        {
-            Debug.Assert(args is T, "Invalid type of arguments provided to callback - expected {0}");
-
-            // emit event
-            EventHandler<EventArgsBase> handler = GetHandler(typeof(T).Name);
-            if (handler != null)
-            {
-                // TODO get event provider here and use it instead of `this`
-                handler(this, args);
-            }
-        }
-
-        protected void AddPublisher(IEventPublisher p)
-        {
-            mPublishers.Add(p);
-        }
-
-        private MethodInfo GetEventMethodInfo(string typeStr)
-        {
-            Type argsBaseType = typeof(EventArgsBase);
-            Type argsType = EventUtils.GetEventTypeArgs(typeStr);
-            if (argsType == null)
-            {
-                throw new EventArgsNotFoundException(typeStr);
-            }
-
-            MethodInfo inf = typeof(EventCollection).GetMethod(nameof(OnEvent), 1, new Type[] { argsBaseType });
-            if (inf == null)
-            {
-                throw new EventArgsNotFoundException(typeStr);
-            }
-
-            return inf.MakeGenericMethod(argsType);
-        }
-
-        protected EventCallback CreateEventCallback(UserEventType type)
-        {
-            MethodInfo eventMethod = GetEventMethodInfo(type.ToString());
-            return new EventCallback(type, Delegate.CreateDelegate(typeof(PublishEventDelegate), this, eventMethod) as PublishEventDelegate);
-        }
-
-        protected EventCallback CreateEventCallback(GlobalEventType type)
-        {
-            MethodInfo eventMethod = GetEventMethodInfo(type.ToString());
-            return new EventCallback(type, Delegate.CreateDelegate(typeof(PublishEventDelegate), this, eventMethod) as PublishEventDelegate);
-        }
-    }
-
-    public delegate void PublishEventDelegate(EventArgsBase args);
-
-    [StructLayout(LayoutKind.Explicit)]
-    public struct EventCallback
-    {
-        [FieldOffset(0)] public GlobalEventType globalType;
-        [FieldOffset(0)] public UserEventType userType;
-        [FieldOffset(8)] public PublishEventDelegate PublishEvent;
-
-        public EventCallback(UserEventType t, PublishEventDelegate pe)
-        {
-            globalType = 0;
-            userType = t;
-            PublishEvent = pe;
-        }
-
-        public EventCallback(GlobalEventType t, PublishEventDelegate pe)
-        {
-            userType = 0;
-            globalType = t;
-            PublishEvent = pe;
-        }
-    }
-
-    public class GlobalEventCollection: EventCollection
-    {
-        // For test purposes
-        public event EventHandler<EventArgsBase> Test;
-
-        // TODO in case we need something to be evented...
-
-        public GlobalEventCollection()
-        {
-            mEvents.Add("GlobalTestArgs", x => ((GlobalEventCollection)x).Test);
-        }
-
-        protected List<EventCallback> GenerateEventCallbacks(GlobalEventType type)
-        {
-            List<EventCallback> callbacks = new();
-
-            if (type == GlobalEventType.None)
-                throw new NoEventTypeProvidedException();
-
-            foreach (GlobalEventType t in Enum.GetValues(typeof(GlobalEventType)))
-            {
-                if ((t & type) != GlobalEventType.None)
-                {
-                    callbacks.Add(CreateEventCallback(t));
-                }
-            }
-
-            return callbacks;
-        }
-
-        // Register an Event Publisher for Global events.
-        // Returns a list of callbacks which should be called to emit an event + for what event type it is for.
-        // Returned List will have as many callbacks as there were EventType's provided in @p type
-        public List<EventCallback> RegisterEventPublisher(IEventPublisher publisher, GlobalEventType type)
-        {
-            AddPublisher(publisher);
-            return GenerateEventCallbacks(type);
-        }
-    }
-
-    public class UserEventCollection: EventCollection
-    {
-        // For test purposes
-        public event EventHandler<EventArgsBase> Test;
-
-        public event EventHandler<EventArgsBase> TwitchChatMessage;
-        public event EventHandler<EventArgsBase> TwitchChatMessageClear;
-        public event EventHandler<EventArgsBase> TwitchChatUserClear;
-        public event EventHandler<EventArgsBase> SpotifyMusicStateUpdate;
-        public event EventHandler<EventArgsBase> SpotifyMusicTrackChanged;
-        public event EventHandler<EventArgsBase> TwitchChannelPointsRedemption;
-        public event EventHandler<EventArgsBase> TwitchSubscription;
-        public event EventHandler<EventArgsBase> TwitchBitsCheer;
-
         private string mLBUser;
+        private Dictionary<string, IEventPublisher> mPublishers = new();
+        private Dictionary<string, EventDispatcher> mDispatchers = new();
+        private Dictionary<string, Event> mEvents = new();
+        private const string DEFAULT_DISPATCHER_NAME = "DEFAULT";
 
-        public UserEventCollection(string lbUser)
+        internal EventCollection(string lbUser)
         {
             mLBUser = lbUser;
 
-            mEvents.Add("UserTestArgs", x => ((UserEventCollection)x).Test);
-            mEvents.Add("TwitchChatMessageArgs", x => ((UserEventCollection)x).TwitchChatMessage);
-            mEvents.Add("TwitchChatMessageClearArgs", x => ((UserEventCollection)x).TwitchChatMessageClear);
-            mEvents.Add("TwitchChatUserClearArgs", x => ((UserEventCollection)x).TwitchChatUserClear);
-            mEvents.Add("SpotifyMusicStateUpdateArgs", x => ((UserEventCollection)x).SpotifyMusicStateUpdate);
-            mEvents.Add("SpotifyMusicTrackChangedArgs", x => ((UserEventCollection)x).SpotifyMusicTrackChanged);
-            mEvents.Add("TwitchChannelPointsRedemptionArgs", x => ((UserEventCollection)x).TwitchChannelPointsRedemption);
-            mEvents.Add("TwitchSubscriptionArgs", x => ((UserEventCollection)x).TwitchSubscription);
-            mEvents.Add("TwitchBitsCheerArgs", x => ((UserEventCollection)x).TwitchBitsCheer);
+            // Every event collection has a default immediate Dispatcher
+            // For any more dispatchers, they need to be manually added
+            AddEventDispatcher(DEFAULT_DISPATCHER_NAME, EventDispatcherType.Immediate);
         }
 
-        protected List<EventCallback> GenerateEventCallbacks(UserEventType type)
+        ~EventCollection()
         {
-            List<EventCallback> callbacks = new();
-
-            if (type == UserEventType.None)
-                throw new NoEventTypeProvidedException();
-
-            foreach (UserEventType t in Enum.GetValues(typeof(UserEventType)))
+            foreach (EventDispatcher ed in mDispatchers.Values)
             {
-                if ((t & type) != UserEventType.None)
+                ed.Stop();
+            }
+        }
+
+        /**
+         * Get registered Event of specified name.
+         *
+         * To subscribe to events use this function and add your delegate to .Endpoint member.
+         */
+        public Event Event(string name)
+        {
+            return mEvents[name];
+        }
+
+        private EventCallback CreateEventCallback(string eventName)
+        {
+            Event ev = Event(eventName);
+            return new EventCallback(eventName, (EventArgsBase args) => ev.Raise(args));
+        }
+
+        private EventCallback AddEvent(EventDescriptor ed)
+        {
+            if (mEvents.ContainsKey(ed.Name))
+                throw new EventAlreadyExistsException(ed.Name);
+
+            string disp = ed.TargetDispatcher;
+            if (disp == null || disp.Length == 0)
+                disp = DEFAULT_DISPATCHER_NAME;
+
+            if (!mDispatchers.ContainsKey(disp))
+                throw new DispatcherNotFoundException(disp);
+
+            mEvents.Add(ed.Name, new Event(ed));
+
+            return CreateEventCallback(ed.Name);
+        }
+
+        /**
+         * Register a new Publisher in the collection.
+         *
+         * This call will query the Publisher for its name and events which are meant
+         * to be published. See EventDescriptor class for requested information.
+         *
+         * Publishers MUST have their own unique name, and provided event names must NOT collide
+         * with events already registered by other Publishers.
+         */
+        public List<EventCallback> RegisterPublisher(IEventPublisher p)
+        {
+            string pubName = p.GetName();
+
+            if (mPublishers.ContainsKey(pubName))
+                throw new PublisherAlreadyRegisteredException(pubName);
+
+            List<EventDescriptor> eventsToAdd = p.GetEvents();
+            if (eventsToAdd == null || eventsToAdd.Count == 0)
+                throw new NoEventProvidedException();
+
+            List<EventCallback> retCallback = new();
+
+            foreach (var ed in eventsToAdd)
+            {
+                retCallback.Add(AddEvent(ed));
+            }
+
+            mPublishers.Add(pubName, p);
+
+            return retCallback;
+        }
+
+        /**
+         * Unregister a publisher.
+         *
+         * This will clear any Events associated with a Publisher.
+         *
+         * If Publisher's name is not found, returns quietly assuming it was already removed
+         * or was not registered in the first place.
+         */
+        public void UnregisterPublisher(IEventPublisher p)
+        {
+            string pubName = p.GetName();
+
+            if (!mPublishers.ContainsKey(pubName))
+                return;
+
+            List<EventDescriptor> events = p.GetEvents();
+
+            if (events != null)
+            {
+                foreach (EventDescriptor e in events)
                 {
-                    callbacks.Add(CreateEventCallback(t));
+                    if (mEvents.ContainsKey(e.Name))
+                        mEvents.Remove(e.Name);
                 }
             }
 
-            return callbacks;
+            mPublishers.Remove(pubName);
         }
 
-        // Register an Event Publisher for User events.
-        // Returns a list of callbacks which should be called to emit an event + for what event type it is for.
-        // Returned List will have as many callbacks as there were EventType's provided in @p type
-        public List<EventCallback> RegisterEventPublisher(IEventPublisher publisher, UserEventType type)
+        /**
+         * Add a new Event Dispatcher.
+         *
+         * This will add an Event Dispatcher of specified name and type. For more information
+         * on Dispatcher types, see EventDispatcher abstract class and implementations.
+         *
+         * Added Event Dispatcher MUST have an unique name, even if it's of different type.
+         */
+        public void AddEventDispatcher(string dispName, EventDispatcherType type)
         {
-            AddPublisher(publisher);
-            return GenerateEventCallbacks(type);
+            EventDispatcher dispatcher = null;
+
+            switch (type)
+            {
+            case EventDispatcherType.Immediate:
+                dispatcher = new ImmediateEventDispatcher(dispName);
+                break;
+            case EventDispatcherType.Queued:
+                dispatcher = new QueuedEventDispatcher(dispName);
+                break;
+            default:
+                throw new ArgumentException("Invalid event dispatcher type");
+            }
+
+            dispatcher.Start();
+
+            mDispatchers.Add(dispName, dispatcher);
+        }
+
+        /**
+         * Remove an Event Dispatcher.
+         *
+         * This call will stop an existing dispatcher and remove it from collection.
+         *
+         * Note that there might be events still using this dispatcher. In such situation
+         * there will be an EventStillInUseException thrown. It is best to clean Dispatchers only
+         * after the Publisher has been unregistered.
+         */
+        public void RemoveEventDispatcher(string dispName)
+        {
+            // check if there still are publishers using the Dispatcher
+            foreach (Event e in mEvents.Values)
+            {
+                if (e.Dispatcher == dispName)
+                    throw new EventStillInUseException(e.Name, e.Dispatcher);
+            }
+
+            // stop the dispatcher; should be blocking
+            mDispatchers[dispName].Stop();
+            mDispatchers.Remove(dispName);
         }
     }
 
+    /**
+     * Event System entry point.
+     *
+     * This class allows for more sophisticated control over events. The underlying mechanism
+     * uses the standard Event Handlers, but allows for some organization in how they're used.
+     *
+     * EventSystem collects Event Collections. By design, one Event Collection should be assigned
+     * to one LukeBot user. In addition to that, there's a special "global" event collection which
+     * should contain and manage all LukeBot-wide events.
+     */
     public class EventSystem
     {
         private Dictionary<string, EventCollection> mUserToCollection = new();
 
-
         public EventSystem()
         {
             // for Global events
-            mUserToCollection.Add(Constants.LUKEBOT_USER_ID, new GlobalEventCollection());
+            mUserToCollection.Add(Constants.LUKEBOT_USER_ID, new(Constants.LUKEBOT_USER_ID));
         }
 
         ~EventSystem()
@@ -213,7 +235,7 @@ namespace LukeBot.Communication
 
         public void AddUser(string lbUser)
         {
-            mUserToCollection.Add(lbUser, new UserEventCollection(lbUser));
+            mUserToCollection.Add(lbUser, new EventCollection(lbUser));
         }
 
         public void RemoveUser(string lbUser)
@@ -221,14 +243,14 @@ namespace LukeBot.Communication
             mUserToCollection.Remove(lbUser);
         }
 
-        public UserEventCollection User(string lbUser)
+        public EventCollection User(string lbUser)
         {
-            return (UserEventCollection)mUserToCollection[lbUser];
+            return mUserToCollection[lbUser];
         }
 
-        public GlobalEventCollection Global()
+        public EventCollection Global()
         {
-            return (GlobalEventCollection)mUserToCollection[Constants.LUKEBOT_USER_ID];
+            return mUserToCollection[Constants.LUKEBOT_USER_ID];
         }
     }
 }

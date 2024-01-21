@@ -1,35 +1,13 @@
 
 namespace LukeBot.Communication.Common
 {
-    public class EventArgsBase
+    public abstract class EventArgsBase
     {
-        public string Type  { get; private set; }
+        public string EventName { get; private set; }
 
-        public EventArgsBase(string typeStr)
+        public EventArgsBase(string name)
         {
-            Type = typeStr;
-        }
-    }
-
-    public class UserEventArgsBase: EventArgsBase
-    {
-        public UserEventType eventType { get; private set; }
-
-        public UserEventArgsBase(UserEventType type, string typeStr)
-            : base(typeStr)
-        {
-            eventType = type;
-        }
-    }
-
-    public class GlobalEventArgsBase: EventArgsBase
-    {
-        public GlobalEventType eventType  { get; private set; }
-
-        public GlobalEventArgsBase(GlobalEventType type, string typeStr)
-            : base(typeStr)
-        {
-            eventType = type;
+            EventName = name;
         }
     }
 }

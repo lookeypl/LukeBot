@@ -8,7 +8,7 @@ namespace LukeBot.Spotify
 {
     public class Utils
     {
-        public static SpotifyMusicTrackChangedArgs DataItemToTrackChangedArgs(API.Spotify.PlaybackStateItem item)
+        public static SpotifyTrackChangedArgs DataItemToTrackChangedArgs(API.Spotify.PlaybackStateItem item)
         {
             float duration = item.duration_ms / 1000.0f; // convert to seconds
             string title = item.name;
@@ -52,12 +52,12 @@ namespace LukeBot.Spotify
             else
                 label = " ";
 
-            SpotifyMusicTrackChangedArgs ret = new SpotifyMusicTrackChangedArgs(artists, title, label, duration);
+            SpotifyTrackChangedArgs ret = new SpotifyTrackChangedArgs(artists, title, label, duration);
 
             return ret;
         }
 
-        public static SpotifyMusicStateUpdateArgs DataToStateUpdateArgs(API.Spotify.PlaybackState data)
+        public static SpotifyStateUpdateArgs DataToStateUpdateArgs(API.Spotify.PlaybackState data)
         {
             float progress;
             PlayerState state;
@@ -73,7 +73,7 @@ namespace LukeBot.Spotify
                 state = data.is_playing ? PlayerState.Playing : PlayerState.Stopped;
             }
 
-            SpotifyMusicStateUpdateArgs ret = new SpotifyMusicStateUpdateArgs(state, progress);
+            SpotifyStateUpdateArgs ret = new SpotifyStateUpdateArgs(state, progress);
             return ret;
         }
     }

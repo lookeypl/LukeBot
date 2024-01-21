@@ -13,19 +13,19 @@ namespace LukeBot.Widget
 {
     public class NowPlaying: IWidget
     {
-        SpotifyMusicStateUpdateArgs mState;
-        SpotifyMusicTrackChangedArgs mCurrentTrack;
+        SpotifyStateUpdateArgs mState;
+        SpotifyTrackChangedArgs mCurrentTrack;
 
         private void OnStateUpdate(object o, EventArgsBase args)
         {
-            SpotifyMusicStateUpdateArgs a = (SpotifyMusicStateUpdateArgs)args;
+            SpotifyStateUpdateArgs a = (SpotifyStateUpdateArgs)args;
             mState = a;
             SendToWSAsync(JsonSerializer.Serialize(a));
         }
 
         private void OnTrackChanged(object o, EventArgsBase args)
         {
-            SpotifyMusicTrackChangedArgs a = (SpotifyMusicTrackChangedArgs)args;
+            SpotifyTrackChangedArgs a = (SpotifyTrackChangedArgs)args;
             mCurrentTrack = a;
             SendToWSAsync(JsonSerializer.Serialize(a));
         }
@@ -46,8 +46,8 @@ namespace LukeBot.Widget
             mState = null;
             mCurrentTrack = null;
 
-            Comms.Event.User(lbUser).SpotifyMusicStateUpdate += OnStateUpdate;
-            Comms.Event.User(lbUser).SpotifyMusicTrackChanged += OnTrackChanged;
+            Comms.Event.User(lbUser).Event(Events.SPOTIFY_STATE_UPDATE).Endpoint += OnStateUpdate;
+            Comms.Event.User(lbUser).Event(Events.SPOTIFY_TRACK_CHANGED).Endpoint += OnTrackChanged;
 
             OnConnectedEvent += OnConnected;
         }

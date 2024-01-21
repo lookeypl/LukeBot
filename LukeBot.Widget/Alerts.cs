@@ -46,8 +46,8 @@ namespace LukeBot.Widget
         public Alerts(string lbUser, string id, string name)
             : base("LukeBot.Widget/Widgets/Alerts.html", id, name)
         {
-            Comms.Event.User(lbUser).TwitchChannelPointsRedemption += OnChannelPointsEvent;
-            Comms.Event.User(lbUser).TwitchSubscription += OnSubscriptionEvent;
+            Comms.Event.User(lbUser).Event(Events.TWITCH_CHANNEL_POINT_REDEMPTION).Endpoint += OnChannelPointsEvent;
+            Comms.Event.User(lbUser).Event(Events.TWITCH_SUBSCRIPTION).Endpoint += OnSubscriptionEvent;
         }
 
         public override WidgetType GetWidgetType()

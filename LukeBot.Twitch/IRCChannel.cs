@@ -74,6 +74,36 @@ namespace LukeBot.Twitch
             return mCommands[cmd].Execute(userIdentity, args);
         }
 
+        // IEventPublisher implementations
+
+        public string GetName()
+        {
+            return "TwitchIRC";
+        }
+
+        public List<EventDescriptor> GetEvents()
+        {
+            List<EventDescriptor> events = new();
+
+            events.Add(new EventDescriptor()
+            {
+                Name = Events.TWITCH_CHAT_MESSAGE,
+                TargetDispatcher = null
+            });
+            events.Add(new EventDescriptor()
+            {
+                Name = Events.TWITCH_CHAT_CLEAR_MESSAGE,
+                TargetDispatcher = null
+            });
+            events.Add(new EventDescriptor()
+            {
+                Name = Events.TWITCH_CHAT_CLEAR_USER,
+                TargetDispatcher = null
+            });
+
+            return events;
+        }
+
         public IRCChannel(string lbUser, API.Twitch.GetUserData userData)
         {
             mLBUser = lbUser;
@@ -84,21 +114,19 @@ namespace LukeBot.Twitch
             mExternalEmotes.AddEmoteSource(new BTTVEmoteSource(userData.id));
             mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(userData.id));
 
-            List<EventCallback> events = Comms.Event.User(mLBUser).RegisterEventPublisher(
-                this, UserEventType.TwitchChatMessage | UserEventType.TwitchChatMessageClear | UserEventType.TwitchChatUserClear
-            );
+            List<EventCallback> events = Comms.Event.User(mLBUser).RegisterPublisher(this);
 
             foreach (EventCallback e in events)
             {
-                switch (e.userType)
+                switch (e.eventName)
                 {
-                case UserEventType.TwitchChatMessage:
+                case Events.TWITCH_CHAT_MESSAGE:
                     mMessageEventCallback = e;
                     break;
-                case UserEventType.TwitchChatMessageClear:
+                case Events.TWITCH_CHAT_CLEAR_MESSAGE:
                     mMessageClearEventCallback = e;
                     break;
-                case UserEventType.TwitchChatUserClear:
+                case Events.TWITCH_CHAT_CLEAR_USER:
                     mUserClearEventCallback = e;
                     break;
                 default:

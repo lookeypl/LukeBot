@@ -21,12 +21,35 @@ namespace LukeBot.Spotify
         private Mutex mDataAccessMutex;
         private ManualResetEvent mShutdownEvent;
         private API.Spotify.PlaybackState mCurrentPlaybackState;
-        private SpotifyMusicStateUpdateArgs mCurrentStateUpdate;
+        private SpotifyStateUpdateArgs mCurrentStateUpdate;
         private int mEventTimeout;
         private bool mChangeExpected;
         private bool mNoItemWarningEmitted;
         private EventCallback mTrackChangedCallback;
         private EventCallback mStateUpdateCallback;
+
+        public string GetName()
+        {
+            return "SpotifyNowPlayingModule";
+        }
+
+        public List<EventDescriptor> GetEvents()
+        {
+            List<EventDescriptor> events = new();
+
+            events.Add(new EventDescriptor()
+            {
+                Name = Events.SPOTIFY_STATE_UPDATE,
+                TargetDispatcher = null
+            });
+            events.Add(new EventDescriptor()
+            {
+                Name = Events.SPOTIFY_TRACK_CHANGED,
+                TargetDispatcher = null
+            });
+
+            return events;
+        }
 
         public NowPlaying(string lbUser, Token token)
         {
@@ -39,20 +62,18 @@ namespace LukeBot.Spotify
             mChangeExpected = false;
             mNoItemWarningEmitted = false;
             mCurrentPlaybackState = null;
-            mCurrentStateUpdate = new SpotifyMusicStateUpdateArgs();
+            mCurrentStateUpdate = new SpotifyStateUpdateArgs();
 
-            List<EventCallback> events = Comms.Event.User(mLBUser).RegisterEventPublisher(
-                this, UserEventType.SpotifyMusicStateUpdate | UserEventType.SpotifyMusicTrackChanged
-            );
+            List<EventCallback> events = Comms.Event.User(mLBUser).RegisterPublisher(this);
 
             foreach (EventCallback e in events)
             {
-                switch (e.userType)
+                switch (e.eventName)
                 {
-                case UserEventType.SpotifyMusicStateUpdate:
+                case Events.SPOTIFY_STATE_UPDATE:
                     mStateUpdateCallback = e;
                     break;
-                case UserEventType.SpotifyMusicTrackChanged:
+                case Events.SPOTIFY_TRACK_CHANGED:
                     mTrackChangedCallback = e;
                     break;
                 default:
@@ -131,7 +152,7 @@ namespace LukeBot.Spotify
             }
 
             // State read - must reach for fetched "state" to get correct playback info
-            SpotifyMusicStateUpdateArgs stateUpdate = Utils.DataToStateUpdateArgs(state);
+            SpotifyStateUpdateArgs stateUpdate = Utils.DataToStateUpdateArgs(state);
 
             // Update internal logic according to state
             if (stateUpdate.State == PlayerState.Playing)

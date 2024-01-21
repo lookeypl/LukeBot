@@ -296,9 +296,12 @@ namespace LukeBot.Tests.Twitch
         {
             await EnsureTwitchCLIStarted();
 
+            // Create EventSubClient instance to register it in event system
+            EventSubClient es = new(EVENT_SUB_TEST_USER);
+
             AutoResetEvent notificationReceivedEvent = new(false);
             bool castedSuccessfully = false;
-            Comms.Event.User(EVENT_SUB_TEST_USER).TwitchChannelPointsRedemption += (e, a) =>
+            Comms.Event.User(EVENT_SUB_TEST_USER).Event(Events.TWITCH_CHANNEL_POINT_REDEMPTION).Endpoint += (e, a) =>
             {
                 TwitchChannelPointsRedemptionArgs args = a as TwitchChannelPointsRedemptionArgs;
                 castedSuccessfully = (args != null);
@@ -306,7 +309,6 @@ namespace LukeBot.Tests.Twitch
                 notificationReceivedEvent.Set();
             };
 
-            EventSubClient es = new(EVENT_SUB_TEST_USER);
             await es.ConnectAsync(null, TWITCH_MOCK_USERID, TWITCH_MOCK_URI);
 
             Assert.AreNotEqual(TwitchWSStatus.Unknown, mTwitchWSStatus);

@@ -15,7 +15,7 @@ using Newtonsoft.Json;
 
 namespace LukeBot.Twitch
 {
-    public class PubSub: IEventPublisher
+    public class PubSub//: IEventPublisher
     {
         private const string PUBSUB_CHANNEL_POINTS_TOPIC = "channel-points-channel-v1";
 
@@ -260,7 +260,7 @@ namespace LukeBot.Twitch
 
             if (Comms.Initialized)
             {
-                List<EventCallback> events = Comms.Event.User(mLBUser).RegisterEventPublisher(
+                /*List<EventCallback> events = Comms.Event.User(mLBUser).RegisterEventPublisher(
                     this, UserEventType.TwitchChannelPointsRedemption
                 );
 
@@ -275,7 +275,7 @@ namespace LukeBot.Twitch
                         Logger.Log().Warning("Received unknown event type from Event system");
                         break;
                     }
-                }
+                }*/
             }
         }
 

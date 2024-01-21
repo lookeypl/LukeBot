@@ -91,7 +91,7 @@
 
     class Message {
         constructor(msg) {
-            if (msg.Type != "TwitchIRCMessage")
+            if (msg.EventName != "TwitchChatMessage")
                 throw new TypeError("Invalid message type");
 
             this.mID = msg.MessageID;
@@ -251,16 +251,16 @@
         try {
             let obj = JSON.parse(event.data);
 
-            if (obj.Type != null) {
-                switch (obj.Type)
+            if (obj.EventName != null) {
+                switch (obj.EventName)
                 {
-                case "TwitchIRCMessage":
+                case "TwitchChatMessage":
                     msgList.add(obj);
                     break;
-                case "TwitchIRCClearChat":
+                case "TwitchChatClearUser":
                     msgList.removeUser(obj);
                     break;
-                case "TwitchIRCClearMsg":
+                case "TwitchChatClearMessage":
                     msgList.remove(obj);
                     break;
                 }

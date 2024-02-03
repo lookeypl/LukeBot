@@ -1,8 +1,11 @@
+using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using LukeBot.Logging;
 using LukeBot.Communication.Common;
 
+[assembly: InternalsVisibleTo("LukeBot.Tests")]
 
 namespace LukeBot.Communication
 {
@@ -12,7 +15,24 @@ namespace LukeBot.Communication
         Queued
     }
 
-    internal abstract class EventDispatcher
+    public enum EventDispatcherState
+    {
+        Stopped = 0,
+        Running,
+        OnHold,
+        Disabled,
+        Done
+    }
+
+    public struct EventDispatcherStatus
+    {
+        public EventDispatcherType Type;
+        public string Name;
+        public EventDispatcherState State;
+        public int EventCount;
+    }
+
+    public abstract class EventDispatcher
     {
         protected string mName;
 
@@ -29,6 +49,7 @@ namespace LukeBot.Communication
         public abstract void Disable();
         public abstract void Hold();
         public abstract void Skip();
+        public abstract EventDispatcherStatus Status();
     }
 
     /**
@@ -90,12 +111,34 @@ namespace LukeBot.Communication
             Logger.Log().Warning("Advanced operations not available on Immediate Dispatcher.");
         }
 
+        public override EventDispatcherStatus Status()
+        {
+            return new EventDispatcherStatus()
+            {
+                Name = mName,
+                Type = EventDispatcherType.Immediate,
+                EventCount = 0,
+                State = EventDispatcherState.Running
+            };
+        }
     }
 
     /**
      * Dispatches events onto a queue, which are executed sequentially by a separate thread.
      *
-     * This Dispatcher allows more control over how events are dispatched.
+     * This Dispatcher allows more control over how events are dispatched. Functionalities
+     * include:
+     *   - Disabling - ignores incoming events and skips them completely
+     *   - Holding - stores incoming events but doesn't raise them
+     *   - Skipping - interrupts currently processed event
+     *   - Clearing - skips current event and clears all queued events
+     *
+     * Events from this Dispatcher are enqueued and raised via a separate worker thread.
+     * This allows to perform some more time-consuming actions in order and without them
+     * possibly happening at the same time.
+     *
+     * Notable use-case is ex. subscription alerts from Twitch, which play back a TTS with
+     * subscription message.
      */
     internal class QueuedEventDispatcher: EventDispatcher
     {
@@ -112,10 +155,11 @@ namespace LukeBot.Communication
         }
 
         private Thread mThread = null;
-        private bool mDone = false;
+        private EventDispatcherState mState = EventDispatcherState.Stopped;
         private Queue<EventQueueItem> mEvents = new();
         private ManualResetEvent mQueueAvailableEvent = new(false);
         private Mutex mEventQueueMutex = new();
+        private EventQueueItem mCurrentEvent = null;
 
         public QueuedEventDispatcher(string name)
             : base(name)
@@ -126,6 +170,10 @@ namespace LukeBot.Communication
 
         private void EnqueueItem(EventQueueItem item)
         {
+            if (mState != EventDispatcherState.Running &&
+                mState != EventDispatcherState.OnHold)
+                return;
+
             mEventQueueMutex.WaitOne();
 
             if (mEvents != null)
@@ -136,6 +184,9 @@ namespace LukeBot.Communication
 
         private EventQueueItem DequeueItem()
         {
+            if (mState != EventDispatcherState.Running)
+                return null;
+
             mEventQueueMutex.WaitOne();
             EventQueueItem item = mEvents.Dequeue();
             mEventQueueMutex.ReleaseMutex();
@@ -143,34 +194,50 @@ namespace LukeBot.Communication
             return item;
         }
 
+        private void InterruptCurrentEvent()
+        {
+            if (mCurrentEvent == null)
+                return;
+
+            mCurrentEvent.ev.Interrupt();
+        }
+
         private void WorkerMain()
         {
+            mState = EventDispatcherState.Running;
+
             while (true)
             {
                 try
                 {
-                    if (mEvents.Count == 0)
+                    if (mEvents.Count == 0 || mState == EventDispatcherState.OnHold)
                     {
                         mQueueAvailableEvent.Reset();
                         mQueueAvailableEvent.WaitOne();
                     }
 
-                    if (mDone)
+                    if (mState == EventDispatcherState.Done)
                         break;
 
-                    EventQueueItem item = DequeueItem();
-                    item.ev.Raise(item.args);
+                    mCurrentEvent = DequeueItem();
+                    if (mCurrentEvent != null)
+                    {
+                        mCurrentEvent.ev.Raise(mCurrentEvent.args);
+                        mCurrentEvent = null;
+                    }
                 }
                 catch (ThreadInterruptedException)
                 {
                     // Thread was interrupted - handle restoring after skipping current event
-                    // TODO
+                    mCurrentEvent = null;
                 }
                 catch (System.Exception e)
                 {
                     Logger.Log().Error("Caught exception on {0} Event Dispatcher: {1}", mName, e.Message);
                 }
             }
+
+            mState = EventDispatcherState.Stopped;
         }
 
         public override void Submit(Event ev, EventArgsBase args)
@@ -181,14 +248,17 @@ namespace LukeBot.Communication
 
         public override void Start()
         {
+            if (mState != EventDispatcherState.Stopped)
+                return;
+
             mThread.Start();
         }
 
         public override void Stop()
         {
-            if (mThread.ThreadState == ThreadState.Running)
+            if (mState != EventDispatcherState.Done && mState != EventDispatcherState.Stopped)
             {
-                mDone = true;
+                mState = EventDispatcherState.Done;
                 mQueueAvailableEvent.Set();
                 mThread.Join();
 
@@ -209,23 +279,66 @@ namespace LukeBot.Communication
 
         public override void Enable()
         {
-            // TODO
+            if (mState != EventDispatcherState.Disabled &&
+                mState != EventDispatcherState.OnHold)
+            {
+                Logger.Log().Warning("{0} Dispatcher: Not expected state {1}! Ignoring Enable() call", mName, mState);
+                return;
+            }
+
+            mState = EventDispatcherState.Running;
+            mQueueAvailableEvent.Set();
         }
 
         public override void Disable()
         {
-            // TODO
+            if (mState != EventDispatcherState.Running)
+            {
+                Logger.Log().Warning("{0} Dispatcher: Not expected state {1}! Ignoring Disable() call", mName, mState);
+                return;
+            }
+
+            mState = EventDispatcherState.Disabled;
+            Clear();
         }
 
         public override void Hold()
         {
-            // TODO
+            if (mState != EventDispatcherState.Running)
+            {
+                Logger.Log().Warning("{0} Dispatcher: Not expected state {1}! Ignoring Hold() call", mName, mState);
+                return;
+            }
+
+            mState = EventDispatcherState.OnHold;
         }
 
         public override void Skip()
         {
-            // TODO
+            if (mState != EventDispatcherState.Running)
+            {
+                Logger.Log().Warning("{0} Dispatcher: Not expected state {1}! Ignoring Hold() call", mName, mState);
+                return;
+            }
+
+            InterruptCurrentEvent();
         }
 
+        public override EventDispatcherStatus Status()
+        {
+            mEventQueueMutex.WaitOne();
+
+            EventDispatcherStatus status = new EventDispatcherStatus()
+            {
+                Name = mName,
+                Type = EventDispatcherType.Queued,
+                EventCount = mEvents.Count,
+                State = mState
+            };
+
+            mEventQueueMutex.ReleaseMutex();
+
+            return status;
+        }
     }
 }

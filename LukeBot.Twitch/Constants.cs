@@ -7,5 +7,10 @@ namespace LukeBot.Twitch
         public static readonly string PROP_TWITCH_USER_LOGIN = "login";
         public static readonly string PROP_TWITCH_COMMANDS = "commands";
         public static readonly int RECONNECT_ATTEMPTS = 10;
+
+        public static string QueuedDispatcherForUser(string user)
+        {
+            return "Twitch_QueuedDispatcher_" + user;
+        }
     }
 }

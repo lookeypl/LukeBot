@@ -14,7 +14,7 @@ namespace LukeBot.Twitch.Common
 
         public const string TWITCH_SUBSCRIPTION = "TwitchSubscription";
 
-        public const string TWITCH_CHANNEL_POINT_REDEMPTION = "TwitchChannelPointRedemption";
+        public const string TWITCH_CHANNEL_POINTS_REDEMPTION = "TwitchChannelPointsRedemption";
     }
 
 
@@ -116,24 +116,42 @@ namespace LukeBot.Twitch.Common
     public enum TwitchSubscriptionType
     {
         New = 0,
-        Resubscription,
+        Resub,
         Gift
     }
 
     public class TwitchSubscriptionDetails
     {
         public TwitchSubscriptionType Type { get; private set; }
-        public int Tier { get; private set; }
+        public int Tier { get; protected set; }
 
-        public TwitchSubscriptionDetails(string tier)
+        public TwitchSubscriptionDetails()
+            : this(1)
+        {
+        }
+
+        public TwitchSubscriptionDetails(int tier)
             : this(TwitchSubscriptionType.New, tier)
         {
         }
 
-        internal TwitchSubscriptionDetails(TwitchSubscriptionType type, string tier)
+        internal TwitchSubscriptionDetails(TwitchSubscriptionType type, int tier)
         {
             Type = type;
-            Tier = System.Int32.Parse(tier);
+            Tier = tier;
+        }
+
+        public virtual void FillStringArgs(IEnumerable<(string a, string v)> args)
+        {
+            int tier = 1;
+
+            foreach ((string a, string v) a in args)
+            {
+                switch (a.a)
+                {
+                case "Tier": tier = Int32.Parse(a.v); break;
+                }
+            }
         }
     }
 
@@ -144,9 +162,38 @@ namespace LukeBot.Twitch.Common
         public int Duration { get; private set; }
         // TODO resub message
 
-        public TwitchResubscriptionDetails(string tier, int cumulative, int streak, int duration)
-            : base(TwitchSubscriptionType.Resubscription, tier)
+        public TwitchResubscriptionDetails()
+            : this(1, 1, 1, 1)
         {
+        }
+
+        public TwitchResubscriptionDetails(int tier, int cumulative, int streak, int duration)
+            : base(TwitchSubscriptionType.Resub, tier)
+        {
+            Cumulative = cumulative;
+            Streak = streak;
+            Duration = duration;
+        }
+
+        public override void FillStringArgs(IEnumerable<(string a, string v)> args)
+        {
+            int tier = 1;
+            int cumulative = 3;
+            int streak = 3;
+            int duration = 1;
+
+            foreach ((string a, string v) a in args)
+            {
+                switch (a.a)
+                {
+                case "Tier": tier = Int32.Parse(a.v); break;
+                case "Cumulative": cumulative = Int32.Parse(a.v); break;
+                case "Streak": streak = Int32.Parse(a.v); break;
+                case "Duration": duration = Int32.Parse(a.v); break;
+                }
+            }
+
+            Tier = tier;
             Cumulative = cumulative;
             Streak = streak;
             Duration = duration;
@@ -157,10 +204,33 @@ namespace LukeBot.Twitch.Common
     {
         public int RecipentCount { get; private set; }
 
-        public TwitchGiftSubscriptionDetails(string tier, int recipentCount)
-            : base(TwitchSubscriptionType.Resubscription, tier)
+        public TwitchGiftSubscriptionDetails()
+            : this(1, 1)
+        {
+        }
+
+        public TwitchGiftSubscriptionDetails(int tier, int recipentCount)
+            : base(TwitchSubscriptionType.Gift, tier)
         {
             RecipentCount = recipentCount;
+        }
+
+        public override void FillStringArgs(IEnumerable<(string a, string v)> args)
+        {
+            int tier = 1;
+            int recipents = 10;
+
+            foreach ((string a, string v) a in args)
+            {
+                switch (a.a)
+                {
+                case "Tier": tier = Int32.Parse(a.v); break;
+                case "Recipents": recipents = Int32.Parse(a.v); break;
+                }
+            }
+
+            Tier = tier;
+            RecipentCount = recipents;
         }
     }
 
@@ -189,7 +259,7 @@ namespace LukeBot.Twitch.Common
         public string Title { get; private set; }
 
         public TwitchChannelPointsRedemptionArgs(string user, string displayName, string title)
-            : base(Events.TWITCH_CHANNEL_POINT_REDEMPTION)
+            : base(Events.TWITCH_CHANNEL_POINTS_REDEMPTION)
         {
             User = user;
             DisplayName = displayName;

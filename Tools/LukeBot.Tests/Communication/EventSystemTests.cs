@@ -38,7 +38,7 @@ namespace LukeBot.Tests.Communication
                     mEvents.Add(new EventDescriptor()
                     {
                         Name = ev,
-                        TargetDispatcher = dispatcher
+                        Dispatcher = dispatcher
                     });
                 }
             }
@@ -77,7 +77,7 @@ namespace LukeBot.Tests.Communication
                     mEventsToTest.Add(new EventDescriptor()
                     {
                         Name = ev,
-                        TargetDispatcher = dispatcher
+                        Dispatcher = dispatcher
                     });
                 }
             }
@@ -108,7 +108,7 @@ namespace LukeBot.Tests.Communication
                     mEventsToTest.Add(new EventDescriptor()
                     {
                         Name = ev,
-                        TargetDispatcher = dispatcher
+                        Dispatcher = dispatcher
                     });
                 }
             }
@@ -168,13 +168,13 @@ namespace LukeBot.Tests.Communication
         {
             // registering two different publishers offering the same event also should fail
             RegisterAndCheckCallbacksGlobal(new string[] { TEST_EVENT_NAME }, "");
-            Assert.ThrowsException<EventAlreadyExistsException>(() =>
+            Assert.ThrowsException<EventDescriptorInvalidException>(() =>
                 mEventSystem.Global().RegisterPublisher(new EventSystemSecondPublisher(new string[] { TEST_EVENT_NAME }, ""))
             );
 
             // similarly, a different dispatcher name should not matter (events should be exclusive)
             mEventSystem.Global().AddEventDispatcher("test", EventDispatcherType.Immediate);
-            Assert.ThrowsException<EventAlreadyExistsException>(() =>
+            Assert.ThrowsException<EventDescriptorInvalidException>(() =>
                 mEventSystem.Global().RegisterPublisher(new EventSystemSecondPublisher(new string[] { TEST_EVENT_NAME }, "test"))
             );
         }

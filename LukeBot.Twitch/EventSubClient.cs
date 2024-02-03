@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -109,7 +110,66 @@ namespace LukeBot.Twitch
             }
         }
 
-        // IEventPublisher APIs
+        // IEventPublisher APIs and helpers
+        private EventArgsBase GenerateTestChannelPointEvent(IEnumerable<(string attrib, string value)> args)
+        {
+            string user = "test_user";
+            string displayName = "Test_User";
+            string title = "Test channel points redemption";
+
+            foreach ((string a, string v) a in args)
+            {
+                switch (a.a)
+                {
+                case "User": user = a.v; break;
+                case "DisplayName": displayName = a.v; break;
+                case "Title": title = a.v; break;
+                default:
+                    Logger.Log().Warning("Unknown test event arg: {0}", a.a);
+                    break;
+                }
+            }
+
+            return new TwitchChannelPointsRedemptionArgs(user, displayName, title);
+        }
+
+        private EventArgsBase GenerateTestSubscriptionEvent(IEnumerable<(string attrib, string value)> args)
+        {
+            TwitchSubscriptionType type = TwitchSubscriptionType.New;
+            string user = "test_user";
+            string displayName = "Test_User";
+            int tier = 1;
+
+            foreach ((string a, string v) a in args)
+            {
+                switch (a.a)
+                {
+                case "Type": type = Enum.Parse<TwitchSubscriptionType>(a.v); break;
+                case "User": user = a.v; break;
+                case "DisplayName": displayName = a.v; break;
+                case "Tier": tier = Int32.Parse(a.v); break;
+                default:
+                    //Logger.Log().Warning("Unknown test event arg: {0}", a.a);
+                    break;
+                }
+            }
+
+            TwitchSubscriptionDetails details;
+            switch (type)
+            {
+            case TwitchSubscriptionType.New: details = new TwitchSubscriptionDetails(); break;
+            case TwitchSubscriptionType.Resub: details = new TwitchResubscriptionDetails(); break;
+            case TwitchSubscriptionType.Gift: details = new TwitchGiftSubscriptionDetails(); break;
+            default:
+                details = new TwitchSubscriptionDetails();
+                break;
+            }
+
+            details.FillStringArgs(args);
+
+            return new TwitchSubscriptionArgs(user, displayName, details);
+        }
+
         public string GetName()
         {
             return "EventSubClient";
@@ -121,17 +181,39 @@ namespace LukeBot.Twitch
 
             events.Add(new EventDescriptor()
             {
-                Name = Events.TWITCH_CHANNEL_POINT_REDEMPTION,
-                TargetDispatcher = null // TODO SHOULD BE A QUEUED DISPATCHER
+                Name = Events.TWITCH_CHANNEL_POINTS_REDEMPTION,
+                Description = "Twitch Channel Points reward redemption. Generated when Twitch user redeems a specified Channel Points reward.",
+                Dispatcher = Constants.QueuedDispatcherForUser(mLBUser),
+                TestGenerator = GenerateTestChannelPointEvent,
+                TestParams = new List<EventTestParam>()
+                {
+                    new() { Name = "User", Description = "Username of Channel Points reward redeemer", Type = EventTestParamType.String },
+                    new() { Name = "DisplayName", Description = "Display name of Channel Points reward redeemer", Type = EventTestParamType.String },
+                    new() { Name = "Title", Description = "Title of redeemed Channel Points reward", Type = EventTestParamType.String }
+                }
             });
             events.Add(new EventDescriptor()
             {
                 Name = Events.TWITCH_SUBSCRIPTION,
-                TargetDispatcher = null // TODO SHOULD BE A QUEUED DISPATCHER
+                Description = "Twitch channel subscription. Generated when Twitch user subscribes, resubscribes or gifts a subscription in the channel.",
+                Dispatcher = Constants.QueuedDispatcherForUser(mLBUser),
+                TestGenerator = GenerateTestSubscriptionEvent,
+                TestParams = new List<EventTestParam>()
+                {
+                    new() { Name = "Type", Description = "Type of subscription (New, Resub, Gift)", Type = EventTestParamType.String },
+                    new() { Name = "User", Description = "Username of subscriber", Type = EventTestParamType.String },
+                    new() { Name = "DisplayName", Description = "Display name of subscriber", Type = EventTestParamType.String },
+                    new() { Name = "Tier", Description = "Tier of subscription", Type = EventTestParamType.Integer },
+                    new() { Name = "Cumulative", Description = "(Resub-only) Number of total subscriptions", Type = EventTestParamType.Integer },
+                    new() { Name = "Streak", Description = "(Resub-only) Subscription streak", Type = EventTestParamType.Integer },
+                    new() { Name = "Duration", Description = "(Resub-only) Duration of subscription in months", Type = EventTestParamType.Integer },
+                    new() { Name = "Recipents", Description = "(Gift-only) Gift recipent count", Type = EventTestParamType.Integer },
+                }
             });
 
             return events;
         }
+
 
         public EventSubClient(string lbUser)
         {
@@ -145,7 +227,7 @@ namespace LukeBot.Twitch
             {
                 switch (e.eventName)
                 {
-                case Events.TWITCH_CHANNEL_POINT_REDEMPTION:
+                case Events.TWITCH_CHANNEL_POINTS_REDEMPTION:
                     mChannelPointsRedemptionCallback = e;
                     break;
                 case Events.TWITCH_SUBSCRIPTION:
@@ -252,14 +334,14 @@ namespace LukeBot.Twitch
             case TwitchSubscriptionType.New:
             {
                 EventSub.PayloadSubEvent data = eventData as EventSub.PayloadSubEvent;
-                details = new TwitchSubscriptionDetails(data.tier);
+                details = new TwitchSubscriptionDetails(Int32.Parse(data.tier));
                 break;
             }
-            case TwitchSubscriptionType.Resubscription:
+            case TwitchSubscriptionType.Resub:
             {
                 EventSub.PayloadSubMessageEvent data = eventData as EventSub.PayloadSubMessageEvent;
                 details = new TwitchResubscriptionDetails(
-                    data.tier,
+                    Int32.Parse(data.tier),
                     data.cumulative_months,
                     (data.streak_months != null) ? (int)data.streak_months : 0,
                     data.duration_months
@@ -271,7 +353,7 @@ namespace LukeBot.Twitch
                 // TODO I wanna make this smarter. I'd love to set up a "gift pending" situation here
                 // and then fetch next data.total subscription
                 EventSub.PayloadSubGiftEvent data = eventData as EventSub.PayloadSubGiftEvent;
-                details = new TwitchGiftSubscriptionDetails(data.tier, data.total);
+                details = new TwitchGiftSubscriptionDetails(Int32.Parse(data.tier), data.total);
                 break;
             }
             default:
@@ -333,7 +415,7 @@ namespace LukeBot.Twitch
                 EmitSubscriptionEvent(TwitchSubscriptionType.Gift, eventData);
                 break;
             case SUB_SUBSCRIPTION_MESSAGE:
-                EmitSubscriptionEvent(TwitchSubscriptionType.Resubscription, eventData);
+                EmitSubscriptionEvent(TwitchSubscriptionType.Resub, eventData);
                 break;
             default:
                 Logger.Log().Warning("EventSub: Unknown notification received");
@@ -445,7 +527,6 @@ namespace LukeBot.Twitch
 
                 if (!resp.IsSuccess)
                 {
-
                     throw new EventSubSubscriptionFailedException(sub, resp.code, resp.responseData.message);
                 }
 

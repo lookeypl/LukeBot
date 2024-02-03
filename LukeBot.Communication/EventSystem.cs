@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using LukeBot.Common;
 using LukeBot.Communication.Common;
+using LukeBot.Logging;
 
 
 namespace LukeBot.Communication
@@ -72,6 +74,16 @@ namespace LukeBot.Communication
             return mEvents[name];
         }
 
+        /**
+         * Get registered Dispatcher of specified name.
+         *
+         * This allows access to specific Dispatcher's (and its Events) behavior.
+         */
+        public EventDispatcher Dispatcher(string name)
+        {
+            return mDispatchers[name];
+        }
+
         private EventCallback CreateEventCallback(string eventName)
         {
             Event ev = Event(eventName);
@@ -80,15 +92,33 @@ namespace LukeBot.Communication
 
         private EventCallback AddEvent(EventDescriptor ed)
         {
-            if (mEvents.ContainsKey(ed.Name))
-                throw new EventAlreadyExistsException(ed.Name);
+            if (ed.Name == null || ed.Name.Length == 0)
+                throw new EventDescriptorInvalidException("Event name is missing");
 
-            string disp = ed.TargetDispatcher;
+            if (mEvents.ContainsKey(ed.Name))
+                throw new EventDescriptorInvalidException(string.Format("{0} event already exists", ed.Name));
+
+            string disp = ed.Dispatcher;
             if (disp == null || disp.Length == 0)
                 disp = DEFAULT_DISPATCHER_NAME;
 
             if (!mDispatchers.ContainsKey(disp))
-                throw new DispatcherNotFoundException(disp);
+                throw new EventDescriptorInvalidException(string.Format("{0}: Dispatcher {1} does not exist", ed.Name, disp));
+
+            // These are just warnings to handle non-critical but still useful fields
+            if (ed.Description == null || ed.Description.Length == 0)
+                Logger.Log().Warning(
+                    "{0}: Description field is null or empty. Consider adding event's description " +
+                    "for better user interaction.",
+                    ed.Name
+                );
+
+            if (ed.TestGenerator != null && ed.TestParams == null)
+                Logger.Log().Warning(
+                    "{0}: Test Generator was provided, but without specifying test parameters. " +
+                    "Consider adding a list of accepted test parameters for better parsing and user information.",
+                    ed.Name
+                );
 
             mEvents.Add(ed.Name, new Event(ed));
 
@@ -196,6 +226,9 @@ namespace LukeBot.Communication
          */
         public void RemoveEventDispatcher(string dispName)
         {
+            if (!mDispatchers.ContainsKey(dispName))
+                return; // was already removed, quietly exit
+
             // check if there still are publishers using the Dispatcher
             foreach (Event e in mEvents.Values)
             {
@@ -206,6 +239,77 @@ namespace LukeBot.Communication
             // stop the dispatcher; should be blocking
             mDispatchers[dispName].Stop();
             mDispatchers.Remove(dispName);
+        }
+
+        /**
+         * Get information about a specific event
+         */
+        public EventInfo GetEventInfo(string eventName)
+        {
+            return Event(eventName).GetEventInfo();
+        }
+
+        public IEnumerable<EventInfo> ListEvents()
+        {
+            List<EventInfo> events = new();
+
+            foreach (Event e in mEvents.Values)
+            {
+                events.Add(e.GetEventInfo());
+            }
+
+            return events;
+        }
+
+        public IEnumerable<EventDispatcherStatus> GetDispatcherStatuses()
+        {
+            List<EventDispatcherStatus> ret = new();
+
+            foreach (EventDispatcher d in mDispatchers.Values)
+            {
+                ret.Add(d.Status());
+            }
+
+            return ret;
+        }
+
+        private void ValidateEventTestArgs(Event ev, IEnumerable<(string, string)> args)
+        {
+            if (ev.TestParams == null)
+                return; // nothing to validate, let's assume this is a responsibilty of the generator
+
+            foreach ((string a, string v) a in args)
+            {
+                if (!ev.TestParams.Any(param => param.Name == a.a))
+                    throw new InvalidTestArgException(a.a);
+
+                EventTestParam testParam = ev.TestParams.Single(param => param.Name == a.a);
+                switch (testParam.Type)
+                {
+                case EventTestParamType.Integer:
+                    // check if we can parse the value to int32
+                    if (!Int32.TryParse(a.v, out int result))
+                        throw new InvalidTestArgException(a.a);
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+
+        public void TestEvent(string name, IEnumerable<(string, string)> args)
+        {
+            Event ev = mEvents[name];
+
+            if (ev.TestGenerator == null)
+                throw new TestArgGeneratorMissingException(ev.Name);
+
+            string dispatcher = ev.Dispatcher;
+            if (dispatcher == null || dispatcher.Length == 0)
+                dispatcher = DEFAULT_DISPATCHER_NAME;
+
+            ValidateEventTestArgs(ev, args);
+            mDispatchers[dispatcher].Submit(ev, ev.TestGenerator(args));
         }
     }
 

@@ -40,12 +40,14 @@ namespace LukeBot.Spotify
             events.Add(new EventDescriptor()
             {
                 Name = Events.SPOTIFY_STATE_UPDATE,
-                TargetDispatcher = null
+                Description = "Spotify Player state update. Emitted regularly when playback state is fetched from Spotify servers.",
+                Dispatcher = null
             });
             events.Add(new EventDescriptor()
             {
                 Name = Events.SPOTIFY_TRACK_CHANGED,
-                TargetDispatcher = null
+                Description = "Spotify Player track update. Emitted when played track is changed to a different one.",
+                Dispatcher = null
             });
 
             return events;

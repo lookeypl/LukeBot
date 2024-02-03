@@ -88,17 +88,20 @@ namespace LukeBot.Twitch
             events.Add(new EventDescriptor()
             {
                 Name = Events.TWITCH_CHAT_MESSAGE,
-                TargetDispatcher = null
+                Description = "Twitch Chat message event. Emitted when any Twitch user sends a chat message.",
+                Dispatcher = null
             });
             events.Add(new EventDescriptor()
             {
                 Name = Events.TWITCH_CHAT_CLEAR_MESSAGE,
-                TargetDispatcher = null
+                Description = "Twitch Chat Clear Message event. Emitted when a chat message is removed from the chat window.",
+                Dispatcher = null
             });
             events.Add(new EventDescriptor()
             {
                 Name = Events.TWITCH_CHAT_CLEAR_USER,
-                TargetDispatcher = null
+                Description = "Twitch Chat Clear User event. Emitted when user's messages are removed from chat window (ie. because user is timed out).",
+                Dispatcher = null
             });
 
             return events;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using LukeBot.API;
 using LukeBot.Common;
+using LukeBot.Communication;
 using LukeBot.Logging;
 using LukeBot.Module;
 using LukeBot.Twitch.EventSub;
@@ -24,6 +25,10 @@ namespace LukeBot.Twitch
         {
             mLBUser = lbUser;
             mChannelName = channelName;
+
+            // Add a queued dispatcher for our user module
+            Comms.Event.User(mLBUser).AddEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser), EventDispatcherType.Queued);
+
             API.Twitch.GetUserResponse resp = API.Twitch.GetUser(botToken, mChannelName);
             if (resp.code != HttpStatusCode.OK)
             {
@@ -92,6 +97,8 @@ namespace LukeBot.Twitch
         public void WaitForShutdown()
         {
             if (mEventSub != null) mEventSub.WaitForShutdown();
+
+            Comms.Event.User(mLBUser).RemoveEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser));
         }
 
         public ModuleType GetModuleType()

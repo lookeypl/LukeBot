@@ -10,6 +10,18 @@ namespace LukeBot.Widget
 {
     public class Alerts: IWidget
     {
+        private class AlertCompletionResponse
+        {
+
+        }
+
+        private void AwaitEventCompletion()
+        {
+            string msg;
+            msg = RecvFromWS();
+
+        }
+
         public void OnChannelPointsEvent(object o, EventArgsBase args)
         {
             TwitchChannelPointsRedemptionArgs a = args as TwitchChannelPointsRedemptionArgs;
@@ -27,7 +39,7 @@ namespace LukeBot.Widget
             case TwitchSubscriptionType.New:
                 Logger.Log().Debug("New sub from: {0} ({1}), tier {2}", a.User, a.DisplayName, a.Details.Tier);
                 break;
-            case TwitchSubscriptionType.Resubscription:
+            case TwitchSubscriptionType.Resub:
                 TwitchResubscriptionDetails resub = a.Details as TwitchResubscriptionDetails;
                 Logger.Log().Debug("Resub from: {0} ({1}), tier {2}, cumulative {3}, streak {4}, duration {5}",
                     a.User, a.DisplayName, resub.Tier, resub.Cumulative, resub.Streak, resub.Duration);
@@ -46,7 +58,7 @@ namespace LukeBot.Widget
         public Alerts(string lbUser, string id, string name)
             : base("LukeBot.Widget/Widgets/Alerts.html", id, name)
         {
-            Comms.Event.User(lbUser).Event(Events.TWITCH_CHANNEL_POINT_REDEMPTION).Endpoint += OnChannelPointsEvent;
+            Comms.Event.User(lbUser).Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Endpoint += OnChannelPointsEvent;
             Comms.Event.User(lbUser).Event(Events.TWITCH_SUBSCRIPTION).Endpoint += OnSubscriptionEvent;
         }
 

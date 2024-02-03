@@ -301,7 +301,7 @@ namespace LukeBot.Tests.Twitch
 
             AutoResetEvent notificationReceivedEvent = new(false);
             bool castedSuccessfully = false;
-            Comms.Event.User(EVENT_SUB_TEST_USER).Event(Events.TWITCH_CHANNEL_POINT_REDEMPTION).Endpoint += (e, a) =>
+            Comms.Event.User(EVENT_SUB_TEST_USER).Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Endpoint += (e, a) =>
             {
                 TwitchChannelPointsRedemptionArgs args = a as TwitchChannelPointsRedemptionArgs;
                 castedSuccessfully = (args != null);

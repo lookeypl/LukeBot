@@ -33,6 +33,55 @@
         return '';
     }
 
+    class WidgetEventCompletionStatus {
+        constructor(status, reason) {
+            this.Status = status;
+            this.Reason = reason;
+        }
+
+        send(socket) {
+            socket.send(JSON.stringify(this))
+        }
+    }
+
+    class AlertBase {
+        constructor(receivedObject) {
+            if (this.constructor == Animal) {
+                throw new Error("Cannot instantiate base class");
+            }
+
+            this.mType = receivedObject.EventName;
+            this.mUsername = receivedObject.User;
+            this.mDisplayName = receivedObject.DisplayName;
+        }
+
+        play() {
+            throw new Error("play() has not been implemented");
+        }
+    }
+
+    class ChannelPointAlert extends AlertBase {
+        constructor(receivedObject) {
+            super(receivedObject);
+            this.mTitle = receivedObject.Title;
+        }
+
+        play() {
+
+        }
+    }
+
+    class SubscriptionAlert extends AlertBase {
+        constructor(receivedObject) {
+            super(receivedObject);
+            this.mTitle = receivedObject.Title;
+        }
+
+        play() {
+
+        }
+    }
+
     const serverAddress = getMeta('serveraddress');
     const alert = document.getElementById('alert');
     printDebug(serverAddress);
@@ -60,11 +109,9 @@
             let obj = JSON.parse(event.data);
 
             if (obj.EventName != null) {
-                if (obj.EventName == "TwitchChannelPointsRedemption") {
-                    alert.innerHTML += obj.DisplayName + " redeemed " + obj.Title + "!!!<br />";
-                } else if (obj.EventName == "TwitchSubscription") {
-                    alert.innerHTML += obj.DisplayName + " subscribed!!!<br />";
-                }
+                // TODO
+                completionStatus = new WidgetEventCompletionStatus(0, "OK");
+                completionStatus.send(socket);
             } else {
                 printDebug(`Received unknown obj: ${obj}`);
             }

@@ -10,16 +10,14 @@ namespace LukeBot.Widget
 {
     public class Alerts: IWidget
     {
-        private class AlertCompletionResponse
-        {
-
-        }
-
         private void AwaitEventCompletion()
         {
-            string msg;
-            msg = RecvFromWS();
+            WidgetEventCompletionResponse resp = JsonConvert.DeserializeObject<WidgetEventCompletionResponse>(RecvFromWS());
 
+            if (resp.Status != 0)
+            {
+                Logger.Log().Warning("Widget failed to complete the event: {0}", resp.Reason);
+            }
         }
 
         public void OnChannelPointsEvent(object o, EventArgsBase args)
@@ -28,6 +26,8 @@ namespace LukeBot.Widget
             string msg = JsonConvert.SerializeObject(a);
             Logger.Log().Debug("Channel Points redemption:\n{0}", msg);
             SendToWSAsync(msg);
+
+            AwaitEventCompletion();
         }
 
         public void OnSubscriptionEvent(object o, EventArgsBase args)
@@ -53,6 +53,8 @@ namespace LukeBot.Widget
 
             string msg = JsonConvert.SerializeObject(a);
             SendToWSAsync(msg);
+
+            AwaitEventCompletion();
         }
 
         public Alerts(string lbUser, string id, string name)

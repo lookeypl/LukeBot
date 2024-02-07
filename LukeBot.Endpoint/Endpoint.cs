@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using System.Threading;
 using LukeBot.Logging;
 using LukeBot.Config;
+using System.IO;
 
 
 namespace LukeBot.Endpoint
@@ -85,6 +86,7 @@ namespace LukeBot.Endpoint
             }
 
             builder.UseStartup<Startup>();
+            builder.UseContentRoot(Directory.GetCurrentDirectory() + "/Data/ContentRoot");
 
             return builder;
         }

@@ -14,6 +14,7 @@ using LukeBot.API;
 using LukeBot.Communication;
 using Intercom = LukeBot.Communication.Common.Intercom;
 using LukeBot.Widget.Common;
+using Microsoft.Extensions.FileProviders;
 
 
 
@@ -192,15 +193,15 @@ namespace LukeBot.Endpoint
 
             app.UseWebSockets();
             app.UseRouting();
+            app.UseStaticFiles(new StaticFileOptions()
+            {
+                FileProvider = new PhysicalFileProvider(Directory.GetCurrentDirectory() + "/Data/ContentRoot"),
+                RequestPath = "/content"
+            });
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapGet("/", async context => {
                     await LoadPage("index.html", context);
-                });
-                endpoints.MapGet("{user}/{page}", async context => {
-                    var user = context.Request.RouteValues["user"];
-                    var page = context.Request.RouteValues["page"];
-                    await LoadPage($"{page}.html", context);
                 });
                 endpoints.MapGet("css/{stylesheet}", async context => {
                     var stylesheet = context.Request.RouteValues["stylesheet"];

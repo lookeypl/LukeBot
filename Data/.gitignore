@@ -6,3 +6,4 @@
 # is necessary for test runs.
 /*.lukebot
 !/props_test.lukebot
+/ContentRoot

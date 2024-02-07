@@ -33,6 +33,8 @@ namespace LukeBot
             FileUtils.SetUnifiedCWD();
             Logger.SetProjectRootDir(Directory.GetCurrentDirectory());
 
+            Directory.CreateDirectory("Data/ContentRoot");
+
             Parser.Default.ParseArguments<ProgramOptions>(args)
                 .WithParsed<ProgramOptions>(HandleProgramOptions)
                 .WithNotParsed(HandleParsingError);

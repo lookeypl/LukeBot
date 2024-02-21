@@ -1,15 +1,28 @@
 ﻿using LukeBot.API;
+using LukeBot.Config;
 using LukeBot.Logging;
 using Command = LukeBot.Twitch.Common.Command;
+using CommonConstants = LukeBot.Common.Constants;
 
 
 namespace LukeBot.Twitch.Command
 {
     public class Shoutout: ICommand
     {
+        private string mBotLogin;
+
         public Shoutout(Command::Descriptor d)
             : base(d)
         {
+            mBotLogin = Conf.Get<string>(Path.Start()
+                .Push(CommonConstants.TWITCH_MODULE_NAME)
+                .Push(Constants.PROP_TWITCH_USER_LOGIN)
+            );
+
+            if (mBotLogin == CommonConstants.DEFAULT_LOGIN_NAME)
+            {
+                throw new PropertyFileInvalidException("Bot's Twitch login has not been provided in Property Store");
+            }
         }
 
         public override void Edit(string newValue)
@@ -29,7 +42,7 @@ namespace LukeBot.Twitch.Command
 
             try
             {
-                Token t = AuthManager.Instance.GetToken(ServiceType.Twitch, LukeBot.Common.Constants.LUKEBOT_USER_ID);
+                Token t = AuthManager.Instance.GetToken(ServiceType.Twitch, mBotLogin);
                 API.Twitch.GetUserResponse userDataResponse = API.Twitch.GetUser(t, args[1]);
                 if (userDataResponse.data == null || userDataResponse.data.Count == 0)
                 {

@@ -4,6 +4,8 @@ namespace LukeBot.Widget
 {
     public class WidgetNotFoundException: Exception
     {
-        public WidgetNotFoundException(string fmt, params object[] args): base(string.Format(fmt, args)) {}
+        public WidgetNotFoundException(string id)
+            : base(string.Format("Widget {0} not found", id))
+        {}
     }
 }

@@ -12,6 +12,7 @@ namespace LukeBot.Widget
     public class WidgetUserModule: IUserModule
     {
         private Dictionary<string, IWidget> mWidgets = new();
+        private Dictionary<string, string> mNameToId = new();
         private string mLBUser;
 
 
@@ -68,13 +69,17 @@ namespace LukeBot.Widget
         {
             IWidget w = AllocateWidget(wd.Type, wd.Id, wd.Name);
             mWidgets.Add(wd.Id, w);
+
+            if (wd.Name != null && wd.Name.Length > 0)
+                mNameToId.Add(wd.Name, wd.Id);
+
             return w;
         }
 
         internal string GetWidgetPage(string widgetID)
         {
             if (!mWidgets.TryGetValue(widgetID, out IWidget widget))
-                throw new WidgetNotFoundException("Widget {0} not found", widgetID);
+                throw new WidgetNotFoundException(widgetID);
 
             return widget.GetPage();
         }
@@ -83,10 +88,26 @@ namespace LukeBot.Widget
         {
             if (!mWidgets.TryGetValue(widgetID, out IWidget widget))
             {
-                throw new WidgetNotFoundException("Widget {0} not found", widgetID);
+                throw new WidgetNotFoundException(widgetID);
             }
 
             return widget.AcquireWS(ws);
+        }
+
+        // tries to see if provided ID is a widget ID.
+        // If it isn't a key in Widgets dictionary, tries to fetch the ID
+        // assuming this is a short-hand name.
+        // With nothing found throws an exception.
+        internal string GetActualWidgetId(string id)
+        {
+            if (mWidgets.ContainsKey(id))
+                return id;
+
+            // not an id in widgets dict, try cross-checking it with user friendly names
+            if (!mNameToId.TryGetValue(id, out string actualId))
+                throw new WidgetNotFoundException(id);
+
+            return actualId;
         }
 
 
@@ -113,10 +134,16 @@ namespace LukeBot.Widget
 
         public IWidget AddWidget(WidgetType type, string name)
         {
+            if (mNameToId.ContainsKey(name))
+                throw new WidgetAlreadyExistsException(name, mNameToId[name]);
+
             string id = Guid.NewGuid().ToString();
 
             IWidget w = AllocateWidget(type, id, name);
             mWidgets.Add(id, w);
+
+            if (name != null && name.Length > 0)
+                mNameToId.Add(name, id);
 
             SaveWidgetToConfig(w);
 
@@ -137,19 +164,22 @@ namespace LukeBot.Widget
 
         public WidgetDesc GetWidgetInfo(string id)
         {
-            return mWidgets[id].GetDesc();
+            return mWidgets[GetActualWidgetId(id)].GetDesc();
         }
 
         public void DeleteWidget(string id)
         {
-            IWidget w = mWidgets[id];
+            string actualId = GetActualWidgetId(id);
+            IWidget w = mWidgets[actualId];
 
             w.RequestShutdown();
             w.WaitForShutdown();
 
-            mWidgets.Remove(id);
+            mWidgets.Remove(actualId);
+            if (mNameToId.ContainsKey(id))
+                mNameToId.Remove(id);
 
-            RemoveWidgetFromConfig(id);
+            RemoveWidgetFromConfig(actualId);
         }
 
         public void RequestShutdown()

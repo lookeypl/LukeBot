@@ -6,6 +6,7 @@
     body {
         background-color: rgba(0, 0, 0, 0);
         overflow: hidden;
+        margin: 0px 0px 0px 0px;
         color: #ffffff;
         font-family: 'Open Sans' Arial sans-serif;
     }
@@ -84,6 +85,14 @@
         font-size: 24px;
         text-align: center;
     }
+    #alert-fg-gradient {
+        --color-a: #4d6173;
+        --color-b: #2a6d91;
+    }
+    #alert-stroke-gradient {
+        --color-a: #a9bdcf;
+        --color-b: #5e7991;
+    }
 </style>
 
 <svg id="alert-svg-defs" width="0" height="0" viewBox="0 0 0 0">
@@ -95,11 +104,11 @@
             x2="50"
             y2="250"
             gradientUnits="userSpaceOnUse">
-            <stop stop-color="#4d6173" />
-            <stop offset="10%" stop-color="#2a6d91" />
-            <stop offset="35%" stop-color="#4d6173" />
-            <stop offset="90%" stop-color="#2a6d91" />
-            <stop offset="100%" stop-color="#4d6173" />
+            <stop stop-color="var(--color-a)" />
+            <stop offset="10%" stop-color="var(--color-b)" />
+            <stop offset="35%" stop-color="var(--color-a)" />
+            <stop offset="85%" stop-color="var(--color-b)" />
+            <stop offset="100%" stop-color="var(--color-a)" />
         </linearGradient>
         <linearGradient
             id="alert-stroke-gradient"
@@ -108,9 +117,9 @@
             x2="50"
             y2="150"
             gradientUnits="userSpaceOnUse">
-            <stop stop-color='#a9bdcf' />
-            <stop offset="70%" stop-color='#5e7991' />
-            <stop offset="100%" stop-color='#a9bdcf' />
+            <stop stop-color='var(--color-a)' />
+            <stop offset="70%" stop-color='var(--color-b)' />
+            <stop offset="100%" stop-color='var(--color-a)' />
         </linearGradient>
     </defs>
 </svg>
@@ -200,6 +209,7 @@
             // parameters for scroll
             this.mDetailsDiv.style.transform = `translateY(0px)`;
             this.mDetailsScroll = 0;
+            this.detailsAnimLastFrame = undefined;
             this.mDetailsMaxScroll = this.mDetailsDiv.clientHeight - this.mDetailsBoxDiv.clientHeight;
 
             if (audioDuration) {
@@ -229,6 +239,7 @@
 
             const titleHandler = (event) => {
                 this.mTitlePath.style.animation = 'none';
+                this.mDetailsScroll = 0;
                 event.target.removeEventListener("transitionend", titleHandler);
                 if (afterHideCb)
                     afterHideCb();

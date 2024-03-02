@@ -22,10 +22,10 @@ namespace LukeBot.Widget
     {
         private struct WebSocketRecv
         {
-            public ValueWebSocketReceiveResult result;
+            public WebSocketReceiveResult result;
             public string data;
 
-            public WebSocketRecv(ValueWebSocketReceiveResult result, string data)
+            public WebSocketRecv(WebSocketReceiveResult result, string data)
             {
                 this.result = result;
                 this.data = data;
@@ -88,12 +88,16 @@ namespace LukeBot.Widget
                 throw new WebSocketException("Web Socket is closed");
 
             string ret = "";
-            ValueWebSocketReceiveResult recvResult;
+            WebSocketReceiveResult recvResult;
+            byte[] buffer = new byte[1024];
             do
             {
-                Memory<byte> buf = new Memory<byte>();
+                ArraySegment<byte> buf = new(buffer);
                 recvResult = await mWS.ReceiveAsync(buf, CancellationToken.None);
-                ret += Encoding.UTF8.GetString(buf.ToArray());
+                if (recvResult.MessageType == WebSocketMessageType.Text)
+                {
+                    ret += Encoding.UTF8.GetString(buf);
+                }
             }
             while (!recvResult.EndOfMessage);
 
@@ -141,6 +145,9 @@ namespace LukeBot.Widget
 
         protected string RecvFromWS()
         {
+            if (mWS == null || mWS.State != WebSocketState.Open)
+                return null;
+
             while (mWSRecvQueue.Count == 0 && mWSThreadDone == false)
                 mWSRecvAvailableEvent.WaitOne();
 

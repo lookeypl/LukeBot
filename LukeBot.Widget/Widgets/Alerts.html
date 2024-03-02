@@ -4,17 +4,137 @@
 
 <style>
     body {
-        background-color: rgba(0, 0, 0, 255);
+        background-color: rgba(0, 0, 0, 0);
         overflow: hidden;
         color: #ffffff;
         font-family: 'Open Sans' Arial sans-serif;
     }
+    @keyframes alert-line-anim {
+        0% {
+            stroke-opacity: 100%;
+            stroke-dashoffset: 1400;
+        }
+        30% {
+            stroke-opacity: 100%;
+            stroke-dashoffset: 0;
+        }
+        60% {
+            stroke-opacity: 80%;
+        }
+        90% {
+            stroke-opacity: 90%;
+        }
+        100% {
+            stroke-opacity: 0%;
+            stroke-dashoffset: 0;
+        }
+    }
+
+    #alert-svg-title path:nth-child(1) {
+        stroke-dasharray: 1400;
+        stroke-dashoffset: 1400;
+        fill: url(#alert-fg-gradient);
+        fill-opacity: 100%;
+        stroke: url(#alert-stroke-gradient);
+        stroke-width: 6;
+        stroke-opacity: 0%;
+    }
+    #alert-svg-details path:nth-child(1) {
+        stroke-dasharray: 1400;
+        stroke-dashoffset: 1400;
+        fill: url(#alert-fg-gradient);
+        fill-opacity: 100%;
+        stroke: url(#alert-stroke-gradient);
+        stroke-width: 6;
+        stroke-opacity: 0%;
+    }
+    .alert {
+        position: relative;
+        float: right;
+        display: flex;
+        flex-flow: column;
+    }
+    .alert-element-title {
+        transition: all 1.0s;
+    }
+    .alert-element-details {
+        transition: all 1.0s;
+    }
+    .alert-element-hidden {
+        transform: translateX(110%);
+    }
+    .alert-bg {
+        fill: #5e7991;
+    }
+    .alert-title {
+        font-size: 36px;
+        text-align: center;
+        vertical-align: center;
+        margin-right: 8px;
+        margin-top: 8px;
+        line-height: 1em;
+        max-height: 2em;
+    }
+    .alert-details-box {
+        margin: 4px 4px 4px 4px;
+        overflow: hidden;
+        max-height: 112px;
+    }
+    .alert-details {
+        font-size: 24px;
+        text-align: center;
+    }
 </style>
 
-<div id="alert">
+<svg id="alert-svg-defs" width="0" height="0" viewBox="0 0 0 0">
+    <defs>
+        <linearGradient
+            id="alert-fg-gradient"
+            x1="50"
+            y1="-50"
+            x2="50"
+            y2="250"
+            gradientUnits="userSpaceOnUse">
+            <stop stop-color="#4d6173" />
+            <stop offset="10%" stop-color="#2a6d91" />
+            <stop offset="35%" stop-color="#4d6173" />
+            <stop offset="90%" stop-color="#2a6d91" />
+            <stop offset="100%" stop-color="#4d6173" />
+        </linearGradient>
+        <linearGradient
+            id="alert-stroke-gradient"
+            x1="50"
+            y1="-50"
+            x2="50"
+            y2="150"
+            gradientUnits="userSpaceOnUse">
+            <stop stop-color='#a9bdcf' />
+            <stop offset="70%" stop-color='#5e7991' />
+            <stop offset="100%" stop-color='#a9bdcf' />
+        </linearGradient>
+    </defs>
+</svg>
+
+<div id="alert" class="alert">
+    <svg id="alert-svg-title" class="alert-element-title alert-element-hidden" width="610" height="100" xmlns="http://www.w3.org/2000/svg">
+        <path d="M605,5 L5,5 L95,95 L605,95 Z" />
+        <foreignObject x="90" y="4" width="510" height="90">
+            <div id="alert-texts_title" class="alert-title">Alert title!</div>
+        </foreignObject>
+    </svg>
+    <svg id="alert-svg-details" class="alert-element-details alert-element-hidden" width="610" height="130" xmlns="http://www.w3.org/2000/svg">
+        <path d="M605,5 L95,5 L95,125 L605,125 Z" />
+        <foreignObject x="94" y="4" width="510" height="120">
+            <div id="alert-texts_details_box" class="alert-details-box" height="112">
+                <div id="alert-texts_details" class="alert-details">This is a test omega lul</div>
+            </div>
+        </foreignObject>
+    </svg>
 </div>
 
 <script>
+    const STREAMELEMENTS_SPEECH_API = "https://api.streamelements.com/kappa/v2/speech";
+
     const dbg = document.getElementById("debug");
     function printDebug(text) {
         if (dbg) {
@@ -33,52 +153,304 @@
         return '';
     }
 
+    class InfoPanel {
+        constructor() {
+            this.mTitleElement = document.getElementById("alert-svg-title");
+            this.mTitlePath = document.querySelector("#alert-svg-title path:nth-child(1)");
+            this.mTitleDiv = document.getElementById("alert-texts_title");
+            this.mDetailsElement = document.getElementById("alert-svg-details");
+            this.mDetailsPath = document.querySelector("#alert-svg-details path:nth-child(1)");
+            this.mDetailsBoxDiv = document.getElementById("alert-texts_details_box");
+            this.mDetailsDiv = document.getElementById("alert-texts_details");
+        }
+
+        detailsAnimFrame(timeStamp) {
+            if (this.mDetailsScroll >= this.mDetailsMaxScroll)
+                return;
+
+            if (this.detailsAnimLastFrame === undefined)
+                this.detailsAnimLastFrame = timeStamp;
+
+            var delta = (timeStamp - this.detailsAnimLastFrame) / 1000.0; // ms -> s
+
+            this.mDetailsScroll += this.mScrollSpeed * delta;
+            this.mDetailsDiv.style.transform = `translateY(-${this.mDetailsScroll}px)`;
+
+            this.detailsAnimLastFrame = timeStamp;
+
+            window.requestAnimationFrame(this.detailsAnimFrame.bind(this));
+        }
+
+        show() {
+            this.mTitleElement.classList.remove("alert-element-hidden");
+            this.mTitlePath.style.animation = 'alert-line-anim 6s ease-out forwards infinite';
+
+            if (this.mDetailsDiv.innerHTML) {
+                this.mDetailsDiv.style.transform = 'translateY(0px)';
+                this.mDetailsElement.classList.remove("alert-element-hidden");
+                this.mDetailsPath.style.animation = 'alert-line-anim 6s ease-out forwards infinite';
+
+                // delay the details animation
+                this.mTitleElement.style.transitionDelay = "0ms";
+                this.mDetailsElement.style.transitionDelay = "150ms";
+            }
+        }
+
+        launchScroll(audioDuration) {
+            // parameters for scroll
+            this.mDetailsDiv.style.transform = `translateY(0px)`;
+            this.mDetailsScroll = 0;
+            this.mDetailsMaxScroll = this.mDetailsDiv.clientHeight - this.mDetailsBoxDiv.clientHeight;
+
+            if (audioDuration) {
+                var audioMinusPause = audioDuration - 10;
+                if (audioMinusPause < 0)
+                    this.mScrollSpeed = 0;
+                else
+                    this.mScrollSpeed = this.mDetailsMaxScroll / audioMinusPause;
+            } else {
+                this.mScrollSpeed = 5.0;
+            }
+
+            this.mAnimTimeout = setTimeout(() => {
+                window.requestAnimationFrame(this.detailsAnimFrame.bind(this));
+            }, 7000);
+        }
+
+        hide(afterHideCb) {
+            this.mTitleElement.style.transitionDelay = "150ms";
+            this.mDetailsElement.style.transitionDelay = "0ms";
+
+            this.mTitleElement.classList.add("alert-element-hidden");
+            this.mDetailsElement.classList.add("alert-element-hidden");
+
+            this.mDetailsMaxScroll = 0; // to stop the scroll animation
+            clearTimeout(this.mAnimTimeout);
+
+            const titleHandler = (event) => {
+                this.mTitlePath.style.animation = 'none';
+                event.target.removeEventListener("transitionend", titleHandler);
+                if (afterHideCb)
+                    afterHideCb();
+            }
+
+            const detailsHandler = (event) => {
+                this.mDetailsPath.style.animation = 'none';
+                event.target.removeEventListener("transitionend", detailsHandler);
+            }
+
+            this.mTitleElement.addEventListener("transitionend", titleHandler);
+            if (this.mDetailsDiv.innerHTML)
+                this.mDetailsElement.addEventListener("transitionend", detailsHandler);
+        }
+
+        setTitle(title) {
+            this.mTitleDiv.innerHTML = title;
+        }
+
+        setDetails(details) {
+            this.mDetailsDiv.innerHTML = details;
+        }
+    }
+    let infoPanel = new InfoPanel();
+
     class WidgetEventCompletionStatus {
         constructor(status, reason) {
             this.Status = status;
             this.Reason = reason;
         }
-
-        send(socket) {
-            socket.send(JSON.stringify(this))
-        }
     }
 
-    class AlertBase {
-        constructor(receivedObject) {
-            if (this.constructor == Animal) {
-                throw new Error("Cannot instantiate base class");
-            }
+    const TwitchSubscriptionType = {
+        New: 0,
+        Resub: 1,
+        Gift: 2
+    }
 
+    class AlertChain {
+        constructor(receivedObject) {
+            this.mChain = new Array();
+            this.mCurrent = 0;
             this.mType = receivedObject.EventName;
             this.mUsername = receivedObject.User;
             this.mDisplayName = receivedObject.DisplayName;
         }
 
+        add(alertEvent) {
+            if (!(alertEvent instanceof AlertBase)) {
+                throw new Error("Cannot add objects not extending AlertBase()");
+            }
+            this.mChain.push(alertEvent);
+        }
+
+        next() {
+            this.mCurrent += 1;
+            if (this.mCurrent < this.mChain.length) {
+                this.mChain[this.mCurrent].execute(this.next.bind(this));
+            }
+        }
+
         play() {
-            throw new Error("play() has not been implemented");
+            this.mCurrent = 0;
+            this.mChain[this.mCurrent].execute(this.next.bind(this));
+        }
+
+        interrupt() {
+            this.mChain.forEach((value, idx) => {
+                value.interrupt();
+            });
         }
     }
 
-    class ChannelPointAlert extends AlertBase {
-        constructor(receivedObject) {
-            super(receivedObject);
-            this.mTitle = receivedObject.Title;
+    class AlertBase {
+        constructor() {
+            if (this.constructor == AlertBase) {
+                throw new Error("Cannot instantiate base class");
+            }
         }
 
-        play() {
+        execute(next) {
+            throw new Error("execute() has not been implemented");
+        }
 
+        interrupt() {
+            throw new Error("interrupt() has not been implemented");
         }
     }
 
-    class SubscriptionAlert extends AlertBase {
-        constructor(receivedObject) {
-            super(receivedObject);
-            this.mTitle = receivedObject.Title;
+    class AudioAlert extends AlertBase {
+        constructor(audioPath) {
+            super();
+            if (audioPath)
+                this.setPath(audioPath);
         }
 
-        play() {
+        setPath(path) {
+            this.mAudioBlobPromise = fetch(path);
+        }
 
+        execute(next) {
+            this.mAudioBlobPromise.then((response) => response.blob())
+                                  .then((blob) => {
+                var audioURL = window.URL.createObjectURL(blob);
+                this.mAudio = new Audio(audioURL);
+                this.mAudio.addEventListener("canplaythrough", (event) => {
+                    this.mAudio.play().catch(
+                        (reason) => {
+                            let completionStatus = new WidgetEventCompletionStatus(2, `ERROR play failed: ${reason}`);
+                            socket.send(JSON.stringify(completionStatus));
+                        }
+                    );
+                });
+                this.mAudio.addEventListener("ended", (value) => {
+                    next(); // when audio ends
+                });
+                this.mAudio.addEventListener("error", (event) => {
+                    let completionStatus = new WidgetEventCompletionStatus(2, `ERROR playing audio alert: ${audio.error.message}`);
+                    socket.send(JSON.stringify(completionStatus));
+                });
+                this.setupScroll();
+            }).catch((error) => {
+                let completionStatus = new WidgetEventCompletionStatus(2, `ERROR fetching audio file: ${error}`);
+                socket.send(JSON.stringify(completionStatus));
+            });
+        }
+
+        setupScroll() {
+            // noop
+        }
+
+        interrupt() {
+            if (this.mAudio)
+                this.mAudio.pause();
+        }
+    }
+
+    class TTSAlert extends AudioAlert {
+        constructor(voice, message) {
+            super();
+            this.mURL = new URL(STREAMELEMENTS_SPEECH_API);
+            this.mURL.searchParams.append("voice", voice);
+            this.mURL.searchParams.append("text", message);
+            this.setPath(this.mURL.toString());
+        }
+
+        setupScroll() {
+            this.mAudio.addEventListener("loadedmetadata", (event) => {
+                infoPanel.launchScroll(event.target.duration);
+            })
+        }
+    }
+
+    class ShowInfoAlert extends AlertBase {
+        constructor(title, details) {
+            super();
+
+            this.mTitle = title;
+            this.mDetails = details;
+        }
+
+        execute(next) {
+            infoPanel.setTitle(this.mTitle);
+            infoPanel.setDetails(this.mDetails);
+            infoPanel.show();
+            next();
+        }
+
+        interrupt() {
+            // noop
+        }
+    }
+
+    class HideInfoAlert extends AlertBase {
+        constructor() {
+            super();
+        }
+
+        execute(next) {
+            infoPanel.hide(next);
+        }
+
+        interrupt() {
+            infoPanel.hide(null);
+        }
+    }
+
+    class TimeoutAlert extends AlertBase {
+        constructor(timeMs) {
+            super();
+            this.mTimeoutMs = timeMs;
+            this.mTimer = null;
+        }
+
+        execute(next) {
+            this.mTimer = setTimeout((wait) => {
+                next();
+                this.mTimer = null;
+            }, this.mTimeoutMs);
+        }
+
+        interrupt() {
+            if (this.mTimer) {
+                clearTimeout(this.mTimer);
+                this.mTimer = null;
+            }
+        }
+    }
+
+    class AlertChainComplete extends AlertBase {
+        constructor() {
+            super();
+            this.mStatus = 0;
+            this.mReason = "OK";
+        }
+
+        execute(next) {
+            let completionStatus = new WidgetEventCompletionStatus(this.mStatus, this.mReason);
+            socket.send(JSON.stringify(completionStatus));
+        }
+
+        interrupt() {
         }
     }
 
@@ -86,6 +458,8 @@
     const alert = document.getElementById('alert');
     printDebug(serverAddress);
 
+
+    let alertChain = null;
 
     let socket = new WebSocket(serverAddress);
     socket.onopen = function (e) {
@@ -109,14 +483,49 @@
             let obj = JSON.parse(event.data);
 
             if (obj.EventName != null) {
-                // TODO
-                completionStatus = new WidgetEventCompletionStatus(0, "OK");
-                completionStatus.send(socket);
+                if (obj.EventName == "AlertInterrupt") {
+                    // interrupt has been triggerred, let's pause the chain and clear it
+                    if (alertChain != null) {
+                        alertChain.interrupt();
+                        alertChain = null;
+
+                        let completionStatus = new WidgetEventCompletionStatus(1, "Alert interrupted");
+                        socket.send(JSON.stringify(completionStatus));
+                    }
+                    return;
+                }
+
+                alertChain = new AlertChain(obj);
+                if (obj.EventName == "TwitchChannelPointsRedemption") {
+                } else if (obj.EventName == "TwitchSubscription") {
+                    var showInfoAlert = null;
+                    if (obj.Details.Type == TwitchSubscriptionType.Resub) {
+                        showInfoAlert = new ShowInfoAlert(obj.DisplayName + "<br>subscribed for " + obj.Details.Duration + " months!", obj.Details.Message);
+                    } else {
+                        showInfoAlert = new ShowInfoAlert(obj.DisplayName + " subscribed!", null);
+                    }
+                    alertChain.add(showInfoAlert);
+
+                    alertChain.add(new AudioAlert("/content/news-ting-6832.ogg"));
+                    if (obj.Details.Type == TwitchSubscriptionType.Resub) {
+                        alertChain.add(new TTSAlert("Brian", obj.Details.Message));
+                    } else {
+                        alertChain.add(new TimeoutAlert(3000));
+                    }
+                    alertChain.add(new HideInfoAlert());
+                } else {
+                    throw new Error("Invalid event name");
+                }
+
+                alertChain.add(new AlertChainComplete());
+                alertChain.play();
             } else {
-                printDebug(`Received unknown obj: ${obj}`);
+                throw new Error("Invalid object received");
             }
         } catch (error) {
             printDebug(`Error: ${error}`);
+            completionStatus = new WidgetEventCompletionStatus(1, `ERROR Exception: ${error}`);
+            socket.send(JSON.stringify(completionStatus));
         }
     }
 </script>

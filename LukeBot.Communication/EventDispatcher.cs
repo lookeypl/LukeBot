@@ -188,7 +188,9 @@ namespace LukeBot.Communication
                 return null;
 
             mEventQueueMutex.WaitOne();
-            EventQueueItem item = mEvents.Dequeue();
+            EventQueueItem item = null;
+            if (mEvents.Count > 0)
+                item = mEvents.Dequeue();
             mEventQueueMutex.ReleaseMutex();
 
             return item;
@@ -197,7 +199,10 @@ namespace LukeBot.Communication
         private void InterruptCurrentEvent()
         {
             if (mCurrentEvent == null)
+            {
+                Logger.Log().Debug("No current event to skip");
                 return;
+            }
 
             mCurrentEvent.ev.Interrupt();
         }
@@ -234,6 +239,7 @@ namespace LukeBot.Communication
                 catch (System.Exception e)
                 {
                     Logger.Log().Error("Caught exception on {0} Event Dispatcher: {1}", mName, e.Message);
+                    Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
                 }
             }
 

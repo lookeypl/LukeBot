@@ -157,22 +157,23 @@ namespace LukeBot.Twitch.Common
 
     public class TwitchResubscriptionDetails: TwitchSubscriptionDetails
     {
-        public int Cumulative { get; private set; }
+        public int Cumulative { get; private set; } // total subscription month
         public int Streak { get; private set; } // 0 if not shared
-        public int Duration { get; private set; }
-        // TODO resub message
+        public int Duration { get; private set; } // length of resub (1, 2, 3 months etc.)
+        public string Message { get; private set; } // resub message
 
         public TwitchResubscriptionDetails()
-            : this(1, 1, 1, 1)
+            : this(1, 1, 1, 1, "")
         {
         }
 
-        public TwitchResubscriptionDetails(int tier, int cumulative, int streak, int duration)
+        public TwitchResubscriptionDetails(int tier, int cumulative, int streak, int duration, string message)
             : base(TwitchSubscriptionType.Resub, tier)
         {
             Cumulative = cumulative;
             Streak = streak;
             Duration = duration;
+            Message = message;
         }
 
         public override void FillStringArgs(IEnumerable<(string a, string v)> args)
@@ -181,6 +182,7 @@ namespace LukeBot.Twitch.Common
             int cumulative = 3;
             int streak = 3;
             int duration = 1;
+            string message = "This is a test";
 
             foreach ((string a, string v) a in args)
             {
@@ -190,6 +192,7 @@ namespace LukeBot.Twitch.Common
                 case "Cumulative": cumulative = Int32.Parse(a.v); break;
                 case "Streak": streak = Int32.Parse(a.v); break;
                 case "Duration": duration = Int32.Parse(a.v); break;
+                case "Message": message = a.v; break;
                 }
             }
 
@@ -197,6 +200,7 @@ namespace LukeBot.Twitch.Common
             Cumulative = cumulative;
             Streak = streak;
             Duration = duration;
+            Message = message;
         }
     }
 

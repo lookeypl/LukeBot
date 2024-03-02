@@ -80,7 +80,7 @@ namespace LukeBot.Communication
          * Note that so far only Queued Dispatcher provides the functionality
          * to emit Interrupt events.
          */
-        public event EventHandler InterruptEndpoint;
+        public event EventHandler<EventArgsBase> InterruptEndpoint;
 
         /**
          * Generator for test events provided by the publisher.

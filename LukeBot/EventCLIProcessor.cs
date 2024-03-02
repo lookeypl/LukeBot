@@ -33,7 +33,7 @@ namespace LukeBot
 
     internal class EventCommandBase
     {
-        [Value(0, MetaName = "dispatcher", Required = true, HelpText = "Event dispatcher")]
+        [Value(0, MetaName = "dispatcher", Default = "", Required = false, HelpText = "Event dispatcher")]
         public string Dispatcher { get; set; }
     }
 
@@ -67,6 +67,11 @@ namespace LukeBot
     {
         private const string COMMAND_NAME = "event";
         private LukeBot mLukeBot;
+
+        private string GetDefaultQueuedDispatcher()
+        {
+            return "Twitch_QueuedDispatcher_" + mLukeBot.GetCurrentUser().Username;
+        }
 
         private IEnumerable<(string attrib, string value)> ConvertArgString(IEnumerable<string> argsList)
         {
@@ -210,7 +215,7 @@ namespace LukeBot
                     msg += "\n";
                 }
 
-                msg += "\n\"Testable\" events can emit a test event using \"event emit <name>\"\n";
+                msg += "\n\"Testable\" events can emit a test event using \"event test <name>\"\n";
             }
             catch (System.Exception e)
             {
@@ -220,53 +225,93 @@ namespace LukeBot
 
         void HandleClearCommand(EventClearCommand args, out string msg)
         {
+            string dispatcher = args.Dispatcher;
+
             try
             {
-                Comms.Event.User(mLukeBot.GetCurrentUser().Username).Dispatcher(args.Dispatcher).Clear();
-                msg = "Events on dispatcher " + args.Dispatcher + " cleared.";
+                if (dispatcher == null || dispatcher.Length == 0)
+                    dispatcher = GetDefaultQueuedDispatcher();
+
+                EventDispatcher dispatcherObject = Comms.Event.User(mLukeBot.GetCurrentUser().Username).Dispatcher(dispatcher);
+                dispatcherObject.Clear();
+                dispatcherObject.Skip();
+                msg = "Events on dispatcher " + dispatcher + " cleared.";
             }
             catch (System.Exception e)
             {
-                msg = "Failed to emit a test event: " + e.Message;
+                msg = "Failed to clear " + dispatcher + " dispatcher: " + e.Message;
             }
         }
 
         void HandleEnableCommand(EventEnableCommand args, out string msg)
         {
+            string dispatcher = args.Dispatcher;
+
             try
             {
-                Comms.Event.User(mLukeBot.GetCurrentUser().Username).Dispatcher(args.Dispatcher).Enable();
-                msg = "Dispatcher " + args.Dispatcher + " enabled.";
+                if (dispatcher == null || dispatcher.Length == 0)
+                    dispatcher = GetDefaultQueuedDispatcher();
+
+                Comms.Event.User(mLukeBot.GetCurrentUser().Username).Dispatcher(dispatcher).Enable();
+                msg = "Dispatcher " + dispatcher + " enabled.";
             }
             catch (System.Exception e)
             {
-                msg = "Failed to enable an event dispatcher: " + e.Message;
+                msg = "Failed to enable " + dispatcher + " dispatcher: " + e.Message;
             }
         }
 
         void HandleDisableCommand(EventDisableCommand args, out string msg)
         {
+            string dispatcher = args.Dispatcher;
+
             try
             {
-                Comms.Event.User(mLukeBot.GetCurrentUser().Username).Dispatcher(args.Dispatcher).Disable();
-                msg = "Dispatcher " + args.Dispatcher + " disabled.";
+                if (dispatcher == null || dispatcher.Length == 0)
+                    dispatcher = GetDefaultQueuedDispatcher();
+
+                Comms.Event.User(mLukeBot.GetCurrentUser().Username).Dispatcher(dispatcher).Disable();
+                msg = "Dispatcher " + dispatcher + " disabled.";
             }
             catch (System.Exception e)
             {
-                msg = "Failed to disable an event dispatcher: " + e.Message;
+                msg = "Failed to disable " + dispatcher + " dispatcher: " + e.Message;
             }
         }
 
         void HandleHoldCommand(EventHoldCommand args, out string msg)
         {
+            string dispatcher = args.Dispatcher;
+
             try
             {
-                Comms.Event.User(mLukeBot.GetCurrentUser().Username).Dispatcher(args.Dispatcher).Hold();
-                msg = "Dispatcher " + args.Dispatcher + " put on hold.";
+                if (dispatcher == null || dispatcher.Length == 0)
+                    dispatcher = GetDefaultQueuedDispatcher();
+
+                Comms.Event.User(mLukeBot.GetCurrentUser().Username).Dispatcher(dispatcher).Hold();
+                msg = "Dispatcher " + dispatcher + " put on hold.";
             }
             catch (System.Exception e)
             {
-                msg = "Failed to hold " + args.Dispatcher + " dispatcher: " + e.Message;
+                msg = "Failed to hold " + dispatcher + " dispatcher: " + e.Message;
+            }
+        }
+
+        void HandleSkipCommand(EventSkipCommand args, out string msg)
+        {
+            string dispatcher = args.Dispatcher;
+
+            try
+            {
+                if (dispatcher == null || dispatcher.Length == 0)
+                    dispatcher = GetDefaultQueuedDispatcher();
+
+                Comms.Event.User(mLukeBot.GetCurrentUser().Username).Dispatcher(dispatcher).Skip();
+                msg = "Dispatcher " + dispatcher + " event skipped.";
+            }
+            catch (System.Exception e)
+            {
+                msg = "Failed to skip event on " + dispatcher + " dispatcher: " + e.Message;
             }
         }
 
@@ -277,7 +322,7 @@ namespace LukeBot
             UserInterface.CommandLine.AddCommand(COMMAND_NAME, (string[] args) =>
             {
                 string result = "";
-                Parser.Default.ParseArguments<EventTestCommand, EventInfoCommand, EventStatusCommand, EventClearCommand, EventEnableCommand, EventDisableCommand, EventHoldCommand>(args)
+                Parser.Default.ParseArguments<EventTestCommand, EventInfoCommand, EventStatusCommand, EventClearCommand, EventEnableCommand, EventDisableCommand, EventHoldCommand, EventSkipCommand>(args)
                     .WithParsed<EventTestCommand>((EventTestCommand args) => HandleTestCommand(args, out result))
                     .WithParsed<EventInfoCommand>((EventInfoCommand args) => HandleInfoCommand(args, out result))
                     .WithParsed<EventStatusCommand>((EventStatusCommand args) => HandleStatusCommand(args, out result))
@@ -285,6 +330,7 @@ namespace LukeBot
                     .WithParsed<EventEnableCommand>((EventEnableCommand args) => HandleEnableCommand(args, out result))
                     .WithParsed<EventDisableCommand>((EventDisableCommand args) => HandleDisableCommand(args, out result))
                     .WithParsed<EventHoldCommand>((EventHoldCommand args) => HandleHoldCommand(args, out result))
+                    .WithParsed<EventSkipCommand>((EventSkipCommand args) => HandleSkipCommand(args, out result))
                     .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, COMMAND_NAME, out result));
                 return result;
             });

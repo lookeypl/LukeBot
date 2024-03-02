@@ -207,6 +207,7 @@ namespace LukeBot.Twitch
                     new() { Name = "Cumulative", Description = "(Resub-only) Number of total subscriptions", Type = EventTestParamType.Integer },
                     new() { Name = "Streak", Description = "(Resub-only) Subscription streak", Type = EventTestParamType.Integer },
                     new() { Name = "Duration", Description = "(Resub-only) Duration of subscription in months", Type = EventTestParamType.Integer },
+                    new() { Name = "Message", Description = "(Resub-only) Resubscription message", Type = EventTestParamType.String },
                     new() { Name = "Recipents", Description = "(Gift-only) Gift recipent count", Type = EventTestParamType.Integer },
                 }
             });
@@ -344,14 +345,15 @@ namespace LukeBot.Twitch
                     Int32.Parse(data.tier),
                     data.cumulative_months,
                     (data.streak_months != null) ? (int)data.streak_months : 0,
-                    data.duration_months
+                    data.duration_months,
+                    data.message.text
                 );
                 break;
             }
             case TwitchSubscriptionType.Gift:
             {
                 // TODO I wanna make this smarter. I'd love to set up a "gift pending" situation here
-                // and then fetch next data.total subscription
+                // and then fetch next data.total subscriptions
                 EventSub.PayloadSubGiftEvent data = eventData as EventSub.PayloadSubGiftEvent;
                 details = new TwitchGiftSubscriptionDetails(Int32.Parse(data.tier), data.total);
                 break;

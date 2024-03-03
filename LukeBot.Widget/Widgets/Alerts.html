@@ -550,6 +550,8 @@
                     var showInfoAlert = null;
                     if (obj.Details.Type == TwitchSubscriptionType.Resub) {
                         showInfoAlert = new ShowInfoAlert(obj.DisplayName + "<br>subscribed for " + obj.Details.Duration + " months!", obj.Details.Message);
+                    } else if (obj.Details.Type == TwitchSubscriptionType.Gift) {
+                        showInfoAlert = new ShowInfoAlert(obj.DisplayName + "<br>gifted " + obj.Details.RecipentCount + " subs!", null);
                     } else {
                         showInfoAlert = new ShowInfoAlert(obj.DisplayName + " subscribed!", null);
                     }

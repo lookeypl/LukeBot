@@ -51,7 +51,6 @@
     }
     .alert {
         position: relative;
-        float: right;
         display: flex;
         flex-flow: column;
     }
@@ -61,8 +60,11 @@
     .alert-element-details {
         transition: all 1.0s;
     }
-    .alert-element-hidden {
+    .alert-element-hidden-right {
         transform: translateX(110%);
+    }
+    .alert-element-hidden-left {
+        transform: translateX(-110%);
     }
     .alert-bg {
         fill: #5e7991;
@@ -124,16 +126,16 @@
     </defs>
 </svg>
 
-<div id="alert" class="alert">
-    <svg id="alert-svg-title" class="alert-element-title alert-element-hidden" width="610" height="100" xmlns="http://www.w3.org/2000/svg">
-        <path d="M605,5 L5,5 L95,95 L605,95 Z" />
-        <foreignObject x="90" y="4" width="510" height="90">
+<div id="alert" class="alert" style="float: right">
+    <svg id="alert-svg-title" class="alert-element-title alert-element-hidden-right" width="610" height="100" xmlns="http://www.w3.org/2000/svg">
+        <path id="alert-svg-title-path" d="M605,5 L5,5 L95,95 L605,95 Z" />
+        <foreignObject id="alert-svg-title-fobj" x="90" y="4" width="510" height="90">
             <div id="alert-texts_title" class="alert-title">Alert title!</div>
         </foreignObject>
     </svg>
-    <svg id="alert-svg-details" class="alert-element-details alert-element-hidden" width="610" height="130" xmlns="http://www.w3.org/2000/svg">
-        <path d="M605,5 L95,5 L95,125 L605,125 Z" />
-        <foreignObject x="94" y="4" width="510" height="120">
+    <svg id="alert-svg-details" class="alert-element-details alert-element-hidden-right" width="610" height="130" xmlns="http://www.w3.org/2000/svg">
+        <path id="alert-svg-details-path" d="M605,5 L95,5 L95,125 L605,125 Z" />
+        <foreignObject id="alert-svg-details-fobj" x="94" y="4" width="510" height="120">
             <div id="alert-texts_details_box" class="alert-details-box" height="112">
                 <div id="alert-texts_details" class="alert-details">This is a test omega lul</div>
             </div>
@@ -164,13 +166,41 @@
 
     class InfoPanel {
         constructor() {
+            this.mRootElement = document.getElementById("alert");
             this.mTitleElement = document.getElementById("alert-svg-title");
-            this.mTitlePath = document.querySelector("#alert-svg-title path:nth-child(1)");
+            this.mTitlePath = document.getElementById("alert-svg-title-path");
+            this.mTitleFObj = document.getElementById("alert-svg-title-fobj");
             this.mTitleDiv = document.getElementById("alert-texts_title");
             this.mDetailsElement = document.getElementById("alert-svg-details");
-            this.mDetailsPath = document.querySelector("#alert-svg-details path:nth-child(1)");
+            this.mDetailsPath = document.getElementById("alert-svg-details-path");
+            this.mDetailsFObj = document.getElementById("alert-svg-details-fobj");
             this.mDetailsBoxDiv = document.getElementById("alert-texts_details_box");
             this.mDetailsDiv = document.getElementById("alert-texts_details");
+            this.mAlignment = "right";
+            this.mHiddenClassName = "alert-element-hidden-right";
+        }
+
+        alignLeft() {
+            // redo some control things to make the widget align to the left side
+            this.mAlignment = "left";
+
+            this.mRootElement.style.float = "left";
+
+            // #1 - SVG paths must be changed
+            this.mTitlePath.setAttribute("d", "M5,5 L605,5 L515,95 L5,95 Z");
+            this.mDetailsPath.setAttribute("d", "M5,5 L515,5 L515,125 L5,125 Z");
+
+            // #2 - we have to hide elements to the left instead of right
+            this.mTitleElement.classList.remove(this.mHiddenClassName);
+            this.mDetailsElement.classList.remove(this.mHiddenClassName);
+
+            this.mHiddenClassName = "alert-element-hidden-left";
+            this.mTitleElement.classList.add(this.mHiddenClassName);
+            this.mDetailsElement.classList.add(this.mHiddenClassName);
+
+            // #3 - Move foreign objects to new locations
+            this.mTitleFObj.setAttribute("x", "4");
+            this.mDetailsFObj.setAttribute("x", "4");
         }
 
         detailsAnimFrame(timeStamp) {
@@ -191,12 +221,12 @@
         }
 
         show() {
-            this.mTitleElement.classList.remove("alert-element-hidden");
+            this.mTitleElement.classList.remove(this.mHiddenClassName);
             this.mTitlePath.style.animation = 'alert-line-anim 6s ease-out forwards infinite';
 
             if (this.mDetailsDiv.innerHTML) {
                 this.mDetailsDiv.style.transform = 'translateY(0px)';
-                this.mDetailsElement.classList.remove("alert-element-hidden");
+                this.mDetailsElement.classList.remove(this.mHiddenClassName);
                 this.mDetailsPath.style.animation = 'alert-line-anim 6s ease-out forwards infinite';
 
                 // delay the details animation
@@ -231,8 +261,8 @@
             this.mTitleElement.style.transitionDelay = "150ms";
             this.mDetailsElement.style.transitionDelay = "0ms";
 
-            this.mTitleElement.classList.add("alert-element-hidden");
-            this.mDetailsElement.classList.add("alert-element-hidden");
+            this.mTitleElement.classList.add(this.mHiddenClassName);
+            this.mDetailsElement.classList.add(this.mHiddenClassName);
 
             this.mDetailsMaxScroll = 0; // to stop the scroll animation
             clearTimeout(this.mAnimTimeout);
@@ -503,6 +533,14 @@
                         let completionStatus = new WidgetEventCompletionStatus(1, "Alert interrupted");
                         socket.send(JSON.stringify(completionStatus));
                     }
+                    return;
+                } else if (obj.EventName == "AlertWidgetConfig") {
+                    // picked up configuration message; read and adjust
+                    if (obj.Alignment && obj.Alignment == "left") {
+                        infoPanel.alignLeft();
+                    }
+                    let completionStatus = new WidgetEventCompletionStatus(0, "Configuration applied");
+                    socket.send(JSON.stringify(completionStatus));
                     return;
                 }
 

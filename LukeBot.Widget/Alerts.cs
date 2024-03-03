@@ -20,6 +20,17 @@ namespace LukeBot.Widget
             }
         }
 
+        private class AlertWidgetConfig : EventArgsBase
+        {
+            public string Alignment { get; set; }
+
+            public AlertWidgetConfig()
+                : base("AlertWidgetConfig")
+            {
+                Alignment = "right";
+            }
+        }
+
         private void AwaitEventCompletion()
         {
             string respStr = RecvFromWS();
@@ -99,6 +110,16 @@ namespace LukeBot.Widget
 
             collection.Event(Events.TWITCH_SUBSCRIPTION).Endpoint += OnSubscriptionEvent;
             collection.Event(Events.TWITCH_SUBSCRIPTION).InterruptEndpoint += OnEventInterrupt;
+
+            this.OnConnectedEvent += (object o, System.EventArgs ea) => {
+                AlertWidgetConfig config = new AlertWidgetConfig();
+                // TODO hacky, make it work properly and implement widget config system
+                WidgetDesc desc = GetDesc();
+                if (desc.Name != null && desc.Name.EndsWith("_Left"))
+                    config.Alignment = "left";
+                SendToWSAsync(JsonConvert.SerializeObject(config));
+                AwaitEventCompletion();
+            };
         }
 
         public override WidgetType GetWidgetType()

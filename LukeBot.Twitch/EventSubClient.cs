@@ -273,6 +273,14 @@ namespace LukeBot.Twitch
             catch (OperationCanceledException)
             {
                 // Reconnect, as we did not receive a single message for more than Keepalive seconds timeout
+                Logger.Log().Warning("Keepalive timer expired - attempting to reconnect...");
+                result.Status = EventSub.InternalStatus.Reconnect;
+                return result;
+            }
+            catch (Exception e)
+            {
+                Logger.Log().Warning("Other exception caught - attempting to reconnect...");
+                Logger.Log().Trace("Caught: {0}\n{1}", e.Message, e.StackTrace);
                 result.Status = EventSub.InternalStatus.Reconnect;
                 return result;
             }
@@ -297,8 +305,16 @@ namespace LukeBot.Twitch
             if (resub)
             {
                 // Sometimes we have to re-subscribe to all events upon reconnect.
-                // Form new subscription list based on existing one.
-                // TODO
+                //  - Form new subscription list based on existing one from mSubscriptions
+                //  - call Subscribe(list) to resub to everything
+                List<string> events = new();
+                foreach (API.Twitch.EventSubSubscriptionResponseData subData in mSubscriptions.Values)
+                {
+                    events.Add(subData.type);
+                }
+
+                // mSubscriptions is cleared inside Subscribe() call
+                Subscribe(events);
             }
 
             if (mSocket.State == WebSocketState.Open)
@@ -434,45 +450,54 @@ namespace LukeBot.Twitch
         {
             while (!mReceiveThreadDone)
             {
-                EventSub.Message msg = await ReceiveAsync();
-
-                if (!msg.Success)
+                try
                 {
-                    Logger.Log().Error("Received unsuccessful message from EventSub");
-                    continue;
+                    EventSub.Message msg = await ReceiveAsync();
+
+                    if (!msg.Success)
+                    {
+                        Logger.Log().Error("Received unsuccessful message from EventSub");
+                        continue;
+                    }
+
+                    switch (msg.Status)
+                    {
+                    case EventSub.InternalStatus.Reconnect:
+                        await Reconnect(EVENTSUB_URI_MAIN, true);
+                        continue;
+                    case EventSub.InternalStatus.Closed:
+                        mReceiveThreadDone = true;
+                        continue;
+                    }
+
+                    switch (msg.Metadata.message_type)
+                    {
+                    case EventSub.MessageType.session_welcome:
+                        await HandleSessionWelcome(msg);
+                        break;
+                    case EventSub.MessageType.session_keepalive:
+                        HandleSessionKeepalive();
+                        break;
+                    case EventSub.MessageType.session_reconnect:
+                        await HandleSessionReconnect(msg.Payload.Session);
+                        break;
+                    case EventSub.MessageType.notification:
+                        HandleNotification(msg.Payload.Subscription, msg.Payload.Event);
+                        break;
+                    case EventSub.MessageType.revocation:
+                        HandleRevocation();
+                        break;
+                    default:
+                        Logger.Log().Error("Invalid EventSub message type: {0}", msg.Metadata.message_type);
+                        break;
+                    }
                 }
-
-                switch (msg.Status)
+                catch (Exception e)
                 {
-                case EventSub.InternalStatus.Reconnect:
-                    Logger.Log().Warning("Keepalive timeout occured, reconnecting...");
-                    await Reconnect(EVENTSUB_URI_MAIN, true);
-                    continue;
-                case EventSub.InternalStatus.Closed:
-                    mReceiveThreadDone = true;
-                    continue;
-                }
-
-                switch (msg.Metadata.message_type)
-                {
-                case EventSub.MessageType.session_welcome:
-                    await HandleSessionWelcome(msg);
-                    break;
-                case EventSub.MessageType.session_keepalive:
-                    HandleSessionKeepalive();
-                    break;
-                case EventSub.MessageType.session_reconnect:
-                    await HandleSessionReconnect(msg.Payload.Session);
-                    break;
-                case EventSub.MessageType.notification:
-                    HandleNotification(msg.Payload.Subscription, msg.Payload.Event);
-                    break;
-                case EventSub.MessageType.revocation:
-                    HandleRevocation();
-                    break;
-                default:
-                    Logger.Log().Error("Invalid EventSub message type: {0}", msg.Metadata.message_type);
-                    break;
+                    Logger.Log().Error("Caught exception on EventSub recv thread: {0}", e.Message);
+                    Logger.Log().Error("EventSub thread will now exit.");
+                    Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
+                    // TODO provide way to manually restart the thread
                 }
             }
         }

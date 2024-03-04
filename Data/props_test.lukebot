@@ -42,6 +42,23 @@
                     "name": "api_endpoint",
                     "type": "System.String",
                     "value": "\"http://127.0.0.1:8080\""
+                },
+                {
+                    "name": "login",
+                    "type": "System.String",
+                    "value": "\"lukebot\""
+                },
+                {
+                    "name": "client_id",
+                    "type": "System.String",
+                    "hidden": true,
+                    "value": "\"0lukebot1test2client3id4\""
+                },
+                {
+                    "name": "client_secret",
+                    "type": "System.String",
+                    "hidden": true,
+                    "value": "\"0lukebot1test2client3secret4\""
                 }
             ]
         }

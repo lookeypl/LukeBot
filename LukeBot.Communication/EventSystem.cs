@@ -84,10 +84,11 @@ namespace LukeBot.Communication
             return mDispatchers[name];
         }
 
-        private EventCallback CreateEventCallback(string eventName)
+        private EventCallback CreateEventCallback(string eventName, string dispatcherName)
         {
             Event ev = Event(eventName);
-            return new EventCallback(eventName, (EventArgsBase args) => ev.Raise(args));
+            EventDispatcher disp = Dispatcher(dispatcherName);
+            return new EventCallback(eventName, (EventArgsBase args) => disp.Submit(ev, args));
         }
 
         private EventCallback AddEvent(EventDescriptor ed)
@@ -122,7 +123,7 @@ namespace LukeBot.Communication
 
             mEvents.Add(ed.Name, new Event(ed));
 
-            return CreateEventCallback(ed.Name);
+            return CreateEventCallback(ed.Name, disp);
         }
 
         /**

@@ -76,7 +76,6 @@ namespace LukeBot.Twitch
             {
                 List<string> events = new();
                 events.Add(EventSubClient.SUB_CHANNEL_POINTS_REDEMPTION_ADD);
-                events.Add(EventSubClient.SUB_SUBSCRIBE);
                 events.Add(EventSubClient.SUB_SUBSCRIPTION_GIFT);
                 events.Add(EventSubClient.SUB_SUBSCRIPTION_MESSAGE);
                 mEventSub.Subscribe(events);

@@ -362,6 +362,7 @@
     class AudioAlert extends AlertBase {
         constructor(audioPath) {
             super();
+            this.mEnsureLongEnough = false;
             if (audioPath)
                 this.setPath(audioPath);
         }
@@ -384,7 +385,15 @@
                     );
                 });
                 this.mAudio.addEventListener("ended", (value) => {
-                    next(); // when audio ends
+                    if (this.mEnsureLongEnough && this.mAudio.duration < 5.0) {
+                        // Wait to make the alert last at least 5 seconds
+                        setTimeout(() => {
+                            next();
+                        }, (5.0 - this.mAudio.duration) * 1000);
+                    } else {
+                        // Audio was longer than non-message alert, continue
+                        next();
+                    }
                 });
                 this.mAudio.addEventListener("error", (event) => {
                     let completionStatus = new WidgetEventCompletionStatus(2, `ERROR playing audio alert: ${audio.error.message}`);
@@ -414,6 +423,7 @@
             this.mURL.searchParams.append("voice", voice);
             this.mURL.searchParams.append("text", message);
             this.setPath(this.mURL.toString());
+            this.mEnsureLongEnough = true;
         }
 
         setupScroll() {
@@ -561,7 +571,7 @@
                     if (obj.Details.Type == TwitchSubscriptionType.Resub) {
                         alertChain.add(new TTSAlert("Brian", obj.Details.Message));
                     } else {
-                        alertChain.add(new TimeoutAlert(3000));
+                        alertChain.add(new TimeoutAlert(5000));
                     }
                     alertChain.add(new HideInfoAlert());
                 } else {

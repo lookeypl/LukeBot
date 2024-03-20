@@ -237,7 +237,10 @@ namespace LukeBot.Twitch
 
             try
             {
-                mIRC.JoinChannel(lbUser, user.GetUserData());
+                // TODO this user token should not be here. In general, this IRC channel
+                // should be probably rewritten and IRCChannel should be owned/managed by
+                // TwitchUserModule. Come back to this someday and make this right.
+                mIRC.JoinChannel(lbUser, user.GetUserData(), user.GetUserToken());
 
                 LoadCommandsFromConfig(lbUser);
 

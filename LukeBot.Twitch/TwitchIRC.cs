@@ -28,6 +28,7 @@ namespace LukeBot.Twitch
         private string mName;
         private Token mToken;
         private IRCClient mIRCClient = null;
+        private BadgeCollection mGlobalBadges = null;
         private Dictionary<string, IRCChannel> mChannels;
         private bool mTagsEnabled = false;
 
@@ -310,7 +311,7 @@ namespace LukeBot.Twitch
             {
                 Logger.Log().Error("Twitch IRC worker thread exited with error.");
                 e.Print(LogLevel.Error);
-                throw e;
+                throw;
             }
 
             while (mConnectionState == ConnectionState.CONNECTED)
@@ -353,6 +354,7 @@ namespace LukeBot.Twitch
             mLoggedInEvent = new AutoResetEvent(false);
             mChannels = new Dictionary<string, IRCChannel>();
             mToken = token;
+            mGlobalBadges = Utils.FetchBadgeCollection(token, null);
 
             Logger.Log().Info("Twitch IRC module initialized");
         }
@@ -363,7 +365,7 @@ namespace LukeBot.Twitch
             WaitForShutdown();
         }
 
-        public void JoinChannel(string lbUser, API.Twitch.GetUserData user)
+        public void JoinChannel(string lbUser, API.Twitch.GetUserData user, Token token)
         {
             mChannelsMutex.WaitOne();
 
@@ -375,7 +377,7 @@ namespace LukeBot.Twitch
 
             mIRCClient.Send(IRCMessage.JOIN(user.login));
 
-            mChannels.Add(user.login, new IRCChannel(lbUser, user));
+            mChannels.Add(user.login, new IRCChannel(lbUser, user, token, mGlobalBadges));
 
             mChannelsMutex.ReleaseMutex();
         }

@@ -456,7 +456,8 @@ namespace LukeBot.Twitch
 
                     if (!msg.Success)
                     {
-                        Logger.Log().Error("Received unsuccessful message from EventSub");
+                        Logger.Log().Error("Received unsuccessful message from EventSub. Stopping.");
+                        mReceiveThreadDone = true;
                         continue;
                     }
 

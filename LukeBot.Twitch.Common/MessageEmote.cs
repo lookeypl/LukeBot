@@ -56,4 +56,16 @@ namespace LukeBot.Twitch.Common
             }
         }
     }
+
+    public struct MessageBadge
+    {
+        public string Name { get; private set; }
+        public string Resource { get; private set; }
+
+        public MessageBadge(string name, string resource)
+        {
+            Name = name;
+            Resource = resource;
+        }
+    }
 }

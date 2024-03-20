@@ -17,6 +17,10 @@ namespace LukeBot.API
         private static readonly string GET_USERS_API_URI = API_URI + "/users";
         private static readonly string GET_CHANNEL_INFORMATION_API_URI = API_URI + "/channels";
 
+        private static readonly string CHAT_BASE_URI = API_URI + "/chat";
+        private static readonly string GET_BADGES_API_URI = CHAT_BASE_URI + "/badges";
+        private static readonly string GET_GLOBAL_BADGES_API_URI = GET_BADGES_API_URI + "/global";
+
         private static readonly string EVENTSUB_BASE_URI = API_URI + "/eventsub";
         private static readonly string EVENTSUB_SUBSCRIPTIONS_API_URI = EVENTSUB_BASE_URI + "/subscriptions";
 
@@ -149,6 +153,30 @@ namespace LukeBot.API
         }
 
 
+        public class GetBadgesResponseBadgeVersion
+        {
+            public string id { get; set; }
+            public string image_url_1x { get; set; }
+            public string image_url_2x { get; set; }
+            public string image_url_4x { get; set; }
+            public string title { get; set; }
+            public string description { get; set; }
+            public string click_action { get; set; }
+            public string click_url { get; set; }
+        }
+
+        public class GetBadgesResponseSet
+        {
+            public string set_id { get; set; }
+            public List<GetBadgesResponseBadgeVersion> versions { get; set; }
+        }
+
+        public class GetBadgesResponse: Response
+        {
+            public List<GetBadgesResponseSet> data { get; set; }
+        }
+
+
         // Get data about specified user. If login field is empty, gets data about user
         // based on provided Token.
         public static GetUserResponse GetUser(Token token, string login = "")
@@ -238,6 +266,24 @@ namespace LukeBot.API
                 uriQuery.Add("after", after);
 
             return Request.Get<GetEventSubSubscriptionsResponse>(EVENTSUB_SUBSCRIPTIONS_API_URI, token, uriQuery);
+        }
+
+        public static GetBadgesResponse GetGlobalChatBadges(Token token)
+        {
+            return Request.Get<GetBadgesResponse>(GET_GLOBAL_BADGES_API_URI, token);
+        }
+
+        public static GetBadgesResponse GetChannelChatBadges(Token token, string broadcasterId)
+        {
+            if (broadcasterId == null || broadcasterId.Length == 0)
+            {
+                throw new ArgumentException("Broadcaster ID cannot be empty or null");
+            }
+
+            Dictionary<string, string> uriQuery = new();
+            uriQuery.Add("broadcaster_id", broadcasterId);
+
+            return Request.Get<GetBadgesResponse>(GET_BADGES_API_URI, token, uriQuery);
         }
     }
 }

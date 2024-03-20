@@ -23,5 +23,27 @@ namespace LukeBot.Twitch
             else
                 throw new LoginFailedException("Failed to login to Twitch: " + data.code.ToString());
         }
+
+        public static BadgeCollection FetchBadgeCollection(Token token, string channelId)
+        {
+            API.Twitch.GetBadgesResponse badges = null;
+            if (channelId == null || channelId.Length == 0)
+            {
+                // fetch global badges
+                badges = API.Twitch.GetGlobalChatBadges(token);
+            }
+            else
+            {
+                // fetch channel badges
+                badges = API.Twitch.GetChannelChatBadges(token, channelId);
+            }
+
+            if (!badges.IsSuccess)
+            {
+                throw new System.Exception(string.Format("Failed to get badge collection: {0}", badges.code.ToString()));
+            }
+
+            return new BadgeCollection(badges);
+        }
     }
 }

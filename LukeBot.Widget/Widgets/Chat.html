@@ -44,6 +44,14 @@
         margin: -.5rem 0;
         vertical-align: middle;
     }
+    .chat-badges-span {
+        margin-right: 0.1em;
+        vertical-align: middle;
+    }
+    .chat-badge {
+        margin-right: 0.1em;
+        height: 1em;
+    }
 </style>
 
 <div id="chat">
@@ -74,6 +82,7 @@
 
 
     const TWITCH_EMOTE_URL_SCHEME = ["//static-cdn.jtvnw.net/emoticons/v2/", "/default/dark/1.0", "/default/dark/2.0", "/default/dark/3.0"];
+    const TWITCH_BADGE_URL_SCHEME = ["//static-cdn.jtvnw.net/badges/v1/", "/1", "/2", "/3"];
     const FFZ_EMOTE_URL_SCHEME = ["//cdn.frankerfacez.com/emote/", "/1", "/2", "/4"];
     const BTTV_EMOTE_URL_SCHEME = ["//cdn.betterttv.net/emote/", "/1x", "/2x", "/3x"];
     const SEVENTV_EMOTE_URL_SCHEME = ["//cdn.7tv.app/emote/", "/1x.webp", "/2x.webp", "/4x.webp"];
@@ -86,6 +95,13 @@
             this.mHeight = height;
             this.mFrom = from;
             this.mTo = to;
+        }
+    }
+
+    class Badge {
+        constructor(name, resource) {
+            this.mName = name;
+            this.mResource = resource;
         }
     }
 
@@ -119,6 +135,12 @@
                         return 0;
                 });
             }
+            this.mBadges = [];
+            if (msg.Badges) {
+                msg.Badges.forEach((b) => {
+                    this.mBadges.push(new Badge(b.Name, b.Resource));
+                }, this);
+            }
         }
     }
 
@@ -134,6 +156,9 @@
                 nick = lastMsg.mNick;
 
             let nickTextNode = document.createTextNode(nick);
+
+            let badgeNode = document.createElement("span");
+            badgeNode.classList.add("chat-badges-span");
 
             let nickNode = document.createElement("span");
             nickNode.style.color = lastMsg.mColor;
@@ -188,10 +213,54 @@
                 });
             }
 
+            if (lastMsg.mBadges) {
+                lastMsg.mBadges.forEach((b) => {
+                    let scheme = TWITCH_BADGE_URL_SCHEME;
+
+                    let url = scheme[0] + b.mResource;
+                    let img = document.createElement("img");
+                    img.src = url + scheme[1];
+                    img.srcset =
+                        url + scheme[1] + " 1x, " +
+                        url + scheme[2] + " 2x, " +
+                        url + scheme[3] + " 4x";
+
+                    img.classList.add("chat-badge");
+                    img.onerror = function() {
+                        // Sometimes it just happens that twitch's CDN doesn't
+                        // want to provide us with the image. If that happens,
+                        // try and trigger redownloading the image by resetting
+                        // its src and srcset. Only do that 5 times max though.
+                        if (!this.mBadgeLoadTries) {
+                            this.mBadgeLoadTries = 0;
+                        }
+                        this.mBadgeLoadTries += 1;
+
+                        if (this.mBadgeLoadTries > 5) {
+                            this.style.display = 'none';
+                        } else {
+                            // Retry the load by providing the same src/srcset.
+                            // Also do this after 100ms to not spam Twitch's CDN
+                            // with requests.
+                            setTimeout(() => {
+                                img.src = url + scheme[1];
+                                img.srcset =
+                                    url + scheme[1] + " 1x, " +
+                                    url + scheme[2] + " 2x, " +
+                                    url + scheme[3] + " 4x";
+                            }, 100);
+                        }
+                    }
+
+                    badgeNode.appendChild(img);
+                });
+            }
+
             let newMsgNode = document.createElement("span");
             newMsgNode.setAttribute("msgid", lastMsg.mID);
             newMsgNode.setAttribute("msguser", lastMsg.mNick);
             newMsgNode.classList.add("chat-line");
+            newMsgNode.appendChild(badgeNode);
             newMsgNode.appendChild(nickNode);
             newMsgNode.appendChild(colonNode);
             newMsgNode.appendChild(textNode);

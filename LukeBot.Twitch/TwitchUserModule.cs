@@ -26,7 +26,7 @@ namespace LukeBot.Twitch
             mLBUser = lbUser;
             mChannelName = channelName;
 
-            // Add a queued dispatcher for our user module
+            // Each user has its own queued dispatcher to independently handle some events
             Comms.Event.User(mLBUser).AddEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser), EventDispatcherType.Queued);
 
             API.Twitch.GetUserResponse resp = API.Twitch.GetUser(botToken, mChannelName);
@@ -56,6 +56,11 @@ namespace LukeBot.Twitch
         internal API.Twitch.GetUserData GetUserData()
         {
             return mUserData;
+        }
+
+        internal Token GetUserToken()
+        {
+            return mUserToken;
         }
 
         internal string GetLBUser()

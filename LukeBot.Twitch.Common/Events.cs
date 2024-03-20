@@ -26,6 +26,7 @@ namespace LukeBot.Twitch.Common
         public string UserID { get; set; }
         public string Color { get; set; }
         public List<MessageEmote> Emotes { get; private set; }
+        public List<MessageBadge> Badges { get; private set; }
         public string Nick { get; set; }
         public string DisplayName { get; set; }
         public string Message { get; set; }
@@ -36,7 +37,8 @@ namespace LukeBot.Twitch.Common
             MessageID = msgID;
             UserID = "";
             Color = "#dddddd";
-            Emotes = new List<MessageEmote>();
+            Emotes = new();
+            Badges = new();
             Nick = "";
             DisplayName = "";
             Message = "";
@@ -68,6 +70,25 @@ namespace LukeBot.Twitch.Common
                     name = GetEmoteName(msg, ranges.Substring(0, firstRangeIdx));
 
                 Emotes.Add(new MessageEmote(EmoteSource.Twitch, name, e.Substring(0, separatorIdx), 32, 32, e.Substring(separatorIdx + 1)));
+            }
+        }
+
+        public void AddBadges(List<MessageBadge> globalBadges, List<MessageBadge> channelBadges)
+        {
+            // gives priority to channel badges
+            Badges.AddRange(channelBadges);
+
+            // add global badges to the collection
+            // and filter out badges that were already added
+            foreach (MessageBadge b in globalBadges)
+            {
+                if (Badges.Exists(x => x.Name == b.Name))
+                {
+                    Logger.Log().Debug("Skipping global badge {0}, duplicated by channel badge", b.Name);
+                    continue;
+                }
+
+                Badges.Add(b);
             }
         }
 

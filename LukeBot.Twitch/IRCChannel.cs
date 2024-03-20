@@ -6,6 +6,7 @@ using LukeBot.Communication;
 using LukeBot.Communication.Common;
 using LukeBot.Twitch.Common;
 using Command = LukeBot.Twitch.Common.Command;
+using LukeBot.API;
 
 
 namespace LukeBot.Twitch
@@ -17,6 +18,8 @@ namespace LukeBot.Twitch
         private API.Twitch.GetUserData mUserData;
         private Dictionary<string, Command.ICommand> mCommands = new();
         private EmoteProvider mExternalEmotes = new();
+        private BadgeCollection mGlobalBadges;
+        private BadgeCollection mChannelBadges;
         private int mMsgIDCounter = 0; // backup for when we don't have metadata
         private EventCallback mMessageEventCallback;
         private EventCallback mMessageClearEventCallback;
@@ -107,11 +110,13 @@ namespace LukeBot.Twitch
             return events;
         }
 
-        public IRCChannel(string lbUser, API.Twitch.GetUserData userData)
+        public IRCChannel(string lbUser, API.Twitch.GetUserData userData, Token userToken, BadgeCollection globalBadges)
         {
             mLBUser = lbUser;
             mChannelName = userData.login;
             mUserData = userData;
+            mGlobalBadges = globalBadges;
+            mChannelBadges = Utils.FetchBadgeCollection(userToken, userData.id);
 
             mExternalEmotes.AddEmoteSource(new FFZEmoteSource(userData.id));
             mExternalEmotes.AddEmoteSource(new BTTVEmoteSource(userData.id));
@@ -171,6 +176,11 @@ namespace LukeBot.Twitch
                 if (m.GetTag("emotes", out emotes))
                 {
                     message.ParseEmotesString(chatMsg, emotes);
+                }
+
+                if (m.GetTag("badges", out string badges))
+                {
+                    message.AddBadges(mGlobalBadges.GetBadges(badges), mChannelBadges.GetBadges(badges));
                 }
             }
             else

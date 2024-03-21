@@ -19,6 +19,12 @@ namespace LukeBot.Twitch
             Uri resUri = new(version.image_url_4x);
             Resource = resUri.Segments[^2].TrimEnd('/');
         }
+
+        public BadgeVersion(BadgeVersion other)
+        {
+            ID = other.ID;
+            Resource = other.Resource;
+        }
     }
 
     public class BadgeSet
@@ -30,9 +36,29 @@ namespace LukeBot.Twitch
         {
             Name = badgeSet.set_id;
             Versions = new();
+            AddVersions(badgeSet);
+        }
 
-            foreach (TwitchAPI.GetBadgesResponseBadgeVersion version in badgeSet.versions)
+        public BadgeSet(BadgeSet other)
+        {
+            Name = other.Name;
+            Versions = new();
+            foreach (KeyValuePair<string, BadgeVersion> v in other.Versions)
             {
+                Versions.Add(v.Key, new BadgeVersion(v.Value));
+            }
+        }
+
+        public void AddVersions(TwitchAPI.GetBadgesResponseSet set)
+        {
+            foreach (TwitchAPI.GetBadgesResponseBadgeVersion version in set.versions)
+            {
+                if (Versions.ContainsKey(version.id))
+                {
+                    Logger.Log().Warning("Badge set {0} already contains version {1}", Name, version.id);
+                    continue;
+                }
+
                 Versions.Add(version.id, new BadgeVersion(version));
             }
         }
@@ -45,9 +71,15 @@ namespace LukeBot.Twitch
         public BadgeCollection(TwitchAPI.GetBadgesResponse badges)
         {
             Sets = new();
-            foreach (TwitchAPI.GetBadgesResponseSet set in badges.data)
+            AddBadges(badges);
+        }
+
+        public BadgeCollection(BadgeCollection other)
+        {
+            Sets = new();
+            foreach (KeyValuePair<string, BadgeSet> set in other.Sets)
             {
-                Sets.Add(set.set_id, new BadgeSet(set));
+                Sets.Add(set.Key, new BadgeSet(set.Value));
             }
         }
 
@@ -82,6 +114,17 @@ namespace LukeBot.Twitch
             }
 
             return badges;
+        }
+
+        public void AddBadges(TwitchAPI.GetBadgesResponse badges)
+        {
+            foreach (TwitchAPI.GetBadgesResponseSet set in badges.data)
+            {
+                if (Sets.ContainsKey(set.set_id))
+                    Sets[set.set_id].AddVersions(set);
+                else
+                    Sets.Add(set.set_id, new BadgeSet(set));
+            }
         }
     }
 }

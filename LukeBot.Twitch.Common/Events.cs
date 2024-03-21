@@ -73,23 +73,9 @@ namespace LukeBot.Twitch.Common
             }
         }
 
-        public void AddBadges(List<MessageBadge> globalBadges, List<MessageBadge> channelBadges)
+        public void AddBadges(List<MessageBadge> badges)
         {
-            // gives priority to channel badges
-            Badges.AddRange(channelBadges);
-
-            // add global badges to the collection
-            // and filter out badges that were already added
-            foreach (MessageBadge b in globalBadges)
-            {
-                if (Badges.Exists(x => x.Name == b.Name))
-                {
-                    Logger.Log().Debug("Skipping global badge {0}, duplicated by channel badge", b.Name);
-                    continue;
-                }
-
-                Badges.Add(b);
-            }
+            Badges = badges;
         }
 
         public void AddExternalEmotes(List<MessageEmote> emotes)

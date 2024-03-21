@@ -354,7 +354,7 @@ namespace LukeBot.Twitch
             mLoggedInEvent = new AutoResetEvent(false);
             mChannels = new Dictionary<string, IRCChannel>();
             mToken = token;
-            mGlobalBadges = Utils.FetchBadgeCollection(token, null);
+            mGlobalBadges = new BadgeCollection(Utils.FetchBadges(token, null));
 
             Logger.Log().Info("Twitch IRC module initialized");
         }

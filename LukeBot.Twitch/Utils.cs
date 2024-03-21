@@ -24,7 +24,7 @@ namespace LukeBot.Twitch
                 throw new LoginFailedException("Failed to login to Twitch: " + data.code.ToString());
         }
 
-        public static BadgeCollection FetchBadgeCollection(Token token, string channelId)
+        public static API.Twitch.GetBadgesResponse FetchBadges(Token token, string channelId)
         {
             API.Twitch.GetBadgesResponse badges = null;
             if (channelId == null || channelId.Length == 0)
@@ -43,7 +43,7 @@ namespace LukeBot.Twitch
                 throw new System.Exception(string.Format("Failed to get badge collection: {0}", badges.code.ToString()));
             }
 
-            return new BadgeCollection(badges);
+            return badges;
         }
     }
 }

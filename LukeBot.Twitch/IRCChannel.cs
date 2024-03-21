@@ -18,7 +18,6 @@ namespace LukeBot.Twitch
         private API.Twitch.GetUserData mUserData;
         private Dictionary<string, Command.ICommand> mCommands = new();
         private EmoteProvider mExternalEmotes = new();
-        private BadgeCollection mGlobalBadges;
         private BadgeCollection mChannelBadges;
         private int mMsgIDCounter = 0; // backup for when we don't have metadata
         private EventCallback mMessageEventCallback;
@@ -115,8 +114,8 @@ namespace LukeBot.Twitch
             mLBUser = lbUser;
             mChannelName = userData.login;
             mUserData = userData;
-            mGlobalBadges = globalBadges;
-            mChannelBadges = Utils.FetchBadgeCollection(userToken, userData.id);
+            mChannelBadges = new(globalBadges);
+            mChannelBadges.AddBadges(Utils.FetchBadges(userToken, userData.id));
 
             mExternalEmotes.AddEmoteSource(new FFZEmoteSource(userData.id));
             mExternalEmotes.AddEmoteSource(new BTTVEmoteSource(userData.id));
@@ -180,7 +179,7 @@ namespace LukeBot.Twitch
 
                 if (m.GetTag("badges", out string badges))
                 {
-                    message.AddBadges(mGlobalBadges.GetBadges(badges), mChannelBadges.GetBadges(badges));
+                    message.AddBadges(mChannelBadges.GetBadges(badges));
                 }
             }
             else

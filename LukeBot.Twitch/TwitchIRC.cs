@@ -532,6 +532,21 @@ namespace LukeBot.Twitch
             mChannelsMutex.ReleaseMutex();
         }
 
+        public void RefreshEmotes(string channel)
+        {
+            mChannelsMutex.WaitOne();
+
+            if (!mChannels.ContainsKey(channel))
+            {
+                mChannelsMutex.ReleaseMutex();
+                throw new UnknownChannelException(channel);
+            }
+
+            mChannels[channel].RefreshEmotes();
+
+            mChannelsMutex.ReleaseMutex();
+        }
+
         public void Run()
         {
             mWorker.Start();

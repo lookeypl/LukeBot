@@ -250,6 +250,11 @@ namespace LukeBot.Twitch
             message.AddExternalEmotes(mExternalEmotes.ParseEmotes(message.Message));
         }
 
+        public void RefreshEmotes()
+        {
+            mExternalEmotes.Refresh();
+        }
+
         public Dictionary<string, Command.ICommand> GetCommands()
         {
             return mCommands;

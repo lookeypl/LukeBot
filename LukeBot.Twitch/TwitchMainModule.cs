@@ -354,6 +354,12 @@ namespace LukeBot.Twitch
             UpdateCommandInConfig(twitchChannel, name);
         }
 
+        public void RefreshEmotesForUser(string lbUser)
+        {
+            string twitchCHannel = GetTwitchChannel(lbUser);
+            mIRC.RefreshEmotes(twitchCHannel);
+        }
+
         public void UpdateLoginForUser(string lbUser, string newLogin)
         {
             // TODO:

@@ -41,6 +41,16 @@ namespace LukeBot.Twitch
 
             return result;
         }
+
+        public void Refresh()
+        {
+            mEmoteSet.Clear();
+
+            foreach (IEmoteSource source in mEmoteSources)
+            {
+                source.FetchEmoteSet(ref mEmoteSet);
+            }
+        }
     }
 
 }

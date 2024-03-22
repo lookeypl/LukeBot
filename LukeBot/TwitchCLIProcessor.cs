@@ -14,6 +14,11 @@ namespace LukeBot
     {
     }
 
+    [Verb("emote-refresh", HelpText = "Refreshes user's emotes. Use to reload emotes from third party providers (ex. FFZ) after adding new ones.")]
+    public class TwitchEmoteRefreshSubverb
+    {
+    }
+
     [Verb("login", HelpText = "Set login to Twitch servers. This will invalidate current auth token if it exists.")]
     public class TwitchLoginSubverb
     {
@@ -37,6 +42,19 @@ namespace LukeBot
         private void HandleCommandSubverb(TwitchCommandSubverb arg, string[] args, out string result)
         {
             result = mCommandCLIProcessor.Parse(args);
+        }
+
+        private void HandleEmoteRefreshSubverb(TwitchEmoteRefreshSubverb arg, out string result)
+        {
+            try
+            {
+                GlobalModules.Twitch.RefreshEmotesForUser(mLukeBot.GetCurrentUser().Username);
+                result = "Emotes refreshed";
+            }
+            catch (System.Exception e)
+            {
+                result = "Failed to refresh emotes: " + e.Message;
+            }
         }
 
         private void HandleLoginSubverb(TwitchLoginSubverb arg, string[] args, out string result)
@@ -99,8 +117,9 @@ namespace LukeBot
             {
                 string result = "";
                 string[] cmdArgs = args.Take(2).ToArray(); // filters out any additional options/commands that might confuse CommandLine
-                Parser.Default.ParseArguments<TwitchCommandSubverb, TwitchLoginSubverb, TwitchEnableSubverb, TwitchDisableSubverb>(cmdArgs)
+                Parser.Default.ParseArguments<TwitchCommandSubverb, TwitchEmoteRefreshSubverb, TwitchLoginSubverb, TwitchEnableSubverb, TwitchDisableSubverb>(cmdArgs)
                     .WithParsed<TwitchCommandSubverb>((TwitchCommandSubverb arg) => HandleCommandSubverb(arg, args.Skip(1).ToArray(), out result))
+                    .WithParsed<TwitchEmoteRefreshSubverb>((TwitchEmoteRefreshSubverb arg) => HandleEmoteRefreshSubverb(arg, out result))
                     .WithParsed<TwitchLoginSubverb>((TwitchLoginSubverb arg) => HandleLoginSubverb(arg, args.Skip(1).ToArray(), out result))
                     .WithParsed<TwitchEnableSubverb>((TwitchEnableSubverb arg) => HandleEnableSubverb(arg, out result))
                     .WithParsed<TwitchDisableSubverb>((TwitchDisableSubverb arg) => HandleDisableSubverb(arg, out result))

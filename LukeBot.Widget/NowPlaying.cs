@@ -1,8 +1,3 @@
-using System;
-using System.IO;
-using System.Threading;
-using System.Text.Json;
-using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Communication.Common;
 using LukeBot.Spotify.Common;
@@ -20,14 +15,14 @@ namespace LukeBot.Widget
         {
             SpotifyStateUpdateArgs a = (SpotifyStateUpdateArgs)args;
             mState = a;
-            SendToWSAsync(JsonSerializer.Serialize(a));
+            SendToWS(a);
         }
 
         private void OnTrackChanged(object o, EventArgsBase args)
         {
             SpotifyTrackChangedArgs a = (SpotifyTrackChangedArgs)args;
             mCurrentTrack = a;
-            SendToWSAsync(JsonSerializer.Serialize(a));
+            SendToWS(a);
         }
 
         protected override void OnConnected()

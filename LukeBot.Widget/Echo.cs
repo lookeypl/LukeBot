@@ -43,12 +43,18 @@ namespace LukeBot.Widget
                           .Select(s => s[random.Next(s.Length)])
                           .ToArray()
             );
-            EchoMessage msg = new EchoMessage(secretEchoMessage);
-
             Logger.Log().Info("Echoing: {0}", secretEchoMessage);
-            SendToWSAsync(JsonConvert.SerializeObject(msg));
 
-            EchoResponse resp = JsonConvert.DeserializeObject<EchoResponse>(RecvFromWS());
+            EchoMessage msg = new EchoMessage(secretEchoMessage);
+            SendToWS(msg);
+
+            EchoResponse resp = RecvFromWS<EchoResponse>();
+            if (resp == null)
+            {
+                Logger.Log().Error("Echo failed - received null response");
+                return;
+            }
+
             if (resp.Message == msg.Message)
             {
                 Logger.Log().Info("Echo successful");

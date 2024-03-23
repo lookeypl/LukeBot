@@ -1,11 +1,8 @@
-﻿using Newtonsoft.Json;
-using LukeBot.Communication;
+﻿using LukeBot.Communication;
 using LukeBot.Communication.Common;
 using LukeBot.Logging;
 using LukeBot.Twitch.Common;
 using LukeBot.Widget.Common;
-using System.Collections.Generic;
-using System.Web;
 
 
 namespace LukeBot.Widget
@@ -33,14 +30,7 @@ namespace LukeBot.Widget
 
         private void AwaitEventCompletion()
         {
-            string respStr = RecvFromWS();
-            if (respStr == null)
-            {
-                Logger.Log().Warning("Widget's response was null - possibly connection was broken or is not connected");
-                return;
-            }
-
-            WidgetEventCompletionResponse resp = JsonConvert.DeserializeObject<WidgetEventCompletionResponse>(respStr);
+            WidgetEventCompletionResponse resp = RecvFromWS<WidgetEventCompletionResponse>();
             if (resp == null)
             {
                 Logger.Log().Warning("Widget's response was null - possibly connection was broken or is not connected");
@@ -61,9 +51,7 @@ namespace LukeBot.Widget
         {
             TwitchChannelPointsRedemptionArgs a = args as TwitchChannelPointsRedemptionArgs;
 
-            string msg = JsonConvert.SerializeObject(a);
-            Logger.Log().Debug("Channel Points redemption:\n{0}", msg);
-            SendToWSAsync(msg);
+            SendToWS(a);
 
             AwaitEventCompletion();
         }
@@ -89,15 +77,14 @@ namespace LukeBot.Widget
                 break;
             }
 
-            string msg = JsonConvert.SerializeObject(a);
-            SendToWSAsync(msg);
+            SendToWS(a);
 
             AwaitEventCompletion();
         }
 
         private void OnEventInterrupt(object o, EventArgsBase args)
         {
-            SendToWSAsync(JsonConvert.SerializeObject(new AlertInterrupt()));
+            SendToWS(new AlertInterrupt());
         }
 
         protected override void OnConnected()
@@ -107,7 +94,8 @@ namespace LukeBot.Widget
             WidgetDesc desc = GetDesc();
             if (desc.Name != null && desc.Name.EndsWith("_Left"))
                 config.Alignment = "left";
-            SendToWSAsync(JsonConvert.SerializeObject(config));
+            SendToWS(config);
+
             AwaitEventCompletion();
         }
 

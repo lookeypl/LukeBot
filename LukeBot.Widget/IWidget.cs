@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Widget.Common;
+using Newtonsoft.Json;
 
 
 namespace LukeBot.Widget
@@ -147,7 +148,12 @@ namespace LukeBot.Widget
             return mWSRecvQueue.Dequeue();
         }
 
-        protected async void SendToWSAsync(string msg)
+        protected T RecvFromWS<T>()
+        {
+            return JsonConvert.DeserializeObject<T>(RecvFromWS());
+        }
+
+        protected async Task SendToWSAsync(string msg)
         {
             if (mWS == null)
                 return; // WebSocket not connected, ignore
@@ -162,6 +168,25 @@ namespace LukeBot.Widget
                 );
             }
         }
+
+        protected async Task SendToWSAsync<T>(T obj)
+        {
+            await SendToWSAsync(JsonConvert.SerializeObject(obj));
+        }
+
+        protected void SendToWS(string msg)
+        {
+            Task t = SendToWSAsync(msg);
+            t.Wait();
+        }
+
+        protected void SendToWS<T>(T obj)
+        {
+            Task t = SendToWSAsync<T>(obj);
+            t.Wait();
+        }
+
+
 
 
         internal Task AcquireWS(WebSocket ws)

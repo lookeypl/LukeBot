@@ -1,9 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Net.WebSockets;
-using System.Text.Json;
-using LukeBot.Common;
-using LukeBot.Communication;
+﻿using LukeBot.Communication;
 using LukeBot.Communication.Common;
 using LukeBot.Twitch.Common;
 using LukeBot.Widget.Common;
@@ -15,20 +10,17 @@ namespace LukeBot.Widget
     {
         private void OnMessage(object o, EventArgsBase args)
         {
-            TwitchChatMessageArgs a = (TwitchChatMessageArgs)args;
-            SendToWSAsync(JsonSerializer.Serialize(a));
+            SendToWS((TwitchChatMessageArgs)args);
         }
 
         private void OnClearChat(object o, EventArgsBase args)
         {
-            TwitchChatUserClearArgs a = (TwitchChatUserClearArgs)args;
-            SendToWSAsync(JsonSerializer.Serialize(a));
+            SendToWS((TwitchChatUserClearArgs)args);
         }
 
         private void OnClearMsg(object o, EventArgsBase args)
         {
-            TwitchChatMessageClearArgs a = (TwitchChatMessageClearArgs)args;
-            SendToWSAsync(JsonSerializer.Serialize(a));
+            SendToWS((TwitchChatMessageClearArgs)args);
         }
 
         protected override void OnConnected()

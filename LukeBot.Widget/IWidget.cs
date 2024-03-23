@@ -44,17 +44,7 @@ namespace LukeBot.Widget
         private bool mWSThreadDone;
         private Queue<string> mWSRecvQueue;
 
-        protected event EventHandler OnConnectedEvent;
-
-
-        private void OnConnected()
-        {
-            EventHandler handler = OnConnectedEvent;
-            if (handler != null)
-            {
-                handler(this, null);
-            }
-        }
+        protected abstract void OnConnected();
 
         private string GetWidgetCode()
         {

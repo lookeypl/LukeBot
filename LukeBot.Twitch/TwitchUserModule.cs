@@ -37,6 +37,7 @@ namespace LukeBot.Twitch
             }
             mUserData = resp.data[0];
 
+            // TODO token's scope should be moved to Config
             string tokenScope = "user:read:email channel:read:redemptions channel:read:subscriptions";
             mUserToken = AuthManager.Instance.GetToken(ServiceType.Twitch, lbUser);
 

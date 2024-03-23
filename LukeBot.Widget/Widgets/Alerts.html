@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans" rel="stylesheet">
+<script src="/js/lukebot-widget-common.js"></script>
 
 <style>
     body {
@@ -145,24 +146,6 @@
 
 <script>
     const STREAMELEMENTS_SPEECH_API = "https://api.streamelements.com/kappa/v2/speech";
-
-    const dbg = document.getElementById("debug");
-    function printDebug(text) {
-        if (dbg) {
-            dbg.innerHTML += text + "<br />";
-        }
-        console.log(text);
-    }
-
-    const metadata = document.getElementsByTagName('meta');
-    function getMeta(name) {
-        for (let i = 0; i < metadata.length; ++i) {
-            if (metadata[i].getAttribute('name') === name) {
-                return metadata[i].getAttribute('content');
-            }
-        }
-        return '';
-    }
 
     class InfoPanel {
         constructor() {
@@ -497,96 +480,69 @@
         }
 
         execute(next) {
-            let completionStatus = new WidgetEventCompletionStatus(this.mStatus, this.mReason);
-            socket.send(JSON.stringify(completionStatus));
+            alertsWidget.send(new WidgetEventCompletionStatus(this.mStatus, this.mReason));
         }
 
         interrupt() {
         }
     }
 
-    const serverAddress = getMeta('serveraddress');
     const alert = document.getElementById('alert');
-    printDebug(serverAddress);
-
-
     let alertChain = null;
 
-    let socket = new WebSocket(serverAddress);
-    socket.onopen = function (e) {
-        printDebug(`Connected to server at ${serverAddress}`);
-    }
+    let alertsWidget = new LukeBotWidget();
+    alertsWidget.registerMessage("AlertInterrupt", (obj) => {
+        // interrupt has been triggerred, let's pause the chain and clear it
+        if (alertChain != null) {
+            alertChain.interrupt();
+            alertChain = null;
 
-    socket.onclose = function (event) {
-        if (event.wasClean) {
-            printDebug(`Connection closed cleanly`);
+            alertsWidget.send(new WidgetEventCompletionStatus(1, "Alert interrupted"));
+        }
+    });
+    alertsWidget.registerMessage("AlertWidgetConfig", (obj) => {
+        // picked up configuration message; read and adjust
+        // TODO once Widget configuration is unified, this has to be changed
+        if (obj.Alignment && obj.Alignment == "left") {
+            infoPanel.alignLeft();
+        }
+
+        alertsWidget.send(new WidgetEventCompletionStatus(0, "Configuration applied"));
+    });
+    alertsWidget.registerMessage("TwitchChannelPointsRedemption", (obj) => {
+        alertChain = new AlertChain(obj);
+
+        // TODO
+
+        alertChain.add(new AlertChainComplete());
+        alertChain.play();
+    });
+    alertsWidget.registerMessage("TwitchSubscription", (obj) => {
+        alertChain = new AlertChain(obj);
+
+        var showInfoAlert = null;
+        if (obj.Details.Type == TwitchSubscriptionType.Resub) {
+            showInfoAlert = new ShowInfoAlert(obj.DisplayName + "<br>subscribed for " + obj.Details.Duration + " months!", obj.Details.Message);
+        } else if (obj.Details.Type == TwitchSubscriptionType.Gift) {
+            showInfoAlert = new ShowInfoAlert(obj.DisplayName + "<br>gifted " + obj.Details.RecipentCount + " subs!", null);
         } else {
-            printDebug(`Connection died`);
+            showInfoAlert = new ShowInfoAlert(obj.DisplayName + " subscribed!", null);
         }
-    }
+        alertChain.add(showInfoAlert);
 
-    socket.onerror = function (error) {
-        printDebug(`Error: ${error.message}`);
-    }
+        alertChain.add(new AudioAlert("/content/news-ting-6832.ogg"));
 
-    socket.onmessage = function (event) {
-        try {
-            let obj = JSON.parse(event.data);
-
-            if (obj.EventName != null) {
-                if (obj.EventName == "AlertInterrupt") {
-                    // interrupt has been triggerred, let's pause the chain and clear it
-                    if (alertChain != null) {
-                        alertChain.interrupt();
-                        alertChain = null;
-
-                        let completionStatus = new WidgetEventCompletionStatus(1, "Alert interrupted");
-                        socket.send(JSON.stringify(completionStatus));
-                    }
-                    return;
-                } else if (obj.EventName == "AlertWidgetConfig") {
-                    // picked up configuration message; read and adjust
-                    if (obj.Alignment && obj.Alignment == "left") {
-                        infoPanel.alignLeft();
-                    }
-                    let completionStatus = new WidgetEventCompletionStatus(0, "Configuration applied");
-                    socket.send(JSON.stringify(completionStatus));
-                    return;
-                }
-
-                alertChain = new AlertChain(obj);
-                if (obj.EventName == "TwitchChannelPointsRedemption") {
-                } else if (obj.EventName == "TwitchSubscription") {
-                    var showInfoAlert = null;
-                    if (obj.Details.Type == TwitchSubscriptionType.Resub) {
-                        showInfoAlert = new ShowInfoAlert(obj.DisplayName + "<br>subscribed for " + obj.Details.Duration + " months!", obj.Details.Message);
-                    } else if (obj.Details.Type == TwitchSubscriptionType.Gift) {
-                        showInfoAlert = new ShowInfoAlert(obj.DisplayName + "<br>gifted " + obj.Details.RecipentCount + " subs!", null);
-                    } else {
-                        showInfoAlert = new ShowInfoAlert(obj.DisplayName + " subscribed!", null);
-                    }
-                    alertChain.add(showInfoAlert);
-
-                    alertChain.add(new AudioAlert("/content/news-ting-6832.ogg"));
-                    if (obj.Details.Type == TwitchSubscriptionType.Resub) {
-                        alertChain.add(new TTSAlert("Brian", obj.Details.Message));
-                    } else {
-                        alertChain.add(new TimeoutAlert(5000));
-                    }
-                    alertChain.add(new HideInfoAlert());
-                } else {
-                    throw new Error("Invalid event name");
-                }
-
-                alertChain.add(new AlertChainComplete());
-                alertChain.play();
-            } else {
-                throw new Error("Invalid object received");
-            }
-        } catch (error) {
-            printDebug(`Error: ${error}`);
-            completionStatus = new WidgetEventCompletionStatus(1, `ERROR Exception: ${error}`);
-            socket.send(JSON.stringify(completionStatus));
+        if (obj.Details.Type == TwitchSubscriptionType.Resub) {
+            alertChain.add(new TTSAlert("Brian", obj.Details.Message));
+        } else {
+            alertChain.add(new TimeoutAlert(5000));
         }
-    }
+
+        alertChain.add(new HideInfoAlert());
+        alertChain.add(new AlertChainComplete());
+        alertChain.play();
+    });
+    alertsWidget.registerMessageError((error) => {
+        alertsWidget.send(new WidgetEventCompletionStatus(1, `ERROR exception while preparing/playing alert: ${error}`));
+    });
 </script>

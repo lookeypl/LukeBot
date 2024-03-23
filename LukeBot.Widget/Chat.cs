@@ -31,6 +31,11 @@ namespace LukeBot.Widget
             SendToWSAsync(JsonSerializer.Serialize(a));
         }
 
+        protected override void OnConnected()
+        {
+            // noop
+        }
+
         public Chat(string lbUser, string id, string name)
             : base("LukeBot.Widget/Widgets/Chat.html", id, name)
         {

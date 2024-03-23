@@ -57,7 +57,7 @@ namespace LukeBot.Widget
             }
         }
 
-        public void OnChannelPointsEvent(object o, EventArgsBase args)
+        private void OnChannelPointsEvent(object o, EventArgsBase args)
         {
             TwitchChannelPointsRedemptionArgs a = args as TwitchChannelPointsRedemptionArgs;
 
@@ -68,7 +68,7 @@ namespace LukeBot.Widget
             AwaitEventCompletion();
         }
 
-        public void OnSubscriptionEvent(object o, EventArgsBase args)
+        private void OnSubscriptionEvent(object o, EventArgsBase args)
         {
             TwitchSubscriptionArgs a = args as TwitchSubscriptionArgs;
 
@@ -95,9 +95,20 @@ namespace LukeBot.Widget
             AwaitEventCompletion();
         }
 
-        public void OnEventInterrupt(object o, EventArgsBase args)
+        private void OnEventInterrupt(object o, EventArgsBase args)
         {
             SendToWSAsync(JsonConvert.SerializeObject(new AlertInterrupt()));
+        }
+
+        protected override void OnConnected()
+        {
+            AlertWidgetConfig config = new AlertWidgetConfig();
+            // TODO hacky, make it work properly and implement widget config system
+            WidgetDesc desc = GetDesc();
+            if (desc.Name != null && desc.Name.EndsWith("_Left"))
+                config.Alignment = "left";
+            SendToWSAsync(JsonConvert.SerializeObject(config));
+            AwaitEventCompletion();
         }
 
         public Alerts(string lbUser, string id, string name)
@@ -110,16 +121,6 @@ namespace LukeBot.Widget
 
             collection.Event(Events.TWITCH_SUBSCRIPTION).Endpoint += OnSubscriptionEvent;
             collection.Event(Events.TWITCH_SUBSCRIPTION).InterruptEndpoint += OnEventInterrupt;
-
-            this.OnConnectedEvent += (object o, System.EventArgs ea) => {
-                AlertWidgetConfig config = new AlertWidgetConfig();
-                // TODO hacky, make it work properly and implement widget config system
-                WidgetDesc desc = GetDesc();
-                if (desc.Name != null && desc.Name.EndsWith("_Left"))
-                    config.Alignment = "left";
-                SendToWSAsync(JsonConvert.SerializeObject(config));
-                AwaitEventCompletion();
-            };
         }
 
         public override WidgetType GetWidgetType()

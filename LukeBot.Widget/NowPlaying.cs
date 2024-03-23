@@ -30,7 +30,7 @@ namespace LukeBot.Widget
             SendToWSAsync(JsonSerializer.Serialize(a));
         }
 
-        private void OnConnected(object o, EventArgs e)
+        protected override void OnConnected()
         {
             if (mState != null && mState.State != PlayerState.Unloaded)
             {
@@ -48,8 +48,6 @@ namespace LukeBot.Widget
 
             Comms.Event.User(lbUser).Event(Events.SPOTIFY_STATE_UPDATE).Endpoint += OnStateUpdate;
             Comms.Event.User(lbUser).Event(Events.SPOTIFY_TRACK_CHANGED).Endpoint += OnTrackChanged;
-
-            OnConnectedEvent += OnConnected;
         }
 
         public override WidgetType GetWidgetType()

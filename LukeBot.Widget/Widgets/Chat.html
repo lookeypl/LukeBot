@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans" rel="stylesheet">
+<script src="/js/lukebot-widget-common.js"></script>
 
 <style>
     html {
@@ -58,27 +59,7 @@
 </div>
 
 <script>
-    const dbg = document.getElementById("debug");
-    function printDebug(text) {
-        if (dbg) {
-            dbg.innerHTML += text + "<br />";
-        }
-        console.log(text);
-    }
-
-    const metadata = document.getElementsByTagName('meta');
-    function getMeta(name) {
-        for (let i = 0; i < metadata.length; ++i) {
-            if (metadata[i].getAttribute('name') === name) {
-                return metadata[i].getAttribute('content');
-            }
-        }
-        return '';
-    }
-
-    const serverAddress = getMeta('serveraddress');
     const chat = document.getElementById('chat');
-    printDebug(serverAddress);
 
 
     const TWITCH_EMOTE_URL_SCHEME = ["//static-cdn.jtvnw.net/emoticons/v2/", "/default/dark/1.0", "/default/dark/2.0", "/default/dark/3.0"];
@@ -173,7 +154,7 @@
             textNode.appendChild(textDataNode);
 
             // replace emote texts based on ranges with links to emotes
-            console.log(lastMsg.mEmotes);
+            printDebug(lastMsg.mEmotes);
             if (lastMsg.mEmotes != undefined) {
                 lastMsg.mEmotes.forEach(function (e) {
                     let scheme = undefined;
@@ -298,55 +279,14 @@
 
     let msgList = new MessageList();
 
-
-    let socket = new WebSocket(serverAddress);
-    socket.onopen = function (e) {
-        printDebug(`Connected to server at ${serverAddress}`);
-    }
-
-    socket.onclose = function (event) {
-        if (event.wasClean) {
-            printDebug(`Connection closed cleanly`);
-        } else {
-            printDebug(`Connection died: ${event.code} (${event.reason})`);
-        }
-    }
-
-    socket.onerror = function (error) {
-        printDebug(`Error: ${error.message}`);
-    }
-
-    socket.onmessage = function (event) {
-        try {
-            let obj = JSON.parse(event.data);
-
-            if (obj.EventName != null) {
-                switch (obj.EventName)
-                {
-                case "TwitchChatMessage":
-                    msgList.add(obj);
-                    break;
-                case "TwitchChatClearUser":
-                    msgList.removeUser(obj);
-                    break;
-                case "TwitchChatClearMessage":
-                    msgList.remove(obj);
-                    break;
-                }
-            } else {
-                printDebug(`Received unknown obj: ${obj}`);
-            }
-        } catch (error) {
-            printDebug(`Error: ${error}`);
-        }
-    }
-
-    // debugging
-    //for (var i = 0; i < 20; ++i) {
-    //    chat.innerHTML += "abcd: lazy fox jumps something idk<br />";
-    //}
-    //chat.innerHTML += "michakes: please don't play KH so you never understand that reference<br />";
-    //chat.innerHTML += "michakes: chat is cut off on the right a little<br />";
-    //chat.innerHTML += "onaku__: grinning_face_with_one_large_and_one_small_eye<br />";
-    //chat.innerHTML += "michakes: If I wanted to have like, a hot key tied to an action, how would I do that without a stream deck/something comparable?<br />";
+    let chatWidget = new LukeBotWidget();
+    chatWidget.registerMessage("TwitchChatMessage", (obj) => {
+        msgList.add(obj);
+    });
+    chatWidget.registerMessage("TwitchChatClearUser", (obj) => {
+        msgList.removeUser(obj);
+    });
+    chatWidget.registerMessage("TwitchChatClearMessage", (obj) => {
+        msgList.remove(obj);
+    });
 </script>

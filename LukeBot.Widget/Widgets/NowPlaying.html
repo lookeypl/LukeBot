@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 
+<script src="/js/lukebot-widget-common.js"></script>
+
 <style>
     body {
         background-color: rgba(0, 0, 0, 0);
@@ -52,23 +54,6 @@
 -->
 
 <script>
-    const dbg = document.getElementById("debug");
-    function printDebug(text) {
-        if (dbg) {
-            dbg.innerHTML += text + "<br />";
-        }
-    }
-
-    const metadata = document.getElementsByTagName('meta');
-    function getMeta(name) {
-        for (let i = 0; i < metadata.length; ++i) {
-            if (metadata[i].getAttribute('name') === name) {
-                return metadata[i].getAttribute('content');
-            }
-        }
-        return '';
-    }
-
     const artists = document.getElementById('artists');
     const subArtistsMain = document.getElementById('subArtistsMain');
     const subArtistsExtra = document.getElementById('subArtistsExtra');
@@ -193,46 +178,18 @@
         }
     }
 
-    const serverAddress = getMeta('serveraddress');
-    printDebug(serverAddress);
-    let socket = new WebSocket(serverAddress);
-    socket.onopen = function (e) {
-        printDebug(`Connected to server at ${serverAddress}`);
-    }
-
-    socket.onclose = function (event) {
+    let nowPlayingWidget = new LukeBotWidget();
+    nowPlayingWidget.registerMessage("SpotifyTrackChanged", (obj) => {
+        currentTrack = obj;
+        trackChanged = true;
+    });
+    nowPlayingWidget.registerMessage("SpotifyStateUpdate", (obj) => {
+        oldPlaybackState = playbackState;
+        playbackState = obj.State;
+        update();
+    });
+    nowPlayingWidget.registerClose(() => {
         playbackState = STATE_UNLOADED;
         update();
-
-        if (event.wasClean) {
-            printDebug(`Connection closed cleanly`);
-        } else {
-            printDebug(`Connection died`);
-        }
-    }
-
-    socket.onerror = function (error) {
-        printDebug(`Error: ${error.message}`);
-    }
-
-    socket.onmessage = function (event) {
-        try {
-            let obj = JSON.parse(event.data);
-
-            if (obj.EventName != null) {
-                if (obj.EventName == "SpotifyTrackChanged") {
-                    currentTrack = obj;
-                    trackChanged = true;
-                } else if (obj.EventName == "SpotifyStateUpdate") {
-                    oldPlaybackState = playbackState;
-                    playbackState = obj.State;
-                    update();
-                }
-            } else {
-                printDebug(`Received unknown obj: ${obj}`);
-            }
-        } catch (error) {
-            printDebug(`Error: ${error}`);
-        }
-    }
+    });
 </script>

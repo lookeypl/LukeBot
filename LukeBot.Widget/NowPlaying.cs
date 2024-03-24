@@ -6,6 +6,13 @@ using LukeBot.Widget.Common;
 
 namespace LukeBot.Widget
 {
+    /**
+     * Widget reflecting currently played track on Spotify service.
+     *
+     * Reacts to events:
+     *  - SpotifyStateUpdate
+     *  - SpotifyTrackChanged
+     */
     public class NowPlaying: IWidget
     {
         SpotifyStateUpdateArgs mState;

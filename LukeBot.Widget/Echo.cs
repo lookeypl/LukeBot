@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using LukeBot.Communication.Common;
 using LukeBot.Logging;
 using LukeBot.Widget.Common;
 using Newtonsoft.Json;
@@ -16,14 +17,13 @@ namespace LukeBot.Widget
      */
     public class Echo: IWidget
     {
-        private class EchoMessage
+        private class EchoMessage: EventArgsBase
         {
-            public string EventName { get; set; }
             public string Message { get; set; }
 
             public EchoMessage(string message)
+                : base("EchoMessage")
             {
-                EventName = "EchoMessage";
                 Message = message;
             }
         }

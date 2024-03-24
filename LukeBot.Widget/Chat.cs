@@ -6,6 +6,14 @@ using LukeBot.Widget.Common;
 
 namespace LukeBot.Widget
 {
+    /**
+     * Widget used to display messages from Twitch Chat.
+     *
+     * Reacts to following events:
+     *  - TwitchChatMessage - new message sent on Twitch chat
+     *  - TwitchChatClearUser - request to remove messages from selected user
+     *  - TwitchChatClearMessage - request to remove a specific message
+     */
     public class Chat: IWidget
     {
         private void OnMessage(object o, EventArgsBase args)

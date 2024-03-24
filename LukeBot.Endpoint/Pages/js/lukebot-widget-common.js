@@ -33,7 +33,7 @@ class LukeBotWidget
             if (e.wasClean) {
                 printDebug(`Connection closed cleanly`);
             } else {
-                printDebug(`Connection died: ${e.code} (${e.reason})`);
+                printDebug(`Connection lost: ${e.code} (${e.reason})`);
             }
         }
         this.socket.onerror = (e) => {

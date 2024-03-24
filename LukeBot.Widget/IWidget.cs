@@ -24,6 +24,7 @@ namespace LukeBot.Widget
         private struct WebSocketRecv
         {
             public WebSocketReceiveResult result;
+
             public string data;
 
             public WebSocketRecv(WebSocketReceiveResult result, string data)

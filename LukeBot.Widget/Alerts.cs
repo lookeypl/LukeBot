@@ -7,6 +7,16 @@ using LukeBot.Widget.Common;
 
 namespace LukeBot.Widget
 {
+    /**
+     * Widget responsible for everything that could be considered an "Alert".
+     *
+     * Currently supported events
+     *  - TwitchSubscription
+     *
+     * Widget assumes events come from a Queued Dispatcher and are processed
+     * one at a time. Once an event arrives, Widget will block execution until
+     * the JS side responds back with a WidgetEventCompletionResponse object.
+     */
     public class Alerts: IWidget
     {
         private class AlertInterrupt : EventArgsBase

@@ -35,8 +35,8 @@ namespace LukeBotClient
         private Queue<string> mRecvQueue = new();
         private bool mRecvThreadDone = false;
         private Mutex mPrintMutex = new();
-        private State mState = State.Init;
-        private ManualResetEvent mAwaitResponseEvent = new(true);
+        private volatile State mState = State.Init;
+        private ManualResetEvent mAwaitResponseEvent = new(false);
         private IntPtr mMainThreadStdinHandle = IntPtr.Zero;
         private const string PROMPT_SUFFIX = "> ";
         private string mCurrentPrompt = "";
@@ -184,8 +184,6 @@ namespace LukeBotClient
                 }
                 case ServerMessageType.Query:
                 {
-                    PrintLine("state = " + mState);
-
                     if (mState != State.AwaitingResponse)
                     {
                         PrintLine("WARNING - Queries should only be received when awaiting a response to a Command");
@@ -202,8 +200,6 @@ namespace LukeBotClient
                     {
                         answer = Query(m.MaskAnswer, m.Query);
                     }
-
-                    PrintLine("answer is " + answer);
 
                     QueryResponseServerMessage r = new(m, answer);
                     await SendObject(r);

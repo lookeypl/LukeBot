@@ -85,9 +85,10 @@ namespace LukeBot
 
         public void Dispose()
         {
-            Logger.Log().Debug("Dispose");
+            Logger.Log().Debug("Dispose; Thread state = {0}", mWorkerThread.ThreadState);
             mWorkerDone = true;
             mCommandAvailableEvent.Set();
+            mWorkerThread.Interrupt();
             mWorkerThread.Join();
         }
     }

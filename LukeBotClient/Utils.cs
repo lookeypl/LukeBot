@@ -6,7 +6,7 @@ namespace LukeBotClient
     internal class Utils
     {
     #if (WINDOWS)
-        // WinAPI "reconstruction" to al
+        // WinAPI "reconstruction" to allow CancelConsoleIO() to work
         private const int STD_INPUT_HANDLE = -10;
 
         [DllImport("kernel32.dll", SetLastError = true)]

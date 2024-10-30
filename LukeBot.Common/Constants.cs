@@ -14,12 +14,14 @@ namespace LukeBot.Common
         public const string PROP_STORE_TOKEN_PROP = "token";
         public const string PROP_STORE_LOGIN_PROP = "login";
         public const string PROP_STORE_RECONNECT_COUNT_PROP_NAME = "reconnect_count";
+        public const string PROP_STORE_SERVER_PING_THRESHOLD_PROP_NAME = "ping_threshold";
 
         public static readonly Path PROP_STORE_SERVER_IP_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_SERVER_IP_PROP_NAME);
         public static readonly Path PROP_STORE_HTTPS_DOMAIN_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_HTTPS_DOMAIN_PROP_NAME);
         public static readonly Path PROP_STORE_HTTPS_EMAIL_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_HTTPS_EMAIL_PROP_NAME);
         public static readonly Path PROP_STORE_USERS_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_USERS_PROP_NAME);
         public static readonly Path PROP_STORE_RECONNECT_COUNT_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_RECONNECT_COUNT_PROP_NAME);
+        public static readonly Path PROP_STORE_SERVER_PING_THRESHOLD_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_SERVER_PING_THRESHOLD_PROP_NAME);
 
         public const string DEFAULT_SERVER_IP = "127.0.0.1";
         public const string DEFAULT_SERVER_HTTPS_DOMAIN = "localhost";
@@ -27,6 +29,7 @@ namespace LukeBot.Common
         public const string DEFAULT_LOGIN_NAME = "SET_BOT_LOGIN_HERE";
         public const string DEFAULT_CLIENT_ID_NAME = "SET_YOUR_CLIENT_ID_HERE";
         public const string DEFAULT_CLIENT_SECRET_NAME = "SET_YOUR_CLIENT_SECRET_HERE";
+        public const int DEFAULT_PING_TIMER_THRESHOLD = 2 * 60 * 1000; // 2 minutes = 120 seconds in miliseconds
 
         public const int SERVERCLI_DEFAULT_PORT = 55268; // in T9: LKBOT
 

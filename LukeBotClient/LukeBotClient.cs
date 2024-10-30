@@ -35,8 +35,9 @@ namespace LukeBotClient
         private Queue<string> mRecvQueue = new();
         private bool mRecvThreadDone = false;
         private Mutex mPrintMutex = new();
-        private volatile State mState = State.Init;
+        private State mState = State.Init;
         private ManualResetEvent mAwaitResponseEvent = new(true);
+        private IntPtr mMainThreadStdinHandle = IntPtr.Zero;
         private const string PROMPT_SUFFIX = "> ";
         private string mCurrentPrompt = "";
 
@@ -106,12 +107,20 @@ namespace LukeBotClient
             int read = 0;
             string recvString = "";
 
-            do
+            try
             {
-                read = await mStream.ReadAsync(mRecvBuffer, 0, 4096);
-                recvString += Encoding.UTF8.GetString(mRecvBuffer, 0, read);
+                do
+                {
+                    read = await mStream.ReadAsync(mRecvBuffer, 0, 4096);
+                    recvString += Encoding.UTF8.GetString(mRecvBuffer, 0, read);
+                }
+                while (read == 4096);
             }
-            while (read == 4096);
+            catch (System.Exception e)
+            {
+                PrintLine("Caught exception while sending message (possibly connection is broken): " + e.Message);
+                return null;
+            }
 
             return recvString;
         }
@@ -123,7 +132,7 @@ namespace LukeBotClient
             {
                 string ret = await Receive();
 
-                if (ret.Length == 0)
+                if (ret == null || ret.Length == 0)
                     return null;
 
                 List<string> msgs = LukeBot.Common.Utils.SplitJSONs(ret);
@@ -152,8 +161,9 @@ namespace LukeBotClient
                     PrintLine("Receive thread exiting - received NULL message, probably connection is broken.");
                     mRecvThreadDone = true;
                     mState = State.Done;
-                    LukeBot.Common.Utils.CancelConsoleIO();
-                    continue;
+                    mAwaitResponseEvent.Set();
+                    LukeBot.Common.Utils.CancelIo(mMainThreadStdinHandle);
+                    break;
                 }
 
                 switch (msg.Type)
@@ -192,6 +202,8 @@ namespace LukeBotClient
                     {
                         answer = Query(m.MaskAnswer, m.Query);
                     }
+
+                    PrintLine("answer is " + answer);
 
                     QueryResponseServerMessage r = new(m, answer);
                     await SendObject(r);
@@ -300,8 +312,22 @@ namespace LukeBotClient
             }
         }
 
+        private string ReadConsoleLine()
+        {
+            try
+            {
+                return Console.ReadLine();
+            }
+            catch (System.OperationCanceledException)
+            {
+                return null;
+            }
+        }
+
         public async Task Run()
         {
+            mMainThreadStdinHandle = LukeBot.Common.Utils.GetHandleForStdin();
+
             try
             {
                 Console.CancelKeyPress += delegate
@@ -323,7 +349,6 @@ namespace LukeBotClient
 
                 // should be a simple "send command and wait for response" here
                 mState = State.InCLI;
-                mAwaitResponseEvent.Reset();
                 while (mState != State.Done)
                 {
                     string msg = "";
@@ -332,7 +357,14 @@ namespace LukeBotClient
                     {
                     case State.InCLI:
                         Print(mCurrentPrompt);
-                        msg = Console.ReadLine();
+                        msg = ReadConsoleLine();
+
+                        if (msg == null || msg.Length == 0)
+                        {
+                            mState = State.Done;
+                            PrintLine("Connection lost, quitting.");
+                            break;
+                        }
 
                         if (msg == "quit")
                         {
@@ -342,15 +374,24 @@ namespace LukeBotClient
                             break;
                         }
 
-                        mState = State.AwaitingResponse;
-                        CommandServerMessage cmdMessage = new(mSessionData, msg);
-                        await SendObject<CommandServerMessage>(cmdMessage);
-                        PrintLine("state = " + mState);
+                        if (mState == State.InCLI)
+                        {
+                            mState = State.AwaitingResponse;
+
+                            CommandServerMessage cmdMessage = new(mSessionData, msg);
+                            await SendObject<CommandServerMessage>(cmdMessage);
+                        }
                         break;
                     case State.AwaitingResponse:
                         mAwaitResponseEvent.WaitOne();
                         mAwaitResponseEvent.Reset();
-                        mState = State.InCLI;
+
+                        // only flip the state if we're in AwaitingResponse state
+                        // if we're not - something might've happened that matters and
+                        // we shouldn't get in the way
+                        if (mState == State.AwaitingResponse)
+                            mState = State.InCLI;
+
                         break;
                     default:
                         PrintLine("Invalid internal state: " + mState + " -- this should not happen");

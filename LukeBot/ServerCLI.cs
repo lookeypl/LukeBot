@@ -27,7 +27,6 @@ namespace LukeBot
             public delegate void OnClientDoneDelegate(string cookie);
 
             private const int COOKIE_SIZE = 32;
-            private const int PING_TIMER_THRESHOLD = 120 * 1000; // 2 minutes = 120 seconds in miliseconds
             private const int REPLAY_PREVENT_WAIT_TIME = 3 * 1000; // 3 seconds in miliseconds
 
             public string mUsername = "";
@@ -47,9 +46,12 @@ namespace LukeBot
             private Thread mRecvThread = null;
             private bool mRecvThreadDone = false;
             private System.Timers.Timer mPingTimer = null;
+            private int mPingTimerThreshold = Constants.DEFAULT_PING_TIMER_THRESHOLD;
             private string mCurrentPingChallenge = "";
+            private AutoResetEvent mPingResponseReceivedEvent;
 
             // handling queries - response must be picked up by Receive thread
+            private CommandExecutor mCommandExecutor = new();
             private AutoResetEvent mQueryResponseEvent = new(false);
             private QueryServerMessage mSentQuery = null; // to validate received message
             private QueryResponseServerMessage mQueryResponse = null;
@@ -60,10 +62,19 @@ namespace LukeBot
             {
                 PingServerMessage ping = new PingServerMessage(mSessionData);
                 mCurrentPingChallenge = ping.Test;
+                mPingResponseReceivedEvent = new(false);
                 SendObject(ping);
+
+                // give client 5 seconds to respond, if no response comes we will bail
+                if (!mPingResponseReceivedEvent.WaitOne(5000))
+                {
+                    LogClientContext(LogLevel.Error, "Ping not responded to - disconnecting");
+                    mRecvThreadDone = true;
+                    mStream.Close();
+                }
             }
 
-            private void LogClientContext(LogLevel level, string msg, params string[] args)
+            private void LogClientContext(LogLevel level, string msg, params object[] args)
             {
                 Logger.Log().Message(level, mLogPreamble + msg, args);
             }
@@ -109,7 +120,13 @@ namespace LukeBot
                 mRecvThread = new(ReceiveThreadMain);
                 mRecvThread.Name = String.Format("ClientContext[{0}] Thread", mCookieShorthand);
 
-                mPingTimer = new(120 * 1000);
+                if (!Conf.TryGet<int>(Constants.PROP_STORE_SERVER_PING_THRESHOLD_PROP, out mPingTimerThreshold))
+                {
+                    mPingTimerThreshold = Constants.DEFAULT_PING_TIMER_THRESHOLD;
+                }
+
+                LogClientContext(LogLevel.Info, "Using ping timer threshold {0} ms", mPingTimerThreshold);
+                mPingTimer = new(mPingTimerThreshold);
                 mPingTimer.Elapsed += OnTimer;
                 mPingTimer.AutoReset = false;
             }
@@ -188,36 +205,43 @@ namespace LukeBot
 
                         LogClientContext(LogLevel.Debug, "Ping challenge successful");
                         mCurrentPingChallenge = "";
+                        mPingResponseReceivedEvent.Set();
                         mPingTimer.Start();
                         break;
                     case ServerMessageType.Command:
                     {
                         CommandServerMessage cmd = msg as CommandServerMessage;
-                        string[] cmdTokens = cmd.Command.Split(' ');
-                        if (mCommands.TryGetValue(cmdTokens[0], out Command c))
-                        {
-                            if (!c.IsPermitted(mPermissionLevel))
-                            {
-                                SendObject<CommandResponseServerMessage>(new CommandResponseServerMessage(cmd, ServerCommandStatus.NotPermitted));
-                                break;
-                            }
 
-                            string retMsg = c.Execute(this, cmdTokens.Skip(1).ToArray());
-                            CommandResponseServerMessage resp = new(cmd, ServerCommandStatus.Success, retMsg);
-                            SendObject<CommandResponseServerMessage>(resp);
-                        }
-                        else
+                        // delegates execution to separate thread in order to free this one
+                        // this is to ensure any other requests
+                        mCommandExecutor.Execute(() =>
                         {
-                            CommandResponseServerMessage resp = new(cmd, ServerCommandStatus.UnknownCommand, "");
-                            SendObject<CommandResponseServerMessage>(resp);
-                        }
-                        LogClientContext(LogLevel.Debug, "Processing Command message done");
+                            string[] cmdTokens = cmd.Command.Split(' ');
+                            if (mCommands.TryGetValue(cmdTokens[0], out Command c))
+                            {
+                                if (!c.IsPermitted(mPermissionLevel))
+                                {
+                                    SendObject<CommandResponseServerMessage>(new CommandResponseServerMessage(cmd, ServerCommandStatus.NotPermitted));
+                                    return;
+                                }
+
+                                string retMsg = c.Execute(this, cmdTokens.Skip(1).ToArray());
+                                CommandResponseServerMessage resp = new(cmd, ServerCommandStatus.Success, retMsg);
+                                SendObject<CommandResponseServerMessage>(resp);
+                            }
+                            else
+                            {
+                                CommandResponseServerMessage resp = new(cmd, ServerCommandStatus.UnknownCommand, "");
+                                SendObject<CommandResponseServerMessage>(resp);
+                            }
+                            LogClientContext(LogLevel.Debug, "Processing Command message done");
+                        });
                         break;
                     }
                     case ServerMessageType.QueryResponse:
                     {
                         QueryResponseServerMessage r = msg as QueryResponseServerMessage;
-                        if (mSentQuery == null || mQueryResponse != null ||
+                        if (mSentQuery != null && mQueryResponse != null &&
                             mQueryResponse.MsgID != mSentQuery.MsgID)
                         {
                             LogClientContext(LogLevel.Warning, "Received query response for a different query than asked - should not happen");
@@ -300,6 +324,7 @@ namespace LukeBot
 
                 mStream.Close();
                 mClient.Close();
+                mCommandExecutor.Dispose();
                 mClientDoneDelegate(mCookie);
             }
 
@@ -354,14 +379,7 @@ namespace LukeBot
             {
                 mSentQuery = m;
                 SendObject<QueryServerMessage>(m);
-                if (!mQueryResponseEvent.WaitOne(60 * 1000))
-                {
-                    LogClientContext(LogLevel.Warning, "Timed out waiting for query response");
-                    mSentQuery = null;
-                    mQueryResponse = null;
-
-                    throw new TimeoutException("Timed out waiting for query response");
-                }
+                mQueryResponseEvent.WaitOne();
 
                 QueryResponseServerMessage r = mQueryResponse;
                 mSentQuery = null;

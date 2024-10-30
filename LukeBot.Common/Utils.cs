@@ -19,11 +19,20 @@ namespace LukeBot.Common
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool CancelIoEx(IntPtr handle, IntPtr lpOverlapped);
 
+        public static IntPtr GetHandleForStdin()
+        {
+            return GetStdHandle(STD_INPUT_HANDLE);
+        }
+
+        public static void CancelIo(IntPtr handle)
+        {
+            CancelIoEx(handle, IntPtr.Zero);
+        }
+
         public static void CancelConsoleIO()
         {
         #if (WINDOWS)
-            IntPtr handle = GetStdHandle(STD_INPUT_HANDLE);
-            CancelIoEx(handle, IntPtr.Zero);
+            CancelIo(GetHandleForStdin());
         #elif (LINUX)
         #endif
         }

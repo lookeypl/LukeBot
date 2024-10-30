@@ -69,7 +69,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBotClient", "LukeBotCli
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Interface.Protocols", "LukeBot.Interface.Protocols\LukeBot.Interface.Protocols.csproj", "{097919C3-910C-42CE-9653-9BB21A12093F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Globals", "LukeBot.Globals\LukeBot.Globals.csproj", "{6062AB7B-C364-4626-80EE-E0D68F7FB4D7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Services", "LukeBot.Services\LukeBot.Services.csproj", "{6062AB7B-C364-4626-80EE-E0D68F7FB4D7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

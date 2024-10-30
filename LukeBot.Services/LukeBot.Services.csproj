@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <RootNamespace>LukeBot.Globals</RootNamespace>
-    <PackageId>LukeBot.Globals</PackageId>
-    <AssemblyName>LukeBot.Globals</AssemblyName>
+    <RootNamespace>LukeBot.Services</RootNamespace>
+    <PackageId>LukeBot.Services</PackageId>
+    <AssemblyName>LukeBot.Services</AssemblyName>
     <Version>0.0.1</Version>
     <NeutralLanguage>en-US</NeutralLanguage>
     <Configurations>Debug;Release;SecureDebug</Configurations>

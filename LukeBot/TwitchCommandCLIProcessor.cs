@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using LukeBot.Globals;
+using LukeBot.Services;
 using LukeBot.Twitch.Common.Command;
 using Command = LukeBot.Twitch.Common.Command;
 using CommandLine;

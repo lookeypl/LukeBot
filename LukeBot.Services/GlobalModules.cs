@@ -4,7 +4,7 @@ using LukeBot.Twitch;
 using LukeBot.Widget;
 
 
-namespace LukeBot.Globals
+namespace LukeBot.Services
 {
     public class GlobalModules
     {

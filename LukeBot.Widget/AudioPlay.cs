@@ -177,8 +177,7 @@ namespace LukeBot.Widget
             //AwaitEventCompletion();
         }
 
-        public AudioPlay(string lbUser, string id, string name)
-            : base(lbUser, "LukeBot.Widget/Widgets/AudioPlay.html", id, name)
+        protected override void OnLoad()
         {
             EventCollection collection = Comms.Event.User(mLBUser);
 
@@ -187,6 +186,17 @@ namespace LukeBot.Widget
             //  - Provide its own events so that it is controllable in some way
             collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Endpoint += OnChannelPoints;
             collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).InterruptEndpoint += OnEventInterrupt;
+        }
+
+        protected override void OnUnload()
+        {
+            // noop
+            // TODO should pause any played music probably
+        }
+
+        public AudioPlay(string lbUser, string id, string name)
+            : base(lbUser, "LukeBot.Widget/Widgets/AudioPlay.html", id, name)
+        {
         }
 
         public override WidgetType GetWidgetType()

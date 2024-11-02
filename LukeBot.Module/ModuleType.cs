@@ -10,6 +10,7 @@ namespace LukeBot.Module
         Twitch,
         Spotify,
         Widget,
+        User,
     }
 
     public static class ModuleTypeExtensions

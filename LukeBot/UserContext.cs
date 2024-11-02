@@ -147,7 +147,7 @@ namespace LukeBot
 
         private IUserModule LoadModule(ModuleType type)
         {
-            IUserModule m = GlobalModules.UserModuleManager.Create(type, Username);
+            IUserModule m = Service.UserModuleManager.Create(type, Username);
             mModules.Add(type, m);
             return m;
         }
@@ -156,7 +156,7 @@ namespace LukeBot
         {
             IUserModule m = mModules[type];
 
-            GlobalModules.UserModuleManager.Unload(m);
+            Service.UserModuleManager.Unload(m);
             m.RequestShutdown();
             m.WaitForShutdown();
 

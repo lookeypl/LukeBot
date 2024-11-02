@@ -12,7 +12,7 @@ using CommonConstants = LukeBot.Common.Constants;
 
 namespace LukeBot.Spotify
 {
-    public class SpotifyMainModule: IMainModule
+    public class SpotifyService: IService
     {
         private Dictionary<string, SpotifyUserModule> mModules = new();
 
@@ -82,7 +82,7 @@ namespace LukeBot.Spotify
 
         // Publics
 
-        public SpotifyMainModule()
+        public SpotifyService()
         {
             Comms.Intermediary.Register(CommonConstants.SPOTIFY_MODULE_NAME);
 

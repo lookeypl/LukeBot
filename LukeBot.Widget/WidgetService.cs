@@ -11,13 +11,14 @@ using Intercom = LukeBot.Communication.Common.Intercom;
 
 namespace LukeBot.Widget
 {
-    public class WidgetMainModule: IMainModule
+    public class WidgetService: IService
     {
         private Dictionary<string, WidgetUserModule> mUsers = new();
         private Dictionary<string, string> mWidgetIDToUser = new();
         private Mutex mMutex = new();
 
 
+        // TODO Widget service can be made visible by Endpoint, Intercom is not needed here
         Intercom::ResponseBase ResponseAllocator(Intercom::MessageBase msg)
         {
             switch (msg.Message)
@@ -97,7 +98,7 @@ namespace LukeBot.Widget
 
         // Public methods //
 
-        public WidgetMainModule()
+        public WidgetService()
         {
             Intercom::EndpointInfo widgetManagerInfo = new Intercom::EndpointInfo(Endpoints.WIDGET_MANAGER, ResponseAllocator);
             widgetManagerInfo.AddMessage(Messages.GET_WIDGET_PAGE, GetWidgetPageDelegate);

@@ -62,7 +62,7 @@ namespace LukeBot
 
             try
             {
-                GlobalModules.Spotify.UpdateLoginForUser(mLukeBot.GetUser(CLI.GetCurrentUser()).Username, arg.Login);
+                Service.Spotify.UpdateLoginForUser(mLukeBot.GetUser(CLI.GetCurrentUser()).Username, arg.Login);
                 result = "Successfully updated Spotify login.";
             }
             catch (System.Exception e)

@@ -1,6 +1,6 @@
 namespace LukeBot.Module
 {
-    public interface IMainModule
+    public interface IService
     {
         public UserModuleDescriptor GetUserModuleDescriptor();
     }

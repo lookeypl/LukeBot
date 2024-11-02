@@ -70,7 +70,7 @@ namespace LukeBot
         {
             try
             {
-                GlobalModules.Twitch.RefreshEmotesForUser(CLI.GetCurrentUser());
+                Service.Twitch.RefreshEmotesForUser(CLI.GetCurrentUser());
                 result = "Emotes refreshed";
             }
             catch (System.Exception e)
@@ -91,7 +91,7 @@ namespace LukeBot
 
             try
             {
-                GlobalModules.Twitch.UpdateLoginForUser(CLI.GetCurrentUser(), args[0]);
+                Service.Twitch.UpdateLoginForUser(CLI.GetCurrentUser(), args[0]);
                 result = "Successfully updated Twitch login.";
             }
             catch (System.Exception e)

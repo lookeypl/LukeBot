@@ -15,7 +15,7 @@ using Intercom = LukeBot.Communication.Common.Intercom;
 
 namespace LukeBot.Twitch
 {
-    public class TwitchMainModule: IMainModule
+    public class TwitchService: IService
     {
         private string mBotLogin;
         private Token mToken;
@@ -172,7 +172,7 @@ namespace LukeBot.Twitch
 
         // Public methods //
 
-        public TwitchMainModule()
+        public TwitchService()
         {
             Comms.Intermediary.Register(CommonConstants.TWITCH_MODULE_NAME);
 

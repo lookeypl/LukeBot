@@ -121,14 +121,14 @@ namespace LukeBot
             {
                 string lbUser = CLI.GetCurrentUser();
 
-                Twitch.Command.ICommand twCmd = GlobalModules.Twitch.AllocateCommand(lbUser, cmd.Name, cmd.Type, string.Join(' ', cmd.Value));
+                Twitch.Command.ICommand twCmd = Service.Twitch.AllocateCommand(lbUser, cmd.Name, cmd.Type, string.Join(' ', cmd.Value));
                 if (twCmd == null)
                 {
                     msg = "Invalid command type";
                     return;
                 }
 
-                GlobalModules.Twitch.AddCommandToChannel(lbUser, cmd.Name, twCmd);
+                Service.Twitch.AddCommandToChannel(lbUser, cmd.Name, twCmd);
             }
             catch (System.Exception e)
             {
@@ -144,7 +144,7 @@ namespace LukeBot
             try
             {
                 string lbUser = CLI.GetCurrentUser();
-                GlobalModules.Twitch.DeleteCommandFromChannel(lbUser, cmd.Name);
+                Service.Twitch.DeleteCommandFromChannel(lbUser, cmd.Name);
             }
             catch (System.Exception e)
             {
@@ -160,7 +160,7 @@ namespace LukeBot
             try
             {
                 string lbUser = CLI.GetCurrentUser();
-                GlobalModules.Twitch.EditCommandFromChannel(lbUser, cmd.Name, string.Join(' ', cmd.Value));
+                Service.Twitch.EditCommandFromChannel(lbUser, cmd.Name, string.Join(' ', cmd.Value));
             }
             catch (System.Exception e)
             {
@@ -179,7 +179,7 @@ namespace LukeBot
 
                 msg = "Available commands:\n";
 
-                List<Command::Descriptor> cmds = GlobalModules.Twitch.GetCommandDescriptors(lbUser);
+                List<Command::Descriptor> cmds = Service.Twitch.GetCommandDescriptors(lbUser);
 
                 foreach (Command::Descriptor c in cmds)
                 {
@@ -200,7 +200,7 @@ namespace LukeBot
 
                 if (cmd.List)
                 {
-                    Command::Descriptor d = GlobalModules.Twitch.GetCommandDescriptor(lbUser, cmd.Name);
+                    Command::Descriptor d = Service.Twitch.GetCommandDescriptor(lbUser, cmd.Name);
 
                     msg = "Modifiers of Twitch command " + cmd.Name + ":\n";
                     msg += "  Privileges: " + d.Privilege.GetStringRepresentation();
@@ -215,7 +215,7 @@ namespace LukeBot
                         return;
                     }
 
-                    GlobalModules.Twitch.AllowPrivilegeInCommand(lbUser, cmd.Name, priv);
+                    Service.Twitch.AllowPrivilegeInCommand(lbUser, cmd.Name, priv);
                     msg = "Command " + cmd.Name + " modified";
                     return;
                 }
@@ -228,13 +228,13 @@ namespace LukeBot
                         return;
                     }
 
-                    GlobalModules.Twitch.DenyPrivilegeInCommand(lbUser, cmd.Name, priv);
+                    Service.Twitch.DenyPrivilegeInCommand(lbUser, cmd.Name, priv);
                     msg = "Command " + cmd.Name + " modified";
                     return;
                 }
                 else if (cmd.Enabled != null)
                 {
-                    GlobalModules.Twitch.SetCommandEnabled(lbUser, cmd.Name, (bool)cmd.Enabled);
+                    Service.Twitch.SetCommandEnabled(lbUser, cmd.Name, (bool)cmd.Enabled);
                     msg = "Command " + cmd.Name + " " + ((bool)cmd.Enabled ? "enabled" : "disabled");
                 }
                 else

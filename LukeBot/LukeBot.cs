@@ -166,13 +166,13 @@ namespace LukeBot
             UnloadUsers();
 
             Logger.Log().Info("Stopping Global Modules...");
-            GlobalModules.Stop();
+            Service.Stop();
 
             Logger.Log().Info("Stopping web endpoint...");
             Endpoint.Endpoint.StopThread();
 
             Logger.Log().Info("Core systems teardown...");
-            GlobalModules.Teardown();
+            Service.Teardown();
             Comms.Teardown();
             Conf.Teardown();
         }
@@ -258,14 +258,14 @@ namespace LukeBot
                 Endpoint.Endpoint.StartThread();
 
                 Logger.Log().Info("Initializing Global Modules...");
-                GlobalModules.Initialize();
+                Service.Initialize();
 
                 InterfaceType uiType = opts.CLI;
                 Logger.Log().Info("Initializing UI {0}...", uiType.ToString());
                 UserInterface.Initialize(uiType, this);
 
                 Logger.Log().Info("Running Global modules...");
-                GlobalModules.Run();
+                Service.Run();
 
                 LoadUsers();
 

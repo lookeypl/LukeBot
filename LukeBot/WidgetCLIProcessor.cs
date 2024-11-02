@@ -108,7 +108,7 @@ namespace LukeBot
             try
             {
                 string lbUser = CLI.GetCurrentUser();
-                addr = GlobalModules.Widget.AddWidget(lbUser, cmd.Type, cmd.Name);
+                addr = Service.Widget.AddWidget(lbUser, cmd.Type, cmd.Name);
 
                 msg = "Added new widget at address: " + addr;
             }
@@ -125,7 +125,7 @@ namespace LukeBot
             try
             {
                 string lbUser = CLI.GetCurrentUser();
-                wd = GlobalModules.Widget.GetWidgetInfo(lbUser, cmd.Id);
+                wd = Service.Widget.GetWidgetInfo(lbUser, cmd.Id);
 
                 msg = wd.Address;
             }
@@ -142,7 +142,7 @@ namespace LukeBot
             try
             {
                 string lbUser = CLI.GetCurrentUser();
-                widgets = GlobalModules.Widget.ListUserWidgets(lbUser);
+                widgets = Service.Widget.ListUserWidgets(lbUser);
 
                 msg = "Available widgets:";
                 foreach (WidgetDesc w in widgets)
@@ -153,7 +153,7 @@ namespace LukeBot
                         msg += w.Name + ", ";
                     msg += w.Type.ToString();
 
-                    if (!GlobalModules.Widget.IsWidgetLoaded(lbUser, w.Id))
+                    if (!Service.Widget.IsWidgetLoaded(lbUser, w.Id))
                         msg += ", unloaded)";
                     else
                         msg += ")";
@@ -173,8 +173,8 @@ namespace LukeBot
             try
             {
                 string lbUser = CLI.GetCurrentUser();
-                wd = GlobalModules.Widget.GetWidgetInfo(lbUser, cmd.Id);
-                conf = GlobalModules.Widget.GetWidgetConfiguration(lbUser, cmd.Id);
+                wd = Service.Widget.GetWidgetInfo(lbUser, cmd.Id);
+                conf = Service.Widget.GetWidgetConfiguration(lbUser, cmd.Id);
 
                 msg = "Widget " + cmd.Id + " info:\n" + wd.ToFormattedString();
                 msg += "\nConfiguration:\n" + conf.ToFormattedString();
@@ -190,7 +190,7 @@ namespace LukeBot
             try
             {
                 string lbUser = CLI.GetCurrentUser();
-                GlobalModules.Widget.DeleteWidget(lbUser, cmd.Id);
+                Service.Widget.DeleteWidget(lbUser, cmd.Id);
 
                 msg = "Widget " + cmd.Id + " deleted.";
             }
@@ -208,16 +208,16 @@ namespace LukeBot
 
                 if (cmd.Id != null && cmd.Id.Length > 0)
                 {
-                    GlobalModules.Widget.ReloadWidget(lbUser, cmd.Id);
+                    Service.Widget.ReloadWidget(lbUser, cmd.Id);
                     msg = "Widget " + cmd.Id + " reloaded.";
                 }
                 else
                 {
-                    List<WidgetDesc> widgets = GlobalModules.Widget.ListUserWidgets(lbUser);
+                    List<WidgetDesc> widgets = Service.Widget.ListUserWidgets(lbUser);
 
                     foreach (WidgetDesc wd in widgets)
                     {
-                        GlobalModules.Widget.ReloadWidget(lbUser, wd.Id);
+                        Service.Widget.ReloadWidget(lbUser, wd.Id);
                     }
 
                     msg = "Widgets reloaded.";
@@ -238,7 +238,7 @@ namespace LukeBot
                 IEnumerable<(string, string)> changes = Utils.ConvertArgStringsToTuples(arg.Changes);
 
                 string lbUser = CLI.GetCurrentUser();
-                GlobalModules.Widget.UpdateWidgetConfiguration(lbUser, arg.Id, changes);
+                Service.Widget.UpdateWidgetConfiguration(lbUser, arg.Id, changes);
 
                 msg = arg.Id + " widget's configuration updated successfully.";
             }

@@ -7,9 +7,9 @@ using Newtonsoft.Json;
 
 [assembly: InternalsVisibleTo("LukeBot.Tests")]
 
-namespace LukeBot
+namespace LukeBot.User.Common
 {
-    internal class PasswordData
+    public class PasswordData
     {
         // with P - plaintextPassword, S - salt, H() - SHA-512 hasher:
         //   hash = H( H(P) | S )

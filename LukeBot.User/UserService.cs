@@ -1,8 +1,9 @@
+using LukeBot.Module;
 using LukeBot.User.Common;
 
-namespace LukeBot
+namespace LukeBot.User
 {
-    internal interface IUserManager
+    public class UserService: IService
     {
         /**
          * Will be called if there is an attempt to authenticate a user.
@@ -13,7 +14,12 @@ namespace LukeBot
          * Returns user's Permission level if authentication succeeded. In case of auth failure
          * should return UserPermissionLevel.None.
          */
-        PermissionLevel AuthenticateUser(string user, byte[] pwdHash, out string reason);
+        public PermissionLevel AuthenticateUser(string user, byte[] pwdHash, out string reason)
+        {
+            // TODO IMPLEMENT
+            reason = "TODO";
+            return PermissionLevel.None;
+        }
 
         /**
          * Will be called if there is an attempt to change user's password.
@@ -24,6 +30,16 @@ namespace LukeBot
          * Should return true upon success and false upon failure. Additionally, @p reason
          * should be set when authentication fails to provide a reason why.
          */
-        bool ChangeUserPassword(string user, byte[] currentPwdHash, byte[] newPwdHash, out string reason);
+        public bool ChangeUserPassword(string user, byte[] currentPwdHash, byte[] newPwdHash, out string reason)
+        {
+            // TODO IMPLEMENT
+            reason = "TODO";
+            return false;
+        }
+
+        public UserModuleDescriptor GetUserModuleDescriptor()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

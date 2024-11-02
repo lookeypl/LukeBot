@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 
 
-namespace LukeBot.Tests
+namespace LukeBot.User.Common.Tests
 {
     [TestClass]
     public class PasswordDataTests

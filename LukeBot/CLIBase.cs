@@ -1,4 +1,6 @@
-﻿namespace LukeBot
+﻿using LukeBot.User.Common;
+
+namespace LukeBot
 {
     internal interface CLIBase
     {
@@ -7,7 +9,7 @@
         void MainLoop();
         void Teardown();
         void AddCommand(string cmd, Command c);
-        void AddCommand(string cmd, UserPermissionLevel permissionLevel, CmdDelegate d);
+        void AddCommand(string cmd, PermissionLevel permissionLevel, CmdDelegate d);
         void OpenBrowserURL(string lbUser, string URL);
     }
 }

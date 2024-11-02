@@ -1,15 +1,17 @@
+using LukeBot.User.Common;
+
 namespace LukeBot
 {
     internal abstract class Command
     {
-        public UserPermissionLevel PermissionLevel { get; private set; }
+        public PermissionLevel PermissionLevel { get; private set; }
 
-        public Command(UserPermissionLevel permissionLevel)
+        public Command(PermissionLevel permissionLevel)
         {
             PermissionLevel = permissionLevel;
         }
 
-        public bool IsPermitted(UserPermissionLevel userLevel)
+        public bool IsPermitted(PermissionLevel userLevel)
         {
             return userLevel >= PermissionLevel;
         }

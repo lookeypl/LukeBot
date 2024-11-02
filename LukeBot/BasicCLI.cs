@@ -2,9 +2,12 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Text;using System.Threading;
+using System.Text;
+using System.Threading;
 using LukeBot.Common;
 using LukeBot.Logging;
+using LukeBot.Services;
+using LukeBot.User.Common;
 
 
 namespace LukeBot
@@ -26,7 +29,6 @@ namespace LukeBot
         private State mState = State.INIT;
         private Mutex mMessageMutex = new Mutex();
         private Dictionary<string, Command> mCommands = new Dictionary<string, Command>();
-        private IUserManager mUserManager;
         private string mPostCommandMessage = "";
         private string mPromptPrefix = ""; // used in basic CLI as marking which user is active
         private string mCurrentUser = "";
@@ -82,19 +84,17 @@ namespace LukeBot
             }
         }
 
-        public BasicCLI(IUserManager userManager)
+        public BasicCLI()
         {
             Logger.AddPreMessageEvent(PreLogMessageEvent);
             Logger.AddPostMessageEvent(PostLogMessageEvent);
 
-            mUserManager = userManager;
-
             // To confidence-test CLI
-            AddCommand("echo", new EchoCommand(UserPermissionLevel.None));
+            AddCommand("echo", new EchoCommand(PermissionLevel.None));
 
             // To change password for current user
             // ServerCLI does that with a separate message sent from client
-            AddCommand("password", UserPermissionLevel.User, (CLIMessageProxy proxy, string[] args) =>
+            AddCommand("password", PermissionLevel.User, (CLIMessageProxy proxy, string[] args) =>
             {
                 try
                 {
@@ -116,7 +116,7 @@ namespace LukeBot
                     byte[] curPwdHash = hasher.ComputeHash(curPwdPlaintext);
                     byte[] newPwdHash = hasher.ComputeHash(newPwdPlaintext);
 
-                    if (!mUserManager.ChangeUserPassword(currentUserName, curPwdHash, newPwdHash, out string reason))
+                    if (!Service.User.ChangeUserPassword(currentUserName, curPwdHash, newPwdHash, out string reason))
                         return reason;
                     else
                         return "Password changed successfully.";
@@ -140,7 +140,7 @@ namespace LukeBot
             }
         }
 
-        public void AddCommand(string cmd, UserPermissionLevel permissionLevel, CLIBase.CmdDelegate d)
+        public void AddCommand(string cmd, PermissionLevel permissionLevel, CLIBase.CmdDelegate d)
         {
             AddCommand(cmd, new LambdaCommand(permissionLevel, d));
         }

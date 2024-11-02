@@ -1,8 +1,10 @@
+using LukeBot.User.Common;
+
 namespace LukeBot
 {
     internal class EchoCommand: Command
     {
-        public EchoCommand(UserPermissionLevel permissionLevel)
+        public EchoCommand(PermissionLevel permissionLevel)
             : base(permissionLevel)
         {
         }

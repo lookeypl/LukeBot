@@ -5,6 +5,7 @@ using LukeBot.Config;
 using LukeBot.Services;
 using LukeBot.Interface;
 using LukeBot.Module;
+using LukeBot.User.Common;
 using CommandLine;
 
 
@@ -32,6 +33,7 @@ namespace LukeBot
     {
     }
 
+    // LKTODO USER: reimplement
     internal class SpotifyCLIProcessor: ICLIProcessor
     {
         private LukeBot mLukeBot;
@@ -62,7 +64,7 @@ namespace LukeBot
 
             try
             {
-                Service.Spotify.UpdateLoginForUser(mLukeBot.GetUser(CLI.GetCurrentUser()).Username, arg.Login);
+                //Service.Spotify.UpdateLoginForUser(mLukeBot.GetUser(CLI.GetCurrentUser()).Username, arg.Login);
                 result = "Successfully updated Spotify login.";
             }
             catch (System.Exception e)
@@ -78,7 +80,7 @@ namespace LukeBot
             try
             {
                 CheckForLogin(CLI);
-                mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(ModuleType.Spotify);
+                //mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(ModuleType.Spotify);
                 msg = "Enabled module " + ModuleType.Spotify;
             }
             catch (System.Exception e)
@@ -93,7 +95,7 @@ namespace LukeBot
 
             try
             {
-                mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(ModuleType.Spotify);
+                //mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(ModuleType.Spotify);
                 msg = "Disabled module " + ModuleType.Spotify;
             }
             catch (System.Exception e)
@@ -106,7 +108,7 @@ namespace LukeBot
         {
             mLukeBot = lb;
 
-            UserInterface.CLI.AddCommand(Constants.SPOTIFY_MODULE_NAME, UserPermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
+            UserInterface.CLI.AddCommand(Constants.SPOTIFY_MODULE_NAME, PermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
             {
                 string result = "";
                 Parser p = new Parser(with => with.HelpWriter = new CLIUtils.CLIMessageProxyTextWriter(cliProxy));

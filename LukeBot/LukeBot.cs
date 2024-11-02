@@ -5,6 +5,7 @@ using LukeBot.Logging;
 using LukeBot.Services;
 using LukeBot.Communication;
 using LukeBot.Communication.Common;
+using LukeBot.User.Common;
 using System.Collections.Generic;
 using System;
 using System.Linq;
@@ -13,9 +14,8 @@ using System.Threading;
 
 namespace LukeBot
 {
-    internal class LukeBot: IUserManager
+    internal class LukeBot
     {
-        private Dictionary<string, UserContext> mUsers = new();
         private object mUsersLock = new();
         private List<ICLIProcessor> mCommandProcessors = new List<ICLIProcessor>{
             new EventCLIProcessor(),
@@ -40,7 +40,7 @@ namespace LukeBot
 
         // IUserManager implementations
 
-        public UserPermissionLevel AuthenticateUser(string user, byte[] pwdHash, out string reason)
+        /*public PermissionLevel AuthenticateUser(string user, byte[] pwdHash, out string reason)
         {
             UserContext ctx;
 
@@ -49,14 +49,14 @@ namespace LukeBot
                 if (!mUsers.TryGetValue(user, out ctx))
                 {
                     reason = "User not found";
-                    return UserPermissionLevel.None;
+                    return PermissionLevel.None;
                 }
             }
 
             if (!ctx.ValidatePassword(pwdHash))
             {
                 reason = "Invalid password";
-                return UserPermissionLevel.None;
+                return PermissionLevel.None;
             }
 
             reason = "";
@@ -65,7 +65,7 @@ namespace LukeBot
 
         public bool ChangeUserPassword(string user, byte[] currentPwdHash, byte[] newPwdHash, out string reason)
         {
-            if (AuthenticateUser(user, currentPwdHash, out reason) == UserPermissionLevel.None)
+            if (AuthenticateUser(user, currentPwdHash, out reason) == PermissionLevel.None)
                 return false;
 
             lock (mUsersLock)
@@ -75,7 +75,7 @@ namespace LukeBot
 
             reason = "";
             return true;
-        }
+        }*/
 
         public void OpenBrowserURLCallback(object o, EventArgsBase args)
         {
@@ -87,6 +87,7 @@ namespace LukeBot
 
         void LoadUsers()
         {
+            /* LKTODO USER: Into UserService
             Path usersProp = Common.Constants.PROP_STORE_USERS_PROP;
 
             if (!Conf.Exists(usersProp))
@@ -108,12 +109,14 @@ namespace LukeBot
                 Logger.Log().Info("Loading LukeBot user " + user);
                 CreateAndRunUser(user);
             }
+            */
         }
 
         void UnloadUsers()
         {
             Logger.Log().Info("Unloading users...");
 
+            /* LKTODO USER: This should be done by UserService
             foreach (UserContext u in mUsers.Values)
             {
                 u.RequestModuleShutdown();
@@ -124,9 +127,10 @@ namespace LukeBot
                 u.WaitForModulesShutdown();
             }
 
-            mUsers.Clear();
+            mUsers.Clear();*/
         }
 
+        /* LKTODO USER: To LukeBot.User
         void AddUserToConfig(string name)
         {
             ConfUtil.ArrayAppend(Common.Constants.PROP_STORE_USERS_PROP, name);
@@ -149,7 +153,7 @@ namespace LukeBot
             if (Conf.Exists(userConfDomain))
                 Conf.Remove(userConfDomain);
         }
-
+        */
 
         private void AddCLICommands()
         {
@@ -177,6 +181,7 @@ namespace LukeBot
             Conf.Teardown();
         }
 
+        /* LKTODO USER: Into UserService
         private void CreateAndRunUser(string lbUsername)
         {
             lock (mUsersLock)
@@ -237,6 +242,7 @@ namespace LukeBot
                 return mUsers[username];
             }
         }
+        */
 
         public void Run(ProgramOptions opts)
         {
@@ -262,7 +268,7 @@ namespace LukeBot
 
                 InterfaceType uiType = opts.CLI;
                 Logger.Log().Info("Initializing UI {0}...", uiType.ToString());
-                UserInterface.Initialize(uiType, this);
+                UserInterface.Initialize(uiType);
 
                 Logger.Log().Info("Running Global modules...");
                 Service.Run();

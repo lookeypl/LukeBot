@@ -43,17 +43,17 @@ namespace LukeBot
             }
         }
 
-        public static void Initialize(InterfaceType type, IUserManager userManager)
+        public static void Initialize(InterfaceType type)
         {
             mType = type;
 
             switch (mType)
             {
             case InterfaceType.basic:
-                mInterface = new BasicCLI(userManager);
+                mInterface = new BasicCLI();
                 break;
             case InterfaceType.server:
-                mInterface = new ServerCLI(userManager);
+                mInterface = new ServerCLI();
                 break;
             default:
                 throw new UnrecognizedInterfaceTypeException(mType);

@@ -6,6 +6,7 @@ using LukeBot.Config;
 using LukeBot.Services;
 using LukeBot.Interface;
 using LukeBot.Module;
+using LukeBot.User.Common;
 using CommandLine;
 
 
@@ -100,6 +101,7 @@ namespace LukeBot
             }
         }
 
+        // LKTODO USER: reimplement
         public void HandleEnableSubverb(TwitchEnableSubverb arg, CLIMessageProxy CLI, out string msg)
         {
             msg = "";
@@ -107,7 +109,7 @@ namespace LukeBot
             try
             {
                 CheckForLogin(CLI);
-                mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(ModuleType.Twitch);
+                //mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(ModuleType.Twitch);
                 msg = "Enabled module " + ModuleType.Twitch;
             }
             catch (System.Exception e)
@@ -116,13 +118,14 @@ namespace LukeBot
             }
         }
 
+        // LKTODO USER: reimplement
         public void HandleDisableSubverb(TwitchDisableSubverb arg, CLIMessageProxy CLI, out string msg)
         {
             msg = "";
 
             try
             {
-                mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(ModuleType.Twitch);
+                //mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(ModuleType.Twitch);
                 msg = "Disabled module " + ModuleType.Twitch;
             }
             catch (System.Exception e)
@@ -136,7 +139,7 @@ namespace LukeBot
             mLukeBot = lb;
             mCommandCLIProcessor = new TwitchCommandCLIProcessor(mLukeBot);
 
-            UserInterface.CLI.AddCommand(Constants.TWITCH_MODULE_NAME, UserPermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
+            UserInterface.CLI.AddCommand(Constants.TWITCH_MODULE_NAME, PermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
             {
                 string result = "";
                 string[] cmdArgs = args.Take(2).ToArray(); // filters out any additional options/commands that might confuse CommandLine

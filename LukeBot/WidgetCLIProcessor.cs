@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Services;
 using LukeBot.Interface;
+using LukeBot.User.Common;
 using LukeBot.Widget.Common;
 using CommandLine;
 
@@ -254,7 +255,8 @@ namespace LukeBot
 
             try
             {
-                mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(Module.ModuleType.Widget);
+                // LKTODO USER: reimplement
+                //mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(Module.ModuleType.Widget);
                 msg = "Enabled module " + Module.ModuleType.Widget;
             }
             catch (System.Exception e)
@@ -269,7 +271,8 @@ namespace LukeBot
 
             try
             {
-                mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(Module.ModuleType.Widget);
+                // LKTODO USER: reimplement
+                //mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(Module.ModuleType.Widget);
                 msg = "Disabled module " + Module.ModuleType.Widget;
             }
             catch (System.Exception e)
@@ -282,7 +285,7 @@ namespace LukeBot
         {
             mLukeBot = lb;
 
-            UserInterface.CLI.AddCommand(Constants.WIDGET_MODULE_NAME, UserPermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
+            UserInterface.CLI.AddCommand(Constants.WIDGET_MODULE_NAME, PermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
             {
                 string result = "";
                 Parser p = new Parser(with => with.HelpWriter = new CLIUtils.CLIMessageProxyTextWriter(cliProxy));

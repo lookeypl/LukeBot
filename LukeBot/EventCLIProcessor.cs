@@ -5,6 +5,7 @@ using LukeBot.Communication;
 using LukeBot.Logging;
 using LukeBot.Module;
 using LukeBot.Interface;
+using LukeBot.User.Common;
 using CommandLine;
 
 namespace LukeBot
@@ -260,7 +261,7 @@ namespace LukeBot
         {
             mLukeBot = lb;
 
-            UserInterface.CLI.AddCommand(COMMAND_NAME, UserPermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
+            UserInterface.CLI.AddCommand(COMMAND_NAME, PermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
             {
                 string result = "";
 

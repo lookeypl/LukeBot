@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using LukeBot.Services;
 using LukeBot.Interface;
+using LukeBot.User.Common;
 using CommandLine;
 
 namespace LukeBot
@@ -68,12 +69,12 @@ namespace LukeBot
             "Set permission level for user. Available levels:\n" +
             "  - User\n" +
             "  - Admin\n")]
-        public UserPermissionLevel PermissionLevel { get; set; }
+        public PermissionLevel PermissionLevel { get; set; }
 
         public UserUpdateCommand()
         {
             Name = "";
-            PermissionLevel = UserPermissionLevel.None;
+            PermissionLevel = PermissionLevel.None;
         }
     }
 
@@ -87,7 +88,8 @@ namespace LukeBot
         {
             try
             {
-                mLukeBot.AddUser(args.Name);
+                // LKTODO USER: reimplement
+                //mLukeBot.AddUser(args.Name);
                 msg = "User " + args.Name + " added successfully";
             }
             catch (System.Exception e)
@@ -100,10 +102,11 @@ namespace LukeBot
         {
             msg = "Available users:\n";
 
-            List<string> usernames = mLukeBot.GetUsernames();
+            // LKTODO USER: reimplement
+            List<string> usernames = new(); // mLukeBot.GetUsernames();
             foreach (string u in usernames)
             {
-                msg += "  " + u + " (" + mLukeBot.GetUser(u).GetPermissionLevel().ToString() + ")\n";
+                msg += "  " + u + " (" + /*mLukeBot.GetUser(u).GetPermissionLevel().ToString() + */")\n";
             }
         }
 
@@ -127,7 +130,8 @@ namespace LukeBot
                     // noop
                 }
 
-                mLukeBot.RemoveUser(args.Name);
+                // LKTODO USER: reimplement
+                //mLukeBot.RemoveUser(args.Name);
                 msg = "User " + args.Name + " removed.";
             }
             catch (System.Exception e)
@@ -140,9 +144,10 @@ namespace LukeBot
         {
             try
             {
-                bool hasUsername = (args.Name != null && args.Name.Length > 0);
+                // LKTODO USER: reimplement
+                /*bool hasUsername = (args.Name != null && args.Name.Length > 0);
                 if (hasUsername && !mLukeBot.IsUsernameValid(args.Name))
-                    throw new System.ArgumentException("Unknown/invalid username.");
+                    throw new System.ArgumentException("Unknown/invalid username.");*/
 
                 mCLI.SetCurrentUser(args.Name);
 
@@ -161,11 +166,12 @@ namespace LukeBot
             }
         }
 
+        // LKTODO USER: reimplement
         void HandlePasswordUserCommand(UserPasswordCommand args, out string msg)
         {
             try
             {
-                UserContext user;
+                /*UserContext user;
                 bool currentUser = (args.Name == null || args.Name.Length == 0);
                 if (currentUser)
                     user = mLukeBot.GetUser(mCLI.GetCurrentUser());
@@ -181,7 +187,7 @@ namespace LukeBot
                     return;
                 }
 
-                user.SetPassword(newPwd);
+                user.SetPassword(newPwd);*/
                 msg = "Password changed";
             }
             catch (System.Exception e)
@@ -190,11 +196,12 @@ namespace LukeBot
             }
         }
 
+        // LKTODO USER: reimplement
         void HandleUpdateUserCommand(UserUpdateCommand args, out string msg)
         {
             try
             {
-                UserContext user;
+                /*UserContext user;
                 bool currentUser = (args.Name == null || args.Name.Length == 0);
                 if (currentUser)
                     user = mLukeBot.GetUser(mCLI.GetCurrentUser());
@@ -208,7 +215,8 @@ namespace LukeBot
 
                 mCLI.Message("Permission level set to " + args.PermissionLevel.ToString());
 
-                msg = "Changes to user " + user.Username + " applied.";
+                msg = "Changes to user " + user.Username + " applied.";*/
+                msg = "TODO";
             }
             catch (System.Exception e)
             {
@@ -220,7 +228,7 @@ namespace LukeBot
         {
             mLukeBot = lb;
 
-            UserInterface.CLI.AddCommand(COMMAND_NAME, UserPermissionLevel.Admin, (CLIMessageProxy cliProxy, string[] args) =>
+            UserInterface.CLI.AddCommand(COMMAND_NAME, PermissionLevel.Admin, (CLIMessageProxy cliProxy, string[] args) =>
             {
                 mCLI = cliProxy;
 

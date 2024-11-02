@@ -1,6 +1,7 @@
 using LukeBot.Module;
 using LukeBot.Spotify;
 using LukeBot.Twitch;
+using LukeBot.User;
 using LukeBot.Widget;
 
 
@@ -11,6 +12,7 @@ namespace LukeBot.Services
         static private UserModuleManager mModuleManager = null;
         static private SpotifyService mSpotifyService = null;
         static private TwitchService mTwitchService = null;
+        static private UserService mUserService = null;
         static private WidgetService mWidgetService = null;
         static private bool mInitialized = false;
 
@@ -38,6 +40,14 @@ namespace LukeBot.Services
             }
         }
 
+        static public UserService User
+        {
+            get
+            {
+                return mUserService;
+            }
+        }
+
         static public WidgetService Widget
         {
             get
@@ -52,6 +62,7 @@ namespace LukeBot.Services
                 return;
 
             mModuleManager = new UserModuleManager();
+            mUserService = new UserService();
 
             mSpotifyService = new SpotifyService();
             mTwitchService = new TwitchService();
@@ -87,6 +98,8 @@ namespace LukeBot.Services
             mSpotifyService = null;
             mTwitchService = null;
             mWidgetService = null;
+
+            mUserService = null;
 
             mInitialized = false;
         }

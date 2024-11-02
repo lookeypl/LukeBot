@@ -36,5 +36,11 @@ namespace LukeBot.Common
         public const string SPOTIFY_MODULE_NAME = "spotify";
         public const string TWITCH_MODULE_NAME = "twitch";
         public const string WIDGET_MODULE_NAME = "widget";
+
+        public const string PROP_STORE_MODULES_DOMAIN = "modules";
+        public const string PROP_STORE_WIDGETS_DOMAIN = "widgets";
+        public const string PROP_STORE_ACCOUNT_DOMAIN = "account";
+        public const string PROP_STORE_PASSWORD = "password";
+        public const string PROP_STORE_PERMISSION_LEVEL = "permission";
     }
 }

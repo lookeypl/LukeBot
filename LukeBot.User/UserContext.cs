@@ -2,34 +2,22 @@
 using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Config;
-using LukeBot.Services;
-using LukeBot.Interface;
+//using LukeBot.Services;
+//using LukeBot.Interface;
 using LukeBot.Logging;
 using LukeBot.Module;
+using LukeBot.User.Common;
 
 
 namespace LukeBot
 {
-    internal enum UserPermissionLevel
-    {
-        None = 0,
-        User,
-        Admin,
-    };
-
     internal class UserContext
     {
         public string Username { get; private set; }
 
-        public const string PROP_STORE_MODULES_DOMAIN = "modules";
-        public const string PROP_STORE_WIDGETS_DOMAIN = "widgets";
-        public const string PROP_STORE_ACCOUNT_DOMAIN = "account";
-        public const string PROP_STORE_PASSWORD = "password";
-        public const string PROP_STORE_PERMISSION_LEVEL = "permission";
-
         private Dictionary<ModuleType, IUserModule> mModules = new();
         private object mLock = new();
-        private UserPermissionLevel mPermissionLevel = UserPermissionLevel.None;
+        private PermissionLevel mPermissionLevel = PermissionLevel.None;
         private PasswordData mPasswordData = null;
 
         // user data management
@@ -38,8 +26,8 @@ namespace LukeBot
             Path passwordDataPath = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
                 .Push(Username)
-                .Push(PROP_STORE_ACCOUNT_DOMAIN)
-                .Push(PROP_STORE_PASSWORD);
+                .Push(Constants.PROP_STORE_ACCOUNT_DOMAIN)
+                .Push(Constants.PROP_STORE_PASSWORD);
 
             if (!Conf.Exists<PasswordData>(passwordDataPath))
                 Conf.Add(passwordDataPath, Property.Create<PasswordData>(mPasswordData));
@@ -49,13 +37,13 @@ namespace LukeBot
             Path permissionLevelPath = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
                 .Push(Username)
-                .Push(PROP_STORE_ACCOUNT_DOMAIN)
-                .Push(PROP_STORE_PERMISSION_LEVEL);
+                .Push(Constants.PROP_STORE_ACCOUNT_DOMAIN)
+                .Push(Constants.PROP_STORE_PERMISSION_LEVEL);
 
-            if (!Conf.Exists<UserPermissionLevel>(permissionLevelPath))
-                Conf.Add(permissionLevelPath, Property.Create<UserPermissionLevel>(mPermissionLevel));
+            if (!Conf.Exists<PermissionLevel>(permissionLevelPath))
+                Conf.Add(permissionLevelPath, Property.Create<PermissionLevel>(mPermissionLevel));
             else
-                Conf.Modify<UserPermissionLevel>(permissionLevelPath, mPermissionLevel);
+                Conf.Modify<PermissionLevel>(permissionLevelPath, mPermissionLevel);
 
             Conf.Save();
         }
@@ -65,8 +53,8 @@ namespace LukeBot
             Path passwordDataPath = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
                 .Push(Username)
-                .Push(PROP_STORE_ACCOUNT_DOMAIN)
-                .Push(PROP_STORE_PASSWORD);
+                .Push(Constants.PROP_STORE_ACCOUNT_DOMAIN)
+                .Push(Constants.PROP_STORE_PASSWORD);
 
             if (!Conf.TryGet<PasswordData>(passwordDataPath, out mPasswordData))
             {
@@ -78,13 +66,13 @@ namespace LukeBot
             Path permissionLevelPath = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
                 .Push(Username)
-                .Push(PROP_STORE_ACCOUNT_DOMAIN)
-                .Push(PROP_STORE_PERMISSION_LEVEL);
+                .Push(Constants.PROP_STORE_ACCOUNT_DOMAIN)
+                .Push(Constants.PROP_STORE_PERMISSION_LEVEL);
 
-            if (!Conf.TryGet<UserPermissionLevel>(permissionLevelPath, out mPermissionLevel))
+            if (!Conf.TryGet<PermissionLevel>(permissionLevelPath, out mPermissionLevel))
             {
                 // no permission level set, assume no permissions
-                mPermissionLevel = UserPermissionLevel.None;
+                mPermissionLevel = PermissionLevel.None;
             }
 
             Logger.Log().Secure("User " + Username + " permission level: {0}", mPermissionLevel);
@@ -96,7 +84,7 @@ namespace LukeBot
             Path modulesProp = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
                 .Push(Username)
-                .Push(PROP_STORE_MODULES_DOMAIN);
+                .Push(Constants.PROP_STORE_MODULES_DOMAIN);
 
             ConfUtil.ArrayAppend(modulesProp, module);
         }
@@ -106,7 +94,7 @@ namespace LukeBot
             Path modulesProp = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
                 .Push(Username)
-                .Push(PROP_STORE_MODULES_DOMAIN);
+                .Push(Constants.PROP_STORE_MODULES_DOMAIN);
 
             string[] modules;
             if (!Conf.TryGet<string[]>(modulesProp, out modules))
@@ -122,7 +110,8 @@ namespace LukeBot
                 {
                     // here we ignore the returned module and do not start it
                     // RunModules() will be called later and will kickstart it for us
-                    LoadModule(m.GetModuleTypeEnum());
+                    // TODO
+                    //LoadModule(m.GetModuleTypeEnum());
                 }
                 catch (System.Exception e)
                 {
@@ -140,11 +129,11 @@ namespace LukeBot
             Path modulesProp = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
                 .Push(Username)
-                .Push(PROP_STORE_MODULES_DOMAIN);
+                .Push(Constants.PROP_STORE_MODULES_DOMAIN);
 
             ConfUtil.ArrayRemove(modulesProp, module);
         }
-
+/*
         private IUserModule LoadModule(ModuleType type)
         {
             IUserModule m = Service.UserModuleManager.Create(type, Username);
@@ -162,7 +151,7 @@ namespace LukeBot
 
             mModules.Remove(type);
         }
-
+*/
 
         public UserContext(string user)
         {
@@ -178,19 +167,19 @@ namespace LukeBot
 
         public void EnableModule(ModuleType module)
         {
-            IUserModule m;
+            //IUserModule m;
 
             lock (mLock)
             {
                 if (mModules.ContainsKey(module))
                 {
-                    throw new ModuleEnabledException(module, Username);
+                    //throw new ModuleEnabledException(module, Username);
                 }
 
-                m = LoadModule(module);
+                //m = LoadModule(module);
                 AddModuleToConfig(module.ToConfString());
 
-                m.Run();
+                //m.Run();
             }
         }
 
@@ -200,10 +189,10 @@ namespace LukeBot
             {
                 if (!mModules.ContainsKey(module))
                 {
-                    throw new ModuleDisabledException(module, Username);
+                    //throw new ModuleDisabledException(module, Username);
                 }
 
-                UnloadModule(module);
+                //UnloadModule(module);
                 RemoveModuleFromConfig(module.ToConfString());
             }
         }
@@ -219,7 +208,7 @@ namespace LukeBot
             }
         }
 
-        public UserPermissionLevel GetPermissionLevel()
+        public PermissionLevel GetPermissionLevel()
         {
             return mPermissionLevel;
         }
@@ -246,7 +235,7 @@ namespace LukeBot
             }
         }
 
-        public void SetPermissionLevel(UserPermissionLevel permLevel)
+        public void SetPermissionLevel(PermissionLevel permLevel)
         {
             lock (mLock)
             {

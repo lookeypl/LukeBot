@@ -34,6 +34,7 @@
     <ProjectReference Include="..\LukeBot.Interface.Protocols\LukeBot.Interface.Protocols.csproj" />
     <ProjectReference Include="..\LukeBot.Module\LukeBot.Module.csproj" />
     <ProjectReference Include="..\LukeBot.Services\LukeBot.Services.csproj" />
+    <ProjectReference Include="..\LukeBot.User.Common\LukeBot.User.Common.csproj" />
     <ProjectReference Include="..\LukeBot.Widget.Common\LukeBot.Widget.Common.csproj" />
   </ItemGroup>
 

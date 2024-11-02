@@ -1,10 +1,9 @@
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using LukeBot.Twitch.Common.Command;
 
 
-namespace LukeBot.Tests.Twitch
+namespace LukeBot.Twitch.Common.Command.Tests
 {
     [TestClass]
     public class UserExtensionsTests

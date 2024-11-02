@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using LukeBot.Module;
 using LukeBot.Interface;
+using LukeBot.Services;
+using LukeBot.User.Common;
 using CommandLine;
 
 namespace LukeBot
@@ -33,6 +35,7 @@ namespace LukeBot
         }
     }
 
+    // LKTODO USER: reimplement
     internal class ModuleCLIProcessor: ICLIProcessor
     {
         private const string COMMAND_NAME = "module";
@@ -44,7 +47,7 @@ namespace LukeBot
             {
                 msg = "Enabled modules:";
 
-                List<ModuleType> modules = mLukeBot.GetUser(CLI.GetCurrentUser()).GetEnabledModules();
+                List<ModuleType> modules = new(); //mLukeBot.GetUser(CLI.GetCurrentUser()).GetEnabledModules();
                 foreach (ModuleType m in modules)
                 {
                     msg += "\n  " + m.ToConfString();
@@ -61,7 +64,7 @@ namespace LukeBot
             try
             {
                 ModuleType type = args.Type.GetModuleTypeEnum();
-                mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(type);
+                //mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(type);
                 msg = "Enabled module " + type.ToString();
             }
             catch (System.Exception e)
@@ -75,7 +78,7 @@ namespace LukeBot
             try
             {
                 ModuleType type = args.Type.GetModuleTypeEnum();
-                mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(type);
+                //mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(type);
                 msg = "Disabled module " + type.ToString();
             }
             catch (System.Exception e)
@@ -88,7 +91,7 @@ namespace LukeBot
         {
             mLukeBot = lb;
 
-            UserInterface.CLI.AddCommand(COMMAND_NAME, UserPermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
+            UserInterface.CLI.AddCommand(COMMAND_NAME, PermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
             {
                 string result = "";
                 Parser p = new Parser(with => with.HelpWriter = new CLIUtils.CLIMessageProxyTextWriter(cliProxy));

@@ -14,6 +14,8 @@ using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Interface.Protocols;
+using LukeBot.Services;
+using LukeBot.User.Common;
 using Newtonsoft.Json;
 using System.Timers;
 
@@ -33,8 +35,7 @@ namespace LukeBot
             private TaskCompletionSource<string> mUsernamePromise = new();
             public string mCookie = ""; // full ID of this connection context
             public SessionData mSessionData = null;
-            private IUserManager mUserManager = null;
-            private UserPermissionLevel mPermissionLevel = UserPermissionLevel.None;
+            private PermissionLevel mPermissionLevel = PermissionLevel.None;
             private OnClientDoneDelegate mClientDoneDelegate = null;
 
             private string mCookieShorthand = "";
@@ -99,13 +100,12 @@ namespace LukeBot
                     msg.Type != ServerMessageType.Login; // Login messages are not accepted at this point
             }
 
-            public ClientContext(TcpClient client, Stream stream, IUserManager userManager, Dictionary<string, Command> commands, OnClientDoneDelegate clientDoneDelegate)
+            public ClientContext(TcpClient client, Stream stream, Dictionary<string, Command> commands, OnClientDoneDelegate clientDoneDelegate)
             {
                 mClient = client;
                 mStream = stream; // passed on separately to wrap it into SslStream
                 mStream.ReadTimeout = 125 * 1000; // 2 minutes
-                mUserManager = userManager;
-                mPermissionLevel = UserPermissionLevel.None;
+                mPermissionLevel = PermissionLevel.None;
                 mClientDoneDelegate = clientDoneDelegate;
                 mCommands = commands;
 
@@ -280,8 +280,8 @@ namespace LukeBot
                     mUsernamePromise.SetResult(mUsername);
 
                     byte[] pwdBuf = Convert.FromBase64String(loginMsg.PasswordHashBase64);
-                    UserPermissionLevel permLevel = mUserManager.AuthenticateUser(loginMsg.User, pwdBuf, out string reason);
-                    if (permLevel == UserPermissionLevel.None)
+                    PermissionLevel permLevel = Service.User.AuthenticateUser(loginMsg.User, pwdBuf, out string reason);
+                    if (permLevel == PermissionLevel.None)
                     {
                         // wait a few seconds to prevent replay attacks
                         Thread.Sleep(REPLAY_PREVENT_WAIT_TIME);
@@ -338,13 +338,13 @@ namespace LukeBot
                 Config.Path permissionLevelPath = Config.Path.Start()
                     .Push(Constants.PROP_STORE_USER_DOMAIN)
                     .Push(mCurrentUser)
-                    .Push(UserContext.PROP_STORE_ACCOUNT_DOMAIN)
-                    .Push(UserContext.PROP_STORE_PERMISSION_LEVEL);
+                    .Push(Constants.PROP_STORE_ACCOUNT_DOMAIN)
+                    .Push(Constants.PROP_STORE_PERMISSION_LEVEL);
 
-                if (!Conf.TryGet<UserPermissionLevel>(permissionLevelPath, out mPermissionLevel))
+                if (!Conf.TryGet<PermissionLevel>(permissionLevelPath, out mPermissionLevel))
                 {
                     // no permission level set, assume no permissions
-                    mPermissionLevel = UserPermissionLevel.None;
+                    mPermissionLevel = PermissionLevel.None;
                 }
             }
 
@@ -456,7 +456,6 @@ namespace LukeBot
         private InterruptReason mInterruptReason = InterruptReason.Unknown;
         private Queue<string> mClientsToClear = new();
         private Mutex mInterruptMutex = new();
-        private IUserManager mUserManager = null;
         private TcpListener mServer;
         private X509Certificate2 mSSLCert;
         private IPAddress mAddress;
@@ -489,7 +488,7 @@ namespace LukeBot
             stream = sslStream;
 
             // Create a new context and start it. It will carry on with the initial conversation.
-            ClientContext context = new(client, stream, mUserManager, mCommands, OnClientRecvThreadDone);
+            ClientContext context = new(client, stream, mCommands, OnClientRecvThreadDone);
             mClients.Add(context.mCookie, context);
 
             context.StartThread();
@@ -547,14 +546,10 @@ namespace LukeBot
             mClients.Clear();
         }
 
-        public ServerCLI(IUserManager userManager)
+        public ServerCLI()
         {
-            if (userManager == null)
-                throw new ArgumentException("User manager is required for Server CLI to work.");
-
             mAddress = IPAddress.Parse("127.0.0.1");
             mPort = Common.Constants.SERVERCLI_DEFAULT_PORT;
-            mUserManager = userManager;
 
             string address;
             if (!Conf.TryGet<string>(Common.Constants.PROP_STORE_SERVER_IP_PROP, out address))
@@ -609,7 +604,7 @@ namespace LukeBot
             }
         }
 
-        public void AddCommand(string cmd, UserPermissionLevel permissionLevel, CLIBase.CmdDelegate d)
+        public void AddCommand(string cmd, PermissionLevel permissionLevel, CLIBase.CmdDelegate d)
         {
             AddCommand(cmd, new LambdaCommand(permissionLevel, d));
         }

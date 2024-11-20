@@ -208,7 +208,7 @@ namespace LukeBot
                 }
                 else if (cmd.Allowed != null && cmd.Allowed.Length > 0)
                 {
-                    Command::User priv = cmd.Allowed.ToUserEnum();
+                    Command::ChatUser priv = cmd.Allowed.ToUserEnum();
                     if (priv == 0)
                     {
                         msg = "Invalid privilege list: " + cmd.Allowed;
@@ -221,7 +221,7 @@ namespace LukeBot
                 }
                 else if (cmd.Denied != null && cmd.Denied.Length > 0)
                 {
-                    Command::User priv = cmd.Denied.ToUserEnum();
+                    Command::ChatUser priv = cmd.Denied.ToUserEnum();
                     if (priv == 0)
                     {
                         msg = "Invalid privilege list: " + cmd.Allowed;

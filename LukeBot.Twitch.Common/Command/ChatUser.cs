@@ -4,7 +4,7 @@ using System.Linq;
 namespace LukeBot.Twitch.Common.Command
 {
     [Flags]
-    public enum User
+    public enum ChatUser
     {
         Chatter = (1 << 0),
         Subscriber = (1 << 1),
@@ -17,18 +17,18 @@ namespace LukeBot.Twitch.Common.Command
 
     public static class UserExtensions
     {
-        public static string GetStringRepresentation(this User u)
+        public static string GetStringRepresentation(this ChatUser u)
         {
             string s = "";
 
-            if ((u & User.Everyone) == User.Everyone)
+            if ((u & ChatUser.Everyone) == ChatUser.Everyone)
                 return "Everyone";
 
-            User[] users = Enum.GetValues<User>();
-            Array.Reverse<User>(users);
-            foreach (User usr in users)
+            ChatUser[] users = Enum.GetValues<ChatUser>();
+            Array.Reverse<ChatUser>(users);
+            foreach (ChatUser usr in users)
             {
-                if (usr == User.Everyone)
+                if (usr == ChatUser.Everyone)
                     continue;
 
                 if ((u & usr) == usr)
@@ -44,18 +44,18 @@ namespace LukeBot.Twitch.Common.Command
             return s;
         }
 
-        // PossibleValues skip User.Everyone since it's a special value
-        private static User[] PossibleValues = Enum.GetValues<User>().Where(u => u != User.Everyone).ToArray();
+        // PossibleValues skip ChatUser.Everyone since it's a special value
+        private static ChatUser[] PossibleValues = Enum.GetValues<ChatUser>().Where(u => u != ChatUser.Everyone).ToArray();
         private static string[] PossibleValueStrings = PossibleValues.Select(u => u.ToString().ToLower()).ToArray();
 
-        public static User ToUserEnum(this string s)
+        public static ChatUser ToUserEnum(this string s)
         {
-            User result = 0;
+            ChatUser result = 0;
             bool valueFound = true;
             string[] userList = s.ToLower().Split(',');
 
             if ("everyone".StartsWith(userList[0]))
-                return User.Everyone;
+                return ChatUser.Everyone;
 
             foreach (string user in userList)
             {

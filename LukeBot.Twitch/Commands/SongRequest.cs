@@ -18,7 +18,7 @@ namespace LukeBot.Twitch.Command
             mHelpMessage = d.Value;
         }
 
-        public override string Execute(Command::User callerPrivilege, string[] args)
+        public override string Execute(Command::ChatUser callerPrivilege, string[] args)
         {
             if (args.Length < 2)
             {

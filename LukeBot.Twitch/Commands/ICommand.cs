@@ -8,7 +8,7 @@ namespace LukeBot.Twitch.Command
         internal delegate void UpdateConfigDelegate(string commandName);
 
         protected string mName;
-        protected User mPrivilegeLevel;
+        protected ChatUser mPrivilegeLevel;
         protected bool mEnabled;
         private UpdateConfigDelegate mUpdateConfig;
 
@@ -19,7 +19,7 @@ namespace LukeBot.Twitch.Command
             mEnabled = d.Enabled;
         }
 
-        protected ICommand(string name, User privilegeLevel)
+        protected ICommand(string name, ChatUser privilegeLevel)
         {
             mName = name;
             mPrivilegeLevel = privilegeLevel;
@@ -39,28 +39,28 @@ namespace LukeBot.Twitch.Command
 
         // Provides:
         //  * args - arguments from a chat message incl. called command name;
-        //  * callerPrivilege - caller's (person who called the command) User privilege flags.
+        //  * callerPrivilege - caller's (person who called the command) ChatUser privilege flags.
         //
         // Returns a string - response that TwitchIRC will send further back to Twitch servers
         // assuming it's not empty (empty string will keep bot silent)
-        public abstract string Execute(User callerPrivilege, string[] args);
+        public abstract string Execute(ChatUser callerPrivilege, string[] args);
 
         // Edit command output based on newValue param
         public abstract void Edit(string newValue);
 
         public abstract Descriptor ToDescriptor();
 
-        public void AllowUsers(User u)
+        public void AllowUsers(ChatUser u)
         {
             mPrivilegeLevel |= u;
         }
 
-        public void DenyUsers(User u)
+        public void DenyUsers(ChatUser u)
         {
             mPrivilegeLevel &= ~u;
         }
 
-        public bool CheckPrivilege(User userIdentity)
+        public bool CheckPrivilege(ChatUser userIdentity)
         {
             //   B M V S C
             //   1 0 0 0 0  priv

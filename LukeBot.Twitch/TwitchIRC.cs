@@ -478,7 +478,7 @@ namespace LukeBot.Twitch
             return d;
         }
 
-        public void AllowPrivilegeInCommand(string channel, string name, Command::User privilege)
+        public void AllowPrivilegeInCommand(string channel, string name, Command::ChatUser privilege)
         {
             mChannelsMutex.WaitOne();
 
@@ -493,7 +493,7 @@ namespace LukeBot.Twitch
             mChannelsMutex.ReleaseMutex();
         }
 
-        public void DenyPrivilegeInCommand(string channel, string name, Command::User privilege)
+        public void DenyPrivilegeInCommand(string channel, string name, Command::ChatUser privilege)
         {
             mChannelsMutex.WaitOne();
 

@@ -309,14 +309,14 @@ namespace LukeBot.Twitch
             return mIRC.GetCommandDescriptor(twitchChannel, name);
         }
 
-        public void AllowPrivilegeInCommand(string lbUser, string name, Command::User privilege)
+        public void AllowPrivilegeInCommand(string lbUser, string name, Command::ChatUser privilege)
         {
             string twitchChannel = GetTwitchChannel(lbUser);
             mIRC.AllowPrivilegeInCommand(twitchChannel, name, privilege);
             UpdateCommandInConfig(twitchChannel, name);
         }
 
-        public void DenyPrivilegeInCommand(string lbUser, string name, Command::User privilege)
+        public void DenyPrivilegeInCommand(string lbUser, string name, Command::ChatUser privilege)
         {
             string twitchChannel = GetTwitchChannel(lbUser);
             mIRC.DenyPrivilegeInCommand(twitchChannel, name, privilege);

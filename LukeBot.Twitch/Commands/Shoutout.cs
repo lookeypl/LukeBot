@@ -30,7 +30,7 @@ namespace LukeBot.Twitch.Command
             // empty - no parameters that affect message contents
         }
 
-        public override string Execute(Command::User callerPrivilege, string[] args)
+        public override string Execute(Command::ChatUser callerPrivilege, string[] args)
         {
             if (args.Length < 2)
             {

@@ -22,7 +22,7 @@ namespace LukeBot.Twitch.Command
             // noop
         }
 
-        public override string Execute(Command::User callerPrivilege, string[] args)
+        public override string Execute(Command::ChatUser callerPrivilege, string[] args)
         {
             if (args.Length < 3)
             {

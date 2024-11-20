@@ -22,7 +22,7 @@ namespace LukeBot.Twitch.Command
                 mCounter = int.Parse(d.Value);
         }
 
-        public override string Execute(Command::User callerPrivilege, string[] args)
+        public override string Execute(Command::ChatUser callerPrivilege, string[] args)
         {
             // syntax of this command:
             //  +<integer> - increment by <integer>
@@ -44,7 +44,7 @@ namespace LukeBot.Twitch.Command
             // privilege check - assume past that point only broadcaster and mods can
             // change/edit the counter.
             // TODO this should be configurable
-            Command::User allowedPrivilege = Command::User.Broadcaster | Command::User.Moderator;
+            Command::ChatUser allowedPrivilege = Command::ChatUser.Broadcaster | Command::ChatUser.Moderator;
             if ((allowedPrivilege & callerPrivilege) == 0)
             {
                 return ""; // no response

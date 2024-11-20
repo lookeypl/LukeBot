@@ -24,32 +24,32 @@ namespace LukeBot.Twitch
         private EventCallback mMessageClearEventCallback;
         private EventCallback mUserClearEventCallback;
 
-        private Command::User EstablishUserIdentity(IRCMessage m, bool tagsEnabled)
+        private Command::ChatUser EstablishUserIdentity(IRCMessage m, bool tagsEnabled)
         {
-            Command::User identity = Command::User.Chatter;
+            Command::ChatUser identity = Command::ChatUser.Chatter;
 
             if (m.User == m.Channel)
-                identity |= Command::User.Broadcaster;
+                identity |= Command::ChatUser.Broadcaster;
 
             if (tagsEnabled)
             {
                 string isMod;
                 if (m.GetTag("mod", out isMod) && Int32.Parse(isMod) == 1)
-                    identity |= Command::User.Moderator;
+                    identity |= Command::ChatUser.Moderator;
 
                 string isVIP;
                 if (m.GetTag("vip", out isVIP) && Int32.Parse(isVIP) == 1)
-                    identity |= Command::User.VIP;
+                    identity |= Command::ChatUser.VIP;
 
                 string isSub;
                 if (m.GetTag("subscriber", out isSub) && Int32.Parse(isSub) == 1)
-                    identity |= Command::User.Subscriber;
+                    identity |= Command::ChatUser.Subscriber;
             }
 
             return identity;
         }
 
-        public string ProcessMessageCommand(string cmd, Command::User userIdentity, string[] args)
+        public string ProcessMessageCommand(string cmd, Command::ChatUser userIdentity, string[] args)
         {
             if (!mCommands.ContainsKey(cmd))
             {
@@ -199,7 +199,7 @@ namespace LukeBot.Twitch
 
             string[] chatMsgTokens = chatMsg.Split(' ');
             string cmd = chatMsgTokens[0];
-            Command::User userIdentity = EstablishUserIdentity(m, tagsEnabled);
+            Command::ChatUser userIdentity = EstablishUserIdentity(m, tagsEnabled);
 
             string response = ProcessMessageCommand(cmd, userIdentity, chatMsgTokens);
 

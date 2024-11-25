@@ -26,6 +26,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
+    <ProjectReference Include="..\LukeBot.Communication\LukeBot.Communication.csproj" />
+    <ProjectReference Include="..\LukeBot.Config\LukeBot.Config.csproj" />
     <ProjectReference Include="..\LukeBot.Module\LukeBot.Module.csproj" />
     <ProjectReference Include="..\LukeBot.User.Common\LukeBot.User.Common.csproj" />
   </ItemGroup>

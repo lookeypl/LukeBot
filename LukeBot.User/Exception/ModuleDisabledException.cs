@@ -1,7 +1,7 @@
 using LukeBot.Common;
 using LukeBot.Module;
 
-namespace LukeBot
+namespace LukeBot.User
 {
     public class ModuleDisabledException: Exception
     {

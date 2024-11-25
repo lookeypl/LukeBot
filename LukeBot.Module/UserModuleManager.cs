@@ -1,10 +1,24 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using LukeBot.User.Common;
 
 
 namespace LukeBot.Module
 {
     public class UserModuleManager
     {
+        private struct UserModuleManagerEntry
+        {
+            public Guid userGuid;
+            public Dictionary<ModuleType, IUserModule> modules = new();
+
+            public UserModuleManagerEntry(Guid guid)
+            {
+                userGuid = guid;
+            }
+        };
+
+        private Dictionary<Guid, UserModuleManagerEntry> mUsers = new();
         private Dictionary<ModuleType, UserModuleDescriptor> mDescriptors = new();
 
         private UserModuleDescriptor GetModuleDescriptor(ModuleType moduleType)
@@ -21,7 +35,7 @@ namespace LukeBot.Module
          * Create a new Module. This is called when enabling a new module for
          * already existing user.
          */
-        public IUserModule Create(ModuleType type, string lbUser)
+        private IUserModule Create(ModuleType type, string lbUser)
         {
             UserModuleDescriptor umd = GetModuleDescriptor(type);
 
@@ -65,6 +79,20 @@ namespace LukeBot.Module
             }
 
             mDescriptors.Add(umd.Type, umd);
+        }
+
+        public void EnableModuleForUser(IUserContext user, ModuleType moduleType)
+        {
+            Guid userGuid = user.GetGuid();
+
+            UserModuleManagerEntry entry;
+            if (!mUsers.TryGetValue(userGuid, out entry))
+            {
+                entry = new(userGuid);
+                mUsers.Add(userGuid, entry);
+            }
+
+            entry.modules.TryAdd(moduleType, Create(moduleType, user.GetUsername()));
         }
     }
 }

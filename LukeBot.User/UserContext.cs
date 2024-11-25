@@ -2,18 +2,17 @@
 using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Config;
-//using LukeBot.Services;
-//using LukeBot.Interface;
 using LukeBot.Logging;
 using LukeBot.Module;
 using LukeBot.User.Common;
 
 
-namespace LukeBot
+namespace LukeBot.User
 {
-    internal class UserContext
+    internal class UserContext: IUserContext
     {
-        public string Username { get; private set; }
+        private Guid mGUID;
+        private string mUsername;
 
         private Dictionary<ModuleType, IUserModule> mModules = new();
         private object mLock = new();
@@ -25,7 +24,7 @@ namespace LukeBot
         {
             Path passwordDataPath = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
-                .Push(Username)
+                .Push(mUsername)
                 .Push(Constants.PROP_STORE_ACCOUNT_DOMAIN)
                 .Push(Constants.PROP_STORE_PASSWORD);
 
@@ -36,7 +35,7 @@ namespace LukeBot
 
             Path permissionLevelPath = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
-                .Push(Username)
+                .Push(mUsername)
                 .Push(Constants.PROP_STORE_ACCOUNT_DOMAIN)
                 .Push(Constants.PROP_STORE_PERMISSION_LEVEL);
 
@@ -52,20 +51,20 @@ namespace LukeBot
         {
             Path passwordDataPath = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
-                .Push(Username)
+                .Push(mUsername)
                 .Push(Constants.PROP_STORE_ACCOUNT_DOMAIN)
                 .Push(Constants.PROP_STORE_PASSWORD);
 
             if (!Conf.TryGet<PasswordData>(passwordDataPath, out mPasswordData))
             {
                 // no password, issue a warning
-                Logger.Log().Warning("User " + Username + " has no password set! Remember to set your password.");
+                Logger.Log().Warning("User " + mUsername + " has no password set! Remember to set your password.");
                 mPasswordData = null;
             }
 
             Path permissionLevelPath = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
-                .Push(Username)
+                .Push(mUsername)
                 .Push(Constants.PROP_STORE_ACCOUNT_DOMAIN)
                 .Push(Constants.PROP_STORE_PERMISSION_LEVEL);
 
@@ -75,7 +74,7 @@ namespace LukeBot
                 mPermissionLevel = PermissionLevel.None;
             }
 
-            Logger.Log().Secure("User " + Username + " permission level: {0}", mPermissionLevel);
+            Logger.Log().Secure("User " + mUsername + " permission level: {0}", mPermissionLevel);
         }
 
         // module-config management
@@ -83,7 +82,7 @@ namespace LukeBot
         {
             Path modulesProp = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
-                .Push(Username)
+                .Push(mUsername)
                 .Push(Constants.PROP_STORE_MODULES_DOMAIN);
 
             ConfUtil.ArrayAppend(modulesProp, module);
@@ -93,7 +92,7 @@ namespace LukeBot
         {
             Path modulesProp = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
-                .Push(Username)
+                .Push(mUsername)
                 .Push(Constants.PROP_STORE_MODULES_DOMAIN);
 
             string[] modules;
@@ -116,9 +115,9 @@ namespace LukeBot
                 catch (System.Exception e)
                 {
                     Logger.Log().Error("Failed to initialize module {0} for user {1}: {2}",
-                        m, Username, e.Message);
+                        m, mUsername, e.Message);
                     Logger.Log().Error("Module {0} for user {1} will be skipped on this load.",
-                        m, Username);
+                        m, mUsername);
                     Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
                 }
             }
@@ -128,7 +127,7 @@ namespace LukeBot
         {
             Path modulesProp = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
-                .Push(Username)
+                .Push(mUsername)
                 .Push(Constants.PROP_STORE_MODULES_DOMAIN);
 
             ConfUtil.ArrayRemove(modulesProp, module);
@@ -136,7 +135,7 @@ namespace LukeBot
 /*
         private IUserModule LoadModule(ModuleType type)
         {
-            IUserModule m = Service.UserModuleManager.Create(type, Username);
+            IUserModule m = Service.UserModuleManager.Create(type, mUsername);
             mModules.Add(type, m);
             return m;
         }
@@ -155,14 +154,24 @@ namespace LukeBot
 
         public UserContext(string user)
         {
-            Username = user;
+            mUsername = user;
 
             LoadUserDataFromConfig();
 
-            Logger.Log().Info("Loading required modules for user {0}", Username);
+            Logger.Log().Info("Loading required modules for user {0}", mUsername);
             LoadModulesFromConfig();
 
-            Logger.Log().Info("Loaded LukeBot user {0}", Username);
+            Logger.Log().Info("Loaded LukeBot user {0}", mUsername);
+        }
+
+        public Guid GetGuid()
+        {
+            return mGUID;
+        }
+
+        public string GetUsername()
+        {
+            return mUsername;
         }
 
         public void EnableModule(ModuleType module)
@@ -173,7 +182,7 @@ namespace LukeBot
             {
                 if (mModules.ContainsKey(module))
                 {
-                    //throw new ModuleEnabledException(module, Username);
+                    throw new ModuleEnabledException(module, mUsername);
                 }
 
                 //m = LoadModule(module);
@@ -189,7 +198,7 @@ namespace LukeBot
             {
                 if (!mModules.ContainsKey(module))
                 {
-                    //throw new ModuleDisabledException(module, Username);
+                    throw new ModuleDisabledException(module, mUsername);
                 }
 
                 //UnloadModule(module);
@@ -226,7 +235,7 @@ namespace LukeBot
 
         // Set a new password based on plaintext. This path should
         // be ONLY taken locally (ex. via BasicCLI)
-        public void SetPassword(string newPassword)
+        public void SetPasswordLocal(string newPassword)
         {
             lock (mLock)
             {
@@ -244,8 +253,22 @@ namespace LukeBot
             }
         }
 
-        // Validate if a password string is correct. Use ONLY locally.
-        public bool ValidatePassword(string password)
+        public bool ValidatePassword(byte[] passwordHash)
+        {
+            lock (mLock)
+            {
+                if (mPasswordData == null)
+                {
+                    // no password data - reject login
+                    Logger.Log().Warning("Attempted to validate non-existing password for user {0}", mUsername);
+                    return false;
+                }
+
+                return mPasswordData.Equals(passwordHash);
+            }
+        }
+
+        public bool ValidatePasswordLocal(string password)
         {
             lock (mLock)
             {
@@ -256,25 +279,9 @@ namespace LukeBot
             }
         }
 
-        // Validates if password is correct. For remote connections only.
-        public bool ValidatePassword(byte[] passwordHash)
-        {
-            lock (mLock)
-            {
-                if (mPasswordData == null)
-                {
-                    // no password data - reject login
-                    Logger.Log().Warning("Attempted to validate non-existing password for user {0}", Username);
-                    return false;
-                }
-
-                return mPasswordData.Equals(passwordHash);
-            }
-        }
-
         public void RunModules()
         {
-            Logger.Log().Info("Running LukeBot modules for user {0}", Username);
+            Logger.Log().Info("Running LukeBot modules for user {0}", mUsername);
             foreach (IUserModule m in mModules.Values)
                 m.Run();
         }

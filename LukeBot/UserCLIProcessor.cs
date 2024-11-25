@@ -7,12 +7,12 @@ using CommandLine;
 namespace LukeBot
 {
     [Verb("add", HelpText = "Add user")]
-    internal class UserAddCommand
+    internal class UserCreateCommand
     {
         [Value(0, MetaName = "username", Required = true, HelpText = "Name of user to add")]
         public string Name { get; set; }
 
-        public UserAddCommand()
+        public UserCreateCommand()
         {
             Name = "";
         }
@@ -84,12 +84,11 @@ namespace LukeBot
         private LukeBot mLukeBot;
         private CLIMessageProxy mCLI;
 
-        void HandleAddUserCommand(UserAddCommand args, out string msg)
+        void HandleCreateUserCommand(UserCreateCommand args, out string msg)
         {
             try
             {
-                // LKTODO USER: reimplement
-                //mLukeBot.AddUser(args.Name);
+                Service.User.CreateNewUser(args.Name);
                 msg = "User " + args.Name + " added successfully";
             }
             catch (System.Exception e)
@@ -102,11 +101,10 @@ namespace LukeBot
         {
             msg = "Available users:\n";
 
-            // LKTODO USER: reimplement
-            List<string> usernames = new(); // mLukeBot.GetUsernames();
+            List<string> usernames = Service.User.GetUsernames();
             foreach (string u in usernames)
             {
-                msg += "  " + u + " (" + /*mLukeBot.GetUser(u).GetPermissionLevel().ToString() + */")\n";
+                msg += "  " + u + " (" + Service.User.GetUser(u).GetPermissionLevel().ToString() + ")\n";
             }
         }
 
@@ -130,8 +128,7 @@ namespace LukeBot
                     // noop
                 }
 
-                // LKTODO USER: reimplement
-                //mLukeBot.RemoveUser(args.Name);
+                Service.User.RemoveUser(args.Name);
                 msg = "User " + args.Name + " removed.";
             }
             catch (System.Exception e)
@@ -144,10 +141,9 @@ namespace LukeBot
         {
             try
             {
-                // LKTODO USER: reimplement
-                /*bool hasUsername = (args.Name != null && args.Name.Length > 0);
-                if (hasUsername && !mLukeBot.IsUsernameValid(args.Name))
-                    throw new System.ArgumentException("Unknown/invalid username.");*/
+                bool hasUsername = (args.Name != null && args.Name.Length > 0);
+                if (hasUsername && !Service.User.IsUsernameValid(args.Name))
+                    throw new System.ArgumentException("Unknown/invalid username.");
 
                 mCLI.SetCurrentUser(args.Name);
 
@@ -166,17 +162,16 @@ namespace LukeBot
             }
         }
 
-        // LKTODO USER: reimplement
         void HandlePasswordUserCommand(UserPasswordCommand args, out string msg)
         {
             try
             {
-                /*UserContext user;
+                IUserContext user;
                 bool currentUser = (args.Name == null || args.Name.Length == 0);
                 if (currentUser)
-                    user = mLukeBot.GetUser(mCLI.GetCurrentUser());
+                    user = Service.User.GetUser(mCLI.GetCurrentUser());
                 else
-                    user = mLukeBot.GetUser(args.Name);
+                    user = Service.User.GetUser(args.Name);
 
                 string newPwd = mCLI.Query(true, "New password");
                 string newPwdRepeat = mCLI.Query(true, "Repeat new password");
@@ -187,7 +182,7 @@ namespace LukeBot
                     return;
                 }
 
-                user.SetPassword(newPwd);*/
+                user.SetPasswordLocal(newPwd);
                 msg = "Password changed";
             }
             catch (System.Exception e)
@@ -196,17 +191,16 @@ namespace LukeBot
             }
         }
 
-        // LKTODO USER: reimplement
         void HandleUpdateUserCommand(UserUpdateCommand args, out string msg)
         {
             try
             {
-                /*UserContext user;
+                IUserContext user;
                 bool currentUser = (args.Name == null || args.Name.Length == 0);
                 if (currentUser)
-                    user = mLukeBot.GetUser(mCLI.GetCurrentUser());
+                    user = Service.User.GetUser(mCLI.GetCurrentUser());
                 else
-                    user = mLukeBot.GetUser(args.Name);
+                    user = Service.User.GetUser(args.Name);
 
                 user.SetPermissionLevel(args.PermissionLevel);
 
@@ -215,7 +209,7 @@ namespace LukeBot
 
                 mCLI.Message("Permission level set to " + args.PermissionLevel.ToString());
 
-                msg = "Changes to user " + user.Username + " applied.";*/
+                msg = "Changes to user " + user.GetUsername() + " applied.";
                 msg = "TODO";
             }
             catch (System.Exception e)
@@ -234,8 +228,8 @@ namespace LukeBot
 
                 string result = "";
                 Parser p = new Parser(with => with.HelpWriter = new CLIUtils.CLIMessageProxyTextWriter(cliProxy));
-                p.ParseArguments<UserAddCommand, UserListCommand, UserRemoveCommand, UserSwitchCommand, UserPasswordCommand, UserUpdateCommand>(args)
-                    .WithParsed<UserAddCommand>((UserAddCommand args) => HandleAddUserCommand(args, out result))
+                p.ParseArguments<UserCreateCommand, UserListCommand, UserRemoveCommand, UserSwitchCommand, UserPasswordCommand, UserUpdateCommand>(args)
+                    .WithParsed<UserCreateCommand>((UserCreateCommand args) => HandleCreateUserCommand(args, out result))
                     .WithParsed<UserListCommand>((UserListCommand args) => HandleListUsersCommand(args, out result))
                     .WithParsed<UserRemoveCommand>((UserRemoveCommand args) => HandleRemoveUserCommand(args, out result))
                     .WithParsed<UserSwitchCommand>((UserSwitchCommand args) => HandleSwitchUserCommand(args, out result))

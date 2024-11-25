@@ -255,8 +255,7 @@ namespace LukeBot
 
             try
             {
-                // LKTODO USER: reimplement
-                //mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(Module.ModuleType.Widget);
+                //Service.User.GetUser(CLI.GetCurrentUser()).EnableModule(Module.ModuleType.Widget);
                 msg = "Enabled module " + Module.ModuleType.Widget;
             }
             catch (System.Exception e)
@@ -271,8 +270,7 @@ namespace LukeBot
 
             try
             {
-                // LKTODO USER: reimplement
-                //mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(Module.ModuleType.Widget);
+                //Service.User.GetUser(CLI.GetCurrentUser()).DisableModule(Module.ModuleType.Widget);
                 msg = "Disabled module " + Module.ModuleType.Widget;
             }
             catch (System.Exception e)

@@ -1,6 +1,6 @@
 using LukeBot.Common;
 
-namespace LukeBot
+namespace LukeBot.User
 {
     public class UsernameNotAvailableException: Exception
     {

@@ -64,6 +64,9 @@ namespace LukeBot
             try
             {
                 ModuleType type = args.Type.GetModuleTypeEnum();
+
+                IUserContext user = Service.User.GetUser(CLI.GetCurrentUser());
+                //Service.ModuleManager.EnableModuleForUser(user, type);
                 //mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(type);
                 msg = "Enabled module " + type.ToString();
             }

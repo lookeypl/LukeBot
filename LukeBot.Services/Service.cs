@@ -16,7 +16,7 @@ namespace LukeBot.Services
         static private WidgetService mWidgetService = null;
         static private bool mInitialized = false;
 
-        static public UserModuleManager UserModuleManager
+        static public UserModuleManager ModuleManager
         {
             get
             {
@@ -86,6 +86,8 @@ namespace LukeBot.Services
 
         static public void Stop()
         {
+            mUserService.UnloadUsers();
+
             if (mTwitchService != null) mTwitchService.RequestShutdown();
             if (mWidgetService != null) mWidgetService.RequestShutdown();
 

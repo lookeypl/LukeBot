@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Logging;
-using LukeBot.Module;
 using LukeBot.Interface;
 using LukeBot.User.Common;
 using CommandLine;

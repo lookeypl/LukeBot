@@ -34,6 +34,11 @@ namespace LukeBot
         private string mCurrentUser = "";
 
 
+        private IUserService GetUserService()
+        {
+            return Service.Get(Constants.USER_MODULE_NAME) as IUserService;
+        }
+
         private void PreLogMessageEvent(object sender, LogMessageArgs args)
         {
             mMessageMutex.WaitOne();
@@ -116,7 +121,7 @@ namespace LukeBot
                     byte[] curPwdHash = hasher.ComputeHash(curPwdPlaintext);
                     byte[] newPwdHash = hasher.ComputeHash(newPwdPlaintext);
 
-                    if (!Service.User.ChangeUserPassword(currentUserName, curPwdHash, newPwdHash, out string reason))
+                    if (!GetUserService().ChangeUserPassword(currentUserName, curPwdHash, newPwdHash, out string reason))
                         return reason;
                     else
                         return "Password changed successfully.";

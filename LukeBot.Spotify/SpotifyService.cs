@@ -5,17 +5,16 @@ using LukeBot.Communication;
 using LukeBot.Communication.Common.Intercom;
 using LukeBot.Config;
 using LukeBot.Logging;
-using LukeBot.Module;
+using LukeBot.Services;
 using LukeBot.Spotify.Common;
 using CommonConstants = LukeBot.Common.Constants;
 
 
 namespace LukeBot.Spotify
 {
-    public class SpotifyService: IService
+    public class SpotifyService: ISpotifyService
     {
         private Dictionary<string, SpotifyUserModule> mModules = new();
-
 
         private bool UserModuleLoadPrerequisites(string lbUser)
         {
@@ -28,9 +27,10 @@ namespace LukeBot.Spotify
             if (!Conf.TryGet<string>(userSpotifyLoginProp, out string login))
             {
                 Logger.Log().Error("No login provided");
-                return false; // login is there, prerequisites are met
+                return false;
             }
 
+            // login is there, prerequisites are met
             return true;
         }
 
@@ -84,17 +84,22 @@ namespace LukeBot.Spotify
 
         public SpotifyService()
         {
-            Comms.Intermediary.Register(CommonConstants.SPOTIFY_MODULE_NAME);
+        }
 
-            EndpointInfo epInfo = new EndpointInfo(Endpoints.SPOTIFY_MAIN_MODULE, Intercom_ResponseAllocator);
-            epInfo.AddMessage(Messages.ADD_SONG_TO_QUEUE, Intercom_AddSongToQueueDelegate);
-            Comms.Intercom.Register(epInfo);
+        public string GetServiceName()
+        {
+            return CommonConstants.SPOTIFY_MODULE_NAME;
+        }
+
+        public IEnumerable<string> GetServiceDependencies()
+        {
+            return new List<String>{ CommonConstants.USER_MODULE_NAME };
         }
 
         public UserModuleDescriptor GetUserModuleDescriptor()
         {
             UserModuleDescriptor umd = new UserModuleDescriptor();
-            umd.Type = ModuleType.Spotify;
+            umd.Type = CommonConstants.SPOTIFY_MODULE_NAME;
             umd.LoadPrerequisite = UserModuleLoadPrerequisites;
             umd.Loader = UserModuleLoader;
             umd.Unloader = UserModuleUnloader;
@@ -105,6 +110,21 @@ namespace LukeBot.Spotify
         {
             // TODO
             throw new NotImplementedException("Updating login for Spotify modules not yet implemented");
+        }
+
+        public void Run()
+        {
+            // noop
+        }
+
+        public void RequestShutdown()
+        {
+            // noop
+        }
+
+        public void WaitForShutdown()
+        {
+            // noop
         }
     }
 }

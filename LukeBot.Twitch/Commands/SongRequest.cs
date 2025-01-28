@@ -6,7 +6,7 @@ using Command = LukeBot.Twitch.Common.Command;
 
 namespace LukeBot.Twitch.Command
 {
-    public class SongRequest: ICommand
+    public class SongRequest: Command::ICommand
     {
         private string mLBUser;
         private string mHelpMessage;

@@ -7,7 +7,7 @@ using Intercom = LukeBot.Communication.Common.Intercom;
 
 namespace LukeBot.Twitch.Command
 {
-    public class EditCommand: ICommand
+    public class EditCommand: Command::ICommand
     {
         public string mLBUser;
 

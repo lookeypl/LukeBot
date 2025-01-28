@@ -1,4 +1,4 @@
-namespace LukeBot.Module
+namespace LukeBot.Services
 {
     public class UserModuleDescriptor
     {
@@ -9,7 +9,7 @@ namespace LukeBot.Module
         /**
          * Name of the module that's being loaded.
          */
-        public ModuleType Type { get; set; }
+        public string Type { get; set; }
 
         /**
          * Delegate checking for any prerequisites a module might need before loading
@@ -42,7 +42,7 @@ namespace LukeBot.Module
 
         public UserModuleDescriptor()
         {
-            Type = ModuleType.Unknown;
+            Type = "";
             LoadPrerequisite = null;
             Loader = null;
         }

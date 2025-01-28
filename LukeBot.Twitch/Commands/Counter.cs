@@ -4,7 +4,7 @@ using Command = LukeBot.Twitch.Common.Command;
 
 namespace LukeBot.Twitch.Command
 {
-    public class Counter: ICommand
+    public class Counter: Command::ICommand
     {
         private int mCounter = 0;
 

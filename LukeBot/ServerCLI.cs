@@ -24,6 +24,11 @@ namespace LukeBot
 {
     internal class ServerCLI: CLIBase
     {
+        static internal IUserService GetUserService()
+        {
+            return Service.Get(Constants.USER_MODULE_NAME) as IUserService;
+        }
+
         private class ClientContext: CLIMessageProxy
         {
             public delegate void OnClientDoneDelegate(string cookie);
@@ -280,7 +285,7 @@ namespace LukeBot
                     mUsernamePromise.SetResult(mUsername);
 
                     byte[] pwdBuf = Convert.FromBase64String(loginMsg.PasswordHashBase64);
-                    PermissionLevel permLevel = Service.User.AuthenticateUser(loginMsg.User, pwdBuf, out string reason);
+                    PermissionLevel permLevel = GetUserService().AuthenticateUser(loginMsg.User, pwdBuf, out string reason);
                     if (permLevel == PermissionLevel.None)
                     {
                         // wait a few seconds to prevent replay attacks

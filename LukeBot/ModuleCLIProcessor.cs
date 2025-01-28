@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using LukeBot.Module;
 using LukeBot.Interface;
 using LukeBot.Services;
 using LukeBot.User.Common;
@@ -47,10 +46,10 @@ namespace LukeBot
             {
                 msg = "Enabled modules:";
 
-                List<ModuleType> modules = new(); //mLukeBot.GetUser(CLI.GetCurrentUser()).GetEnabledModules();
-                foreach (ModuleType m in modules)
+                List<string> modules = new(); //mLukeBot.GetUser(CLI.GetCurrentUser()).GetEnabledModules();
+                foreach (string m in modules)
                 {
-                    msg += "\n  " + m.ToConfString();
+                    msg += "\n  " + m;
                 }
             }
             catch (System.Exception e)
@@ -63,12 +62,10 @@ namespace LukeBot
         {
             try
             {
-                ModuleType type = args.Type.GetModuleTypeEnum();
-
-                IUserContext user = Service.User.GetUser(CLI.GetCurrentUser());
-                //Service.ModuleManager.EnableModuleForUser(user, type);
-                //mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(type);
-                msg = "Enabled module " + type.ToString();
+                //IUserContext user = Service.User.GetUser(CLI.GetCurrentUser());
+                //Service.ModuleManager.EnableModuleForUser(user, args.Type);
+                //mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(args.Type);
+                msg = "Enabled module " + args.Type;
             }
             catch (System.Exception e)
             {
@@ -80,9 +77,8 @@ namespace LukeBot
         {
             try
             {
-                ModuleType type = args.Type.GetModuleTypeEnum();
-                //mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(type);
-                msg = "Disabled module " + type.ToString();
+               //mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(args.Type);
+                msg = "Disabled module " + args.Type;
             }
             catch (System.Exception e)
             {

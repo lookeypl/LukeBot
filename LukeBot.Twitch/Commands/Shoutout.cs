@@ -7,7 +7,7 @@ using CommonConstants = LukeBot.Common.Constants;
 
 namespace LukeBot.Twitch.Command
 {
-    public class Shoutout: ICommand
+    public class Shoutout: Command::ICommand
     {
         private string mBotLogin;
 

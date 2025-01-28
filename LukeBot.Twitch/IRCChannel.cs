@@ -16,7 +16,7 @@ namespace LukeBot.Twitch
         private string mLBUser;
         private string mChannelName;
         private API.Twitch.GetUserData mUserData;
-        private Dictionary<string, Command.ICommand> mCommands = new();
+        private Dictionary<string, Command::ICommand> mCommands = new();
         private EmoteProvider mExternalEmotes = new();
         private BadgeCollection mChannelBadges;
         private int mMsgIDCounter = 0; // backup for when we don't have metadata
@@ -59,7 +59,7 @@ namespace LukeBot.Twitch
             }
 
             Logger.Log().Debug("Processing command {0}", cmd);
-            Command.ICommand c = mCommands[cmd];
+            Command::ICommand c = mCommands[cmd];
 
             if (!c.IsEnabled())
             {
@@ -225,7 +225,7 @@ namespace LukeBot.Twitch
             mMessageClearEventCallback.PublishEvent(message);
         }
 
-        public void AddCommand(string name, Command.ICommand command)
+        public void AddCommand(string name, Command::ICommand command)
         {
             if (mCommands.ContainsKey(name))
                 throw new ArgumentException(String.Format("Command {0} already exists for channel {1}", name, mChannelName));
@@ -243,7 +243,7 @@ namespace LukeBot.Twitch
 
         public void EditCommand(string name, string newValue)
         {
-            Command.ICommand cmd;
+            Command::ICommand cmd;
             if (!mCommands.TryGetValue(name, out cmd))
                 throw new ArgumentException(String.Format("Command {0} does not exist for channel {1}", name, mChannelName));
 
@@ -260,12 +260,12 @@ namespace LukeBot.Twitch
             mExternalEmotes.Refresh();
         }
 
-        public Dictionary<string, Command.ICommand> GetCommands()
+        public Dictionary<string, Command::ICommand> GetCommands()
         {
             return mCommands;
         }
 
-        public Command.ICommand GetCommand(string name)
+        public Command::ICommand GetCommand(string name)
         {
             return mCommands[name];
         }

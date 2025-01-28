@@ -84,11 +84,16 @@ namespace LukeBot
         private LukeBot mLukeBot;
         private CLIMessageProxy mCLI;
 
-        void HandleCreateUserCommand(UserCreateCommand args, out string msg)
+        private IUserService GetUserService()
+        {
+            return Service.Get(Common.Constants.USER_MODULE_NAME) as IUserService;
+        }
+
+        private void HandleCreateUserCommand(UserCreateCommand args, out string msg)
         {
             try
             {
-                Service.User.CreateNewUser(args.Name);
+                GetUserService().CreateNewUser(args.Name);
                 msg = "User " + args.Name + " added successfully";
             }
             catch (System.Exception e)
@@ -97,18 +102,18 @@ namespace LukeBot
             }
         }
 
-        void HandleListUsersCommand(UserListCommand args, out string msg)
+        private void HandleListUsersCommand(UserListCommand args, out string msg)
         {
             msg = "Available users:\n";
 
-            List<string> usernames = Service.User.GetUsernames();
+            List<string> usernames = GetUserService().GetUsernames();
             foreach (string u in usernames)
             {
-                msg += "  " + u + " (" + Service.User.GetUser(u).GetPermissionLevel().ToString() + ")\n";
+                msg += "  " + u + " (" + GetUserService().GetUser(u).GetPermissionLevel().ToString() + ")\n";
             }
         }
 
-        void HandleRemoveUserCommand(UserRemoveCommand args, out string msg)
+        private void HandleRemoveUserCommand(UserRemoveCommand args, out string msg)
         {
             if (!mCLI.Ask("Are you sure you want to remove user " + args.Name + "? This will remove all associated data!"))
             {
@@ -128,7 +133,7 @@ namespace LukeBot
                     // noop
                 }
 
-                Service.User.RemoveUser(args.Name);
+                GetUserService().RemoveUser(args.Name);
                 msg = "User " + args.Name + " removed.";
             }
             catch (System.Exception e)
@@ -137,12 +142,12 @@ namespace LukeBot
             }
         }
 
-        void HandleSwitchUserCommand(UserSwitchCommand args, out string msg)
+        private void HandleSwitchUserCommand(UserSwitchCommand args, out string msg)
         {
             try
             {
                 bool hasUsername = (args.Name != null && args.Name.Length > 0);
-                if (hasUsername && !Service.User.IsUsernameValid(args.Name))
+                if (hasUsername && !GetUserService().IsUsernameValid(args.Name))
                     throw new System.ArgumentException("Unknown/invalid username.");
 
                 mCLI.SetCurrentUser(args.Name);
@@ -162,16 +167,16 @@ namespace LukeBot
             }
         }
 
-        void HandlePasswordUserCommand(UserPasswordCommand args, out string msg)
+        private void HandlePasswordUserCommand(UserPasswordCommand args, out string msg)
         {
             try
             {
                 IUserContext user;
                 bool currentUser = (args.Name == null || args.Name.Length == 0);
                 if (currentUser)
-                    user = Service.User.GetUser(mCLI.GetCurrentUser());
+                    user = GetUserService().GetUser(mCLI.GetCurrentUser());
                 else
-                    user = Service.User.GetUser(args.Name);
+                    user = GetUserService().GetUser(args.Name);
 
                 string newPwd = mCLI.Query(true, "New password");
                 string newPwdRepeat = mCLI.Query(true, "Repeat new password");
@@ -191,16 +196,16 @@ namespace LukeBot
             }
         }
 
-        void HandleUpdateUserCommand(UserUpdateCommand args, out string msg)
+        private void HandleUpdateUserCommand(UserUpdateCommand args, out string msg)
         {
             try
             {
                 IUserContext user;
                 bool currentUser = (args.Name == null || args.Name.Length == 0);
                 if (currentUser)
-                    user = Service.User.GetUser(mCLI.GetCurrentUser());
+                    user = GetUserService().GetUser(mCLI.GetCurrentUser());
                 else
-                    user = Service.User.GetUser(args.Name);
+                    user = GetUserService().GetUser(args.Name);
 
                 user.SetPermissionLevel(args.PermissionLevel);
 

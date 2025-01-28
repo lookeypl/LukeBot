@@ -2,7 +2,7 @@ using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Config;
 using LukeBot.Logging;
-using LukeBot.Module;
+using LukeBot.Services;
 using LukeBot.User.Common;
 using System;
 using System.Linq;
@@ -11,11 +11,10 @@ using System.Collections.Generic;
 
 namespace LukeBot.User
 {
-    public class UserService: IService
+    public class UserService: IUserService
     {
         private Dictionary<string, UserContext> mUsers = new();
         private object mUsersLock = new();
-        private UserModuleManager mUMD = null;
 
         private void AddUserToConfig(string name)
         {
@@ -49,8 +48,19 @@ namespace LukeBot.User
             mUsers.Add(username, new UserContext(username));
         }
 
+
         public UserService()
         {
+        }
+
+        public string GetServiceName()
+        {
+            return Constants.USER_MODULE_NAME;
+        }
+
+        public IEnumerable<string> GetServiceDependencies()
+        {
+            return null;
         }
 
         public void LoadUsers()
@@ -201,10 +211,22 @@ namespace LukeBot.User
         // unused??
         public UserModuleDescriptor GetUserModuleDescriptor()
         {
-            UserModuleDescriptor umd = new();
-            umd.Type = ModuleType.User;
+            return null;
+        }
 
-            return umd;
+        public void Run()
+        {
+            LoadUsers();
+        }
+
+        public void RequestShutdown()
+        {
+            // noop
+        }
+
+        public void WaitForShutdown()
+        {
+            // noop
         }
     }
 }

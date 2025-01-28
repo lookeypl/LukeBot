@@ -4,7 +4,7 @@ using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Services;
 using LukeBot.Interface;
-using LukeBot.Module;
+using LukeBot.Spotify.Common;
 using LukeBot.User.Common;
 using CommandLine;
 
@@ -58,13 +58,23 @@ namespace LukeBot
             }
         }
 
+        private IUserContext GetCurrentUser(CLIMessageProxy CLI)
+        {
+            return (Service.Get(Constants.USER_MODULE_NAME) as IUserService).GetUser(CLI.GetCurrentUser());
+        }
+
+        private ISpotifyService GetService()
+        {
+            return Service.Get(Constants.SPOTIFY_MODULE_NAME) as ISpotifyService;
+        }
+
         private void HandleLoginSubverb(SpotifyLoginSubverb arg, CLIMessageProxy CLI, out string result)
         {
             result = "";
 
             try
             {
-                //Service.Spotify.UpdateLoginForUser(mLukeBot.GetUser(CLI.GetCurrentUser()).Username, arg.Login);
+                GetService().UpdateLoginForUser(GetCurrentUser(CLI).GetUsername(), arg.Login);
                 result = "Successfully updated Spotify login.";
             }
             catch (System.Exception e)
@@ -80,8 +90,8 @@ namespace LukeBot
             try
             {
                 CheckForLogin(CLI);
-                //mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(ModuleType.Spotify);
-                msg = "Enabled module " + ModuleType.Spotify;
+                //mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(Constants.SPOTIFY_MODULE_NAME);
+                msg = "Enabled module " + Constants.SPOTIFY_MODULE_NAME;
             }
             catch (System.Exception e)
             {
@@ -95,8 +105,8 @@ namespace LukeBot
 
             try
             {
-                //mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(ModuleType.Spotify);
-                msg = "Disabled module " + ModuleType.Spotify;
+                //mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(Constants.SPOTIFY_MODULE_NAME);
+                msg = "Disabled module " + Constants.SPOTIFY_MODULE_NAME;
             }
             catch (System.Exception e)
             {

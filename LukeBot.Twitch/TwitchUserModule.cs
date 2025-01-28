@@ -5,11 +5,12 @@ using LukeBot.API;
 using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Logging;
-using LukeBot.Module;
+using LukeBot.Services;
 using LukeBot.Twitch.EventSub;
 using LukeBot.Twitch.Common;
 using Widget = LukeBot.Widget;
 
+using CommonConstants = LukeBot.Common.Constants;
 
 namespace LukeBot.Twitch
 {
@@ -107,9 +108,9 @@ namespace LukeBot.Twitch
             Comms.Event.User(mLBUser).RemoveEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser));
         }
 
-        public ModuleType GetModuleType()
+        public string GetModuleType()
         {
-            return ModuleType.Twitch;
+            return CommonConstants.TWITCH_MODULE_NAME;
         }
     }
 }

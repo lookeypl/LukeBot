@@ -4,8 +4,10 @@ using System.Net.WebSockets;
 using System.Threading.Tasks;
 using LukeBot.Config;
 using LukeBot.Logging;
-using LukeBot.Module;
+using LukeBot.Services;
 using LukeBot.Widget.Common;
+
+using CommonConstants = LukeBot.Common.Constants;
 
 
 namespace LukeBot.Widget
@@ -286,9 +288,9 @@ namespace LukeBot.Widget
         {
         }
 
-        public ModuleType GetModuleType()
+        public string GetModuleType()
         {
-            return ModuleType.Widget;
+            return CommonConstants.WIDGET_MODULE_NAME;
         }
     }
 }

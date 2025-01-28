@@ -5,7 +5,7 @@ using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Services;
 using LukeBot.Interface;
-using LukeBot.Module;
+using LukeBot.Twitch.Common;
 using LukeBot.User.Common;
 using CommandLine;
 
@@ -42,6 +42,16 @@ namespace LukeBot
         private TwitchCommandCLIProcessor mCommandCLIProcessor;
         private LukeBot mLukeBot;
 
+        private ITwitchService GetTwitchService()
+        {
+            return Service.Get(Common.Constants.TWITCH_MODULE_NAME) as ITwitchService;
+        }
+
+        private IUserService GetUserService()
+        {
+            return Service.Get(Common.Constants.USER_MODULE_NAME) as IUserService;
+        }
+
         private void CheckForLogin(CLIMessageProxy CLI)
         {
             Path path = Path.Start()
@@ -71,7 +81,7 @@ namespace LukeBot
         {
             try
             {
-                Service.Twitch.RefreshEmotesForUser(CLI.GetCurrentUser());
+                GetTwitchService().RefreshEmotesForUser(CLI.GetCurrentUser());
                 result = "Emotes refreshed";
             }
             catch (System.Exception e)
@@ -92,7 +102,7 @@ namespace LukeBot
 
             try
             {
-                Service.Twitch.UpdateLoginForUser(CLI.GetCurrentUser(), args[0]);
+                GetTwitchService().UpdateLoginForUser(CLI.GetCurrentUser(), args[0]);
                 result = "Successfully updated Twitch login.";
             }
             catch (System.Exception e)
@@ -101,7 +111,6 @@ namespace LukeBot
             }
         }
 
-        // LKTODO USER: reimplement
         public void HandleEnableSubverb(TwitchEnableSubverb arg, CLIMessageProxy CLI, out string msg)
         {
             msg = "";
@@ -109,8 +118,8 @@ namespace LukeBot
             try
             {
                 CheckForLogin(CLI);
-                //mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(ModuleType.Twitch);
-                msg = "Enabled module " + ModuleType.Twitch;
+                GetUserService().GetUser(CLI.GetCurrentUser()).EnableModule(Constants.TWITCH_MODULE_NAME);
+                msg = "Enabled module " + Constants.TWITCH_MODULE_NAME;
             }
             catch (System.Exception e)
             {
@@ -118,15 +127,14 @@ namespace LukeBot
             }
         }
 
-        // LKTODO USER: reimplement
         public void HandleDisableSubverb(TwitchDisableSubverb arg, CLIMessageProxy CLI, out string msg)
         {
             msg = "";
 
             try
             {
-                //mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(ModuleType.Twitch);
-                msg = "Disabled module " + ModuleType.Twitch;
+                GetUserService().GetUser(CLI.GetCurrentUser()).DisableModule(Constants.TWITCH_MODULE_NAME);
+                msg = "Disabled module " + Constants.TWITCH_MODULE_NAME;
             }
             catch (System.Exception e)
             {

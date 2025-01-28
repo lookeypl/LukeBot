@@ -1,11 +1,8 @@
-using LukeBot.Twitch.Common.Command;
-
-
-namespace LukeBot.Twitch.Command
+namespace LukeBot.Twitch.Common.Command
 {
     public abstract class ICommand
     {
-        internal delegate void UpdateConfigDelegate(string commandName);
+        public delegate void UpdateConfigDelegate(string commandName);
 
         protected string mName;
         protected ChatUser mPrivilegeLevel;
@@ -32,7 +29,7 @@ namespace LukeBot.Twitch.Command
             mUpdateConfig(mName);
         }
 
-        internal void SetUpdateConfigDelegate(UpdateConfigDelegate d)
+        public void SetUpdateConfigDelegate(UpdateConfigDelegate d)
         {
             mUpdateConfig = d;
         }

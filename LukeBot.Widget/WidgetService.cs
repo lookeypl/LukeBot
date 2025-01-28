@@ -4,14 +4,16 @@ using System.Diagnostics;
 using System.Threading;
 using LukeBot.Communication;
 using LukeBot.Logging;
-using LukeBot.Module;
+using LukeBot.Services;
 using LukeBot.Widget.Common;
 using Intercom = LukeBot.Communication.Common.Intercom;
+
+using CommonConstants = LukeBot.Common.Constants;
 
 
 namespace LukeBot.Widget
 {
-    public class WidgetService: IService
+    public class WidgetService: IWidgetService
     {
         private Dictionary<string, WidgetUserModule> mUsers = new();
         private Dictionary<string, string> mWidgetIDToUser = new();
@@ -107,6 +109,16 @@ namespace LukeBot.Widget
             Comms.Intercom.Register(widgetManagerInfo);
         }
 
+        public string GetServiceName()
+        {
+            return CommonConstants.WIDGET_MODULE_NAME;
+        }
+
+        public IEnumerable<string> GetServiceDependencies()
+        {
+            return new List<String> { "twitch", "spotify", "user" };
+        }
+
         public WidgetUserModule LoadWidgetUserModule(string lbUser)
         {
             if (mUsers.ContainsKey(lbUser))
@@ -171,7 +183,7 @@ namespace LukeBot.Widget
         public UserModuleDescriptor GetUserModuleDescriptor()
         {
             UserModuleDescriptor umd = new UserModuleDescriptor();
-            umd.Type = ModuleType.Widget;
+            umd.Type = CommonConstants.WIDGET_MODULE_NAME;
             umd.LoadPrerequisite = null;
             umd.Loader = UserModuleLoader;
             umd.Unloader = UserModuleUnloader;

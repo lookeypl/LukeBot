@@ -58,7 +58,7 @@ namespace LukeBot
             UserInterface.Teardown();
 
             Logger.Log().Info("Stopping Services...");
-            Service.Stop();
+            Service.Teardown();
 
             Logger.Log().Info("Stopping web endpoint...");
             Endpoint.Endpoint.StopThread();
@@ -90,6 +90,10 @@ namespace LukeBot
 
                 Logger.Log().Info("Initializing Services...");
                 Service.Initialize();
+                Service.Register(new User.UserService());
+                Service.Register(new Twitch.TwitchService());
+                Service.Register(new Spotify.SpotifyService());
+                Service.Register(new Widget.WidgetService());
 
                 InterfaceType uiType = opts.CLI;
                 Logger.Log().Info("Initializing UI {0}...", uiType.ToString());
@@ -97,9 +101,6 @@ namespace LukeBot
 
                 Logger.Log().Info("Running Services...");
                 Service.Run();
-
-                Logger.Log().Info("Loading Users...");
-                Service.User.LoadUsers();
 
                 Logger.Log().Info("Giving control to UI");
                 AddCLICommands();

@@ -1,10 +1,10 @@
 using LukeBot.Common;
 
-namespace LukeBot.Module
+namespace LukeBot.Services
 {
     public class PrerequisiteNotMetException: Exception
     {
-        public PrerequisiteNotMetException(ModuleType type)
+        public PrerequisiteNotMetException(string type)
             : base(string.Format("Prerequisite for module {0} not met", type))
         {
         }

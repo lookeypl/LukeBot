@@ -3,7 +3,7 @@ using Command = LukeBot.Twitch.Common.Command;
 
 namespace LukeBot.Twitch.Command
 {
-    public class Print: ICommand
+    public class Print: Command::ICommand
     {
         private string mMessage = "";
 

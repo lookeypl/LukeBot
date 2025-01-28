@@ -8,6 +8,12 @@ namespace LukeBot.User.Common
         public string GetUsername();
         public PermissionLevel GetPermissionLevel();
 
+        // Enable a module
+        public void EnableModule(string module);
+
+        // Disable a module
+        public void DisableModule(string module);
+
         // Set a new password based on a received hash. This path should
         // be taken only by remote connections (aka. via ServerCLI)
         public void SetPassword(byte[] passwordHash);

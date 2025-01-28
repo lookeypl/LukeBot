@@ -1,20 +1,25 @@
-using LukeBot.Module;
-using LukeBot.Spotify;
-using LukeBot.Twitch;
-using LukeBot.User;
-using LukeBot.Widget;
+using System.Collections.Generic;
+using System.Linq;
+using LukeBot.Logging;
 
 
 namespace LukeBot.Services
 {
     public class Service
     {
+        private class ServiceDesc
+        {
+            public IService service = null;
+            public List<string> dependencyNames = new();
+            public List<IService> dependencies = new();
+            public bool initialized = false;
+
+            public ServiceDesc() {}
+        }
+
         static private UserModuleManager mModuleManager = null;
-        static private SpotifyService mSpotifyService = null;
-        static private TwitchService mTwitchService = null;
-        static private UserService mUserService = null;
-        static private WidgetService mWidgetService = null;
         static private bool mInitialized = false;
+        static private Dictionary<string, ServiceDesc> mServices = new();
 
         static public UserModuleManager ModuleManager
         {
@@ -24,84 +29,88 @@ namespace LukeBot.Services
             }
         }
 
-        static public SpotifyService Spotify
-        {
-            get
-            {
-                return mSpotifyService;
-            }
-        }
-
-        static public TwitchService Twitch
-        {
-            get
-            {
-                return mTwitchService;
-            }
-        }
-
-        static public UserService User
-        {
-            get
-            {
-                return mUserService;
-            }
-        }
-
-        static public WidgetService Widget
-        {
-            get
-            {
-                return mWidgetService;
-            }
-        }
-
         static public void Initialize()
         {
             if (mInitialized)
                 return;
 
             mModuleManager = new UserModuleManager();
-            mUserService = new UserService();
-
-            mSpotifyService = new SpotifyService();
-            mTwitchService = new TwitchService();
-            mWidgetService = new WidgetService();
-
-            mModuleManager.RegisterUserModule(mSpotifyService.GetUserModuleDescriptor());
-            mModuleManager.RegisterUserModule(mTwitchService.GetUserModuleDescriptor());
-            mModuleManager.RegisterUserModule(mWidgetService.GetUserModuleDescriptor());
 
             mInitialized = true;
         }
 
-        static public void Run()
+        static private void RunService(ServiceDesc sd)
         {
-            mTwitchService.Run();
-            mWidgetService.Run();
+            if (sd.initialized) return;
 
-            // wait until modules are ready
-            mTwitchService.AwaitIRCLoggedIn(60 * 1000);
+            if (sd.dependencies != null)
+            {
+                foreach (ServiceDesc depsd in sd.dependencies)
+                {
+                    RunService(depsd);
+                }
+            }
+
+            sd.service.Run();
+            sd.initialized = true;
         }
 
-        static public void Stop()
+        static private void ResolveDependencies()
         {
-            mUserService.UnloadUsers();
 
-            if (mTwitchService != null) mTwitchService.RequestShutdown();
-            if (mWidgetService != null) mWidgetService.RequestShutdown();
+        }
 
-            if (mTwitchService != null) mTwitchService.WaitForShutdown();
-            if (mWidgetService != null) mWidgetService.WaitForShutdown();
+        static public void Run()
+        {
+            ResolveDependencies();
+
+            foreach (ServiceDesc sd in mServices.Values)
+            {
+                try
+                {
+                    RunService(sd);
+                }
+                catch (System.Exception e)
+                {
+                    Logger.Log().Error("Failed to run service {0}: {1} - {2}", sd.service.GetServiceName(), e.GetType().ToString(), e.Message);
+                }
+            }
+        }
+
+        static public void Register(IService service)
+        {
+            string name = service.GetServiceName();
+            if (mServices.ContainsKey(name))
+            {
+                throw new ServiceAlreadyRegisteredException(name);
+            }
+
+            IEnumerable<string> dependencies = service.GetServiceDependencies();
+
+            ServiceDesc sd = new();
+            sd.service = service;
+            sd.dependencyNames = dependencies != null ? Enumerable.ToList<string>(dependencies) : null;
+
+            mServices.Add(name, sd);
+        }
+
+        static public IService Get(string name)
+        {
+            return mServices[name].service;
         }
 
         static public void Teardown()
         {
-            mSpotifyService = null;
-            mTwitchService = null;
-            mWidgetService = null;
+            foreach (ServiceDesc sd in mServices.Values)
+            {
+                sd.service.RequestShutdown();
+            }
 
-            mUserService = null;
+            foreach (ServiceDesc sd in mServices.Values)
+            {
+                sd.service.WaitForShutdown();
+                sd.initialized = false;
+            }
 
             mInitialized = false;
         }

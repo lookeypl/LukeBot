@@ -5,7 +5,6 @@ using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Services;
 using LukeBot.Interface;
-using LukeBot.Module;
 using LukeBot.User.Common;
 using CommandLine;
 

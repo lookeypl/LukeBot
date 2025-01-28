@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using LukeBot.Services;
+using LukeBot.Twitch.Common;
 using LukeBot.Twitch.Common.Command;
-using Command = LukeBot.Twitch.Common.Command;
+using TwitchCommand = LukeBot.Twitch.Common.Command;
 using CommandLine;
 
 
@@ -18,7 +19,7 @@ namespace LukeBot
             "Type of command to add. Available command types: " +
             "  print, shoutout, addcom, editcom, delcom, counter, songrequest"
         )]
-        public Command::Type Type { get; set; }
+        public TwitchCommand::Type Type { get; set; }
 
         [Value(2, MetaName = "value", Required = false, HelpText = "Value for the command.")]
         public IEnumerable<string> Value { get; set; }
@@ -26,7 +27,7 @@ namespace LukeBot
         public TwitchAddCommand()
         {
             Name = "";
-            Type = Command::Type.print;
+            Type = TwitchCommand::Type.print;
         }
     }
 
@@ -110,6 +111,11 @@ namespace LukeBot
     {
         private LukeBot mLukeBot;
 
+        private ITwitchService GetTwitchService()
+        {
+            return Service.Get(Common.Constants.TWITCH_MODULE_NAME) as ITwitchService;
+        }
+
         internal TwitchCommandCLIProcessor(LukeBot lb)
         {
             mLukeBot = lb;
@@ -121,14 +127,14 @@ namespace LukeBot
             {
                 string lbUser = CLI.GetCurrentUser();
 
-                Twitch.Command.ICommand twCmd = Service.Twitch.AllocateCommand(lbUser, cmd.Name, cmd.Type, string.Join(' ', cmd.Value));
+                TwitchCommand.ICommand twCmd = GetTwitchService().AllocateCommand(lbUser, cmd.Name, cmd.Type, string.Join(' ', cmd.Value));
                 if (twCmd == null)
                 {
                     msg = "Invalid command type";
                     return;
                 }
 
-                Service.Twitch.AddCommandToChannel(lbUser, cmd.Name, twCmd);
+                GetTwitchService().AddCommandToChannel(lbUser, cmd.Name, twCmd);
             }
             catch (System.Exception e)
             {
@@ -144,7 +150,7 @@ namespace LukeBot
             try
             {
                 string lbUser = CLI.GetCurrentUser();
-                Service.Twitch.DeleteCommandFromChannel(lbUser, cmd.Name);
+                GetTwitchService().DeleteCommandFromChannel(lbUser, cmd.Name);
             }
             catch (System.Exception e)
             {
@@ -160,7 +166,7 @@ namespace LukeBot
             try
             {
                 string lbUser = CLI.GetCurrentUser();
-                Service.Twitch.EditCommandFromChannel(lbUser, cmd.Name, string.Join(' ', cmd.Value));
+                GetTwitchService().EditCommandFromChannel(lbUser, cmd.Name, string.Join(' ', cmd.Value));
             }
             catch (System.Exception e)
             {
@@ -179,9 +185,9 @@ namespace LukeBot
 
                 msg = "Available commands:\n";
 
-                List<Command::Descriptor> cmds = Service.Twitch.GetCommandDescriptors(lbUser);
+                List<TwitchCommand::Descriptor> cmds = GetTwitchService().GetCommandDescriptors(lbUser);
 
-                foreach (Command::Descriptor c in cmds)
+                foreach (TwitchCommand::Descriptor c in cmds)
                 {
                     msg += String.Format("  {0} ({1})\n", c.Name, c.Type.ToString());
                 }
@@ -200,7 +206,7 @@ namespace LukeBot
 
                 if (cmd.List)
                 {
-                    Command::Descriptor d = Service.Twitch.GetCommandDescriptor(lbUser, cmd.Name);
+                    TwitchCommand::Descriptor d = GetTwitchService().GetCommandDescriptor(lbUser, cmd.Name);
 
                     msg = "Modifiers of Twitch command " + cmd.Name + ":\n";
                     msg += "  Privileges: " + d.Privilege.GetStringRepresentation();
@@ -208,33 +214,33 @@ namespace LukeBot
                 }
                 else if (cmd.Allowed != null && cmd.Allowed.Length > 0)
                 {
-                    Command::ChatUser priv = cmd.Allowed.ToUserEnum();
+                    TwitchCommand::ChatUser priv = cmd.Allowed.ToUserEnum();
                     if (priv == 0)
                     {
                         msg = "Invalid privilege list: " + cmd.Allowed;
                         return;
                     }
 
-                    Service.Twitch.AllowPrivilegeInCommand(lbUser, cmd.Name, priv);
+                    GetTwitchService().AllowPrivilegeInCommand(lbUser, cmd.Name, priv);
                     msg = "Command " + cmd.Name + " modified";
                     return;
                 }
                 else if (cmd.Denied != null && cmd.Denied.Length > 0)
                 {
-                    Command::ChatUser priv = cmd.Denied.ToUserEnum();
+                    TwitchCommand::ChatUser priv = cmd.Denied.ToUserEnum();
                     if (priv == 0)
                     {
                         msg = "Invalid privilege list: " + cmd.Allowed;
                         return;
                     }
 
-                    Service.Twitch.DenyPrivilegeInCommand(lbUser, cmd.Name, priv);
+                    GetTwitchService().DenyPrivilegeInCommand(lbUser, cmd.Name, priv);
                     msg = "Command " + cmd.Name + " modified";
                     return;
                 }
                 else if (cmd.Enabled != null)
                 {
-                    Service.Twitch.SetCommandEnabled(lbUser, cmd.Name, (bool)cmd.Enabled);
+                    GetTwitchService().SetCommandEnabled(lbUser, cmd.Name, (bool)cmd.Enabled);
                     msg = "Command " + cmd.Name + " " + ((bool)cmd.Enabled ? "enabled" : "disabled");
                 }
                 else

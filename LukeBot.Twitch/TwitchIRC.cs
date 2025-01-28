@@ -390,7 +390,7 @@ namespace LukeBot.Twitch
             mChannelsMutex.ReleaseMutex();
         }
 
-        public void AddCommandToChannel(string channel, string commandName, Command.ICommand command)
+        public void AddCommandToChannel(string channel, string commandName, Command::ICommand command)
         {
             mChannelsMutex.WaitOne();
 
@@ -452,8 +452,8 @@ namespace LukeBot.Twitch
                 throw new UnknownChannelException(channel);
             }
 
-            Dictionary<string, Command.ICommand> cmds = mChannels[channel].GetCommands();
-            foreach (Command.ICommand cmd in cmds.Values)
+            Dictionary<string, Command::ICommand> cmds = mChannels[channel].GetCommands();
+            foreach (Command::ICommand cmd in cmds.Values)
                 cmdDescs.Add(cmd.ToDescriptor());
 
             mChannelsMutex.ReleaseMutex();

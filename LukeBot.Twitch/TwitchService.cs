@@ -4,7 +4,7 @@ using LukeBot.API;
 using LukeBot.Communication;
 using LukeBot.Config;
 using LukeBot.Logging;
-using LukeBot.Module;
+using LukeBot.Services;
 using LukeBot.Twitch.Common;
 
 using CommonConstants = LukeBot.Common.Constants;
@@ -15,7 +15,7 @@ using Intercom = LukeBot.Communication.Common.Intercom;
 
 namespace LukeBot.Twitch
 {
-    public class TwitchService: IService
+    public class TwitchService: ITwitchService
     {
         private string mBotLogin;
         private Token mToken;
@@ -71,7 +71,7 @@ namespace LukeBot.Twitch
             }
         }
 
-        private void SaveCommandToConfig(string lbUser, string name, Command.ICommand cmd)
+        private void SaveCommandToConfig(string lbUser, string name, Command::ICommand cmd)
         {
             Command::Descriptor desc = cmd.ToDescriptor();
 
@@ -193,6 +193,16 @@ namespace LukeBot.Twitch
             Comms.Intercom.Register(epInfo);
         }
 
+        public string GetServiceName()
+        {
+            return CommonConstants.TWITCH_MODULE_NAME;
+        }
+
+        public IEnumerable<string> GetServiceDependencies()
+        {
+            return new List<String> { "user" };
+        }
+
         public TwitchUserModule JoinChannel(string lbUser)
         {
             string channel = Conf.Get<string>(Path.Start()
@@ -246,16 +256,16 @@ namespace LukeBot.Twitch
             Logger.Log().Secure("Parted channel twitch ID: {0}", module.GetUserData().id);
         }
 
-        public void AddCommandToChannel(string lbUser, string commandName, Command.ICommand command)
+        public void AddCommandToChannel(string lbUser, string commandName, Command::ICommand command)
         {
             string twitchChannel = GetTwitchChannel(lbUser);
             mIRC.AddCommandToChannel(twitchChannel, commandName, command);
             SaveCommandToConfig(lbUser, commandName, command);
         }
 
-        public Twitch.Command.ICommand AllocateCommand(string lbUser, Command::Descriptor d)
+        public Command::ICommand AllocateCommand(string lbUser, Command::Descriptor d)
         {
-            Twitch.Command.ICommand cmd = null;
+            Command::ICommand cmd = null;
 
             switch (d.Type)
             {
@@ -273,7 +283,7 @@ namespace LukeBot.Twitch
             return cmd;
         }
 
-        public Twitch.Command.ICommand AllocateCommand(string lbUser, string name, Command::Type type, string value)
+        public Command::ICommand AllocateCommand(string lbUser, string name, Command::Type type, string value)
         {
             return AllocateCommand(lbUser, new Command::Descriptor(name, type, value));
         }
@@ -347,7 +357,7 @@ namespace LukeBot.Twitch
         public UserModuleDescriptor GetUserModuleDescriptor()
         {
             UserModuleDescriptor umd = new UserModuleDescriptor();
-            umd.Type = ModuleType.Twitch;
+            umd.Type = CommonConstants.TWITCH_MODULE_NAME;
             umd.LoadPrerequisite = UserModuleLoadPrerequisites;
             umd.Loader = UserModuleLoader;
             umd.Unloader = UserModuleUnloader;

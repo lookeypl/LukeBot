@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Logging;
-using LukeBot.Module;
+using LukeBot.Services;
 using LukeBot.User.Common;
 
 
@@ -14,7 +14,7 @@ namespace LukeBot.User
         private Guid mGUID;
         private string mUsername;
 
-        private Dictionary<ModuleType, IUserModule> mModules = new();
+        private Dictionary<string, IUserModule> mModules = new();
         private object mLock = new();
         private PermissionLevel mPermissionLevel = PermissionLevel.None;
         private PasswordData mPasswordData = null;
@@ -132,25 +132,26 @@ namespace LukeBot.User
 
             ConfUtil.ArrayRemove(modulesProp, module);
         }
-/*
-        private IUserModule LoadModule(ModuleType type)
+
+        private IUserModule CreateUserModule(string type)
         {
-            IUserModule m = Service.UserModuleManager.Create(type, mUsername);
+            /*IUserModule m = Service.UserModuleManager.Create(type, mUsername);
             mModules.Add(type, m);
-            return m;
+            return m;*/
+            return null;
         }
 
-        private void UnloadModule(ModuleType type)
+        private void RemoveUserModule(string type)
         {
-            IUserModule m = mModules[type];
+            /*IUserModule m = mModules[type];
 
             Service.UserModuleManager.Unload(m);
             m.RequestShutdown();
             m.WaitForShutdown();
 
-            mModules.Remove(type);
+            mModules.Remove(type);*/
         }
-*/
+
 
         public UserContext(string user)
         {
@@ -174,7 +175,7 @@ namespace LukeBot.User
             return mUsername;
         }
 
-        public void EnableModule(ModuleType module)
+        public void EnableModule(string module)
         {
             //IUserModule m;
 
@@ -185,14 +186,14 @@ namespace LukeBot.User
                     throw new ModuleEnabledException(module, mUsername);
                 }
 
-                //m = LoadModule(module);
-                AddModuleToConfig(module.ToConfString());
+                //m = CreateUserModule(module);
+                AddModuleToConfig(module);
 
                 //m.Run();
             }
         }
 
-        public void DisableModule(ModuleType module)
+        public void DisableModule(string module)
         {
             lock (mLock)
             {
@@ -201,17 +202,17 @@ namespace LukeBot.User
                     throw new ModuleDisabledException(module, mUsername);
                 }
 
-                //UnloadModule(module);
-                RemoveModuleFromConfig(module.ToConfString());
+                //RemoveUserModule(module);
+                RemoveModuleFromConfig(module);
             }
         }
 
-        public List<ModuleType> GetEnabledModules()
+        public List<string> GetEnabledModules()
         {
             lock (mLock)
             {
-                List<ModuleType> enabledModules = new(mModules.Keys.Count);
-                foreach (ModuleType m in mModules.Keys)
+                List<string> enabledModules = new(mModules.Keys.Count);
+                foreach (string m in mModules.Keys)
                     enabledModules.Add(m);
                 return enabledModules;
             }

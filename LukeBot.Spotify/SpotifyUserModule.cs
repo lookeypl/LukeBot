@@ -4,13 +4,13 @@ using System.Net;
 using LukeBot.Logging;
 using LukeBot.API;
 using LukeBot.Config;
-using LukeBot.Module;
+using LukeBot.Spotify.Common;
 using CommonConstants = LukeBot.Common.Constants;
 using System.Net.Http;
 
 namespace LukeBot.Spotify
 {
-    public class SpotifyUserModule: IUserModule
+    public class SpotifyUserModule: ISpotifyUserModule
     {
         internal string LBUser { get; private set; }
         private string mSpotifyUsername;
@@ -147,9 +147,9 @@ namespace LukeBot.Spotify
             mNowPlaying.Wait();
         }
 
-        public ModuleType GetModuleType()
+        public string GetModuleType()
         {
-            return ModuleType.Spotify;
+            return CommonConstants.SPOTIFY_MODULE_NAME;
         }
     }
 }

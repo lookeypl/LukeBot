@@ -128,12 +128,18 @@ namespace LukeBot.Spotify
 
         public void RequestShutdown()
         {
-            // noop
+            foreach (SpotifyUserModule um in mModules.Values)
+            {
+                um.RequestShutdown();
+            }
         }
 
         public void WaitForShutdown()
         {
-            // noop
+            foreach (SpotifyUserModule um in mModules.Values)
+            {
+                um.WaitForShutdown();
+            }
         }
     }
 }

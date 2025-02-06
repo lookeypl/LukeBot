@@ -192,20 +192,15 @@ namespace LukeBot.Widget
         {
             mService = service;
             mLBUser = lbUser;
-
-            LoadWidgetsFromConfig();
         }
 
         ~WidgetUserModule()
         {
         }
 
-        public void Init()
-        {
-        }
-
         public void Run()
         {
+            LoadWidgetsFromConfig();
         }
 
         public string AddWidget(WidgetType type, string name)

@@ -59,6 +59,7 @@ namespace LukeBot.Widget
             }
 
             WidgetUserModule user = new WidgetUserModule(this, lbUser);
+            user.Run();
 
             Logger.Log().Debug("Got {0} widgets for user {1}", user.ListWidgets().Count(), lbUser);
 

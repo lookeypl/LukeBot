@@ -79,6 +79,8 @@ namespace LukeBot.Spotify
         public IUserModule CreateModule(IUserContext user)
         {
             SpotifyUserModule module = new(user.GetUsername());
+            module.Run();
+
             mModules.Add(user.GetUsername(), module);
             CommonUtils.AddUserModuleToConfig(CommonConstants.SPOTIFY_SERVICE_NAME, user.GetUsername());
             return module;

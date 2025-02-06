@@ -27,7 +27,7 @@ namespace LukeBot.Twitch
         private EventSubClient mEventSub;
 
 
-        private Path GetCommandCollectionPropertyName(string lbUser)
+        private Path GetCommandCollectionPropertyName()
         {
             return Path.Start()
                 .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
@@ -48,7 +48,7 @@ namespace LukeBot.Twitch
 
         private void UpdateCommandInConfig(string commandName)
         {
-            Path cmdCollectionProp = GetCommandCollectionPropertyName(mLBUser);
+            Path cmdCollectionProp = GetCommandCollectionPropertyName();
 
             Command::Descriptor[] commands = Conf.Get<Command::Descriptor[]>(cmdCollectionProp);
 
@@ -59,7 +59,7 @@ namespace LukeBot.Twitch
 
         private void LoadCommandsFromConfig()
         {
-            Path cmdCollectionProp = GetCommandCollectionPropertyName(mLBUser);
+            Path cmdCollectionProp = GetCommandCollectionPropertyName();
 
             Command::Descriptor[] commands;
             if (!Conf.TryGet<Command::Descriptor[]>(cmdCollectionProp, out commands))
@@ -76,13 +76,13 @@ namespace LukeBot.Twitch
         {
             Command::Descriptor desc = cmd.ToDescriptor();
 
-            Path cmdCollectionProp = GetCommandCollectionPropertyName(mLBUser);
+            Path cmdCollectionProp = GetCommandCollectionPropertyName();
             ConfUtil.ArrayAppend(cmdCollectionProp, desc, new Command::DescriptorComparer());
         }
 
         private void RemoveCommandFromConfig(string name)
         {
-            Path cmdCollectionProp = GetCommandCollectionPropertyName(mLBUser);
+            Path cmdCollectionProp = GetCommandCollectionPropertyName();
             ConfUtil.ArrayRemove<Command::Descriptor>(cmdCollectionProp, (Command::Descriptor d) => d.Name != name);
         }
 
@@ -233,6 +233,8 @@ namespace LukeBot.Twitch
         {
             try
             {
+                LoadCommandsFromConfig();
+
                 List<string> events = new();
                 events.Add(EventSubClient.SUB_CHANNEL_POINTS_REDEMPTION_ADD);
                 events.Add(EventSubClient.SUB_SUBSCRIPTION_GIFT);

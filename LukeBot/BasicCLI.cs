@@ -31,12 +31,12 @@ namespace LukeBot
         private Dictionary<string, Command> mCommands = new Dictionary<string, Command>();
         private string mPostCommandMessage = "";
         private string mPromptPrefix = ""; // used in basic CLI as marking which user is active
-        private string mCurrentUser = "";
+        private IUserContext mCurrentUser = null;
 
 
         private IUserService GetUserService()
         {
-            return Service.Get(Constants.USER_MODULE_NAME) as IUserService;
+            return Service.Get(Constants.USER_SERVICE_NAME) as IUserService;
         }
 
         private void PreLogMessageEvent(object sender, LogMessageArgs args)
@@ -103,7 +103,7 @@ namespace LukeBot
             {
                 try
                 {
-                    string currentUserName = proxy.GetCurrentUser();
+                    string currentUserName = proxy.GetCurrentUser().GetUsername();
 
                     string curPwd = proxy.Query(true, "Current password");
                     string newPwd = proxy.Query(true, "New password");
@@ -211,18 +211,18 @@ namespace LukeBot
                 return Console.ReadLine();
         }
 
-        public string GetCurrentUser()
+        public IUserContext GetCurrentUser()
         {
-            if (mCurrentUser.Length == 0)
+            if (mCurrentUser == null)
                 throw new NoUserSelectedException();
 
             return mCurrentUser;
         }
 
-        public void SetCurrentUser(string username)
+        public void SetCurrentUser(IUserContext user)
         {
-            mCurrentUser = username;
-            mPromptPrefix = username;
+            mCurrentUser = user;
+            mPromptPrefix = user.GetUsername();
         }
 
         public void RefreshUserData()

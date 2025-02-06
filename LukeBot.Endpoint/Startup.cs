@@ -14,15 +14,20 @@ using LukeBot.Communication;
 using LukeBot.Config;
 using LukeBot.Logging;
 using Intercom = LukeBot.Communication.Common.Intercom;
+using LukeBot.Services;
 using LukeBot.Widget.Common;
 using Microsoft.Extensions.FileProviders;
-
 
 
 namespace LukeBot.Endpoint
 {
     public class Startup
     {
+        private IWidgetService GetWidgetService()
+        {
+            return Service.Get(Constants.WIDGET_SERVICE_NAME) as IWidgetService;
+        }
+
         async Task LoadPage(string page, HttpContext context)
         {
             StreamReader reader = File.OpenText("LukeBot.Endpoint/Pages/" + page);
@@ -125,19 +130,15 @@ namespace LukeBot.Endpoint
         {
             Logger.Log().Debug("Widget requested - handling {0}", widgetUUID);
 
-            GetWidgetPageMessage msg = new GetWidgetPageMessage(widgetUUID);
-            GetWidgetPageResponse page =
-                Comms.Intercom.Request<GetWidgetPageResponse, GetWidgetPageMessage>(msg);
-
-            page.Wait();
-
-            if (page.Status == Intercom::MessageStatus.SUCCESS)
+            try
             {
-                await context.Response.WriteAsync(page.pageContents);
+                IWidgetUserModule wum = GetWidgetService().GetModuleByWidgetUUID(widgetUUID);
+                string pageContents = wum.GetWidgetPage(widgetUUID);
+                await context.Response.WriteAsync(pageContents);
             }
-            else
+            catch (Exception e)
             {
-                await context.Response.WriteAsync("Couldn't load widget: " + page.ErrorReason);
+                await context.Response.WriteAsync("Couldn't load widget: " + e.Message);
             }
         }
 
@@ -156,24 +157,12 @@ namespace LukeBot.Endpoint
             {
                 WebSocket ws = await context.WebSockets.AcceptWebSocketAsync();
 
-                AssignWSMessage msg = new AssignWSMessage(widgetUUID, ws);
-                AssignWSResponse resp =
-                    Comms.Intercom.Request<AssignWSResponse, AssignWSMessage>(msg);
-
-                resp.Wait();
-
-                if (resp.Status != Intercom::MessageStatus.SUCCESS)
-                {
-                    await ws.CloseAsync(WebSocketCloseStatus.InternalServerError,
-                        string.Format(resp.ErrorReason.Substring(0, 120)),
-                        CancellationToken.None
-                    );
-                    return;
-                }
+                IWidgetUserModule wum = GetWidgetService().GetModuleByWidgetUUID(widgetUUID);
+                Task lifetimeTask = wum.AssignWidgetWebSocket(widgetUUID, ws);
 
                 Logger.Log().Debug("Awaiting lifetime task to keep connection to {0} Widget WS alive", widgetUUID);
                 // await for ws to complete, it will be closed in IWidget.cs when needed
-                await resp.lifetimeTask;
+                await lifetimeTask;
                 Logger.Log().Debug("Lifetime task for Widget WS {0} finished", widgetUUID);
 
                 // TODO at this point Kestrel logs "the application completed without reading the entire request body."
@@ -182,7 +171,7 @@ namespace LukeBot.Endpoint
             }
             catch (Exception e)
             {
-                Logger.Log().Error("Error while processing WS connection for widgets: {0}", e.Message);
+                Logger.Log().Error("Error while processing WS connection for widget: {0}", e.Message);
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             }
         }

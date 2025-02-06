@@ -71,7 +71,7 @@ namespace LukeBot
 
         private string GetDefaultQueuedDispatcher(CLIMessageProxy CLI)
         {
-            return "Twitch_QueuedDispatcher_" + CLI.GetCurrentUser();
+            return "Twitch_QueuedDispatcher_" + CLI.GetCurrentUser().GetUsername();
         }
 
         void HandleTestCommand(EventTestCommand args, CLIMessageProxy CLI, out string msg)
@@ -82,7 +82,7 @@ namespace LukeBot
                 // See LukeBot.Common.Utils.ConvertArgString() for details
                 IEnumerable<(string, string)> eventArgs = Utils.ConvertArgStringsToTuples(args.Args);
 
-                Comms.Event.User(CLI.GetCurrentUser()).TestEvent(args.Event, eventArgs);
+                Comms.Event.User(CLI.GetCurrentUser().GetUsername()).TestEvent(args.Event, eventArgs);
                 msg = "Test event " + args.Event + " emitted";
             }
             catch (System.Exception e)
@@ -95,7 +95,7 @@ namespace LukeBot
         {
             try
             {
-                EventInfo e = Comms.Event.User(CLI.GetCurrentUser()).GetEventInfo(args.Event);
+                EventInfo e = Comms.Event.User(CLI.GetCurrentUser().GetUsername()).GetEventInfo(args.Event);
                 msg = e.Name + " event:\n";
                 msg += "  " + e.Description + "\n";
                 msg += "\n";
@@ -123,7 +123,7 @@ namespace LukeBot
             {
                 msg = "Dispatchers (name - type):\n";
 
-                IEnumerable<EventDispatcherStatus> statuses = Comms.Event.User(CLI.GetCurrentUser()).GetDispatcherStatuses();
+                IEnumerable<EventDispatcherStatus> statuses = Comms.Event.User(CLI.GetCurrentUser().GetUsername()).GetDispatcherStatuses();
 
                 foreach (EventDispatcherStatus s in statuses)
                 {
@@ -144,7 +144,7 @@ namespace LukeBot
 
                 msg += "Events (name - dispatcher):\n";
 
-                IEnumerable<EventInfo> events = Comms.Event.User(CLI.GetCurrentUser()).ListEvents();
+                IEnumerable<EventInfo> events = Comms.Event.User(CLI.GetCurrentUser().GetUsername()).ListEvents();
 
                 foreach (EventInfo e in events)
                 {
@@ -173,7 +173,7 @@ namespace LukeBot
                 if (dispatcher == null || dispatcher.Length == 0)
                     dispatcher = GetDefaultQueuedDispatcher(CLI);
 
-                EventDispatcher dispatcherObject = Comms.Event.User(CLI.GetCurrentUser()).Dispatcher(dispatcher);
+                EventDispatcher dispatcherObject = Comms.Event.User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher);
                 dispatcherObject.Clear();
                 dispatcherObject.Skip();
                 msg = "Events on dispatcher " + dispatcher + " cleared.";
@@ -193,7 +193,7 @@ namespace LukeBot
                 if (dispatcher == null || dispatcher.Length == 0)
                     dispatcher = GetDefaultQueuedDispatcher(CLI);
 
-                Comms.Event.User(CLI.GetCurrentUser()).Dispatcher(dispatcher).Enable();
+                Comms.Event.User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher).Enable();
                 msg = "Dispatcher " + dispatcher + " enabled.";
             }
             catch (System.Exception e)
@@ -211,7 +211,7 @@ namespace LukeBot
                 if (dispatcher == null || dispatcher.Length == 0)
                     dispatcher = GetDefaultQueuedDispatcher(CLI);
 
-                Comms.Event.User(CLI.GetCurrentUser()).Dispatcher(dispatcher).Disable();
+                Comms.Event.User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher).Disable();
                 msg = "Dispatcher " + dispatcher + " disabled.";
             }
             catch (System.Exception e)
@@ -229,7 +229,7 @@ namespace LukeBot
                 if (dispatcher == null || dispatcher.Length == 0)
                     dispatcher = GetDefaultQueuedDispatcher(CLI);
 
-                Comms.Event.User(CLI.GetCurrentUser()).Dispatcher(dispatcher).Hold();
+                Comms.Event.User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher).Hold();
                 msg = "Dispatcher " + dispatcher + " put on hold.";
             }
             catch (System.Exception e)
@@ -247,7 +247,7 @@ namespace LukeBot
                 if (dispatcher == null || dispatcher.Length == 0)
                     dispatcher = GetDefaultQueuedDispatcher(CLI);
 
-                Comms.Event.User(CLI.GetCurrentUser()).Dispatcher(dispatcher).Skip();
+                Comms.Event.User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher).Skip();
                 msg = "Dispatcher " + dispatcher + " event skipped.";
             }
             catch (System.Exception e)

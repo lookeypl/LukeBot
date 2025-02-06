@@ -104,26 +104,36 @@ namespace LukeBot.Widget
 
         private async void WSRecvThreadMain()
         {
-            mWSThreadDone = false;
-            while (!mWSThreadDone)
+            try
             {
-                WebSocketRecv recv = await RecvFromWSInternalAsync();
-
-                if (recv.result.MessageType == WebSocketMessageType.Close)
+                mWSThreadDone = false;
+                while (!mWSThreadDone)
                 {
-                    Logger.Log().Debug("Received close message");
-                    mWSThreadDone = true;
+                    WebSocketRecv recv = await RecvFromWSInternalAsync();
+
+                    if (recv.result.MessageType == WebSocketMessageType.Close)
+                    {
+                        Logger.Log().Debug("Received close message");
+                        mWSThreadDone = true;
+                        mWSRecvAvailableEvent.Set();
+                        continue;
+                    }
+
+                    Logger.Log().Debug("Enqueueing message");
+                    Logger.Log().Secure(" -> msg = {0}", recv.data);
+                    mWSRecvQueue.Enqueue(recv.data);
                     mWSRecvAvailableEvent.Set();
-                    continue;
                 }
 
-                Logger.Log().Debug("Enqueueing message");
-                Logger.Log().Secure(" -> msg = {0}", recv.data);
-                mWSRecvQueue.Enqueue(recv.data);
-                mWSRecvAvailableEvent.Set();
+                CloseWS(WebSocketCloseStatus.NormalClosure);
             }
+            catch (System.Exception e)
+            {
+                Logger.Log().Error("Widget {0}: Receive thread raised an Exception: {1}", Name, e.Message);
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
 
-            CloseWS(WebSocketCloseStatus.NormalClosure);
+                CloseWS(WebSocketCloseStatus.InternalServerError);
+            }
         }
 
 

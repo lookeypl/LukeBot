@@ -55,7 +55,7 @@ namespace LukeBot.User
 
         public string GetServiceName()
         {
-            return Constants.USER_MODULE_NAME;
+            return Constants.USER_SERVICE_NAME;
         }
 
         public IEnumerable<string> GetServiceDependencies()
@@ -111,10 +111,10 @@ namespace LukeBot.User
          * Example: ServerCLI receives a Login message, and during processing will call
          * this method to check if password is correct.
          *
-         * Returns user's Permission level if authentication succeeded. In case of auth failure
-         * should return UserPermissionLevel.None.
+         * Returns user's context if authentication succeeded. In case of auth failure
+         * should return null.
          */
-        public PermissionLevel AuthenticateUser(string user, byte[] pwdHash, out string reason)
+        public IUserContext AuthenticateUser(string user, byte[] pwdHash, out string reason)
         {
             UserContext ctx;
 
@@ -123,18 +123,18 @@ namespace LukeBot.User
                 if (!mUsers.TryGetValue(user, out ctx))
                 {
                     reason = "User not found";
-                    return PermissionLevel.None;
+                    return null;
                 }
             }
 
             if (!ctx.ValidatePassword(pwdHash))
             {
                 reason = "Invalid password";
-                return PermissionLevel.None;
+                return null;
             }
 
             reason = "";
-            return ctx.GetPermissionLevel();
+            return ctx;
         }
 
         /**
@@ -145,10 +145,12 @@ namespace LukeBot.User
          *
          * Should return true upon success and false upon failure. Additionally, @p reason
          * should be set when authentication fails to provide a reason why.
+         *
+         * TODO this should be IUserContext API
          */
         public bool ChangeUserPassword(string user, byte[] currentPwdHash, byte[] newPwdHash, out string reason)
         {
-            if (AuthenticateUser(user, currentPwdHash, out reason) == PermissionLevel.None)
+            if (AuthenticateUser(user, currentPwdHash, out reason) == null)
                 return false;
 
             lock (mUsersLock)
@@ -208,10 +210,19 @@ namespace LukeBot.User
             }
         }
 
-        // unused??
-        public UserModuleDescriptor GetUserModuleDescriptor()
+        public IUserModule CreateModule(string lbUser)
         {
-            return null;
+            throw new NotImplementedException("User service does not create its own user modules");
+        }
+
+        public IUserModule GetModule(string lbUser)
+        {
+            throw new NotImplementedException("User service does not create its own user modules");
+        }
+
+        public void DisableModule(string lbUser)
+        {
+            throw new NotImplementedException("User service does not create its own user modules");
         }
 
         public void Run()

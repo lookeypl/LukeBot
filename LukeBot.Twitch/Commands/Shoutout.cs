@@ -15,7 +15,7 @@ namespace LukeBot.Twitch.Command
             : base(d)
         {
             mBotLogin = Conf.Get<string>(Path.Start()
-                .Push(CommonConstants.TWITCH_MODULE_NAME)
+                .Push(CommonConstants.TWITCH_SERVICE_NAME)
                 .Push(CommonConstants.PROP_STORE_LOGIN_PROP)
             );
 

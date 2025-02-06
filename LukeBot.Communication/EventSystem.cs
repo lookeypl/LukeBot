@@ -18,7 +18,7 @@ namespace LukeBot.Communication
      */
     public interface IEventPublisher
     {
-        public string GetName();
+        public string GetEventPublisherName();
         public List<EventDescriptor> GetEvents();
     }
 
@@ -140,7 +140,7 @@ namespace LukeBot.Communication
          */
         public List<EventCallback> RegisterPublisher(IEventPublisher p)
         {
-            string pubName = p.GetName();
+            string pubName = p.GetEventPublisherName();
 
             Logger.Log().Debug("Registering publisher {0}", pubName);
 
@@ -173,7 +173,7 @@ namespace LukeBot.Communication
          */
         public void UnregisterPublisher(IEventPublisher p)
         {
-            string pubName = p.GetName();
+            string pubName = p.GetEventPublisherName();
 
             Logger.Log().Debug("Unregistering publisher {0}", pubName);
 

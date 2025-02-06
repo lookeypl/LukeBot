@@ -105,7 +105,12 @@ namespace LukeBot
 
         private IWidgetService GetWidgetService()
         {
-            return Service.Get(Common.Constants.WIDGET_MODULE_NAME) as IWidgetService;
+            return Service.Get(Common.Constants.WIDGET_SERVICE_NAME) as IWidgetService;
+        }
+
+        private IWidgetUserModule GetWidgetUserModule(IUserContext user)
+        {
+            return GetWidgetService().GetModule(user) as IWidgetUserModule;
         }
 
         public void HandleAddCommand(WidgetAddCommand cmd, CLIMessageProxy CLI, out string msg)
@@ -113,8 +118,7 @@ namespace LukeBot
             string addr;
             try
             {
-                string lbUser = CLI.GetCurrentUser();
-                addr = GetWidgetService().AddWidget(lbUser, cmd.Type, cmd.Name);
+                addr = GetWidgetUserModule(CLI.GetCurrentUser()).AddWidget(cmd.Type, cmd.Name);
 
                 msg = "Added new widget at address: " + addr;
             }
@@ -130,8 +134,7 @@ namespace LukeBot
 
             try
             {
-                string lbUser = CLI.GetCurrentUser();
-                wd = GetWidgetService().GetWidgetInfo(lbUser, cmd.Id);
+                wd = GetWidgetUserModule(CLI.GetCurrentUser()).GetWidgetInfo(cmd.Id);
 
                 msg = wd.Address;
             }
@@ -143,12 +146,11 @@ namespace LukeBot
 
         public void HandleListCommand(WidgetListCommand cmd, CLIMessageProxy CLI, out string msg)
         {
-            List<WidgetDesc> widgets;
+            IEnumerable<WidgetDesc> widgets;
 
             try
             {
-                string lbUser = CLI.GetCurrentUser();
-                widgets = GetWidgetService().ListUserWidgets(lbUser);
+                widgets = GetWidgetUserModule(CLI.GetCurrentUser()).ListWidgets();
 
                 msg = "Available widgets:";
                 foreach (WidgetDesc w in widgets)
@@ -159,7 +161,7 @@ namespace LukeBot
                         msg += w.Name + ", ";
                     msg += w.Type.ToString();
 
-                    if (!GetWidgetService().IsWidgetLoaded(lbUser, w.Id))
+                    if (!GetWidgetUserModule(CLI.GetCurrentUser()).IsWidgetLoaded(w.Id))
                         msg += ", unloaded)";
                     else
                         msg += ")";
@@ -178,9 +180,8 @@ namespace LukeBot
 
             try
             {
-                string lbUser = CLI.GetCurrentUser();
-                wd = GetWidgetService().GetWidgetInfo(lbUser, cmd.Id);
-                conf = GetWidgetService().GetWidgetConfiguration(lbUser, cmd.Id);
+                wd = GetWidgetUserModule(CLI.GetCurrentUser()).GetWidgetInfo(cmd.Id);
+                conf = GetWidgetUserModule(CLI.GetCurrentUser()).GetWidgetConfiguration(cmd.Id);
 
                 msg = "Widget " + cmd.Id + " info:\n" + wd.ToFormattedString();
                 msg += "\nConfiguration:\n" + conf.ToFormattedString();
@@ -195,8 +196,7 @@ namespace LukeBot
         {
             try
             {
-                string lbUser = CLI.GetCurrentUser();
-                GetWidgetService().DeleteWidget(lbUser, cmd.Id);
+                GetWidgetUserModule(CLI.GetCurrentUser()).DeleteWidget(cmd.Id);
 
                 msg = "Widget " + cmd.Id + " deleted.";
             }
@@ -210,20 +210,19 @@ namespace LukeBot
         {
             try
             {
-                string lbUser = CLI.GetCurrentUser();
 
                 if (cmd.Id != null && cmd.Id.Length > 0)
                 {
-                    GetWidgetService().ReloadWidget(lbUser, cmd.Id);
+                    GetWidgetUserModule(CLI.GetCurrentUser()).ReloadWidget(cmd.Id);
                     msg = "Widget " + cmd.Id + " reloaded.";
                 }
                 else
                 {
-                    List<WidgetDesc> widgets = GetWidgetService().ListUserWidgets(lbUser);
+                    IEnumerable<WidgetDesc> widgets = GetWidgetUserModule(CLI.GetCurrentUser()).ListWidgets();
 
                     foreach (WidgetDesc wd in widgets)
                     {
-                        GetWidgetService().ReloadWidget(lbUser, wd.Id);
+                        GetWidgetUserModule(CLI.GetCurrentUser()).ReloadWidget(wd.Id);
                     }
 
                     msg = "Widgets reloaded.";
@@ -243,8 +242,7 @@ namespace LukeBot
             {
                 IEnumerable<(string, string)> changes = Utils.ConvertArgStringsToTuples(arg.Changes);
 
-                string lbUser = CLI.GetCurrentUser();
-                GetWidgetService().UpdateWidgetConfiguration(lbUser, arg.Id, changes);
+                GetWidgetUserModule(CLI.GetCurrentUser()).UpdateWidgetConfiguration(arg.Id, changes);
 
                 msg = arg.Id + " widget's configuration updated successfully.";
             }
@@ -260,12 +258,12 @@ namespace LukeBot
 
             try
             {
-                //Service.User.GetUser(CLI.GetCurrentUser()).EnableModule(Constants.WIDGET_MODULE_NAME);
-                msg = "Enabled module " + Constants.WIDGET_MODULE_NAME;
+                GetWidgetService().CreateModule(CLI.GetCurrentUser());
+                msg = "Created module " + Constants.WIDGET_SERVICE_NAME;
             }
             catch (System.Exception e)
             {
-                msg = "Failed to enable Widget module: " + e.Message;
+                msg = "Failed to create Widget module: " + e.Message;
             }
         }
 
@@ -275,12 +273,12 @@ namespace LukeBot
 
             try
             {
-                //Service.User.GetUser(CLI.GetCurrentUser()).DisableModule(Constants.WIDGET_MODULE_NAME);
-                msg = "Disabled module " + Constants.WIDGET_MODULE_NAME;
+                GetWidgetService().DestroyModule(CLI.GetCurrentUser());
+                msg = "Destroyed module " + Constants.WIDGET_SERVICE_NAME;
             }
             catch (System.Exception e)
             {
-                msg = "Failed to disable Widget module: " + e.Message;
+                msg = "Failed to destroy Widget module: " + e.Message;
             }
         }
 
@@ -288,7 +286,7 @@ namespace LukeBot
         {
             mLukeBot = lb;
 
-            UserInterface.CLI.AddCommand(Constants.WIDGET_MODULE_NAME, PermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
+            UserInterface.CLI.AddCommand(Constants.WIDGET_SERVICE_NAME, PermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
             {
                 string result = "";
                 Parser p = new Parser(with => with.HelpWriter = new CLIUtils.CLIMessageProxyTextWriter(cliProxy));
@@ -303,7 +301,7 @@ namespace LukeBot
                     .WithParsed<WidgetUpdateCommand>((WidgetUpdateCommand arg) => HandleUpdateCommand(arg, cliProxy, out result))
                     .WithParsed<WidgetEnableCommand>((WidgetEnableCommand arg) => HandleEnableCommand(arg, cliProxy, out result))
                     .WithParsed<WidgetDisableCommand>((WidgetDisableCommand arg) => HandleDisableCommand(arg, cliProxy, out result))
-                    .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, Constants.WIDGET_MODULE_NAME, out result));
+                    .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, Constants.WIDGET_SERVICE_NAME, out result));
                 return result;
             });
         }

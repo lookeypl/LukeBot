@@ -8,7 +8,7 @@ namespace LukeBot.User.Common
     {
         public void LoadUsers();
         public void UnloadUsers();
-        public PermissionLevel AuthenticateUser(string user, byte[] pwdHash, out string reason);
+        public IUserContext AuthenticateUser(string user, byte[] pwdHash, out string reason);
         public bool ChangeUserPassword(string user, byte[] currentPwdHash, byte[] newPwdHash, out string reason);
         public IUserContext GetUser(string username);
         public void CreateNewUser(string username);

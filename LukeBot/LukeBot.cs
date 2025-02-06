@@ -89,7 +89,6 @@ namespace LukeBot
                 Endpoint.Endpoint.StartThread();
 
                 Logger.Log().Info("Initializing Services...");
-                Service.Initialize();
                 Service.Register(new User.UserService());
                 Service.Register(new Twitch.TwitchService());
                 Service.Register(new Spotify.SpotifyService());

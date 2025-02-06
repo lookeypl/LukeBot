@@ -30,7 +30,7 @@ namespace LukeBot.Twitch.Command
             }
 
             DeleteCommandIntercomMsg msg = new DeleteCommandIntercomMsg();
-            msg.User = mLBUser;
+            msg.lbUser = mLBUser;
             msg.Name = args[1];
 
             Intercom::ResponseBase resp = Comms.Intercom.Request<Intercom::ResponseBase, DeleteCommandIntercomMsg>(msg);

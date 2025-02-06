@@ -1,9 +1,9 @@
 using LukeBot.Services;
+using LukeBot.User.Common;
 
 namespace LukeBot.Spotify.Common
 {
-    public interface ISpotifyService: IService
+    public interface ISpotifyService: IService, IUserModuleFactory
     {
-        public void UpdateLoginForUser(string lbUser, string newLogin);
     }
 }

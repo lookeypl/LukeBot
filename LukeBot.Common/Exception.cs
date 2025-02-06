@@ -8,6 +8,10 @@ namespace LukeBot.Common
         {
         }
 
+        public Exception(string msg, System.Exception e): base(msg, e)
+        {
+        }
+
         public void Print(LogLevel level)
         {
             Logger.Log().Message(level, "{0} caught: {1}", this.GetType().FullName, Message);

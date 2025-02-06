@@ -1,3 +1,5 @@
+using LukeBot.User.Common;
+
 namespace LukeBot
 {
     /**
@@ -38,16 +40,15 @@ namespace LukeBot
          *
          * Should throw NoUserSelectedException when no user is selected.
          */
-        string GetCurrentUser();
+        IUserContext GetCurrentUser();
 
         /**
-         * Switches user to provided username.
+         * Switches user to provided context. Providing "null" as @p user is valid and is expected
+         * to "unset" current user.
          *
-         * CLIProcessor should validate provided username before calling this method.
-         *
-         * Note that this action should only be done by Admin accounts.
+         * Note that this action should only be done by PermissionLevel.Admin accounts.
          */
-        void SetCurrentUser(string username);
+        void SetCurrentUser(IUserContext user);
 
         /**
          * Triggers a user data refresh.

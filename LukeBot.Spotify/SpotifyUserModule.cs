@@ -8,6 +8,7 @@ using LukeBot.Spotify.Common;
 using CommonConstants = LukeBot.Common.Constants;
 using System.Net.Http;
 
+
 namespace LukeBot.Spotify
 {
     public class SpotifyUserModule: ISpotifyUserModule
@@ -58,14 +59,14 @@ namespace LukeBot.Spotify
         {
             LBUser = lbUser;
 
-            string storagePath = "Outputs/" + CommonConstants.SPOTIFY_MODULE_NAME + "/" + LBUser;
+            string storagePath = "Outputs/" + CommonConstants.SPOTIFY_SERVICE_NAME + "/" + LBUser;
             Directory.CreateDirectory(storagePath);
 
             mSpotifyUsername = Conf.Get<string>(
                 Config.Path.Start()
                     .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
                     .Push(LBUser)
-                    .Push(CommonConstants.SPOTIFY_MODULE_NAME)
+                    .Push(CommonConstants.SPOTIFY_SERVICE_NAME)
                     .Push(CommonConstants.PROP_STORE_LOGIN_PROP)
             );
 
@@ -74,8 +75,8 @@ namespace LukeBot.Spotify
             mNowPlaying = new NowPlaying(LBUser, mToken);
             mNowPlayingTextFile = new NowPlayingTextFile(
                 LBUser,
-                "Outputs/" + CommonConstants.SPOTIFY_MODULE_NAME + "/" + LBUser + "/nowplaying_artist.txt",
-                "Outputs/" + CommonConstants.SPOTIFY_MODULE_NAME + "/" + LBUser +  "/nowplaying_title.txt"
+                "Outputs/" + CommonConstants.SPOTIFY_SERVICE_NAME + "/" + LBUser + "/nowplaying_artist.txt",
+                "Outputs/" + CommonConstants.SPOTIFY_SERVICE_NAME + "/" + LBUser +  "/nowplaying_title.txt"
             );
         }
 
@@ -131,6 +132,12 @@ namespace LukeBot.Spotify
             return track;
         }
 
+        public void UpdateLogin(string newLogin)
+        {
+            // TODO
+            throw new NotImplementedException("Updating login for Spotify modules not yet implemented");
+        }
+
         public void Run()
         {
             mNowPlaying.Run();
@@ -149,7 +156,7 @@ namespace LukeBot.Spotify
 
         public string GetModuleType()
         {
-            return CommonConstants.SPOTIFY_MODULE_NAME;
+            return CommonConstants.SPOTIFY_SERVICE_NAME;
         }
     }
 }

@@ -44,20 +44,20 @@ namespace LukeBot
 
         private ITwitchService GetTwitchService()
         {
-            return Service.Get(Common.Constants.TWITCH_MODULE_NAME) as ITwitchService;
+            return Service.Get(Common.Constants.TWITCH_SERVICE_NAME) as ITwitchService;
         }
 
-        private IUserService GetUserService()
+        private ITwitchUserModule GetTwitchUserModule(IUserContext user)
         {
-            return Service.Get(Common.Constants.USER_MODULE_NAME) as IUserService;
+            return GetTwitchService().GetModule(user) as ITwitchUserModule;
         }
 
         private void CheckForLogin(CLIMessageProxy CLI)
         {
             Path path = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
-                .Push(CLI.GetCurrentUser())
-                .Push(Constants.TWITCH_MODULE_NAME)
+                .Push(CLI.GetCurrentUser().GetUsername())
+                .Push(Constants.TWITCH_SERVICE_NAME)
                 .Push(Constants.PROP_STORE_LOGIN_PROP);
 
             if (!Conf.TryGet<string>(path, out string login))
@@ -81,7 +81,7 @@ namespace LukeBot
         {
             try
             {
-                GetTwitchService().RefreshEmotesForUser(CLI.GetCurrentUser());
+                GetTwitchUserModule(CLI.GetCurrentUser()).RefreshEmotes();
                 result = "Emotes refreshed";
             }
             catch (System.Exception e)
@@ -102,7 +102,7 @@ namespace LukeBot
 
             try
             {
-                GetTwitchService().UpdateLoginForUser(CLI.GetCurrentUser(), args[0]);
+                GetTwitchUserModule(CLI.GetCurrentUser()).UpdateLogin(args[0]);
                 result = "Successfully updated Twitch login.";
             }
             catch (System.Exception e)
@@ -118,8 +118,8 @@ namespace LukeBot
             try
             {
                 CheckForLogin(CLI);
-                GetUserService().GetUser(CLI.GetCurrentUser()).EnableModule(Constants.TWITCH_MODULE_NAME);
-                msg = "Enabled module " + Constants.TWITCH_MODULE_NAME;
+                GetTwitchService().CreateModule(CLI.GetCurrentUser());
+                msg = "Enabled module " + Constants.TWITCH_SERVICE_NAME;
             }
             catch (System.Exception e)
             {
@@ -133,8 +133,8 @@ namespace LukeBot
 
             try
             {
-                GetUserService().GetUser(CLI.GetCurrentUser()).DisableModule(Constants.TWITCH_MODULE_NAME);
-                msg = "Disabled module " + Constants.TWITCH_MODULE_NAME;
+                GetTwitchService().DestroyModule(CLI.GetCurrentUser());
+                msg = "Disabled module " + Constants.TWITCH_SERVICE_NAME;
             }
             catch (System.Exception e)
             {
@@ -147,7 +147,7 @@ namespace LukeBot
             mLukeBot = lb;
             mCommandCLIProcessor = new TwitchCommandCLIProcessor(mLukeBot);
 
-            UserInterface.CLI.AddCommand(Constants.TWITCH_MODULE_NAME, PermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
+            UserInterface.CLI.AddCommand(Constants.TWITCH_SERVICE_NAME, PermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
             {
                 string result = "";
                 string[] cmdArgs = args.Take(2).ToArray(); // filters out any additional options/commands that might confuse CommandLine
@@ -158,7 +158,7 @@ namespace LukeBot
                     .WithParsed<TwitchLoginSubverb>((TwitchLoginSubverb arg) => HandleLoginSubverb(arg, cliProxy, args.Skip(1).ToArray(), out result))
                     .WithParsed<TwitchEnableSubverb>((TwitchEnableSubverb arg) => HandleEnableSubverb(arg, cliProxy, out result))
                     .WithParsed<TwitchDisableSubverb>((TwitchDisableSubverb arg) => HandleDisableSubverb(arg, cliProxy, out result))
-                    .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, Constants.TWITCH_MODULE_NAME, out result));
+                    .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, Constants.TWITCH_SERVICE_NAME, out result));
                 return result;
             });
         }

@@ -4,6 +4,7 @@ using System.Net;
 using LukeBot.API;
 using LukeBot.Common;
 using LukeBot.Communication;
+using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
 using LukeBot.Twitch.EventSub;
@@ -11,27 +12,107 @@ using LukeBot.Twitch.Common;
 using Widget = LukeBot.Widget;
 
 using CommonConstants = LukeBot.Common.Constants;
+using Command = LukeBot.Twitch.Common.Command;
+using LukeBot.Twitch.Common.Command;
 
 namespace LukeBot.Twitch
 {
-    public class TwitchUserModule: IUserModule
+    public class TwitchUserModule: ITwitchUserModule
     {
         private string mLBUser;
-        private string mChannelName;
+        private TwitchIRC mIRC;
+        private IRCChannel mIRCChannel;
         private Token mUserToken;
         private API.Twitch.GetUserData mUserData;
         private EventSubClient mEventSub;
 
 
-        public TwitchUserModule(string lbUser, Token botToken, string channelName)
+        private Path GetCommandCollectionPropertyName(string lbUser)
+        {
+            return Path.Start()
+                .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
+                .Push(mLBUser)
+                .Push(CommonConstants.TWITCH_SERVICE_NAME)
+                .Push(Constants.PROP_TWITCH_COMMANDS);
+        }
+
+        private string GetTwitchChannel()
+        {
+            return Conf.Get<string>(Path.Start()
+                .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
+                .Push(mLBUser)
+                .Push(CommonConstants.TWITCH_SERVICE_NAME)
+                .Push(CommonConstants.PROP_STORE_LOGIN_PROP)
+            );
+        }
+
+        private void UpdateCommandInConfig(string commandName)
+        {
+            Path cmdCollectionProp = GetCommandCollectionPropertyName(mLBUser);
+
+            Command::Descriptor[] commands = Conf.Get<Command::Descriptor[]>(cmdCollectionProp);
+
+            int idx = Array.FindIndex<Command::Descriptor>(commands, (Command::Descriptor d) => d.Name == commandName);
+            commands[idx] = GetChatCommandDescriptor(commandName);
+            Conf.Modify<Command::Descriptor[]>(cmdCollectionProp, commands);
+        }
+
+        private void LoadCommandsFromConfig()
+        {
+            Path cmdCollectionProp = GetCommandCollectionPropertyName(mLBUser);
+
+            Command::Descriptor[] commands;
+            if (!Conf.TryGet<Command::Descriptor[]>(cmdCollectionProp, out commands))
+                return; // quiet exit, assume user does not have any commands for Twitch chat
+
+            string twitchChannel = GetTwitchChannel();
+            foreach (Command::Descriptor cmd in commands)
+            {
+                mIRCChannel.AddCommand(cmd.Name, AllocateChatCommand(cmd));
+            }
+        }
+
+        private void SaveCommandToConfig(string name, Command::ICommand cmd)
+        {
+            Command::Descriptor desc = cmd.ToDescriptor();
+
+            Path cmdCollectionProp = GetCommandCollectionPropertyName(mLBUser);
+            ConfUtil.ArrayAppend(cmdCollectionProp, desc, new Command::DescriptorComparer());
+        }
+
+        private void RemoveCommandFromConfig(string name)
+        {
+            Path cmdCollectionProp = GetCommandCollectionPropertyName(mLBUser);
+            ConfUtil.ArrayRemove<Command::Descriptor>(cmdCollectionProp, (Command::Descriptor d) => d.Name != name);
+        }
+
+        private ICommand AllocateChatCommand(Descriptor d)
+        {
+            Command::ICommand cmd = null;
+
+            switch (d.Type)
+            {
+            case Command::Type.print: cmd = new Command.Print(d); break;
+            case Command::Type.shoutout: cmd = new Command.Shoutout(d); break;
+            case Command::Type.addcom: cmd = new Command.AddCommand(d, mLBUser); break;
+            case Command::Type.editcom: cmd = new Command.EditCommand(d, mLBUser); break;
+            case Command::Type.delcom: cmd = new Command.DeleteCommand(d, mLBUser); break;
+            case Command::Type.counter: cmd = new Command.Counter(d); break;
+            case Command::Type.songrequest: cmd = new Command.SongRequest(d, mLBUser); break;
+            default: return null;
+            }
+
+            cmd.SetUpdateConfigDelegate((string name) => UpdateCommandInConfig(name));
+            return cmd;
+        }
+
+
+        internal TwitchUserModule(string lbUser, Token botToken, TwitchIRC IRC)
         {
             mLBUser = lbUser;
-            mChannelName = channelName;
+            string channelName = GetTwitchChannel();
 
-            // Each user has its own queued dispatcher to independently handle some events
-            Comms.Event.User(mLBUser).AddEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser), EventDispatcherType.Queued);
-
-            API.Twitch.GetUserResponse resp = API.Twitch.GetUser(botToken, mChannelName);
+            API.Twitch.GetUserResponse resp = API.Twitch.GetUser(botToken, channelName);
             if (resp.code != HttpStatusCode.OK)
             {
                 Logger.Log().Error("Failed to fetch user data from Twitch - received error code {0}", resp.code.ToString());
@@ -41,7 +122,7 @@ namespace LukeBot.Twitch
 
             // TODO token's scope should be moved to Config
             string tokenScope = "user:read:email channel:read:redemptions channel:read:subscriptions";
-            mUserToken = AuthManager.Instance.GetToken(ServiceType.Twitch, lbUser);
+            mUserToken = AuthManager.Instance.GetToken(ServiceType.Twitch, channelName);
 
             bool tokenFromFile = mUserToken.Loaded;
             if (!mUserToken.Loaded)
@@ -52,6 +133,11 @@ namespace LukeBot.Twitch
                 throw new InvalidOperationException("Failed to login to Twitch");
             }
 
+            // Each user has its own queued dispatcher to independently handle some events
+            Comms.Event.User(mLBUser).AddEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser), EventDispatcherType.Queued);
+
+            mIRC = IRC;
+            mIRCChannel = mIRC.JoinChannel(mLBUser, mUserData, mUserToken);
             mEventSub = new(mLBUser);
             mEventSub.Connect(mUserToken, mUserData.id);
         }
@@ -73,10 +159,75 @@ namespace LukeBot.Twitch
 
         internal string GetChannelName()
         {
-            return mChannelName;
+            return mIRCChannel.GetChannelName();
         }
 
-        // IUserModule overrides
+        // ITwitchUserModule overrides //
+
+        public void AddChatCommand(Descriptor d)
+        {
+            ICommand cmd = AllocateChatCommand(d);
+            mIRCChannel.AddCommand(d.Name, cmd);
+            SaveCommandToConfig(d.Name, cmd);
+        }
+
+        public void AddChatCommand(string commandName, Common.Command.Type type, string value)
+        {
+            AddChatCommand(new Descriptor(commandName, type, value));
+        }
+
+        public void DeleteChatCommand(string commandName)
+        {
+            mIRCChannel.DeleteCommand(commandName);
+            RemoveCommandFromConfig(commandName);
+        }
+
+        public void EditChatCommand(string commandName, string newValue)
+        {
+            mIRCChannel.EditCommand(commandName, newValue);
+            UpdateCommandInConfig(commandName);
+        }
+
+        public List<Descriptor> GetChatCommandDescriptors()
+        {
+            return mIRCChannel.GetCommandDescriptors();
+        }
+
+        public Descriptor GetChatCommandDescriptor(string commandName)
+        {
+            return mIRCChannel.GetCommandDescriptor(commandName);
+        }
+
+        public void AllowChatCommandPrivilege(string commandName, ChatUser privilege)
+        {
+            mIRCChannel.GetCommand(commandName).AllowUsers(privilege);
+        }
+
+        public void DenyChatCommandPrivilege(string commandName, ChatUser privilege)
+        {
+            mIRCChannel.GetCommand(commandName).DenyUsers(privilege);
+        }
+
+        public void SetChatCommandEnabled(string commandName, bool enabled)
+        {
+            mIRCChannel.GetCommand(commandName).SetEnabled(enabled);
+        }
+
+        public void RefreshEmotes()
+        {
+            mIRCChannel.RefreshEmotes();
+        }
+
+        public void UpdateLogin(string newLogin)
+        {
+            // TODO:
+            // - Part from current channel
+            // - Add a new channel
+            throw new NotImplementedException("Updating login for Twitch modules not yet implemented");
+        }
+
+
+        // IUserModule overrides //
 
         public void Run()
         {
@@ -103,14 +254,32 @@ namespace LukeBot.Twitch
 
         public void WaitForShutdown()
         {
-            if (mEventSub != null) mEventSub.WaitForShutdown();
+            if (mEventSub != null)
+            {
+                mEventSub.WaitForShutdown();
+                mEventSub = null;
+            }
 
             Comms.Event.User(mLBUser).RemoveEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser));
+
+            if (mIRCChannel != null)
+            {
+                mIRC.PartChannel(mIRCChannel);
+
+                mIRCChannel = null;
+                mIRC = null;
+            }
         }
 
         public string GetModuleType()
         {
-            return CommonConstants.TWITCH_MODULE_NAME;
+            return CommonConstants.TWITCH_SERVICE_NAME;
+        }
+
+        public void Dispose()
+        {
+            RequestShutdown();
+            WaitForShutdown();
         }
     }
 }

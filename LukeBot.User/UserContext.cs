@@ -78,7 +78,7 @@ namespace LukeBot.User
         }
 
         // module-config management
-        private void AddModuleToConfig(string module)
+        /*private void AddModuleToConfig(string module)
         {
             Path modulesProp = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
@@ -86,9 +86,9 @@ namespace LukeBot.User
                 .Push(Constants.PROP_STORE_MODULES_DOMAIN);
 
             ConfUtil.ArrayAppend(modulesProp, module);
-        }
+        }*/
 
-        private void LoadModulesFromConfig()
+        /*private void LoadModulesFromConfig()
         {
             Path modulesProp = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
@@ -121,9 +121,9 @@ namespace LukeBot.User
                     Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
                 }
             }
-        }
+        }*/
 
-        private void RemoveModuleFromConfig(string module)
+        /*private void RemoveModuleFromConfig(string module)
         {
             Path modulesProp = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
@@ -131,25 +131,26 @@ namespace LukeBot.User
                 .Push(Constants.PROP_STORE_MODULES_DOMAIN);
 
             ConfUtil.ArrayRemove(modulesProp, module);
+        }*/
+
+        public void AttachModule(IUserModule module)
+        {
+            string type = module.GetModuleType();
+            if (mModules.ContainsKey(type))
+            {
+                throw new ModuleAlreadyAttachedException(type);
+            }
+
+            mModules.Add(type, module);
         }
 
-        private IUserModule CreateUserModule(string type)
+        public void DetachModule(IUserModule module)
         {
-            /*IUserModule m = Service.UserModuleManager.Create(type, mUsername);
-            mModules.Add(type, m);
-            return m;*/
-            return null;
-        }
-
-        private void RemoveUserModule(string type)
-        {
-            /*IUserModule m = mModules[type];
-
-            Service.UserModuleManager.Unload(m);
-            m.RequestShutdown();
-            m.WaitForShutdown();
-
-            mModules.Remove(type);*/
+            string type = module.GetModuleType();
+            if (mModules.ContainsKey(type))
+            {
+                mModules.Remove(type);
+            }
         }
 
 
@@ -158,10 +159,6 @@ namespace LukeBot.User
             mUsername = user;
 
             LoadUserDataFromConfig();
-
-            Logger.Log().Info("Loading required modules for user {0}", mUsername);
-            LoadModulesFromConfig();
-
             Logger.Log().Info("Loaded LukeBot user {0}", mUsername);
         }
 
@@ -173,38 +170,6 @@ namespace LukeBot.User
         public string GetUsername()
         {
             return mUsername;
-        }
-
-        public void EnableModule(string module)
-        {
-            //IUserModule m;
-
-            lock (mLock)
-            {
-                if (mModules.ContainsKey(module))
-                {
-                    throw new ModuleEnabledException(module, mUsername);
-                }
-
-                //m = CreateUserModule(module);
-                AddModuleToConfig(module);
-
-                //m.Run();
-            }
-        }
-
-        public void DisableModule(string module)
-        {
-            lock (mLock)
-            {
-                if (!mModules.ContainsKey(module))
-                {
-                    throw new ModuleDisabledException(module, mUsername);
-                }
-
-                //RemoveUserModule(module);
-                RemoveModuleFromConfig(module);
-            }
         }
 
         public List<string> GetEnabledModules()

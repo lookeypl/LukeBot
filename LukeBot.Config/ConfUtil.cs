@@ -66,6 +66,81 @@ namespace LukeBot.Config
             Conf.Modify<T[]>(path, array);
         }
 
+        private static T[] ArrayUnique<T>(T[] a)
+        {
+            List<T> newList = new();
+
+            for (int i = 0; i < a.Length; ++i)
+            {
+                if (!newList.Contains(a[i]))
+                {
+                    newList.Add(a[i]);
+                }
+            }
+
+            return newList.ToArray();
+        }
+
+        /**
+         * Append an entry to an array. Sorts using default comparers. No change is made
+         * if element already exists in the array.
+         *
+         * If Array does not exist in Config, it will be created.
+         */
+        public static void ArrayAppendUnique<T>(Path path, T entry)
+        {
+            ArrayAppendUnique<T>(path, entry, null);
+        }
+
+        /**
+         * Append an array of entries to an array. Sorts using default comparers. No change is made
+         * if element already exists in the array.
+         *
+         * If Array does not exist in Config, it will be created.
+         */
+        public static void ArrayAppendUnique<T>(Path path, T[] entries)
+        {
+            ArrayAppendUnique<T>(path, entries, null);
+        }
+
+        /**
+         * Append an entry to an array and sort the array contents. No change is made
+         * if element already exists in the array.
+         *
+         * If Array does not exist in Config, it will be created.
+         */
+        public static void ArrayAppendUnique<T>(Path path, T entry, IComparer<T> comparer)
+        {
+            ArrayAppendUnique<T>(path, new T[] { entry }, comparer);
+        }
+
+        /**
+         * Append an entry to an array and sort the array contents. If an entry exists
+         * in the array already no modification is made.
+         *
+         * If Array does not exist in Config it will be created.
+         */
+        public static void ArrayAppendUnique<T>(Path path, T[] entries, IComparer<T> comparer)
+        {
+            T[] array;
+            if (!Conf.TryGet<T[]>(path, out array))
+            {
+                array = new T[entries.Length];
+                Array.Copy(entries, 0, array, 0, entries.Length);
+                Array.Sort<T>(array, comparer);
+                array = ArrayUnique(array);
+                Conf.Add(path, Property.Create<T[]>(array));
+                return;
+            }
+
+            int oldLength = array.Length;
+            Array.Resize(ref array, array.Length + entries.Length);
+            Array.Copy(entries, 0, array, oldLength, entries.Length);
+            Array.Sort<T>(array, comparer);
+            array = ArrayUnique(array);
+            Conf.Modify<T[]>(path, array);
+        }
+
         /**
          * Remove an entry to an array. Removing a last element will remove the whole Path
          * from the Config.

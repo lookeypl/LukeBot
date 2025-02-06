@@ -28,7 +28,7 @@ namespace LukeBot.Spotify
         private EventCallback mTrackChangedCallback;
         private EventCallback mStateUpdateCallback;
 
-        public string GetName()
+        public string GetEventPublisherName()
         {
             return "SpotifyNowPlayingModule";
         }

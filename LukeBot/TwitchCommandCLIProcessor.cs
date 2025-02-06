@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using LukeBot.Services;
 using LukeBot.Twitch.Common;
 using LukeBot.Twitch.Common.Command;
+using LukeBot.User.Common;
 using TwitchCommand = LukeBot.Twitch.Common.Command;
 using CommandLine;
 
@@ -113,7 +114,12 @@ namespace LukeBot
 
         private ITwitchService GetTwitchService()
         {
-            return Service.Get(Common.Constants.TWITCH_MODULE_NAME) as ITwitchService;
+            return Service.Get(Common.Constants.TWITCH_SERVICE_NAME) as ITwitchService;
+        }
+
+        private ITwitchUserModule GetTwitchUserModule(IUserContext user)
+        {
+            return GetTwitchService().GetModule(user) as ITwitchUserModule;
         }
 
         internal TwitchCommandCLIProcessor(LukeBot lb)
@@ -125,16 +131,7 @@ namespace LukeBot
         {
             try
             {
-                string lbUser = CLI.GetCurrentUser();
-
-                TwitchCommand.ICommand twCmd = GetTwitchService().AllocateCommand(lbUser, cmd.Name, cmd.Type, string.Join(' ', cmd.Value));
-                if (twCmd == null)
-                {
-                    msg = "Invalid command type";
-                    return;
-                }
-
-                GetTwitchService().AddCommandToChannel(lbUser, cmd.Name, twCmd);
+                GetTwitchUserModule(CLI.GetCurrentUser()).AddChatCommand(cmd.Name, cmd.Type, string.Join(' ', cmd.Value));
             }
             catch (System.Exception e)
             {
@@ -149,8 +146,7 @@ namespace LukeBot
         {
             try
             {
-                string lbUser = CLI.GetCurrentUser();
-                GetTwitchService().DeleteCommandFromChannel(lbUser, cmd.Name);
+                GetTwitchUserModule(CLI.GetCurrentUser()).DeleteChatCommand(cmd.Name);
             }
             catch (System.Exception e)
             {
@@ -165,8 +161,7 @@ namespace LukeBot
         {
             try
             {
-                string lbUser = CLI.GetCurrentUser();
-                GetTwitchService().EditCommandFromChannel(lbUser, cmd.Name, string.Join(' ', cmd.Value));
+                GetTwitchUserModule(CLI.GetCurrentUser()).EditChatCommand(cmd.Name, string.Join(' ', cmd.Value));
             }
             catch (System.Exception e)
             {
@@ -181,11 +176,9 @@ namespace LukeBot
         {
             try
             {
-                string lbUser = CLI.GetCurrentUser();
-
                 msg = "Available commands:\n";
 
-                List<TwitchCommand::Descriptor> cmds = GetTwitchService().GetCommandDescriptors(lbUser);
+                List<TwitchCommand::Descriptor> cmds = GetTwitchUserModule(CLI.GetCurrentUser()).GetChatCommandDescriptors();
 
                 foreach (TwitchCommand::Descriptor c in cmds)
                 {
@@ -202,11 +195,9 @@ namespace LukeBot
         {
             try
             {
-                string lbUser = CLI.GetCurrentUser();
-
                 if (cmd.List)
                 {
-                    TwitchCommand::Descriptor d = GetTwitchService().GetCommandDescriptor(lbUser, cmd.Name);
+                    TwitchCommand::Descriptor d = GetTwitchUserModule(CLI.GetCurrentUser()).GetChatCommandDescriptor(cmd.Name);
 
                     msg = "Modifiers of Twitch command " + cmd.Name + ":\n";
                     msg += "  Privileges: " + d.Privilege.GetStringRepresentation();
@@ -221,7 +212,7 @@ namespace LukeBot
                         return;
                     }
 
-                    GetTwitchService().AllowPrivilegeInCommand(lbUser, cmd.Name, priv);
+                    GetTwitchUserModule(CLI.GetCurrentUser()).AllowChatCommandPrivilege(cmd.Name, priv);
                     msg = "Command " + cmd.Name + " modified";
                     return;
                 }
@@ -234,13 +225,13 @@ namespace LukeBot
                         return;
                     }
 
-                    GetTwitchService().DenyPrivilegeInCommand(lbUser, cmd.Name, priv);
+                    GetTwitchUserModule(CLI.GetCurrentUser()).DenyChatCommandPrivilege(cmd.Name, priv);
                     msg = "Command " + cmd.Name + " modified";
                     return;
                 }
                 else if (cmd.Enabled != null)
                 {
-                    GetTwitchService().SetCommandEnabled(lbUser, cmd.Name, (bool)cmd.Enabled);
+                    GetTwitchUserModule(CLI.GetCurrentUser()).SetChatCommandEnabled(cmd.Name, (bool)cmd.Enabled);
                     msg = "Command " + cmd.Name + " " + ((bool)cmd.Enabled ? "enabled" : "disabled");
                 }
                 else

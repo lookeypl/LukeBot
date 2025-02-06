@@ -26,7 +26,7 @@ namespace LukeBot
     {
         static internal IUserService GetUserService()
         {
-            return Service.Get(Constants.USER_MODULE_NAME) as IUserService;
+            return Service.Get(Constants.USER_SERVICE_NAME) as IUserService;
         }
 
         private class ClientContext: CLIMessageProxy
@@ -45,7 +45,7 @@ namespace LukeBot
 
             private string mCookieShorthand = "";
             private string mLogPreamble = "";
-            private string mCurrentUser = "";
+            private IUserContext mCurrentUser = null;
             private TcpClient mClient = null;
             private Stream mStream = null;
             private byte[] mRecvBuffer = new byte[4096];
@@ -285,8 +285,8 @@ namespace LukeBot
                     mUsernamePromise.SetResult(mUsername);
 
                     byte[] pwdBuf = Convert.FromBase64String(loginMsg.PasswordHashBase64);
-                    PermissionLevel permLevel = GetUserService().AuthenticateUser(loginMsg.User, pwdBuf, out string reason);
-                    if (permLevel == PermissionLevel.None)
+                    IUserContext userContext = GetUserService().AuthenticateUser(loginMsg.User, pwdBuf, out string reason);
+                    if (userContext == null)
                     {
                         // wait a few seconds to prevent replay attacks
                         Thread.Sleep(REPLAY_PREVENT_WAIT_TIME);
@@ -305,7 +305,7 @@ namespace LukeBot
                     );
 
                     // inform client which user is logged in (current one)
-                    SetCurrentUser(mUsername);
+                    SetCurrentUser(userContext);
                     RefreshUserData();
 
                     LogClientContext(LogLevel.Info, "Connected");
@@ -342,7 +342,7 @@ namespace LukeBot
             {
                 Config.Path permissionLevelPath = Config.Path.Start()
                     .Push(Constants.PROP_STORE_USER_DOMAIN)
-                    .Push(mCurrentUser)
+                    .Push(mCurrentUser.GetUsername())
                     .Push(Constants.PROP_STORE_ACCOUNT_DOMAIN)
                     .Push(Constants.PROP_STORE_PERMISSION_LEVEL);
 
@@ -420,19 +420,19 @@ namespace LukeBot
                 return r.Response;
             }
 
-            public string GetCurrentUser()
+            public IUserContext GetCurrentUser()
             {
-                if (mCurrentUser.Length == 0)
+                if (mCurrentUser == null)
                     throw new NoUserSelectedException();
 
                 return mCurrentUser;
             }
 
-            public void SetCurrentUser(string username)
+            public void SetCurrentUser(IUserContext user)
             {
-                mCurrentUser = username;
+                mCurrentUser = user;
 
-                CurrentUserChangeServerMessage m = new(mSessionData, username);
+                CurrentUserChangeServerMessage m = new(mSessionData, user.GetUsername());
                 SendObject<CurrentUserChangeServerMessage>(m);
             }
 

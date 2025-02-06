@@ -15,7 +15,7 @@ using CommonConstants = LukeBot.Common.Constants;
 
 namespace LukeBot.Twitch
 {
-    public class TwitchIRC
+    internal class TwitchIRC
     {
         private enum ConnectionState
         {
@@ -355,7 +355,7 @@ namespace LukeBot.Twitch
             Logger.Log().Info("Twitch IRC module initialized");
         }
 
-        public void JoinChannel(string lbUser, API.Twitch.GetUserData user, Token token)
+        public IRCChannel JoinChannel(string lbUser, API.Twitch.GetUserData user, Token token)
         {
             mChannelsMutex.WaitOne();
 
@@ -367,40 +367,30 @@ namespace LukeBot.Twitch
 
             mIRCClient.Send(IRCMessage.JOIN(user.login));
 
-            mChannels.Add(user.login, new IRCChannel(lbUser, user, token, mGlobalBadges));
+            IRCChannel channel = new(lbUser, user, token, mGlobalBadges);
+
+            mChannels.Add(user.login, channel);
 
             mChannelsMutex.ReleaseMutex();
+
+            return channel;
         }
 
-        public void PartChannel(API.Twitch.GetUserData user)
+        public void PartChannel(IRCChannel channel)
         {
             mChannelsMutex.WaitOne();
 
-            if (!mChannels.ContainsKey(user.login))
+            string channelName = channel.GetChannelName();
+            if (!mChannels.ContainsKey(channelName))
             {
                 mChannelsMutex.ReleaseMutex();
-                throw new UnknownChannelException(user.login);
+                throw new UnknownChannelException(channelName);
             }
 
-            mIRCClient.Send(IRCMessage.PART(user.login));
+            mIRCClient.Send(IRCMessage.PART(channelName));
 
-            mChannels[user.login].Dispose();
-            mChannels.Remove(user.login);
-
-            mChannelsMutex.ReleaseMutex();
-        }
-
-        public void AddCommandToChannel(string channel, string commandName, Command::ICommand command)
-        {
-            mChannelsMutex.WaitOne();
-
-            if (!mChannels.ContainsKey(channel))
-            {
-                mChannelsMutex.ReleaseMutex();
-                throw new UnknownChannelException(channel);
-            }
-
-            mChannels[channel].AddCommand(commandName, command);
+            mChannels[channelName].Dispose();
+            mChannels.Remove(channelName);
 
             mChannelsMutex.ReleaseMutex();
         }
@@ -408,134 +398,6 @@ namespace LukeBot.Twitch
         public bool AwaitLoggedIn(int timeoutMs)
         {
             return mLoggedInEvent.WaitOne(timeoutMs);
-        }
-
-        public void DeleteCommandFromChannel(string channel, string commandName)
-        {
-            mChannelsMutex.WaitOne();
-
-            if (!mChannels.ContainsKey(channel))
-            {
-                mChannelsMutex.ReleaseMutex();
-                throw new UnknownChannelException(channel);
-            }
-
-            mChannels[channel].DeleteCommand(commandName);
-
-            mChannelsMutex.ReleaseMutex();
-        }
-
-        public void EditCommandFromChannel(string channel, string commandName, string newValue)
-        {
-            mChannelsMutex.WaitOne();
-
-            if (!mChannels.ContainsKey(channel))
-            {
-                mChannelsMutex.ReleaseMutex();
-                throw new UnknownChannelException(channel);
-            }
-
-            mChannels[channel].EditCommand(commandName, newValue);
-
-            mChannelsMutex.ReleaseMutex();
-        }
-
-        public List<Command::Descriptor> GetCommandDescriptors(string channel)
-        {
-            List<Command::Descriptor> cmdDescs = new List<Command::Descriptor>();
-
-            mChannelsMutex.WaitOne();
-
-            if (!mChannels.ContainsKey(channel))
-            {
-                mChannelsMutex.ReleaseMutex();
-                throw new UnknownChannelException(channel);
-            }
-
-            Dictionary<string, Command::ICommand> cmds = mChannels[channel].GetCommands();
-            foreach (Command::ICommand cmd in cmds.Values)
-                cmdDescs.Add(cmd.ToDescriptor());
-
-            mChannelsMutex.ReleaseMutex();
-
-            return cmdDescs;
-        }
-
-        public Command::Descriptor GetCommandDescriptor(string channel, string name)
-        {
-            mChannelsMutex.WaitOne();
-
-            if (!mChannels.ContainsKey(channel))
-            {
-                mChannelsMutex.ReleaseMutex();
-                throw new UnknownChannelException(channel);
-            }
-
-            Command::Descriptor d = mChannels[channel].GetCommand(name).ToDescriptor();
-
-            mChannelsMutex.ReleaseMutex();
-
-            return d;
-        }
-
-        public void AllowPrivilegeInCommand(string channel, string name, Command::ChatUser privilege)
-        {
-            mChannelsMutex.WaitOne();
-
-            if (!mChannels.ContainsKey(channel))
-            {
-                mChannelsMutex.ReleaseMutex();
-                throw new UnknownChannelException(channel);
-            }
-
-            mChannels[channel].GetCommand(name).AllowUsers(privilege);
-
-            mChannelsMutex.ReleaseMutex();
-        }
-
-        public void DenyPrivilegeInCommand(string channel, string name, Command::ChatUser privilege)
-        {
-            mChannelsMutex.WaitOne();
-
-            if (!mChannels.ContainsKey(channel))
-            {
-                mChannelsMutex.ReleaseMutex();
-                throw new UnknownChannelException(channel);
-            }
-
-            mChannels[channel].GetCommand(name).DenyUsers(privilege);
-
-            mChannelsMutex.ReleaseMutex();
-        }
-
-        public void SetCommandEnabled(string channel, string name, bool enabled)
-        {
-            mChannelsMutex.WaitOne();
-
-            if (!mChannels.ContainsKey(channel))
-            {
-                mChannelsMutex.ReleaseMutex();
-                throw new UnknownChannelException(channel);
-            }
-
-            mChannels[channel].GetCommand(name).SetEnabled(enabled);
-
-            mChannelsMutex.ReleaseMutex();
-        }
-
-        public void RefreshEmotes(string channel)
-        {
-            mChannelsMutex.WaitOne();
-
-            if (!mChannels.ContainsKey(channel))
-            {
-                mChannelsMutex.ReleaseMutex();
-                throw new UnknownChannelException(channel);
-            }
-
-            mChannels[channel].RefreshEmotes();
-
-            mChannelsMutex.ReleaseMutex();
         }
 
         public void Run()

@@ -12,8 +12,9 @@ using CommonConstants = LukeBot.Common.Constants;
 
 namespace LukeBot.Widget
 {
-    public class WidgetUserModule: IUserModule
+    public class WidgetUserModule: IWidgetUserModule
     {
+        private WidgetService mService;
         private Dictionary<string, IWidget> mWidgets = new();
         private Dictionary<string, string> mNameToId = new();
         private string mLBUser;
@@ -24,7 +25,7 @@ namespace LukeBot.Widget
             return Path.Start()
                 .Push(LukeBot.Common.Constants.PROP_STORE_USER_DOMAIN)
                 .Push(mLBUser)
-                .Push(LukeBot.Common.Constants.WIDGET_MODULE_NAME)
+                .Push(LukeBot.Common.Constants.WIDGET_SERVICE_NAME)
                 .Push(Constants.PROP_WIDGETS);
         }
 
@@ -150,7 +151,7 @@ namespace LukeBot.Widget
             }
         }
 
-        internal string GetWidgetPage(string widgetID)
+        public string GetWidgetPage(string widgetID)
         {
             if (!mWidgets.TryGetValue(widgetID, out IWidget widget))
                 throw new WidgetNotFoundException(widgetID);
@@ -158,7 +159,7 @@ namespace LukeBot.Widget
             return widget.GetPage();
         }
 
-        internal Task AssignWS(string widgetID, WebSocket ws)
+        public Task AssignWidgetWebSocket(string widgetID, WebSocket ws)
         {
             if (!mWidgets.TryGetValue(widgetID, out IWidget widget))
             {
@@ -187,8 +188,9 @@ namespace LukeBot.Widget
 
         // Public methods //
 
-        public WidgetUserModule(string lbUser)
+        public WidgetUserModule(WidgetService service, string lbUser)
         {
+            mService = service;
             mLBUser = lbUser;
 
             LoadWidgetsFromConfig();
@@ -206,7 +208,7 @@ namespace LukeBot.Widget
         {
         }
 
-        public IWidget AddWidget(WidgetType type, string name)
+        public string AddWidget(WidgetType type, string name)
         {
             if (mNameToId.ContainsKey(name))
                 throw new WidgetAlreadyExistsException(name, mNameToId[name]);
@@ -223,10 +225,10 @@ namespace LukeBot.Widget
 
             LoadWidget(id);
 
-            return w;
+            return w.ID;
         }
 
-        public List<WidgetDesc> ListWidgets()
+        public IEnumerable<WidgetDesc> ListWidgets()
         {
             List<WidgetDesc> widgets = new List<WidgetDesc>();
 
@@ -290,7 +292,7 @@ namespace LukeBot.Widget
 
         public string GetModuleType()
         {
-            return CommonConstants.WIDGET_MODULE_NAME;
+            return CommonConstants.WIDGET_SERVICE_NAME;
         }
     }
 }

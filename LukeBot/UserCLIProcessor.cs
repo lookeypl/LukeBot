@@ -86,7 +86,7 @@ namespace LukeBot
 
         private IUserService GetUserService()
         {
-            return Service.Get(Common.Constants.USER_MODULE_NAME) as IUserService;
+            return Service.Get(Common.Constants.USER_SERVICE_NAME) as IUserService;
         }
 
         private void HandleCreateUserCommand(UserCreateCommand args, out string msg)
@@ -125,8 +125,8 @@ namespace LukeBot
             {
                 try
                 {
-                    if (mCLI.GetCurrentUser() == args.Name)
-                        mCLI.SetCurrentUser("");
+                    if (mCLI.GetCurrentUser().GetUsername() == args.Name)
+                        mCLI.SetCurrentUser(null);
                 }
                 catch (NoUserSelectedException)
                 {
@@ -150,11 +150,14 @@ namespace LukeBot
                 if (hasUsername && !GetUserService().IsUsernameValid(args.Name))
                     throw new System.ArgumentException("Unknown/invalid username.");
 
-                mCLI.SetCurrentUser(args.Name);
+                if (args.Name.Length == 0)
+                    mCLI.SetCurrentUser(null); // unset current user
+                else
+                    mCLI.SetCurrentUser(GetUserService().GetUser(args.Name));
 
                 try
                 {
-                    msg = "Switched to user " + mCLI.GetCurrentUser();
+                    msg = "Switched to user " + mCLI.GetCurrentUser().GetUsername();
                 }
                 catch (NoUserSelectedException)
                 {
@@ -174,7 +177,7 @@ namespace LukeBot
                 IUserContext user;
                 bool currentUser = (args.Name == null || args.Name.Length == 0);
                 if (currentUser)
-                    user = GetUserService().GetUser(mCLI.GetCurrentUser());
+                    user = mCLI.GetCurrentUser();
                 else
                     user = GetUserService().GetUser(args.Name);
 
@@ -203,7 +206,7 @@ namespace LukeBot
                 IUserContext user;
                 bool currentUser = (args.Name == null || args.Name.Length == 0);
                 if (currentUser)
-                    user = GetUserService().GetUser(mCLI.GetCurrentUser());
+                    user = mCLI.GetCurrentUser();
                 else
                     user = GetUserService().GetUser(args.Name);
 

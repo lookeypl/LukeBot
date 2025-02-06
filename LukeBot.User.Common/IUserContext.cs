@@ -1,4 +1,5 @@
 using System;
+using LukeBot.Services;
 
 namespace LukeBot.User.Common
 {
@@ -8,11 +9,12 @@ namespace LukeBot.User.Common
         public string GetUsername();
         public PermissionLevel GetPermissionLevel();
 
-        // Enable a module
-        public void EnableModule(string module);
+        // Attaches a User Module
+        // Should be done by Services when creating a new UserModule
+        public void AttachModule(IUserModule module);
 
-        // Disable a module
-        public void DisableModule(string module);
+        // Detaches a user module
+        public void DetachModule(IUserModule module);
 
         // Set a new password based on a received hash. This path should
         // be taken only by remote connections (aka. via ServerCLI)

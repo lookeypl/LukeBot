@@ -1,99 +1,102 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
-using LukeBot.Communication;
+using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
+using LukeBot.User.Common;
 using LukeBot.Widget.Common;
-using Intercom = LukeBot.Communication.Common.Intercom;
 
 using CommonConstants = LukeBot.Common.Constants;
+using CommonUtils = LukeBot.Common.Utils;
 
 
 namespace LukeBot.Widget
 {
     public class WidgetService: IWidgetService
     {
-        private Dictionary<string, WidgetUserModule> mUsers = new();
+        private Dictionary<string, WidgetUserModule> mUserModules = new();
         private Dictionary<string, string> mWidgetIDToUser = new();
         private Mutex mMutex = new();
 
+        // Config interactions //
 
-        // TODO Widget service can be made visible by Endpoint, Intercom is not needed here
-        Intercom::ResponseBase ResponseAllocator(Intercom::MessageBase msg)
+        private void LoadUserModulesFromConfig()
         {
-            switch (msg.Message)
+            string[] users = CommonUtils.GetUserModulesFromConfig(CommonConstants.WIDGET_SERVICE_NAME);
+
+            foreach (string u in users)
             {
-            case Messages.GET_WIDGET_PAGE: return new GetWidgetPageResponse();
-            case Messages.ASSIGN_WS: return new AssignWSResponse();
+                try
+                {
+                    IUserService userService = Service.Get(CommonConstants.USER_SERVICE_NAME) as IUserService;
+                    CreateModule(userService.GetUser(u));
+                }
+                catch (System.Exception e)
+                {
+                    Logger.Log().Error("Failed to initialize Widget user module for user {0}: {1}", u, e.Message);
+                    Logger.Log().Error("Widget user module for user {0} will be skipped on this load.", u);
+                    Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
+                }
             }
-
-            Debug.Assert(false, "Message should be validated by now - should not happen");
-            return new Intercom::ResponseBase();
-        }
-
-        void GetWidgetPageDelegate(Intercom::MessageBase msg, ref Intercom::ResponseBase resp)
-        {
-            GetWidgetPageMessage m = (GetWidgetPageMessage)msg;
-            GetWidgetPageResponse r = (GetWidgetPageResponse)resp;
-
-            mMutex.WaitOne();
-
-            string ret;
-
-            try
-            {
-                string user = mWidgetIDToUser[m.widgetID];
-                ret = mUsers[user].GetWidgetPage(m.widgetID);
-            }
-            catch (System.Exception e)
-            {
-                mMutex.ReleaseMutex();
-                r.SignalError(String.Format("Widget {0} couldn't be acquired: {1}", m.widgetID, e.Message));
-                return;
-            }
-
-            mMutex.ReleaseMutex();
-
-            r.SetContents(ret);
-            r.SignalSuccess();
-        }
-
-        void AssignWSDelegate(Intercom::MessageBase msg, ref Intercom::ResponseBase resp)
-        {
-            AssignWSMessage m = (AssignWSMessage)msg;
-            AssignWSResponse r = (AssignWSResponse)resp;
-
-            mMutex.WaitOne();
-
-            try
-            {
-                string user = mWidgetIDToUser[m.widgetID];
-                r.SetLifetimeTask(mUsers[user].AssignWS(m.widgetID, m.GetWebSocket()));
-            }
-            catch (System.Exception e)
-            {
-                mMutex.ReleaseMutex();
-                r.SignalError(String.Format("Widget {0} WS assignment failed: {1}", m.widgetID, e.Message));
-                return;
-            }
-
-            mMutex.ReleaseMutex();
-            resp.SignalSuccess();
         }
 
 
-        // User Module Descriptor delegates //
+        // Privates & internals //
 
-        private IUserModule UserModuleLoader(string lbUser)
+        internal void AssignWidgetUUIDToUser(string uuid, string username)
         {
-            return LoadWidgetUserModule(lbUser);
+            mWidgetIDToUser.Add(uuid, username);
         }
 
-        private void UserModuleUnloader(IUserModule module)
+        private WidgetUserModule LoadWidgetUserModule(string lbUser)
         {
-            // ...
+            if (mUserModules.ContainsKey(lbUser))
+            {
+                throw new WidgetUserAlreadyLoadedException("Widget user {0} already loaded", lbUser);
+            }
+
+            WidgetUserModule user = new WidgetUserModule(this, lbUser);
+
+            Logger.Log().Debug("Got {0} widgets for user {1}", user.ListWidgets().Count(), lbUser);
+
+            mUserModules.Add(lbUser, user);
+            foreach (WidgetDesc wd in user.ListWidgets())
+                mWidgetIDToUser.Add(wd.Id, lbUser);
+
+            Logger.Log().Info("Loaded Widgets for user {0}", lbUser);
+            return user;
+        }
+
+
+        // IUserModuleFactory interfaces //
+
+        public IUserModule CreateModule(IUserContext user)
+        {
+            WidgetUserModule module = LoadWidgetUserModule(user.GetUsername());
+            CommonUtils.AddUserModuleToConfig(CommonConstants.WIDGET_SERVICE_NAME, user.GetUsername());
+
+            return module;
+        }
+
+        public IUserModule GetModule(IUserContext user)
+        {
+            return mUserModules[user.GetUsername()];
+        }
+
+        public void DestroyModule(IUserContext user)
+        {
+            if (mUserModules.TryGetValue(user.GetUsername(), out WidgetUserModule module))
+            {
+                CommonUtils.RemoveUserModuleFromConfig(CommonConstants.WIDGET_SERVICE_NAME, user.GetUsername());
+
+                module.RequestShutdown();
+                module.WaitForShutdown();
+
+                mUserModules.Remove(user.GetUsername());
+            }
         }
 
 
@@ -102,107 +105,41 @@ namespace LukeBot.Widget
 
         public WidgetService()
         {
-            Intercom::EndpointInfo widgetManagerInfo = new Intercom::EndpointInfo(Endpoints.WIDGET_MANAGER, ResponseAllocator);
-            widgetManagerInfo.AddMessage(Messages.GET_WIDGET_PAGE, GetWidgetPageDelegate);
-            widgetManagerInfo.AddMessage(Messages.ASSIGN_WS, AssignWSDelegate);
-
-            Comms.Intercom.Register(widgetManagerInfo);
         }
 
         public string GetServiceName()
         {
-            return CommonConstants.WIDGET_MODULE_NAME;
+            return CommonConstants.WIDGET_SERVICE_NAME;
         }
 
         public IEnumerable<string> GetServiceDependencies()
         {
-            return new List<String> { "twitch", "spotify", "user" };
+            return new List<String> {
+                CommonConstants.TWITCH_SERVICE_NAME,
+                CommonConstants.SPOTIFY_SERVICE_NAME,
+                CommonConstants.USER_SERVICE_NAME
+            };
         }
 
-        public WidgetUserModule LoadWidgetUserModule(string lbUser)
+        public IWidgetUserModule GetModuleByWidgetUUID(string uuid)
         {
-            if (mUsers.ContainsKey(lbUser))
-            {
-                throw new WidgetUserAlreadyLoadedException("Widget user {0} already loaded", lbUser);
-            }
-
-            WidgetUserModule user = new WidgetUserModule(lbUser);
-
-            Logger.Log().Debug("Got {0} widgets for user {1}", user.ListWidgets().Count, lbUser);
-
-            mUsers.Add(lbUser, user);
-            foreach (WidgetDesc wd in user.ListWidgets())
-                mWidgetIDToUser.Add(wd.Id, lbUser);
-
-            Logger.Log().Info("Loaded Widgets for user {0}", lbUser);
-            return user;
-        }
-
-        public string AddWidget(string lbUser, WidgetType type, string name)
-        {
-            IWidget w = mUsers[lbUser].AddWidget(type, name);
-            mWidgetIDToUser.Add(w.ID, lbUser);
-            return w.GetWidgetAddress();
-        }
-
-        public List<WidgetDesc> ListUserWidgets(string lbUser)
-        {
-            return mUsers[lbUser].ListWidgets();
-        }
-
-        public WidgetDesc GetWidgetInfo(string lbUser, string id)
-        {
-            return mUsers[lbUser].GetWidgetInfo(id);
-        }
-
-        public bool IsWidgetLoaded(string lbUser, string id)
-        {
-            return mUsers[lbUser].IsWidgetLoaded(id);
-        }
-
-        public void DeleteWidget(string lbUser, string id)
-        {
-            mUsers[lbUser].DeleteWidget(id);
-        }
-
-        public void ReloadWidget(string lbUser, string id)
-        {
-            mUsers[lbUser].ReloadWidget(id);
-        }
-
-        public void UpdateWidgetConfiguration(string lbUser, string id, IEnumerable<(string, string)> changes)
-        {
-            mUsers[lbUser].UpdateWidgetConfiguration(id, changes);
-        }
-
-        public WidgetConfiguration GetWidgetConfiguration(string lbUser, string id)
-        {
-            return mUsers[lbUser].GetWidgetConfiguration(id);
-        }
-
-        public UserModuleDescriptor GetUserModuleDescriptor()
-        {
-            UserModuleDescriptor umd = new UserModuleDescriptor();
-            umd.Type = CommonConstants.WIDGET_MODULE_NAME;
-            umd.LoadPrerequisite = null;
-            umd.Loader = UserModuleLoader;
-            umd.Unloader = UserModuleUnloader;
-            return umd;
+            return mUserModules[mWidgetIDToUser[uuid]];
         }
 
         public void Run()
         {
+            LoadUserModulesFromConfig();
         }
 
         public void RequestShutdown()
         {
-            foreach (WidgetUserModule um in mUsers.Values)
+            foreach (WidgetUserModule um in mUserModules.Values)
                 um.RequestShutdown();
         }
 
         public void WaitForShutdown()
         {
-            foreach (WidgetUserModule um in mUsers.Values)
+            foreach (WidgetUserModule um in mUserModules.Values)
                 um.WaitForShutdown();
         }
     }

@@ -8,7 +8,7 @@ namespace LukeBot.Twitch
     public class IntercomMessageBase: Intercom::MessageBase
     {
         // LukeBot user to add the command for
-        public string User { get; set; }
+        public string lbUser { get; set; }
 
         public IntercomMessageBase(string endpoint, string msgType)
             : base(endpoint, msgType)

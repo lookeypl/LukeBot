@@ -30,7 +30,7 @@ namespace LukeBot.Twitch.Command
             }
 
             EditCommandIntercomMsg msg = new EditCommandIntercomMsg();
-            msg.User = mLBUser;
+            msg.lbUser = mLBUser;
             msg.Name = args[1];
             msg.Param = String.Join(' ', args, 2, args.Length - 2);
 

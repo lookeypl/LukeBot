@@ -207,7 +207,7 @@ namespace LukeBot.Twitch
             return new TwitchSubscriptionArgs(user, displayName, details);
         }
 
-        public string GetName()
+        public string GetEventPublisherName()
         {
             return "EventSubClient";
         }
@@ -295,12 +295,6 @@ namespace LukeBot.Twitch
                     break;
                 }
             }
-        }
-
-        ~EventSubClient()
-        {
-            RequestShutdown();
-            WaitForShutdown();
         }
 
         public async Task<EventSub.Message> ReceiveAsync()

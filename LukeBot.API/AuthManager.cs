@@ -64,7 +64,7 @@ namespace LukeBot.API
             mOpenBrowserURLDelegate = callbacks[0];
         }
 
-        public string GetName()
+        public string GetEventPublisherName()
         {
             return "AuthManager";
         }

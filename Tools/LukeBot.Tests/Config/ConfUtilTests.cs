@@ -228,6 +228,40 @@ namespace LukeBot.Tests.Config
                 Assert.AreEqual(expected[i], confNumbers[i]);
         }
 
+        [TestMethod]
+        public void ConfUtil_ArrayAppendUnique_FromEmpty()
+        {
+            int[] numbers = { 1, 2, 2, 3, 4 };
+
+            Path p = Path.Form("test", "numbers");
+            ConfUtil.ArrayAppendUnique(p, numbers);
+
+            int[] expected = { 1, 2, 3, 4 };
+            int[] confNumbers = Conf.Get<int[]>(p);
+
+            Assert.AreEqual(expected.Length, confNumbers.Length);
+            for (int i = 0; i < expected.Length; ++i)
+                Assert.AreEqual(expected[i], confNumbers[i]);
+        }
+
+        [TestMethod]
+        public void ConfUtil_ArrayAppendUnique_Append()
+        {
+            int[] numbers = { 1, 2, 3, 4 };
+
+            Path p = Path.Form("test", "numbers");
+            ConfUtil.ArrayAppendUnique(p, numbers);
+
+            ConfUtil.ArrayAppendUnique(p, 2);
+
+            int[] expected = { 1, 2, 3, 4 };
+            int[] confNumbers = Conf.Get<int[]>(p);
+
+            Assert.AreEqual(expected.Length, confNumbers.Length);
+            for (int i = 0; i < expected.Length; ++i)
+                Assert.AreEqual(expected[i], confNumbers[i]);
+        }
+
         [ClassCleanup]
         static public void ConfUtil_TestClassTeardown()
         {

@@ -43,7 +43,7 @@ namespace LukeBot.Tests.Communication
                 }
             }
 
-            public string GetName()
+            public string GetEventPublisherName()
             {
                 return "EventSystemSecondPublisher";
             }
@@ -54,7 +54,7 @@ namespace LukeBot.Tests.Communication
             }
         }
 
-        public string GetName()
+        public string GetEventPublisherName()
         {
             return "EventSystemTestPublisher";
         }

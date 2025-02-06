@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using LukeBot.Config;
 
 
 namespace LukeBot.Common
@@ -220,6 +221,38 @@ namespace LukeBot.Common
             }
 
             return messages;
+        }
+
+        // Common Config interactions //
+
+        private static Path GetUserModulesPath(string service)
+        {
+            return Path.Start()
+                .Push(service)
+                .Push(Constants.PROP_STORE_MODULES_DOMAIN);
+        }
+
+        public static void AddUserModuleToConfig(string service, string lbUser)
+        {
+            ConfUtil.ArrayAppendUnique(GetUserModulesPath(service), lbUser);
+        }
+
+        public static string[] GetUserModulesFromConfig(string service)
+        {
+            string[] users;
+            if (!Conf.TryGet<string[]>(GetUserModulesPath(service), out users))
+            {
+                // Couldn't find the config entry, meaning there is no enabled modules.
+                // Not considered an error.
+                users = new string[0];
+            }
+
+            return users;
+        }
+
+        public static void RemoveUserModuleFromConfig(string service, string lbUser)
+        {
+            ConfUtil.ArrayRemove(GetUserModulesPath(service), lbUser);
         }
     }
 }

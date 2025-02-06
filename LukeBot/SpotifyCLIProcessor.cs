@@ -42,8 +42,8 @@ namespace LukeBot
         {
             Path path = Path.Start()
                 .Push(Constants.PROP_STORE_USER_DOMAIN)
-                .Push(CLI.GetCurrentUser())
-                .Push(Constants.SPOTIFY_MODULE_NAME)
+                .Push(CLI.GetCurrentUser().GetUsername())
+                .Push(Constants.SPOTIFY_SERVICE_NAME)
                 .Push(Constants.PROP_STORE_LOGIN_PROP);
 
             if (!Conf.TryGet<string>(path, out string login))
@@ -58,14 +58,14 @@ namespace LukeBot
             }
         }
 
-        private IUserContext GetCurrentUser(CLIMessageProxy CLI)
-        {
-            return (Service.Get(Constants.USER_MODULE_NAME) as IUserService).GetUser(CLI.GetCurrentUser());
-        }
-
         private ISpotifyService GetService()
         {
-            return Service.Get(Constants.SPOTIFY_MODULE_NAME) as ISpotifyService;
+            return Service.Get(Constants.SPOTIFY_SERVICE_NAME) as ISpotifyService;
+        }
+
+        private ISpotifyUserModule GetUserModule(IUserContext user)
+        {
+            return GetService().GetModule(user) as ISpotifyUserModule;
         }
 
         private void HandleLoginSubverb(SpotifyLoginSubverb arg, CLIMessageProxy CLI, out string result)
@@ -74,7 +74,7 @@ namespace LukeBot
 
             try
             {
-                GetService().UpdateLoginForUser(GetCurrentUser(CLI).GetUsername(), arg.Login);
+                GetUserModule(CLI.GetCurrentUser()).UpdateLogin(arg.Login);
                 result = "Successfully updated Spotify login.";
             }
             catch (System.Exception e)
@@ -90,12 +90,12 @@ namespace LukeBot
             try
             {
                 CheckForLogin(CLI);
-                //mLukeBot.GetUser(CLI.GetCurrentUser()).EnableModule(Constants.SPOTIFY_MODULE_NAME);
-                msg = "Enabled module " + Constants.SPOTIFY_MODULE_NAME;
+                GetService().CreateModule(CLI.GetCurrentUser());
+                msg = "Created module " + Constants.SPOTIFY_SERVICE_NAME;
             }
             catch (System.Exception e)
             {
-                msg = "Failed to enable Spotify module: " + e.Message;
+                msg = "Failed to create Spotify module: " + e.Message;
             }
         }
 
@@ -105,12 +105,12 @@ namespace LukeBot
 
             try
             {
-                //mLukeBot.GetUser(CLI.GetCurrentUser()).DisableModule(Constants.SPOTIFY_MODULE_NAME);
-                msg = "Disabled module " + Constants.SPOTIFY_MODULE_NAME;
+                GetService().DestroyModule(CLI.GetCurrentUser());
+                msg = "Destroyed module " + Constants.SPOTIFY_SERVICE_NAME;
             }
             catch (System.Exception e)
             {
-                msg = "Failed to disable Spotify module: " + e.Message;
+                msg = "Failed to destroy Spotify module: " + e.Message;
             }
         }
 
@@ -118,7 +118,7 @@ namespace LukeBot
         {
             mLukeBot = lb;
 
-            UserInterface.CLI.AddCommand(Constants.SPOTIFY_MODULE_NAME, PermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
+            UserInterface.CLI.AddCommand(Constants.SPOTIFY_SERVICE_NAME, PermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
             {
                 string result = "";
                 Parser p = new Parser(with => with.HelpWriter = new CLIUtils.CLIMessageProxyTextWriter(cliProxy));
@@ -126,7 +126,7 @@ namespace LukeBot
                     .WithParsed<SpotifyLoginSubverb>((SpotifyLoginSubverb arg) => HandleLoginSubverb(arg, cliProxy, out result))
                     .WithParsed<SpotifyEnableSubverb>((SpotifyEnableSubverb arg) => HandleEnableSubverb(arg, cliProxy, out result))
                     .WithParsed<SpotifyDisableSubverb>((SpotifyDisableSubverb arg) => HandleDisableSubverb(arg, cliProxy, out result))
-                    .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, Constants.SPOTIFY_MODULE_NAME, out result));
+                    .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, Constants.SPOTIFY_SERVICE_NAME, out result));
                 return result;
             });
         }

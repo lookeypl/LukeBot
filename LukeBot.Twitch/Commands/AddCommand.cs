@@ -30,7 +30,7 @@ namespace LukeBot.Twitch.Command
             }
 
             AddCommandIntercomMsg msg = new AddCommandIntercomMsg();
-            msg.User = mLBUser;
+            msg.lbUser = mLBUser;
             msg.Name = args[1];
             msg.Type = Command::Type.print; // we assume from chat-level you can only add print commands
             msg.Param = String.Join(' ', args, 2, args.Length - 2);

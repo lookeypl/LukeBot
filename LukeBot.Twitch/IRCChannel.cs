@@ -11,7 +11,7 @@ using LukeBot.API;
 
 namespace LukeBot.Twitch
 {
-    class IRCChannel: IEventPublisher, IDisposable
+    internal class IRCChannel: IEventPublisher, IDisposable
     {
         private string mLBUser;
         private string mChannelName;
@@ -78,7 +78,7 @@ namespace LukeBot.Twitch
 
         // IEventPublisher implementations
 
-        public string GetName()
+        public string GetEventPublisherName()
         {
             return "TwitchIRC";
         }
@@ -109,10 +109,16 @@ namespace LukeBot.Twitch
             return events;
         }
 
+
+        // IDisposable
+
         public void Dispose()
         {
             Comms.Event.User(mLBUser).UnregisterPublisher(this);
         }
+
+
+        // Public methods
 
         public IRCChannel(string lbUser, API.Twitch.GetUserData userData, Token userToken, BadgeCollection globalBadges)
         {
@@ -268,6 +274,27 @@ namespace LukeBot.Twitch
         public Command::ICommand GetCommand(string name)
         {
             return mCommands[name];
+        }
+
+        public List<Command::Descriptor> GetCommandDescriptors()
+        {
+            List<Command::Descriptor> cmdDescs = new List<Command::Descriptor>();
+
+            Dictionary<string, Command::ICommand> cmds = GetCommands();
+            foreach (Command::ICommand cmd in cmds.Values)
+                cmdDescs.Add(cmd.ToDescriptor());
+
+            return cmdDescs;
+        }
+
+        public Command::Descriptor GetCommandDescriptor(string name)
+        {
+            return GetCommand(name).ToDescriptor();
+        }
+
+        public string GetChannelName()
+        {
+            return mChannelName;
         }
     };
 }

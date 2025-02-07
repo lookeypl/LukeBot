@@ -27,9 +27,6 @@ class LukeBotWidget
             printDebug(`Connected to server at ${this.serverAddress}`);
         }
         this.socket.onclose = (e) => {
-            if (this.close)
-                this.close();
-
             if (e.wasClean) {
                 printDebug(`Connection closed cleanly`);
             } else {
@@ -56,6 +53,10 @@ class LukeBotWidget
                     this.messageError(error);
             }
         }
+
+        window.addEventListener("beforeunload", () => {
+            this.socket.close();
+        });
     }
 
     registerMessage(message, callback) {

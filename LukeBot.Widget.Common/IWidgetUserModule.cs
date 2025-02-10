@@ -17,7 +17,7 @@ namespace LukeBot.Widget.Common
         public void DeleteWidget(string id);
         public void ReloadWidget(string id);
         public void UpdateWidgetConfiguration(string id, IEnumerable<(string, string)> changes);
-        public WidgetConfiguration GetWidgetConfiguration(string id);
+        public IWidgetConfiguration GetWidgetConfiguration(string id);
 
     }
 }

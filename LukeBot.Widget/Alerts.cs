@@ -1,4 +1,5 @@
-﻿using LukeBot.Communication;
+﻿using System.Collections.Generic;
+using LukeBot.Communication;
 using LukeBot.Communication.Common;
 using LukeBot.Logging;
 using LukeBot.Twitch.Common;
@@ -52,7 +53,7 @@ namespace LukeBot.Widget
                 case "Alignment":
                 {
                     if (value != "left" && value != "right")
-                        throw new WidgetConfigurationUpdateException("Invalid Alignment value: {0}. Allowed values: \"left\" or \"right\"", value);
+                        throw new WidgetConfigurationException("Update failed - invalid Alignment value: {0}. Allowed values: \"left\" or \"right\"", value);
                     break;
                 }
                 default:

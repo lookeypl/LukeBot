@@ -623,8 +623,6 @@ namespace LukeBot
             if (certs.Count == 0)
             {
                 Logger.Log().Error("ServerCLI: Couldn't find HTTPS certificate for {0} domain", httpsDomain);
-                Logger.Log().Error("ServerCLI: Will NOT listen to incoming connections.");
-                Logger.Log().Error("ServerCLI: Maybe LettuceEncrypt did not fetch it yet? Wait for some time until it does, then restart.");
                 throw new ServerCLIException("HTTPS certificate for {0} domain not found.", httpsDomain);
             }
 

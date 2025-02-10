@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using LukeBot.Logging;
 using LukeBot.Widget.Common;
 

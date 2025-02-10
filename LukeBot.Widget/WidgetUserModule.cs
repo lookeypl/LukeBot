@@ -261,7 +261,7 @@ namespace LukeBot.Widget
             LoadWidget(actualId);
         }
 
-        public WidgetConfiguration GetWidgetConfiguration(string id)
+        public IWidgetConfiguration GetWidgetConfiguration(string id)
         {
             return mWidgets[GetActualWidgetId(id)].GetConfig();
         }

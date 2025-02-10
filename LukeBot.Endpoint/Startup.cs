@@ -186,6 +186,7 @@ namespace LukeBot.Endpoint
             {
                 string email = Conf.Get<string>(Common.Constants.PROP_STORE_HTTPS_EMAIL_PROP);
 
+                Logger.Log().Info("Configuring LettuceEncrypt for domain {0} email {1}", domain, email);
                 services.AddLettuceEncrypt(c =>
                 {
                     c.AcceptTermsOfService = true;

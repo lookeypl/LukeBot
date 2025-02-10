@@ -1,6 +1,7 @@
 ﻿using LukeBot.Interface;
 using LukeBot.Common;
 using LukeBot.Config;
+using LukeBot.Endpoint;
 using LukeBot.Logging;
 using LukeBot.Services;
 using LukeBot.Communication;
@@ -16,7 +17,6 @@ namespace LukeBot
 {
     internal class LukeBot
     {
-
         private List<ICLIProcessor> mCommandProcessors = new List<ICLIProcessor>{
             new EventCLIProcessor(),
             new ModuleCLIProcessor(),
@@ -29,6 +29,9 @@ namespace LukeBot
             new TwitchCLIProcessor(),
             new WidgetCLIProcessor(),
         };
+
+        private HostEndpoint mEndpoint = new();
+
 
         public LukeBot()
         {
@@ -61,7 +64,7 @@ namespace LukeBot
             Service.Teardown();
 
             Logger.Log().Info("Stopping web endpoint...");
-            Endpoint.Endpoint.StopThread();
+            mEndpoint.Stop();
 
             Logger.Log().Info("Core systems teardown...");
             Service.Teardown();
@@ -86,7 +89,7 @@ namespace LukeBot
                 Comms.Event.Global().Event(API.Events.AUTHMGR_OPEN_BROWSER).Endpoint += OpenBrowserURLCallback;
 
                 Logger.Log().Info("Starting web endpoint...");
-                Endpoint.Endpoint.StartThread();
+                mEndpoint.Start();
 
                 Logger.Log().Info("Initializing Services...");
                 Service.Register(new User.UserService());

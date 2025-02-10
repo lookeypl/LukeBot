@@ -581,6 +581,7 @@ namespace LukeBot
 
             X509Store store = new(StoreName.My, StoreLocation.CurrentUser);
             store.Open(OpenFlags.OpenExistingOnly);
+            Logger.Log().Info("Looking through X509 store for HTTPS certificate for {0}", httpsDomain);
             Logger.Log().Info("X509 Store opened with {0} certificates:", store.Certificates.Count);
             foreach (X509Certificate2 cert in store.Certificates)
             {

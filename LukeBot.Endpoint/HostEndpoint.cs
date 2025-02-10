@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography.X509Certificates;
@@ -12,37 +13,14 @@ using Microsoft.AspNetCore.Server.Kestrel.Https;
 
 namespace LukeBot.Endpoint
 {
-    public class Endpoint
+    public class HostEndpoint
     {
-        private static Endpoint mEndpoint = null;
-        private static Thread mEndpointThread = null;
-        private IWebHost mHost = null;
+        private IHost mHost = null;
 
-        private static void ThreadMain()
-        {
-            mEndpoint = new Endpoint();
-            mEndpoint.Run();
-        }
-
-        public static void StartThread()
-        {
-            mEndpointThread = new Thread(ThreadMain);
-            mEndpointThread.Start();
-        }
-
-        public static void StopThread()
-        {
-            if (mEndpoint != null)
-                mEndpoint.Stop();
-
-            if (mEndpointThread != null)
-                mEndpointThread.Join();
-        }
-
-        public void Run()
+        public async void Start()
         {
             mHost = CreateHostBuilder().Build();
-            mHost.Run();
+            await mHost.StartAsync();
         }
 
         public async void Stop()
@@ -51,15 +29,9 @@ namespace LukeBot.Endpoint
                 await mHost.StopAsync();
         }
 
-        public IWebHostBuilder CreateHostBuilder()
+        public IHostBuilder CreateHostBuilder()
         {
-            IWebHostBuilder builder = WebHost.CreateDefaultBuilder();
-
-            builder.ConfigureLogging(logging =>
-            {
-                logging.ClearProviders();
-                logging.AddProvider(new LBLoggingProvider());
-            });
+            IHostBuilder builder = Host.CreateDefaultBuilder();
 
             string domain;
             string[] URLs;
@@ -91,12 +63,21 @@ namespace LukeBot.Endpoint
             Logger.Log().Info("Endpoint using host addresses:");
             foreach (string addr in URLs)
             {
-                Logger.Log().Info("  - https://" + addr + "/");
+                Logger.Log().Info("  - " + addr + "/");
             }
 
-            builder.UseUrls(URLs);
-            builder.UseStartup<Startup>();
-            builder.UseContentRoot(Directory.GetCurrentDirectory() + "/Data/ContentRoot");
+            builder.ConfigureWebHostDefaults(webBuilder =>
+            {
+                webBuilder.UseUrls(URLs);
+                webBuilder.UseStartup<Startup>();
+                webBuilder.UseContentRoot(Directory.GetCurrentDirectory() + "/Data/ContentRoot");
+            });
+
+            builder.ConfigureLogging(logging =>
+            {
+                logging.ClearProviders();
+                logging.AddProvider(new LBLoggingProvider());
+            });
 
             return builder;
         }

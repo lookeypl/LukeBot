@@ -176,33 +176,6 @@ namespace LukeBot.Endpoint
             }
         }
 
-        public void ConfigureServices(IServiceCollection services)
-        {
-            string domain = Conf.Get<string>(Common.Constants.PROP_STORE_HTTPS_DOMAIN_PROP);
-
-            // LettuceEncrypt is not needed when domain is set to localhost
-            // we assume we're in dev environment which has dev certificate provided
-            if (!domain.Contains("localhost"))
-            {
-                string email = Conf.Get<string>(Common.Constants.PROP_STORE_HTTPS_EMAIL_PROP);
-
-                Logger.Log().Info("Configuring LettuceEncrypt for domain {0} email {1}", domain, email);
-                services.AddLettuceEncrypt(c =>
-                {
-                    c.AcceptTermsOfService = true;
-                    c.DomainNames = new string[] { domain };
-                    c.EmailAddress = email;
-                });
-            }
-            else
-            {
-                Logger.Log().Warning("=== NOTE ===");
-                Logger.Log().Warning("HTTPS domain is set to localhost - assuming we're in dev environment");
-                Logger.Log().Warning("If something fails, remember to run \"dotnet dev-certs https --trust\"");
-                Logger.Log().Warning("============");
-            }
-        }
-
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -220,6 +193,7 @@ namespace LukeBot.Endpoint
             });
             app.UseEndpoints(endpoints =>
             {
+                /* TODO: Disabled while the web UI part is not ready
                 endpoints.MapGet("/", async context => {
                     await LoadPage("index.html", context);
                 });
@@ -238,7 +212,7 @@ namespace LukeBot.Endpoint
                 endpoints.MapGet("api/{call}", async context => {
                     var call = context.Request.RouteValues["call"];
                     await HandleAPICall($"{call}", context);
-                });
+                });*/
                 endpoints.MapGet("callback/{service}", async context => {
                     var service = context.Request.RouteValues["service"];
                     await HandleServiceCallback($"{service}", context);

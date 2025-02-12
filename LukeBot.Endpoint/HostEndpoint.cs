@@ -63,7 +63,7 @@ namespace LukeBot.Endpoint
             Logger.Log().Info("Endpoint using host addresses:");
             foreach (string addr in URLs)
             {
-                Logger.Log().Info("  - " + addr + "/");
+                Logger.Log().Info("  - " + addr);
             }
 
             builder.ConfigureWebHostDefaults(webBuilder =>
@@ -77,6 +77,31 @@ namespace LukeBot.Endpoint
             {
                 logging.ClearProviders();
                 logging.AddProvider(new LBLoggingProvider());
+            });
+
+            builder.ConfigureServices(services =>
+            {
+                // LettuceEncrypt is not needed when domain is set to localhost
+                // we assume we're in dev environment which has dev certificate provided
+                if (!domain.Contains("localhost"))
+                {
+                    string email = Conf.Get<string>(Common.Constants.PROP_STORE_HTTPS_EMAIL_PROP);
+
+                    Logger.Log().Info("Configuring LettuceEncrypt for domain {0} email {1}", domain, email);
+                    services.AddLettuceEncrypt(c =>
+                    {
+                        c.AcceptTermsOfService = true;
+                        c.DomainNames = new string[] { domain };
+                        c.EmailAddress = email;
+                    });
+                }
+                else
+                {
+                    Logger.Log().Warning("=== NOTE ===");
+                    Logger.Log().Warning("HTTPS domain is set to localhost - assuming we're in dev environment");
+                    Logger.Log().Warning("If something fails, remember to run \"dotnet dev-certs https --trust\"");
+                    Logger.Log().Warning("============");
+                }
             });
 
             return builder;

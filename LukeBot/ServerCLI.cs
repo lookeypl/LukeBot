@@ -585,13 +585,23 @@ namespace LukeBot
             Logger.Log().Info("X509 Store opened with {0} certificates:", store.Certificates.Count);
             foreach (X509Certificate2 cert in store.Certificates)
             {
-                Logger.Log().Info("  - {0} (friendly name {1})", cert.Subject, cert.FriendlyName);
+                Logger.Log().Info("  - {0}", cert.Subject);
+                Logger.Log().Info("    -> Friendly Name: {0}", cert.FriendlyName);
+                Logger.Log().Info("    -> Certificate Verified?: {0}", cert.Verify());
+                Logger.Log().Info("    -> Simple Name: {0}", cert.GetNameInfo(X509NameType.SimpleName,true));
+                Logger.Log().Info("    -> Signature Algorithm: {0}", cert.SignatureAlgorithm.FriendlyName);
+                Logger.Log().Info("    -> Certificate Archived?: {0}", cert.Archived);
+                Logger.Log().Info("    -> Length of Raw Data: {0}", cert.RawData.Length);
             }
 
             X509Certificate2Collection certs = store.Certificates.Find(X509FindType.FindBySubjectName, httpsDomain, true);
             if (certs.Count == 0)
             {
-                throw new ServerCLIException("HTTPS certificate for {0} domain not found.", httpsDomain);
+                Logger.Log().Error("ServerCLI: Couldn't find HTTPS certificate for {0} domain", httpsDomain);
+                Logger.Log().Error("ServerCLI: Will NOT listen to incoming connections.");
+                Logger.Log().Error("ServerCLI: Maybe LettuceEncrypt did not fetch it yet? Wait for some time until it does, then restart.");
+                return;
+                //throw new ServerCLIException("HTTPS certificate for {0} domain not found.", httpsDomain);
             }
 
             Logger.Log().Info("ServerCLI: Found certificate for {0}", httpsDomain);
@@ -629,8 +639,26 @@ namespace LukeBot
             }
         }
 
+        public void NoConnectionMainLoop()
+        {
+            ManualResetEvent closeEvent = new(false);
+
+            Console.CancelKeyPress += delegate {
+                closeEvent.Set();
+            };
+
+            closeEvent.WaitOne();
+        }
+
         public void MainLoop()
         {
+            if (mSSLCert == null)
+            {
+                Logger.Log().Warning("ServerCLI: SSL Certificate not found. Connections not open.");
+                NoConnectionMainLoop();
+                return;
+            }
+
             bool done = false;
 
             try

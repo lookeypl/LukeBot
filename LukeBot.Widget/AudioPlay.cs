@@ -195,7 +195,7 @@ namespace LukeBot.Widget
         }
 
         public AudioPlay(string lbUser, string id, string name)
-            : base(lbUser, "LukeBot.Widget/Widgets/AudioPlay.html", id, name)
+            : base(lbUser, "Widgets/AudioPlay.html", id, name)
         {
         }
 

@@ -50,7 +50,7 @@ public class MainClass
     {
         FileUtils.SetUnifiedCWD();
         Logger.SetPreamble(false);
-        Logger.SetProjectRootDir(Directory.GetCurrentDirectory());
+        Logger.EstablishProjectRootDir("Tools");
 
         try
         {

@@ -48,4 +48,8 @@
     <Compile Remove="TestTemplate.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Data/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

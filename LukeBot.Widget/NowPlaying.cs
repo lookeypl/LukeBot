@@ -55,7 +55,7 @@ namespace LukeBot.Widget
         }
 
         public NowPlaying(string lbUser, string id, string name)
-            : base(lbUser, "LukeBot.Widget/Widgets/NowPlaying.html", id, name)
+            : base(lbUser, "Widgets/NowPlaying.html", id, name)
         {
             mState = null;
             mCurrentTrack = null;

@@ -75,7 +75,7 @@ namespace LukeBot.Widget
         }
 
         public Echo(string lbUser, string id, string name)
-            : base(lbUser, "LukeBot.Widget/Widgets/Echo.html", id, name)
+            : base(lbUser, "Widgets/Echo.html", id, name)
         {
         }
 

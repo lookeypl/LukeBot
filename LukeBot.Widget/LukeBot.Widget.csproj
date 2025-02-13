@@ -29,6 +29,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Widgets/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Widgets/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\LukeBot.Communication\LukeBot.Communication.csproj" />
     <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
     <ProjectReference Include="..\LukeBot.Config\LukeBot.Config.csproj" />

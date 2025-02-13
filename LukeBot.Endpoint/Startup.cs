@@ -30,7 +30,7 @@ namespace LukeBot.Endpoint
 
         async Task LoadPage(string page, HttpContext context)
         {
-            StreamReader reader = File.OpenText("LukeBot.Endpoint/Pages/" + page);
+            StreamReader reader = File.OpenText("Pages/" + page);
             string p = reader.ReadToEnd();
             reader.Close();
             await context.Response.WriteAsync(p);
@@ -200,12 +200,12 @@ namespace LukeBot.Endpoint
                 endpoints.MapGet("css/{stylesheet}", async context => {
                     var stylesheet = context.Request.RouteValues["stylesheet"];
                     await LoadPage($"css/{stylesheet}", context);
-                });
+                });*/
                 endpoints.MapGet("js/{script}", async context => {
                     var script = context.Request.RouteValues["script"];
                     await LoadPage($"js/{script}", context);
                 });
-                endpoints.MapGet("views/{view}", async context => {
+                /*endpoints.MapGet("views/{view}", async context => {
                     var view = context.Request.RouteValues["view"];
                     await LoadPage($"views/{view}", context);
                 });

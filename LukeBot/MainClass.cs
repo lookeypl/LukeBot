@@ -39,7 +39,7 @@ namespace LukeBot
                 Console.OutputEncoding = System.Text.Encoding.Unicode;
             }
 
-            Logger.SetProjectRootDir(Directory.GetCurrentDirectory());
+            Logger.EstablishProjectRootDir("LukeBot");
 
             Directory.CreateDirectory("Data/ContentRoot");
 

@@ -51,7 +51,7 @@ namespace LukeBot.Widget
         }
 
         public Chat(string lbUser, string id, string name)
-            : base(lbUser, "LukeBot.Widget/Widgets/Chat.html", id, name)
+            : base(lbUser, "Widgets/Chat.html", id, name)
         {
         }
 

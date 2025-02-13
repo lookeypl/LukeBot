@@ -26,6 +26,11 @@
 
   <ItemGroup>
     <Folder Include="Pages/css/" />
+    <Folder Include="Pages/js/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Pages/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

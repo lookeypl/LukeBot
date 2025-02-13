@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Threading;
 
 
@@ -52,9 +53,30 @@ namespace LukeBot.Logging
                 handler(this, args);
         }
 
-        public void SetProjectRootDir(string dir)
+        public void EstablishProjectRootDir(string toplevelDirName, string dir)
         {
-            mProjectRootDir = dir;
+            // attempts to establish a directory in which the project resided when built
+            // This should be called first, before any logs are written
+
+            // in case we are on Windows
+            dir = dir.Replace('\\', '/');
+
+            string[] dirs = dir.Split('/');
+
+            // reverse-search until we find a match
+            // We assume that this is called by the top-level binary which resides in @p projectName
+            // directory. If that's the case, we will simply trim everything before that.
+            int leftover = 0;
+            for (int i = dirs.Length - 1; i >= 0; --i)
+            {
+                leftover += dirs[i].Length + 1; // includes the slash
+
+                if (dirs[i] == toplevelDirName)
+                {
+                    mProjectRootDir = dir.Substring(0, dir.Length - leftover);
+                    break;
+                }
+            }
         }
 
         public void SetPreamble(bool enable)

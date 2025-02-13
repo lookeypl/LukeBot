@@ -79,9 +79,12 @@ namespace LukeBot.Logging
             return LoggerSingleton.IsLogLevelEnabled(level);
         }
 
-        public static void SetProjectRootDir(string dir)
+        // Attempts to establish the project's root dir used at build time.
+        // It will reverse-look through @p dir for @p toplevelDirName and trim everything before
+        // last occurenece of @p toplevelDirname.
+        public static void EstablishProjectRootDir(string toplevelDirName, [CallerFilePath] string dir = "")
         {
-            LoggerSingleton.Instance.SetProjectRootDir(dir);
+            LoggerSingleton.Instance.EstablishProjectRootDir(toplevelDirName, dir);
         }
 
         public static void SetPreamble(bool enabled)

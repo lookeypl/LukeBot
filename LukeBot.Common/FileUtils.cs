@@ -4,16 +4,12 @@ namespace LukeBot.Common
 {
     public class FileUtils
     {
+        // We set CWD to be at exe directory
+        // That way the project will work the same way after publish
         public static void SetUnifiedCWD()
         {
-            string cwd = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            string newCwd = cwd + "/../../..";
-
-            // DEV
-            // Changes current directory to repo root to access Data directory
-            // Otherwise, after publishing data this won't be accessible so CWD will be the exe location
-            if (File.Exists(newCwd + "/LukeBot.sln"))
-                Directory.SetCurrentDirectory(newCwd);
+            string exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            Directory.SetCurrentDirectory(exeDir);
         }
 
         public static bool Exists(string path)

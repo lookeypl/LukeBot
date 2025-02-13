@@ -177,7 +177,7 @@ namespace LukeBot.Widget
         }
 
         public Alerts(string lbUser, string id, string name)
-            : base(lbUser, "LukeBot.Widget/Widgets/Alerts.html", id, name, new AlertWidgetConfig())
+            : base(lbUser, "Widgets/Alerts.html", id, name, new AlertWidgetConfig())
         {
         }
 

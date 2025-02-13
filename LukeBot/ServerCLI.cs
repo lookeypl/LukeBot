@@ -177,6 +177,14 @@ namespace LukeBot
                 while (!mRecvThreadDone)
                 {
                     ServerMessage msg = ReceiveObject<ServerMessage>();
+
+                    if (msg == null)
+                    {
+                        LogClientContext(LogLevel.Info, "Received null message - closing context");
+                        mRecvThreadDone = true;
+                        break;
+                    }
+
                     LogClientContext(LogLevel.Info, "Mesage: {0}", msg.ToString());
                     if (!ValidateMessage(msg))
                     {
@@ -432,7 +440,11 @@ namespace LukeBot
             {
                 mCurrentUser = user;
 
-                CurrentUserChangeServerMessage m = new(mSessionData, user.GetUsername());
+                string newUsername = "";
+                if (mCurrentUser != null)
+                    newUsername = user.GetUsername();
+
+                CurrentUserChangeServerMessage m = new(mSessionData, newUsername);
                 SendObject<CurrentUserChangeServerMessage>(m);
             }
 

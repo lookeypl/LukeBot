@@ -495,9 +495,26 @@ namespace LukeBot
             TcpClient client = mServer.AcceptTcpClient();
             Stream stream = null;
 
-            if (mSSLCert == null)
+            if (mSSLCert == null || !mSSLCert.Verify())
             {
-                throw new ServerCLIException("SSL Cert is null when it definitely shouldn't be");
+                try
+                {
+                    FetchSSLCertificate();
+
+                    if (mSSLCert == null || !mSSLCert.Verify())
+                    {
+                        // reject the connection - maybe the certificate does not exist or is invalid
+                        Logger.Log().Warning("ServerCLI: Incoming connection closed, fetched certificate not valid or does not exist");
+                        client.Close();
+                        return;
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    Logger.Log().Warning("ServerCLI: Connection rejected, fetching SSL certificate failed: {0}", e.Message);
+                    client.Close();
+                    return;
+                }
             }
 
             SslStream sslStream = new SslStream(client.GetStream(), false);
@@ -563,27 +580,8 @@ namespace LukeBot
             mClients.Clear();
         }
 
-        public ServerCLI()
+        private void FetchSSLCertificate()
         {
-            mAddress = IPAddress.Parse("127.0.0.1");
-            mPort = Common.Constants.SERVERCLI_DEFAULT_PORT;
-
-            string address;
-            if (!Conf.TryGet<string>(Common.Constants.PROP_STORE_SERVER_IP_PROP, out address))
-                throw new ServerCLIException("server_ip property not set, IP address for Server's TCP listener unknown");
-
-            try
-            {
-                mAddress = IPAddress.Parse(address);
-            }
-            catch (FormatException)
-            {
-                throw new ServerCLIException("server_ip property is invalid");
-            }
-
-            Logger.Log().Info("ServerCLI: Will listen on {0}", mAddress);
-            mServer = new TcpListener(mAddress, mPort);
-
             string httpsDomain;
             if (!Conf.TryGet<string>(Common.Constants.PROP_STORE_HTTPS_DOMAIN_PROP, out httpsDomain))
             {
@@ -612,12 +610,33 @@ namespace LukeBot
                 Logger.Log().Error("ServerCLI: Couldn't find HTTPS certificate for {0} domain", httpsDomain);
                 Logger.Log().Error("ServerCLI: Will NOT listen to incoming connections.");
                 Logger.Log().Error("ServerCLI: Maybe LettuceEncrypt did not fetch it yet? Wait for some time until it does, then restart.");
-                return;
-                //throw new ServerCLIException("HTTPS certificate for {0} domain not found.", httpsDomain);
+                throw new ServerCLIException("HTTPS certificate for {0} domain not found.", httpsDomain);
             }
 
             Logger.Log().Info("ServerCLI: Found certificate for {0}", httpsDomain);
             mSSLCert = certs[0];
+        }
+
+        public ServerCLI()
+        {
+            mAddress = IPAddress.Parse("127.0.0.1");
+            mPort = Common.Constants.SERVERCLI_DEFAULT_PORT;
+
+            string address;
+            if (!Conf.TryGet<string>(Common.Constants.PROP_STORE_SERVER_IP_PROP, out address))
+                throw new ServerCLIException("server_ip property not set, IP address for Server's TCP listener unknown");
+
+            try
+            {
+                mAddress = IPAddress.Parse(address);
+            }
+            catch (FormatException)
+            {
+                throw new ServerCLIException("server_ip property is invalid");
+            }
+
+            Logger.Log().Info("ServerCLI: Will listen on {0}", mAddress);
+            mServer = new TcpListener(mAddress, mPort);
         }
 
         ~ServerCLI()
@@ -651,26 +670,8 @@ namespace LukeBot
             }
         }
 
-        public void NoConnectionMainLoop()
-        {
-            ManualResetEvent closeEvent = new(false);
-
-            Console.CancelKeyPress += delegate {
-                closeEvent.Set();
-            };
-
-            closeEvent.WaitOne();
-        }
-
         public void MainLoop()
         {
-            if (mSSLCert == null)
-            {
-                Logger.Log().Warning("ServerCLI: SSL Certificate not found. Connections not open.");
-                NoConnectionMainLoop();
-                return;
-            }
-
             bool done = false;
 
             try

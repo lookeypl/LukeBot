@@ -43,4 +43,8 @@
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
+    <Content Include="Data/**" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

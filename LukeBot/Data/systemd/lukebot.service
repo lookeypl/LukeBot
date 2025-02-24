@@ -1,0 +1,15 @@
+[Unit]
+Description=LukeBot
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=lukebot
+WorkingDirectory=/opt/lukebot/publish/
+ExecStart=/opt/lukebot/publish/LukeBot --cli=server
+KillSignal=SIGINT
+StandardInput=null
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

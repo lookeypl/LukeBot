@@ -737,6 +737,11 @@ namespace LukeBot
                     {
                         Logger.Log().Error("Authentication error caught: {0}. Connection attempt dropped.", e.Message);
                     }
+                    catch (System.Exception e)
+                    {
+                        Logger.Log().Error("Other error caught: {0}. Connection attempt dropped.", e.Message);
+                        Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
+                    }
                 }
             }
             catch (System.Exception e)

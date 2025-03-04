@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Linq;
+using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -316,10 +317,13 @@ namespace LukeBot
                     SetCurrentUser(userContext);
                     RefreshUserData();
 
-                    LogClientContext(LogLevel.Info, "Connected");
+                    IPEndPoint remote = mClient.Client.RemoteEndPoint as IPEndPoint;
+                    LogClientContext(LogLevel.Info, "Connected to {0}", remote.Address);
                     mPingTimer.Start();
 
                     MainLoop();
+
+                    LogClientContext(LogLevel.Info, "Disconnecting {0}", remote.Address);
                 }
                 catch (ClientContextException e)
                 {
@@ -494,6 +498,17 @@ namespace LukeBot
             // this blocks until a new connection comes in
             TcpClient client = mServer.AcceptTcpClient();
             Stream stream = null;
+
+            IPEndPoint remote = client.Client.RemoteEndPoint as IPEndPoint;
+            if (remote != null)
+            {
+                Logger.Log().Info("New client attempting connection: {0}", remote.Address);
+            }
+            else
+            {
+                // TODO maybe we should reject those, but are they even possible?
+                Logger.Log().Info("Accepted new client with null remote end point");
+            }
 
             if (mSSLCert == null || !mSSLCert.Verify())
             {
@@ -717,6 +732,10 @@ namespace LukeBot
                             break;
                         }
                         }
+                    }
+                    catch (AuthenticationException e)
+                    {
+                        Logger.Log().Error("Authentication error caught: {0}. Connection attempt dropped.", e.Message);
                     }
                 }
             }

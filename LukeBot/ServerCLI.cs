@@ -688,6 +688,7 @@ namespace LukeBot
         public void MainLoop()
         {
             bool done = false;
+            bool attemptRestart = false;
 
             try
             {
@@ -706,6 +707,9 @@ namespace LukeBot
                     try
                     {
                         AcceptNewConnection();
+                        // reset the flag since a new connection was accepted successfully
+                        // that means the server restart from IOE catch was successful
+                        attemptRestart = false;
                     }
                     catch (SocketException)
                     {
@@ -737,10 +741,24 @@ namespace LukeBot
                     {
                         Logger.Log().Error("Authentication error caught: {0}. Connection attempt dropped.", e.Message);
                     }
-                    catch (System.Exception e)
+                    catch (IOException e)
                     {
-                        Logger.Log().Error("Other error caught: {0}. Connection attempt dropped.", e.Message);
-                        Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
+                        Logger.Log().Error("IO exception caught: {0}. Connection attempt dropped.", e.Message);
+                    }
+                    catch (InvalidOperationException e)
+                    {
+                        if (attemptRestart)
+                        {
+                            Logger.Log().Error("Caught IOE during server restart attempt: {0}. Closing.", e.Message);
+                            #pragma warning disable CA2200
+                            throw e;
+                            #pragma warning restore CA2200
+                        }
+
+                        Logger.Log().Error("Caught IOE: {0}. Attempt to restart the server...", e.Message);
+                        attemptRestart = true;
+                        mServer.Stop();
+                        mServer.Start();
                     }
                 }
             }

@@ -337,13 +337,12 @@ namespace LukeBot.Twitch
 
             if (recvResult.MessageType == WebSocketMessageType.Close)
             {
-                result.Success = true;
                 result.Status = EventSub.InternalStatus.Closed;
                 return result;
             }
 
             result = JsonConvert.DeserializeObject<EventSub.Message>(recvMsgString, new EventSub.Deserializer());
-            result.Success = true;
+            result.Status = EventSub.InternalStatus.Fine;
 
             return result;
         }
@@ -456,7 +455,7 @@ namespace LukeBot.Twitch
 
         private async Task HandleSessionWelcome(EventSub.Message msg)
         {
-            if (!msg.Success || msg.Status != EventSub.InternalStatus.Fine ||
+            if (msg.Status != EventSub.InternalStatus.Fine ||
                 msg.Metadata.message_type != EventSub.MessageType.session_welcome)
             {
                 Logger.Log().Error("Received an invalid welcome message from Twitch - aborting.");
@@ -528,13 +527,6 @@ namespace LukeBot.Twitch
                 {
                     EventSub.Message msg = await ReceiveAsync();
 
-                    if (!msg.Success)
-                    {
-                        Logger.Log().Error("Received unsuccessful message from EventSub. Stopping.");
-                        mReceiveThreadDone = true;
-                        continue;
-                    }
-
                     switch (msg.Status)
                     {
                     case EventSub.InternalStatus.Reconnect:
@@ -570,9 +562,7 @@ namespace LukeBot.Twitch
                 catch (Exception e)
                 {
                     Logger.Log().Error("Caught exception on EventSub recv thread: {0}", e.Message);
-                    Logger.Log().Error("EventSub thread will now exit.");
                     Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
-                    // TODO provide way to manually restart the thread
                 }
             }
         }
@@ -647,7 +637,7 @@ namespace LukeBot.Twitch
         public async void RequestShutdown()
         {
             mReceiveThreadDone = true;
-            if (mSocket != null)
+            if (mSocket != null && mSocket.State != WebSocketState.Aborted)
             {
                 try
                 {

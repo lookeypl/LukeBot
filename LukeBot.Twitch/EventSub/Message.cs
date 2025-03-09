@@ -186,7 +186,6 @@ namespace LukeBot.Twitch.EventSub
         public Payload Payload { get; set; }
 
         // LukeBot-internal fields
-        public bool Success = false;
         public InternalStatus Status = InternalStatus.Fine;
     }
 }

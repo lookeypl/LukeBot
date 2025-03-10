@@ -57,8 +57,10 @@ namespace LukeBot.Twitch
         private int mKeepaliveTimeoutSeconds = 10;
         private Thread mReceiveThread = null;
         private bool mReceiveThreadDone = false;
-        private AutoResetEvent mSessionReadyEvent = new(false);
         private Dictionary<string, API.Twitch.EventSubSubscriptionResponseData> mSubscriptions = new(); // id to subscription data acquired on creation
+        private Queue<string> mSubscriptionQueue = new();
+        private bool mCanSubscribe = false;
+        private readonly object mProcessSubscriptionsLock = new(); // locks mCanSubscribe and mSubscriptionQueue
 
         // mostly used for tests to halt the test until Reconnect arrives and passes through
         public event EventHandler Reconnected;
@@ -295,6 +297,9 @@ namespace LukeBot.Twitch
                     break;
                 }
             }
+
+            mReceiveThread = new(ReceiveThreadMain);
+            mReceiveThread.Name = "EventSub Receive Thread";
         }
 
         public async Task<EventSub.Message> ReceiveAsync()
@@ -349,30 +354,31 @@ namespace LukeBot.Twitch
 
         private async Task Reconnect(string newURL, bool resub = false)
         {
-            ClientWebSocket newSocket = await ConnectInternal(mToken, mUserID, newURL);
-
-            if (resub)
-            {
-                // Sometimes we have to re-subscribe to all events upon reconnect.
-                //  - Form new subscription list based on existing one from mSubscriptions
-                //  - call Subscribe(list) to resub to everything
-                List<string> events = new();
-                foreach (API.Twitch.EventSubSubscriptionResponseData subData in mSubscriptions.Values)
-                {
-                    events.Add(subData.type);
-                }
-
-                // mSubscriptions is cleared inside Subscribe() call
-                Subscribe(events);
-            }
-
             if (mSocket.State == WebSocketState.Open)
             {
                 await mSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
             }
+            else
+            {
+                mSocket.Abort();
+            }
 
-            // TODO This is a race condition potentially with Receive Thread
-            mSocket.Abort();
+            if (resub)
+            {
+                // Sometimes we have to re-subscribe to all events upon reconnect.
+                // Move all actual subscriptions to mSubscriptionQueue so that when we pick up
+                // a Welcome message we will handle them
+                lock (mProcessSubscriptionsLock)
+                {
+                    foreach (API.Twitch.EventSubSubscriptionResponseData subData in mSubscriptions.Values)
+                    {
+                        mSubscriptionQueue.Enqueue(subData.type);
+                    }
+                }
+            }
+
+            ClientWebSocket newSocket = await ConnectInternal(mToken, mUserID, newURL);
+
             mSocket = newSocket;
             OnReconnected();
         }
@@ -453,6 +459,43 @@ namespace LukeBot.Twitch
             mSubscriptionCallback.PublishEvent(subArgs);
         }
 
+        private void ProcessSubscriptionQueue()
+        {
+            lock (mProcessSubscriptionsLock)
+            {
+                // it can happen we are here before we got the Welcome message
+                // if we are, silently exit - receive thread will handle this process for us
+                if (!mCanSubscribe || (mSubscriptionQueue.Count == 0)) return;
+
+                Logger.Log().Debug("Processing subscriptions");
+                while (mSubscriptionQueue.Count > 0)
+                {
+                    string sub = mSubscriptionQueue.Dequeue();
+
+                    if (mSubscriptions.ContainsKey(sub))
+                    {
+                        Logger.Log().Warning("{0}: Already subscribed to {1}, skipping", mLBUser, sub);
+                        continue;
+                    }
+
+                    API.Twitch.CreateEventSubSubscriptionResponse resp = API.Twitch.CreateEventSubSubscription(
+                        mToken,
+                        sub,
+                        MapSubscriptionToVersion(sub),
+                        mUserID,
+                        mSessionID
+                    );
+
+                    if (!resp.IsSuccess)
+                    {
+                        throw new EventSubSubscriptionFailedException(sub, resp.code, resp.responseData.message);
+                    }
+
+                    mSubscriptions.Add(resp.data[0].id, resp.data[0]);
+                }
+            }
+        }
+
         private async Task HandleSessionWelcome(EventSub.Message msg)
         {
             if (msg.Status != EventSub.InternalStatus.Fine ||
@@ -469,7 +512,14 @@ namespace LukeBot.Twitch
             if (msg.Payload.Session.keepalive_timeout_seconds != null)
                 mKeepaliveTimeoutSeconds = (int)msg.Payload.Session.keepalive_timeout_seconds;
 
-            mSessionReadyEvent.Set();
+            lock (mProcessSubscriptionsLock)
+            {
+                // allow for processing subscriptions
+                mCanSubscribe = true;
+            }
+
+            // immediately check if we have any in queue and subscribe if we do
+            ProcessSubscriptionQueue();
         }
 
         private void HandleSessionKeepalive()
@@ -569,13 +619,9 @@ namespace LukeBot.Twitch
 
         private async Task<ClientWebSocket> ConnectInternal(Token token, string userId, string url)
         {
-            mSessionReadyEvent.Reset();
-
             mToken = token;
             mUserID = userId;
             mConnectURI = new(url);
-            mReceiveThread = new(ReceiveThreadMain);
-            mReceiveThread.Name = "EventSub Receive Thread";
 
             ClientWebSocket socket = new ClientWebSocket();
             await socket.ConnectAsync(mConnectURI, new CancellationTokenSource(mKeepaliveTimeoutSeconds * 1000).Token);
@@ -602,7 +648,7 @@ namespace LukeBot.Twitch
 
         public void Subscribe(List<string> events)
         {
-            if (mReceiveThread == null)
+            if (mSocket == null)
             {
                 Logger.Log().Warning("EventSub: Cannot subscribe to events, EventSub was not connected.");
                 return;
@@ -610,28 +656,15 @@ namespace LukeBot.Twitch
 
             ValidateEventList(events);
 
-            // wait for welcome message to appear
-            mSessionReadyEvent.WaitOne();
-
-            // Subscribe to requested events
-            mSubscriptions.Clear();
-            foreach (string sub in events)
+            lock (mProcessSubscriptionsLock)
             {
-                API.Twitch.CreateEventSubSubscriptionResponse resp = API.Twitch.CreateEventSubSubscription(
-                    mToken,
-                    sub,
-                    MapSubscriptionToVersion(sub),
-                    mUserID,
-                    mSessionID
-                );
-
-                if (!resp.IsSuccess)
+                foreach (string e in events)
                 {
-                    throw new EventSubSubscriptionFailedException(sub, resp.code, resp.responseData.message);
+                    mSubscriptionQueue.Enqueue(e);
                 }
-
-                mSubscriptions.Add(resp.data[0].id, resp.data[0]);
             }
+
+            ProcessSubscriptionQueue();
         }
 
         public async void RequestShutdown()

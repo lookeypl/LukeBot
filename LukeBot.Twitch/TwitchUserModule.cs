@@ -128,6 +128,8 @@ namespace LukeBot.Twitch
             if (!mUserToken.Loaded)
                 mUserToken.Request(tokenScope);
 
+            mUserToken.EnsureValid();
+
             if (!Utils.IsLoginSuccessful(mUserToken))
             {
                 throw new InvalidOperationException("Failed to login to Twitch");
@@ -139,7 +141,6 @@ namespace LukeBot.Twitch
             mIRC = IRC;
             mIRCChannel = mIRC.JoinChannel(mLBUser, mUserData, mUserToken);
             mEventSub = new(mLBUser);
-            mEventSub.Connect(mUserToken, mUserData.id);
         }
 
         internal API.Twitch.GetUserData GetUserData()
@@ -234,6 +235,8 @@ namespace LukeBot.Twitch
             try
             {
                 LoadCommandsFromConfig();
+
+                mEventSub.Connect(mUserToken, mUserData.id);
 
                 List<string> events = new();
                 events.Add(EventSubClient.SUB_CHANNEL_POINTS_REDEMPTION_ADD);

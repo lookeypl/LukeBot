@@ -299,7 +299,7 @@ namespace LukeBot.Twitch
             }
 
             mReceiveThread = new(ReceiveThreadMain);
-            mReceiveThread.Name = "EventSub Receive Thread";
+            mReceiveThread.Name = "EventSub Receive Thread " + mLBUser;
         }
 
         public async Task<EventSub.Message> ReceiveAsync()
@@ -328,13 +328,13 @@ namespace LukeBot.Twitch
             catch (OperationCanceledException)
             {
                 // Reconnect, as we did not receive a single message for more than Keepalive seconds timeout
-                Logger.Log().Warning("Keepalive timer expired - attempting to reconnect...");
+                Logger.Log().Warning("EventSubClient {0}: Keepalive timer expired - attempting to reconnect...", mLBUser);
                 result.Status = EventSub.InternalStatus.Reconnect;
                 return result;
             }
             catch (Exception e)
             {
-                Logger.Log().Warning("Other exception caught - attempting to reconnect...");
+                Logger.Log().Warning("EventSubClient {0}: Other exception caught - attempting to reconnect...", mLBUser);
                 Logger.Log().Trace("Caught: {0}\n{1}", e.Message, e.StackTrace);
                 result.Status = EventSub.InternalStatus.Reconnect;
                 return result;
@@ -474,7 +474,7 @@ namespace LukeBot.Twitch
                 // if we are, silently exit - receive thread will handle this process for us
                 if (!mCanSubscribe || (mSubscriptionQueue.Count == 0)) return;
 
-                Logger.Log().Info("EventSubClient {0}: Processing subscriptions", mLBUser);
+                Logger.Log().Debug("EventSubClient {0}: Processing subscriptions", mLBUser);
                 while (mSubscriptionQueue.Count > 0)
                 {
                     string sub = mSubscriptionQueue.Dequeue();
@@ -514,7 +514,7 @@ namespace LukeBot.Twitch
                 throw new EventSubConnectFailedException();
             }
 
-            Logger.Log().Info("EventSubClient {0}: Received Welcome", mLBUser);
+            Logger.Log().Info("EventSubClient {0}: Welcome", mLBUser);
             // Update necessary parameters for further work
             mSessionID = msg.Payload.Session.id;
             if (msg.Payload.Session.keepalive_timeout_seconds != null)
@@ -536,18 +536,18 @@ namespace LukeBot.Twitch
             // Its purpose is to clear the keepalive timeout timer when no other message came through.
             // If we don't get it within mKeepaliveTimeoutSeconds seconds, we should reconnect. This is
             // handled inside ReceiveAsync as a timeout.
-            //Logger.Log().Debug("EventSub: Keepalive");
+            //Logger.Log().Debug("EventSubClient {0}: Keepalive", mLBUser);
         }
 
         private async Task HandleSessionReconnect(EventSub.PayloadSession sessionReconnect)
         {
-            Logger.Log().Debug("EventSub: Reconnect");
+            Logger.Log().Info("EventSubClient {0}: Reconnect", mLBUser);
             await Reconnect(sessionReconnect.reconnect_url);
         }
 
         private void HandleNotification(EventSub.PayloadSubscription subscription, EventSub.PayloadEvent eventData)
         {
-            Logger.Log().Debug("EventSub: Notification: {0}", subscription.type);
+            Logger.Log().Info("EventSubClient {0}: Notification: {1}", mLBUser, subscription.type);
 
             switch (subscription.type)
             {
@@ -574,12 +574,12 @@ namespace LukeBot.Twitch
 
         private void HandleRevocation()
         {
-            Logger.Log().Debug("EventSub: Revocation");
+            Logger.Log().Debug("EventSubClient {0}: Revocation", mLBUser);
         }
 
         private async void ReceiveThreadMain()
         {
-            Logger.Log().Info("EventSubClient: Receive thread started for {0}", mLBUser);
+            Logger.Log().Info("EventSubClient {0}: Receive thread started", mLBUser);
 
             while (!mReceiveThreadDone)
             {
@@ -615,13 +615,13 @@ namespace LukeBot.Twitch
                         HandleRevocation();
                         break;
                     default:
-                        Logger.Log().Error("Invalid EventSub message type: {0}", msg.Metadata.message_type);
+                        Logger.Log().Error("EventSubClient {0}: Invalid EventSub message type: {1}", mLBUser, msg.Metadata.message_type);
                         break;
                     }
                 }
                 catch (Exception e)
                 {
-                    Logger.Log().Error("Caught exception on EventSub recv thread: {0}", e.Message);
+                    Logger.Log().Error("EventSubClient {0}: Caught exception on EventSub recv thread: {1}", mLBUser, e.Message);
                     Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
                 }
             }
@@ -663,7 +663,7 @@ namespace LukeBot.Twitch
         {
             if (mSocket == null)
             {
-                Logger.Log().Warning("EventSub: Cannot subscribe to events, EventSub was not connected.");
+                Logger.Log().Warning("EventSubClient {0}: Cannot subscribe to events, EventSub was not connected.", mLBUser);
                 return;
             }
 
@@ -691,7 +691,7 @@ namespace LukeBot.Twitch
                 }
                 catch (System.Exception e)
                 {
-                    Logger.Log().Error("Error during EventSub shutdown request: {0}", e.Message);
+                    Logger.Log().Error("EventSubClient {0}: Error during EventSub shutdown request: {0}", mLBUser, e.Message);
                 }
             }
         }

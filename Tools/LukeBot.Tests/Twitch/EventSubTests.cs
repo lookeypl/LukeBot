@@ -270,8 +270,17 @@ namespace LukeBot.Tests.Twitch
         [TestMethodSkippedWithoutTwitchCLI]
         public async Task EventSub_Reconnect()
         {
-            AutoResetEvent reconnectedEvent = new(false);
+            AutoResetEvent notificationReceivedEvent = new(false);
+            bool castedSuccessfully = false;
+            Comms.Event.User(EVENT_SUB_TEST_USER).Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Endpoint += (e, a) =>
+            {
+                TwitchChannelPointsRedemptionArgs args = a as TwitchChannelPointsRedemptionArgs;
+                castedSuccessfully = (args != null);
+                Console.Error.WriteLine(String.Format("user: {0} name: {1} title: {2}", args.User, args.DisplayName, args.Title));
+                notificationReceivedEvent.Set();
+            };
 
+            AutoResetEvent reconnectedEvent = new(false);
             es.Reconnected += (e, args) =>
             {
                 reconnectedEvent.Set();
@@ -281,6 +290,10 @@ namespace LukeBot.Tests.Twitch
 
             Assert.AreNotEqual(TwitchWSStatus.Unknown, mTwitchWSStatus);
 
+            List<string> events = new();
+            events.Add(EventSubClient.SUB_CHANNEL_POINTS_REDEMPTION_ADD);
+            es.Subscribe(events);
+
             // NOTE - reconnect testing can only happen once every 30 seconds.
             // Technically only one test should call this funciton per run. But,
             // if you're running your own Twitch CLI mock server, make sure to NOT
@@ -289,7 +302,20 @@ namespace LukeBot.Tests.Twitch
             await reconnectCall.WaitForExitAsync();
             Assert.AreEqual(0, reconnectCall.ExitCode);
 
-            reconnectedEvent.WaitOne(5 * 1000);
+            Assert.IsTrue(reconnectedEvent.WaitOne(5 * 1000));
+
+            // test that reconnect went through and subscription still works
+            Process eventTriggerCall = CallTwitchCLI(
+                "event", "trigger",
+                "channel.channel_points_custom_reward_redemption.add",
+                "--transport", "websocket",
+                "--session", es.SessionID
+            );
+            await eventTriggerCall.WaitForExitAsync();
+            Assert.AreEqual(0, eventTriggerCall.ExitCode);
+
+            Assert.IsTrue(notificationReceivedEvent.WaitOne(5 * 1000));
+            Assert.IsTrue(castedSuccessfully);
         }
 
         [TestMethodSkippedWithoutTwitchCLI]
@@ -314,14 +340,14 @@ namespace LukeBot.Tests.Twitch
             es.Subscribe(events);
 
             // testing channel point redemption
-            Process reconnectCall = CallTwitchCLI(
+            Process eventTriggerCall = CallTwitchCLI(
                 "event", "trigger",
                 "channel.channel_points_custom_reward_redemption.add",
                 "--transport", "websocket",
                 "--session", es.SessionID
             );
-            await reconnectCall.WaitForExitAsync();
-            Assert.AreEqual(0, reconnectCall.ExitCode);
+            await eventTriggerCall.WaitForExitAsync();
+            Assert.AreEqual(0, eventTriggerCall.ExitCode);
 
             notificationReceivedEvent.WaitOne(5 * 1000);
 

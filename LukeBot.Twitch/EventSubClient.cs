@@ -61,6 +61,7 @@ namespace LukeBot.Twitch
         private Queue<string> mSubscriptionQueue = new();
         private bool mCanSubscribe = false;
         private readonly object mProcessSubscriptionsLock = new(); // locks mCanSubscribe and mSubscriptionQueue
+        private ClientWebSocket mOldSocket = null; // only used to store old connection until we switch to a new one
 
         // mostly used for tests to halt the test until Reconnect arrives and passes through
         public event EventHandler Reconnected;
@@ -359,22 +360,13 @@ namespace LukeBot.Twitch
                 mCanSubscribe = false;
             }
 
-            if (mSocket.State == WebSocketState.Open)
-            {
-                await mSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
-            }
-            else
-            {
-                mSocket.Abort();
-            }
-
             if (resub)
             {
                 lock (mProcessSubscriptionsLock)
                 {
-                // Sometimes we have to re-subscribe to all events upon reconnect.
-                // Move all actual subscriptions to mSubscriptionQueue so that when we pick up
-                // a Welcome message we will handle them
+                    // Sometimes we have to re-subscribe to all events upon reconnect.
+                    // Move all actual subscriptions to mSubscriptionQueue so that when we pick up
+                    // a Welcome message we will handle them
                     foreach (API.Twitch.EventSubSubscriptionResponseData subData in mSubscriptions.Values)
                     {
                         mSubscriptionQueue.Enqueue(subData.type);
@@ -384,10 +376,12 @@ namespace LukeBot.Twitch
                 }
             }
 
+            Logger.Log().Info("EventSubClient {0}: Reconnecting...", mLBUser);
             ClientWebSocket newSocket = await ConnectInternal(mToken, mUserID, newURL);
 
+            mOldSocket = mSocket;
             mSocket = newSocket;
-            OnReconnected();
+            Logger.Log().Info("EventSubClient {0}: Reconnect: New socket acquired", mLBUser);
         }
 
         private void EmitChannelPointsEvent(EventSub.PayloadEvent eventData)
@@ -520,6 +514,12 @@ namespace LukeBot.Twitch
             if (msg.Payload.Session.keepalive_timeout_seconds != null)
                 mKeepaliveTimeoutSeconds = (int)msg.Payload.Session.keepalive_timeout_seconds;
 
+            // close old connection if it exists
+            if (mOldSocket != null)
+            {
+                await mOldSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
+            }
+
             lock (mProcessSubscriptionsLock)
             {
                 // allow for processing subscriptions
@@ -528,6 +528,15 @@ namespace LukeBot.Twitch
 
             // immediately check if we have any in queue and subscribe if we do
             ProcessSubscriptionQueue();
+
+            if (mOldSocket != null)
+            {
+                mOldSocket.Dispose();
+                mOldSocket = null;
+
+                OnReconnected();
+                Logger.Log().Info("EventSubClient {0}: Reconnect completed", mLBUser);
+            }
         }
 
         private void HandleSessionKeepalive()

@@ -517,7 +517,17 @@ namespace LukeBot.Twitch
             // close old connection if it exists
             if (mOldSocket != null)
             {
-                await mOldSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
+                try
+                {
+                    // attempt to gracefully close the socket
+                    await mOldSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
+                }
+                catch (System.Exception e)
+                {
+                    Logger.Log().Warning("EventSubClient {0}: Exception caught while closing old socket, aborting socket: {1}",
+                        mLBUser, e.Message);
+                    mOldSocket.Abort();
+                }
             }
 
             lock (mProcessSubscriptionsLock)

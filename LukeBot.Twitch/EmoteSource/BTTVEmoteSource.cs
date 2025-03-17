@@ -24,7 +24,7 @@ namespace LukeBot.Twitch
                 }
                 else
                 {
-                    emoteSet.Add(o.name, new Twitch.Common.Emote(EmoteSource.BTTV, o.name, o.id, o.width, o.height));
+                    emoteSet.Add(o.name, new Twitch.Common.Emote(EmoteSource.BTTV, o.name, o.id, o.width, o.height, o.animated));
                 }
             }
         }

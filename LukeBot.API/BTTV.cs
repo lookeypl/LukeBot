@@ -22,6 +22,7 @@ namespace LukeBot.API
                 // width/height completely.
                 width = 128;
                 height = 128;
+                animated = (bool)e["animated"];
             }
         }
 

@@ -71,7 +71,9 @@ namespace LukeBot.Twitch.Common
                 else
                     name = GetEmoteName(msg, ranges.Substring(0, firstRangeIdx));
 
-                Emotes.Add(new MessageEmote(EmoteSource.Twitch, name, e.Substring(0, separatorIdx), 32, 32, e.Substring(separatorIdx + 1)));
+                // "animated" is false because animated Twitch sub emotes don't have static versions
+                // so we just ignore that field and assume emote will be animated if it is
+                Emotes.Add(new MessageEmote(EmoteSource.Twitch, name, e.Substring(0, separatorIdx), 32, 32, e.Substring(separatorIdx + 1), false));
             }
         }
 

@@ -7,14 +7,16 @@
         public string ID { get; private set; }
         public int Width { get; private set; }
         public int Height { get; private set; }
+        public bool Animated { get; private set; }
 
-        public Emote(EmoteSource source, string name, string id, int width, int height)
+        public Emote(EmoteSource source, string name, string id, int width, int height, bool animated)
         {
             Source = source;
             Name = name;
             ID = id;
             Width = width;
             Height = height;
+            Animated = animated;
         }
     }
 }

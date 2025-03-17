@@ -19,6 +19,12 @@ namespace LukeBot.API
                 id = (string)e["id"];
                 width = (int)e["width"];
                 height = (int)e["height"];
+
+                if (e.TryGetValue("animated", out JToken value) && value != null) {
+                    animated = true;
+                } else {
+                    animated = false;
+                }
             }
         }
 

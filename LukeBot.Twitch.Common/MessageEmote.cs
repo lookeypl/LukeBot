@@ -23,6 +23,7 @@ namespace LukeBot.Twitch.Common
         public string ID { get; private set; }
         public int Width { get; private set; }
         public int Height { get; private set; }
+        public bool Animated { get; private set; }
         public List<MessageEmoteRange> Ranges { get; private set; }
 
         public MessageEmote(Emote emote, int from, int to)
@@ -32,17 +33,19 @@ namespace LukeBot.Twitch.Common
             ID = emote.ID;
             Width = emote.Width;
             Height = emote.Height;
+            Animated = emote.Animated;
             Ranges = new List<MessageEmoteRange>();
             Ranges.Add(new MessageEmoteRange(from, to));
         }
 
-        public MessageEmote(EmoteSource source, string name, string id, int width, int height, string rangesStr)
+        public MessageEmote(EmoteSource source, string name, string id, int width, int height, string rangesStr, bool animated)
         {
             Source = source.ToString();
             Name = name;
             ID = id;
             Width = width;
             Height = height;
+            Animated = animated;
             Ranges = new List<MessageEmoteRange>();
             string[] ranges = rangesStr.Split(',');
             foreach (string r in ranges)

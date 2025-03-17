@@ -24,12 +24,12 @@ namespace LukeBot.Twitch
 
             foreach (var e in globalEmotes.emotes)
             {
-                emoteSet.Add(e.name, new Twitch.Common.Emote(EmoteSource.FFZ, e.name, e.id, e.width, e.height));
+                emoteSet.Add(e.name, new Twitch.Common.Emote(EmoteSource.FFZ, e.name, e.id, e.width, e.height, e.animated));
             }
 
             foreach (var e in userEmotes.emotes)
             {
-                emoteSet.Add(e.name, new Twitch.Common.Emote(EmoteSource.FFZ, e.name, e.id, e.width, e.height));
+                emoteSet.Add(e.name, new Twitch.Common.Emote(EmoteSource.FFZ, e.name, e.id, e.width, e.height, e.animated));
             }
         }
 

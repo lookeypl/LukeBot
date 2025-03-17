@@ -9,18 +9,20 @@ namespace LukeBot.API
         public string name { get; protected set; }
         public int width { get; protected set; }
         public int height { get; protected set; }
+        public bool animated { get; protected set; }
 
         public Emote()
-            : this("", "", 0, 0)
+            : this("", "", 0, 0, false)
         {
         }
 
-        public Emote(string id, string name, int width, int height)
+        public Emote(string id, string name, int width, int height, bool animated)
         {
             this.id = id;
             this.name = name;
             this.width = width;
             this.height = height;
+            this.animated = animated;
         }
     };
 

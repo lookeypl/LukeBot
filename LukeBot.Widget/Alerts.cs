@@ -31,39 +31,43 @@ namespace LukeBot.Widget
 
         private class AlertWidgetConfig: WidgetConfiguration
         {
+            [WidgetConfigurationField]
             private string Alignment = "right";
-
-            static AlertWidgetConfig()
-            {
-                RegisterAllocator(nameof(AlertWidgetConfig), () => new AlertWidgetConfig());
-            }
 
             public AlertWidgetConfig()
                 : base("AlertWidgetConfig")
             {
-                RegisterField(nameof(Alignment), () => Alignment);
             }
         }
 
         private void AwaitEventCompletion()
         {
-            if (!Connected)
-                return;
+            try
+            {
+                if (!Connected)
+                    return;
 
-            WidgetEventCompletionResponse resp = RecvFromWS<WidgetEventCompletionResponse>();
-            if (resp == null)
-            {
-                Logger.Log().Warning("Widget's response was null - possibly connection was broken or is not connected");
-                return;
-            }
+                WidgetEventCompletionResponse resp = RecvFromWS<WidgetEventCompletionResponse>();
+                if (resp == null)
+                {
+                    Logger.Log().Warning("Widget's response was null - possibly connection was broken or is not connected");
+                    return;
+                }
 
-            if (resp.Status != 0)
-            {
-                Logger.Log().Warning("Widget failed to complete the event: {0}", resp.Reason);
+                if (resp.Status != 0)
+                {
+                    Logger.Log().Warning("Widget failed to complete the event: {0}", resp.Reason);
+                }
+                else
+                {
+                    Logger.Log().Debug("Widget completed event");
+                }
             }
-            else
+            catch (System.Exception e)
             {
-                Logger.Log().Debug("Widget completed event");
+                Logger.Log().Error("{0}: Caught {1} on Widget's receive loop: {2}",
+                    Name, e.GetType().Name, e.Message
+                );
             }
         }
 
@@ -108,13 +112,15 @@ namespace LukeBot.Widget
 
         protected override void OnConnected()
         {
-            SendToWS(mConfiguration);
+            // must use internal serialization routine to use the proper Converter
+            SendToWS(mConfiguration.Serialize());
             AwaitEventCompletion();
         }
 
         protected override void OnConfigurationUpdate()
         {
-            SendToWS(mConfiguration);
+            // must use internal serialization routine to use the proper Converter
+            SendToWS(mConfiguration.Serialize());
             AwaitEventCompletion();
         }
 
@@ -144,6 +150,11 @@ namespace LukeBot.Widget
 
             collection.Event(Events.TWITCH_SUBSCRIPTION).Endpoint -= OnSubscriptionEvent;
             collection.Event(Events.TWITCH_SUBSCRIPTION).InterruptEndpoint -= OnEventInterrupt;
+        }
+
+        static Alerts()
+        {
+            WidgetConfiguration.RegisterAllocator(nameof(AlertWidgetConfig), () => new AlertWidgetConfig());
         }
 
         public Alerts(string lbUser, string id, string name)

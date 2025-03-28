@@ -47,6 +47,7 @@ namespace LukeBot.Widget.Common
 
         public abstract void SetJson(JsonElement element);
         public abstract JsonElement GetJson();
+        public abstract string GetValueString();
     }
 
     public class WidgetConfigurationFieldAccessor<T>: WidgetConfigurationField
@@ -79,6 +80,11 @@ namespace LukeBot.Widget.Common
         public override JsonElement GetJson()
         {
             return JsonSerializer.SerializeToElement<T>(Getter());
+        }
+
+        public override string GetValueString()
+        {
+            return Getter().ToString();
         }
     }
 

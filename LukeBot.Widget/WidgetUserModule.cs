@@ -128,9 +128,9 @@ namespace LukeBot.Widget
             catch (Exception e)
             {
                 if (w.Name.Length > 0)
-                    Logger.Log().Error("Falied to load Widget {0} ({1}): {2}", w.Name, w.ID, e.Message);
+                    Logger.Log().Error("Failed to load Widget {0} ({1}): {2}", w.Name, w.ID, e.Message);
                 else
-                    Logger.Log().Error("Falied to load Widget {0}: {1}", w.ID, e.Message);
+                    Logger.Log().Error("Failed to load Widget {0}: {1}", w.ID, e.Message);
             }
         }
 
@@ -146,9 +146,9 @@ namespace LukeBot.Widget
             catch (Exception e)
             {
                 if (w.Name.Length > 0)
-                    Logger.Log().Error("Falied to unload Widget {0} ({1}): {2}", w.Name, w.ID, e.Message);
+                    Logger.Log().Error("Failed to unload Widget {0} ({1}): {2}", w.Name, w.ID, e.Message);
                 else
-                    Logger.Log().Error("Falied to unload Widget {0}: {1}", w.ID, e.Message);
+                    Logger.Log().Error("Failed to unload Widget {0}: {1}", w.ID, e.Message);
             }
         }
 

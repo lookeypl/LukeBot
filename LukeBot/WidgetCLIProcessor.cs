@@ -182,10 +182,22 @@ namespace LukeBot
             {
                 wd = GetWidgetUserModule(CLI.GetCurrentUser()).GetWidgetInfo(cmd.Id);
                 conf = GetWidgetUserModule(CLI.GetCurrentUser()).GetWidgetConfiguration(cmd.Id);
+                Dictionary<string, WidgetConfigurationField> fields = conf.GetFields();
 
                 msg = "Widget " + cmd.Id + " info:\n" + wd.ToFormattedString();
-                //LKTODO reimplement
-                // msg += "\nConfiguration:\n" + conf.ToFormattedString();
+                msg += "\nConfiguration:";
+                if (fields.Count == 0)
+                {
+                    msg += " empty";
+                }
+                else
+                {
+                    msg += "\n";
+                    foreach (WidgetConfigurationField field in fields.Values)
+                    {
+                        msg += "  " + field.Name + ": " + field.GetValueString() + "\n";
+                    }
+                }
             }
             catch (System.Exception e)
             {

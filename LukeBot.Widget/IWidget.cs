@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Widget.Common;
-using Newtonsoft.Json;
 
 
 namespace LukeBot.Widget
@@ -94,7 +94,7 @@ namespace LukeBot.Widget
                 recvResult = await mWS.ReceiveAsync(buf, CancellationToken.None);
                 if (recvResult.MessageType == WebSocketMessageType.Text)
                 {
-                    ret += Encoding.UTF8.GetString(buf);
+                    ret += Encoding.UTF8.GetString(buffer, 0, recvResult.Count);
                 }
             }
             while (!recvResult.EndOfMessage);
@@ -167,7 +167,7 @@ namespace LukeBot.Widget
 
         protected T RecvFromWS<T>()
         {
-            return JsonConvert.DeserializeObject<T>(RecvFromWS());
+            return JsonSerializer.Deserialize<T>(RecvFromWS());
         }
 
         protected async Task SendToWSAsync(string msg)
@@ -188,7 +188,7 @@ namespace LukeBot.Widget
 
         protected async Task SendToWSAsync<T>(T obj)
         {
-            await SendToWSAsync(JsonConvert.SerializeObject(obj));
+            await SendToWSAsync(JsonSerializer.Serialize(obj));
         }
 
         protected void SendToWS(string msg)
@@ -317,26 +317,6 @@ namespace LukeBot.Widget
 
             return page;
         }
-
-        /* LKTODO REMOVE
-        public void ValidateConfigUpdate(IEnumerable<(string, string)> changes)
-        {
-            foreach ((string f, string v) change in changes)
-            {
-                mConfiguration.ValidateUpdate(change.f, change.v);
-            }
-        }
-
-        public void UpdateConfig(IEnumerable<(string, string)> changes)
-        {
-            foreach ((string f, string v) change in changes)
-            {
-                mConfiguration.Update(change.f, change.v);
-            }
-
-            OnConfigurationUpdate();
-        }
-        */
 
         public WidgetConfiguration GetConfig()
         {

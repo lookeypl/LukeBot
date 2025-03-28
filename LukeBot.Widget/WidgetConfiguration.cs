@@ -15,16 +15,19 @@ namespace LukeBot.Widget
     {
         private Dictionary<string, WidgetConfigurationField> mFields = new();
 
-        protected delegate WidgetConfiguration WidgetConfigurationAllocator();
+        public delegate WidgetConfiguration WidgetConfigurationAllocator();
         private static Dictionary<string, WidgetConfigurationAllocator> mAllocators = new();
 
-        protected static void RegisterAllocator(string confName, WidgetConfigurationAllocator allocator)
+        public static void RegisterAllocator(string confName, WidgetConfigurationAllocator allocator)
         {
             mAllocators.Add(confName, allocator);
         }
 
         public static WidgetConfiguration AllocateInstanceOf(string confName)
         {
+            if (!mAllocators.ContainsKey(confName))
+                throw new WidgetConfigurationException("Allocator for configuration of type {0} does not exist", confName);
+
             return mAllocators[confName]();
         }
 

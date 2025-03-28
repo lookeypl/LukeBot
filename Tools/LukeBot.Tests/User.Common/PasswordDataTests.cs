@@ -3,9 +3,10 @@ using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using LukeBot.User.Common;
 
 
-namespace LukeBot.User.Common.Tests
+namespace LukeBot.Tests.User.Common
 {
     [TestClass]
     public class PasswordDataTests

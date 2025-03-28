@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using LukeBot.Twitch.Common.Command;
 
 
-namespace LukeBot.Twitch.Common.Command.Tests
+namespace LukeBot.Tests.Twitch.Common.Command
 {
     [TestClass]
     public class ChatUserExtensionsTests

@@ -1,6 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-
+/**
+ * TODO: Namespace should be "LukeBot.Tests.<test_namespaces>
+ */
 namespace LukeBot.Tests
 {
     /**

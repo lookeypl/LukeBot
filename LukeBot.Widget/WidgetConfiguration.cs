@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
@@ -96,7 +97,9 @@ namespace LukeBot.Widget
         public WidgetConfiguration(string eventName)
             : base(eventName)
         {
-            MemberInfo[] members = this.GetType().GetMembers();
+            MemberInfo[] members = this.GetType().GetMembers(
+                BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic
+            );
 
             foreach (MemberInfo member in members)
             {

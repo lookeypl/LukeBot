@@ -16,6 +16,9 @@ namespace LukeBot.Tests.Widget
         // NOTE: For test purposes this mirrors actual config class that would be used to serialize
         // and send to Widget's WebSocket. Changes here might require changes to TestConfiguration
         // and vice versa.
+        //
+        // NOTE 2 ELECTRIC BOOGALOO: the ordering matters for Serialize test. Attribute-registered
+        // members are registered when base constructor is called.
         private class EventTestConfiguration: EventArgsBase
         {
             public bool boolField = true;
@@ -30,7 +33,12 @@ namespace LukeBot.Tests.Widget
             public List<int> intListField = new List<int> { 1, 18, 22, 678, 901 };
             public List<string> stringListField = new List<string> { "list50", "list12", "list1", "listtest420" };
 
+            // NOTE public to make it easier to use...
+            public int privateIntRegisteredViaAttribute = 202020;
+
             public bool boolRegisteredManually = false;
+            // NOTE public to make it easier to use...
+            public int privateIntRegisteredManually = 5060;
 
             public EventTestConfiguration()
                 : base("TestConfiguration")
@@ -60,9 +68,14 @@ namespace LukeBot.Tests.Widget
             public List<int> intListField = new(EVENT_TEST_CONFIGURATION.intListField);
             [WidgetConfigurationField]
             public List<string> stringListField = new(EVENT_TEST_CONFIGURATION.stringListField);
+            [WidgetConfigurationField]
+            private int privateIntRegisteredViaAttribute = EVENT_TEST_CONFIGURATION.privateIntRegisteredViaAttribute;
 
             // below field on purpose has no attribute, as we are registering it manually with RegisterField()
             public bool boolRegisteredManually = EVENT_TEST_CONFIGURATION.boolRegisteredManually;
+            private int privateIntRegisteredManually = EVENT_TEST_CONFIGURATION.privateIntRegisteredManually;
+
+            private int privateIntNotRegistered = 0;
 
             static TestConfiguration()
             {
@@ -77,6 +90,7 @@ namespace LukeBot.Tests.Widget
                 Array.Copy(EVENT_TEST_CONFIGURATION.stringArrayField, stringArrayField, EVENT_TEST_CONFIGURATION.stringArrayField.Length);
 
                 RegisterField(nameof(boolRegisteredManually), () => boolRegisteredManually);
+                RegisterField(nameof(privateIntRegisteredManually), () => privateIntRegisteredManually);
             }
 
             public void CheckFields()
@@ -92,8 +106,11 @@ namespace LukeBot.Tests.Widget
                 Assert.IsNotNull(Get(nameof(intListField)));
                 Assert.IsNotNull(Get(nameof(stringListField)));
                 Assert.IsNotNull(Get(nameof(boolRegisteredManually)));
+                Assert.IsNotNull(Get(nameof(privateIntRegisteredManually)));
+                Assert.IsNotNull(Get(nameof(privateIntRegisteredViaAttribute)));
 
                 // check if some random field does not exist
+                Assert.ThrowsException<WidgetConfigurationException>(() => Get(nameof(privateIntNotRegistered)));
                 Assert.ThrowsException<WidgetConfigurationException>(() => Get("randomNamedFieldWhichShouldNotExist"));
 
                 Assert.AreEqual(EVENT_TEST_CONFIGURATION.boolField, boolField);
@@ -121,6 +138,9 @@ namespace LukeBot.Tests.Widget
                     Assert.AreEqual(EVENT_TEST_CONFIGURATION.stringListField[i], stringListField[i]);
 
                 Assert.AreEqual(EVENT_TEST_CONFIGURATION.boolRegisteredManually, boolRegisteredManually);
+
+                Assert.AreEqual(EVENT_TEST_CONFIGURATION.privateIntRegisteredManually, privateIntRegisteredManually);
+                Assert.AreEqual(EVENT_TEST_CONFIGURATION.privateIntRegisteredViaAttribute, privateIntRegisteredViaAttribute);
             }
 
             public void TryRegisterExisting()

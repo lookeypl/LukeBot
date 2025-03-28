@@ -1,113 +1,91 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Text.Json;
 
 
 namespace LukeBot.Widget.Common
 {
-    public enum WidgetConfigurationFieldType
+    public class WidgetConfigurationFieldAttribute: Attribute
     {
-        BOOLEAN,
-        INTEGER,
-        STRING,
-        ARRAY,
-    };
+    }
 
     public abstract class WidgetConfigurationField
     {
         public string Name { get; private set; }
-        public WidgetConfigurationFieldType Type { get; private set; }
+        public abstract Type Type { get; }
 
-        protected WidgetConfigurationField(string name, WidgetConfigurationFieldType type)
+        protected WidgetConfigurationField(string name)
         {
             Name = name;
-            Type = type;
         }
 
-        public abstract void Parse(string value);
+        // TODO maybe we could introduce a possibility to auto-cast the field
+        // example:
+        //   int x = 10;
+        //   WidgetConfigurationField f = new WidgetConfigurationFieldAccessor<int>(nameof(x), () => x);
+        //   float y = f.Get<float>();
+        // This would probably require getting our hands dirty with Reflection...
+        public T Get<T>()
+        {
+            if (typeof(T) != Type)
+                throw new WidgetConfigurationFieldException("Invalid type {0}", typeof(T).ToString());
+
+            WidgetConfigurationFieldAccessor<T> accessor = this as WidgetConfigurationFieldAccessor<T>;
+            return accessor.Get();
+        }
+
+        public void Set<T>(T val)
+        {
+            if (typeof(T) != Type)
+                throw new WidgetConfigurationFieldException("Invalid type {0}", typeof(T).ToString());
+
+            WidgetConfigurationFieldAccessor<T> accessor = this as WidgetConfigurationFieldAccessor<T>;
+            accessor.Set(val);
+        }
+
+        public abstract void SetJson(JsonElement element);
+        public abstract JsonElement GetJson();
     }
 
-    public abstract class WidgetConfigurationFieldValue<T>: WidgetConfigurationField
+    public class WidgetConfigurationFieldAccessor<T>: WidgetConfigurationField
     {
-        public T Value { get; protected set; }
+        private readonly Action<T> Setter;
+        private readonly Func<T> Getter;
 
-        protected WidgetConfigurationFieldValue(string name, T value, WidgetConfigurationFieldType type)
-            : base(name, type)
+        public override Type Type { get => typeof(T); }
+
+        public WidgetConfigurationFieldAccessor(string name, Expression<Func<T>> expression)
+            : base(name)
         {
-            Value = value;
+            if (expression.Body is not MemberExpression memberExpression)
+                throw new WidgetConfigurationFieldException("Accessor can only be used with member expressions");
+
+            ParameterExpression parameter = Expression.Parameter(typeof(T));
+
+            Setter = Expression.Lambda<Action<T>>(Expression.Assign(memberExpression, parameter), parameter).Compile();
+            Getter = expression.Compile();
         }
 
-        public void Update(T v)
-        {
-            Value = v;
-        }
-    }
+        public void Set(T v) => Setter(v);
+        public T Get() => Getter();
 
-    public class WidgetConfigurationFieldBoolean: WidgetConfigurationFieldValue<bool>
-    {
-        public WidgetConfigurationFieldBoolean(string name, bool value)
-            : base(name, value, WidgetConfigurationFieldType.BOOLEAN)
+        public override void SetJson(JsonElement element)
         {
+            Setter(element.Deserialize<T>());
         }
 
-        public override void Parse(string value)
+        public override JsonElement GetJson()
         {
-            Update(Boolean.Parse(value));
-        }
-    }
-
-    public class WidgetConfigurationFieldInteger: WidgetConfigurationFieldValue<int>
-    {
-        public WidgetConfigurationFieldInteger(string name, int value)
-            : base(name, value, WidgetConfigurationFieldType.INTEGER)
-        {
-        }
-
-        public override void Parse(string value)
-        {
-            Update(Int32.Parse(value));
-        }
-    }
-
-    public class WidgetConfigurationFieldString: WidgetConfigurationFieldValue<string>
-    {
-        public WidgetConfigurationFieldString(string name, string value)
-            : base(name, value, WidgetConfigurationFieldType.STRING)
-        {
-        }
-
-        public override void Parse(string v)
-        {
-            Update(v);
-        }
-    }
-
-    public class WidgetConfigurationFieldArray: WidgetConfigurationFieldValue<List<WidgetConfigurationField>>
-    {
-        public WidgetConfigurationFieldArray(string name, List<WidgetConfigurationField> value)
-            : base(name, value, WidgetConfigurationFieldType.ARRAY)
-        {
-        }
-
-        public override void Parse(string v)
-        {
-            // TODO should this be supported?
-            throw new NotSupportedException("Parsing an Array widget configuration field from string is not supported");
-        }
-
-        public void Add(WidgetConfigurationField field)
-        {
-            Value.Add(field);
-        }
-
-        public WidgetConfigurationField this[int i]
-        {
-            get { return Value[i]; }
-            set { Value[i] = value; }
+            return JsonSerializer.SerializeToElement<T>(Getter());
         }
     }
 
     public interface IWidgetConfiguration
     {
-        public IEnumerable<WidgetConfigurationField> GetFields();
+        public Dictionary<string, WidgetConfigurationField> GetFields();
+        public WidgetConfigurationField Get(string name);
+        public WidgetConfigurationFieldAccessor<T> Get<T>(string name);
     }
 }

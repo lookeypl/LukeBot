@@ -269,8 +269,10 @@ namespace LukeBot.Widget
         public void UpdateWidgetConfiguration(string id, IEnumerable<(string, string)> changes)
         {
             IWidget w = mWidgets[GetActualWidgetId(id)];
-            w.ValidateConfigUpdate(changes);
-            w.UpdateConfig(changes);
+
+            // LKTODO reimplement
+            /*w.ValidateConfigUpdate(changes);
+            w.UpdateConfig(changes);*/
         }
 
         public void RequestShutdown()

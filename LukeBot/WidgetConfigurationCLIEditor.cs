@@ -29,7 +29,7 @@ namespace LukeBot
             return GetWidgetService().GetModule(user) as IWidgetUserModule;
         }
 
-        private WidgetConfiguration GetWidgetConfiguration()
+        private IWidgetConfiguration GetWidgetConfiguration()
         {
             return GetWidgetService().GetModuleByWidgetUUID(mWidgetID).GetWidgetConfiguration(mWidgetID);
         }
@@ -42,7 +42,7 @@ namespace LukeBot
 
         public void ProcessPickOptionState()
         {
-            WidgetConfiguration config = GetWidgetConfiguration();
+            IWidgetConfiguration config = GetWidgetConfiguration();
 
             mCLI.Message("Available configuration options:");
 

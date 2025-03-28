@@ -206,7 +206,7 @@ namespace LukeBot.Widget
         protected void LoadConfiguration()
         {
             if (Conf.TryGet<string>(mConfigurationPath, out string configStr))
-                mConfiguration.DeserializeConfiguration(configStr);
+                mConfiguration = WidgetConfiguration.Deserialize(configStr);
         }
 
         protected void SaveConfiguration()
@@ -214,7 +214,7 @@ namespace LukeBot.Widget
             if (mConfiguration.EventName == Constants.EMPTY_WIDGET_CONFIGURATION_NAME)
                 return; // skip saving config for widgets with no config
 
-            string widgetConfigStr = mConfiguration.SerializeConfiguration();
+            string widgetConfigStr = mConfiguration.Serialize();
 
             if (Conf.Exists(mConfigurationPath))
                 Conf.Modify<string>(mConfigurationPath, widgetConfigStr);
@@ -244,7 +244,7 @@ namespace LukeBot.Widget
         }
 
 
-        public IWidget(string lbUser, string widgetFilePath, string id, string name, WidgetConfiguration config)
+        protected IWidget(string lbUser, string widgetFilePath, string id, string name, WidgetConfiguration config)
         {
             mWidgetFilePath = widgetFilePath;
 
@@ -267,7 +267,7 @@ namespace LukeBot.Widget
             mConfiguration = config;
         }
 
-        public IWidget(string lbUser, string widgetFilePath, string id, string name)
+        protected IWidget(string lbUser, string widgetFilePath, string id, string name)
             : this(lbUser, widgetFilePath, id, name, new EmptyWidgetConfiguration())
         {
         }
@@ -318,6 +318,7 @@ namespace LukeBot.Widget
             return page;
         }
 
+        /* LKTODO REMOVE
         public void ValidateConfigUpdate(IEnumerable<(string, string)> changes)
         {
             foreach ((string f, string v) change in changes)
@@ -335,6 +336,7 @@ namespace LukeBot.Widget
 
             OnConfigurationUpdate();
         }
+        */
 
         public WidgetConfiguration GetConfig()
         {

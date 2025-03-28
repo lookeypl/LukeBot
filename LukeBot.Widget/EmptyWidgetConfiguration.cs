@@ -7,26 +7,14 @@ namespace LukeBot.Widget
 {
     internal class EmptyWidgetConfiguration: WidgetConfiguration
     {
+        static EmptyWidgetConfiguration()
+        {
+            WidgetConfiguration.RegisterAllocator(Constants.EMPTY_WIDGET_CONFIGURATION_NAME, () => new EmptyWidgetConfiguration());
+        }
+
         public EmptyWidgetConfiguration()
             : base(Constants.EMPTY_WIDGET_CONFIGURATION_NAME)
         {
-        }
-
-        public override void DeserializeConfiguration(string configString)
-        {
-        }
-
-        public override void ValidateUpdate(string field, string value)
-        {
-        }
-
-        public override void Update(string field, string value)
-        {
-        }
-
-        public override string ToFormattedString()
-        {
-            return "";
         }
     }
 }

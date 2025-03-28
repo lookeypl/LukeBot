@@ -31,48 +31,17 @@ namespace LukeBot.Widget
 
         private class AlertWidgetConfig: WidgetConfiguration
         {
-            public string Alignment { get; set; }
+            private string Alignment = "right";
+
+            static AlertWidgetConfig()
+            {
+                RegisterAllocator(nameof(AlertWidgetConfig), () => new AlertWidgetConfig());
+            }
 
             public AlertWidgetConfig()
                 : base("AlertWidgetConfig")
             {
-                Alignment = "right";
-            }
-
-            public override void DeserializeConfiguration(string configString)
-            {
-                AlertWidgetConfig config = JsonConvert.DeserializeObject<AlertWidgetConfig>(configString);
-
-                Alignment = config.Alignment;
-            }
-
-            public override void ValidateUpdate(string field, string value)
-            {
-                switch (field)
-                {
-                case "Alignment":
-                {
-                    if (value != "left" && value != "right")
-                        throw new WidgetConfigurationException("Update failed - invalid Alignment value: {0}. Allowed values: \"left\" or \"right\"", value);
-                    break;
-                }
-                default:
-                    Logger.Log().Warning("Unrecognized Alert Widget config field: {0}", field);
-                    break;
-                }
-            }
-
-            public override void Update(string field, string value)
-            {
-                switch (field)
-                {
-                case "Alignment": Alignment = value; break;
-                }
-            }
-
-            public override string ToFormattedString()
-            {
-                return "  Alignment: " + Alignment;
+                RegisterField(nameof(Alignment), () => Alignment);
             }
         }
 
@@ -178,7 +147,7 @@ namespace LukeBot.Widget
         }
 
         public Alerts(string lbUser, string id, string name)
-            : base(lbUser, "Widgets/Alerts.html", id, name, new AlertWidgetConfig())
+            : base(lbUser, "Widgets/Alerts.html", id, name)
         {
         }
 

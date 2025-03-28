@@ -176,7 +176,7 @@ namespace LukeBot
         public void HandleInfoCommand(WidgetInfoCommand cmd, CLIMessageProxy CLI, out string msg)
         {
             WidgetDesc wd;
-            WidgetConfiguration conf;
+            IWidgetConfiguration conf;
 
             try
             {
@@ -184,7 +184,8 @@ namespace LukeBot
                 conf = GetWidgetUserModule(CLI.GetCurrentUser()).GetWidgetConfiguration(cmd.Id);
 
                 msg = "Widget " + cmd.Id + " info:\n" + wd.ToFormattedString();
-                msg += "\nConfiguration:\n" + conf.ToFormattedString();
+                //LKTODO reimplement
+                // msg += "\nConfiguration:\n" + conf.ToFormattedString();
             }
             catch (System.Exception e)
             {

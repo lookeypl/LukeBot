@@ -362,7 +362,7 @@ namespace LukeBotClient
                             break;
                         }
 
-                        if (msg == "quit")
+                        if (msg == "quit" || msg == "exit")
                         {
                             LogoutServerMessage logoutMessage = new(mSessionData);
                             await SendObject<LogoutServerMessage>(logoutMessage);

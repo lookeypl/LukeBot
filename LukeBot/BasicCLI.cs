@@ -63,7 +63,7 @@ namespace LukeBot
 
         private void ProcessCommand(string cmd)
         {
-            if (cmd == "quit")
+            if (cmd == "quit" || cmd == "exit")
             {
                 mState = State.DONE;
             }

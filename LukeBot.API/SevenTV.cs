@@ -78,7 +78,7 @@ namespace LukeBot.API
             ResponseJObject resp = Request.GetJObject(SEVENTV_API_EMOTE_SETS_GLOBAL);
             if (resp.code != HttpStatusCode.OK)
             {
-                Logger.Log().Warning("7TV: Failed to fetch global emotes from 7TV - {1}", resp.code.ToString());
+                Logger.Log().Warning("7TV: Failed to fetch global emotes from 7TV - {0}", resp.code.ToString());
                 return EmoteSet.Empty();
             }
 

@@ -206,10 +206,13 @@ namespace LukeBot.Widget
         protected void LoadConfiguration()
         {
             if (Conf.TryGet<string>(mConfigurationPath, out string configStr))
+            {
                 mConfiguration = WidgetConfiguration.Deserialize(configStr);
+                mConfiguration.SetOwner(this);
+            }
         }
 
-        protected void SaveConfiguration()
+        public void SaveConfiguration()
         {
             if (mConfiguration.EventName == Constants.EMPTY_WIDGET_CONFIGURATION_NAME)
                 return; // skip saving config for widgets with no config
@@ -220,6 +223,12 @@ namespace LukeBot.Widget
                 Conf.Modify<string>(mConfigurationPath, widgetConfigStr);
             else
                 Conf.Add(mConfigurationPath, Property.Create<string>(widgetConfigStr));
+            Conf.Save();
+        }
+
+        internal void NotifyConfigurationUpdate()
+        {
+            OnConfigurationUpdate();
         }
 
 
@@ -244,7 +253,7 @@ namespace LukeBot.Widget
         }
 
 
-        protected IWidget(string lbUser, string widgetFilePath, string id, string name, WidgetConfiguration config)
+        protected IWidget(string lbUser, string widgetFilePath, string id, string name)
         {
             mWidgetFilePath = widgetFilePath;
 
@@ -264,12 +273,7 @@ namespace LukeBot.Widget
                 .Push(mLBUser)
                 .Push(ID)
                 .Push(Constants.PROP_CONFIG);
-            mConfiguration = config;
-        }
-
-        protected IWidget(string lbUser, string widgetFilePath, string id, string name)
-            : this(lbUser, widgetFilePath, id, name, new EmptyWidgetConfiguration())
-        {
+            mConfiguration = new EmptyWidgetConfiguration();
         }
 
         public void Load()

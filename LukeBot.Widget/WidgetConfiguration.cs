@@ -13,6 +13,7 @@ namespace LukeBot.Widget
 {
     public abstract class WidgetConfiguration: EventArgsBase, IWidgetConfiguration
     {
+        private IWidget mOwner = null;
         private Dictionary<string, WidgetConfigurationField> mFields = new();
 
         public delegate WidgetConfiguration WidgetConfigurationAllocator();
@@ -44,6 +45,11 @@ namespace LukeBot.Widget
             if (mFields.ContainsKey(field.Name))
             {
                 throw new WidgetConfigurationException("Configuration field {0} already exists", field.Name);
+            }
+
+            if (mOwner != null)
+            {
+                field.mFieldSetDelegate = mOwner.NotifyConfigurationUpdate;
             }
 
             mFields.Add(field.Name, field);
@@ -124,6 +130,19 @@ namespace LukeBot.Widget
                     }
 
                     RegisterField(field);
+                }
+            }
+        }
+
+        public void SetOwner(IWidget owner)
+        {
+            mOwner = owner;
+
+            if (mOwner != null)
+            {
+                foreach (WidgetConfigurationField f in mFields.Values)
+                {
+                    f.mFieldSetDelegate = mOwner.NotifyConfigurationUpdate;
                 }
             }
         }

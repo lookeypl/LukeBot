@@ -170,22 +170,6 @@ namespace LukeBot.Widget
             return widget.AcquireWS(ws);
         }
 
-        // tries to see if provided ID is a widget ID.
-        // If it isn't a key in Widgets dictionary, tries to fetch the ID
-        // assuming this is a short-hand name.
-        // With nothing found throws an exception.
-        internal string GetActualWidgetId(string id)
-        {
-            if (mWidgets.ContainsKey(id))
-                return id;
-
-            // not an id in widgets dict, try cross-checking it with user friendly names
-            if (!mNameToId.TryGetValue(id, out string actualId))
-                throw new WidgetNotFoundException(id);
-
-            return actualId;
-        }
-
 
         // Public methods //
 
@@ -202,6 +186,22 @@ namespace LukeBot.Widget
         public void Run()
         {
             LoadWidgetsFromConfig();
+        }
+
+        // tries to see if provided ID is a widget ID.
+        // If it isn't a key in Widgets dictionary, tries to fetch the ID
+        // assuming this is a short-hand name.
+        // With nothing found throws an exception.
+        public string GetActualWidgetId(string id)
+        {
+            if (mWidgets.ContainsKey(id))
+                return id;
+
+            // not an id in widgets dict, try cross-checking it with user friendly names
+            if (!mNameToId.TryGetValue(id, out string actualId))
+                throw new WidgetNotFoundException(id);
+
+            return actualId;
         }
 
         public string AddWidget(WidgetType type, string name)
@@ -261,18 +261,14 @@ namespace LukeBot.Widget
             LoadWidget(actualId);
         }
 
+        public void SaveConfiguration(string id)
+        {
+            mWidgets[GetActualWidgetId(id)].SaveConfiguration();
+        }
+
         public IWidgetConfiguration GetWidgetConfiguration(string id)
         {
             return mWidgets[GetActualWidgetId(id)].GetConfig();
-        }
-
-        public void UpdateWidgetConfiguration(string id, IEnumerable<(string, string)> changes)
-        {
-            IWidget w = mWidgets[GetActualWidgetId(id)];
-
-            // LKTODO reimplement
-            /*w.ValidateConfigUpdate(changes);
-            w.UpdateConfig(changes);*/
         }
 
         public void RequestShutdown()

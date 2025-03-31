@@ -76,16 +76,9 @@ namespace LukeBot
         }
     }
 
-    [Verb("update", HelpText = "Updates Widget's configuration. Each Widget might have different configuration fields depending on type.")]
-    public class WidgetUpdateCommand: WidgetBaseCommand
+    [Verb("config", HelpText = "Launches Widget Configuration editor.")]
+    public class WidgetConfigCommand: WidgetBaseCommand
     {
-        [Value(1, MetaName = "changes", Required = true, HelpText = "List of changes to Widget's configuration in <key>=<value> format.")]
-        public IEnumerable<string> Changes { get; set; }
-
-        public WidgetUpdateCommand()
-        {
-            Changes = new List<string>();
-        }
     }
 
     [Verb("enable", HelpText = "Enable Widget support for current user.")]
@@ -247,21 +240,21 @@ namespace LukeBot
             }
         }
 
-        public void HandleUpdateCommand(WidgetUpdateCommand arg, CLIMessageProxy CLI, out string msg)
+        public void HandleConfigCommand(WidgetConfigCommand arg, CLIMessageProxy CLI, out string msg)
         {
             msg = "";
 
             try
             {
-                IEnumerable<(string, string)> changes = Utils.ConvertArgStringsToTuples(arg.Changes);
+                string id = GetWidgetUserModule(CLI.GetCurrentUser()).GetActualWidgetId(arg.Id);
+                new WidgetConfigurationCLIEditor(id, arg.Id, CLI).MainLoop();
 
-                GetWidgetUserModule(CLI.GetCurrentUser()).UpdateWidgetConfiguration(arg.Id, changes);
-
-                msg = arg.Id + " widget's configuration updated successfully.";
+                GetWidgetUserModule(CLI.GetCurrentUser()).SaveConfiguration(arg.Id);
+                msg = "Widget Configuration Editor closed.";
             }
             catch (System.Exception e)
             {
-                msg = "Failed to update Widget's configuration: " + e.Message;
+                msg = "Widget Configuration Editor error: " + e.Message;
             }
         }
 
@@ -304,14 +297,14 @@ namespace LukeBot
                 string result = "";
                 Parser p = new Parser(with => with.HelpWriter = new CLIUtils.CLIMessageProxyTextWriter(cliProxy));
                 p.ParseArguments<WidgetAddCommand, WidgetAddressCommand, WidgetListCommand, WidgetInfoCommand, WidgetDeleteCommand,
-                        WidgetReloadCommand, WidgetUpdateCommand, WidgetEnableCommand, WidgetDisableCommand>(args)
+                        WidgetReloadCommand, WidgetConfigCommand, WidgetEnableCommand, WidgetDisableCommand>(args)
                     .WithParsed<WidgetAddCommand>((WidgetAddCommand arg) => HandleAddCommand(arg, cliProxy, out result))
                     .WithParsed<WidgetAddressCommand>((WidgetAddressCommand arg) => HandleAddressCommand(arg, cliProxy, out result))
                     .WithParsed<WidgetListCommand>((WidgetListCommand arg) => HandleListCommand(arg, cliProxy, out result))
                     .WithParsed<WidgetInfoCommand>((WidgetInfoCommand arg) => HandleInfoCommand(arg, cliProxy, out result))
                     .WithParsed<WidgetDeleteCommand>((WidgetDeleteCommand arg) => HandleDeleteCommand(arg, cliProxy, out result))
                     .WithParsed<WidgetReloadCommand>((WidgetReloadCommand arg) => HandleReloadCommand(arg, cliProxy, out result))
-                    .WithParsed<WidgetUpdateCommand>((WidgetUpdateCommand arg) => HandleUpdateCommand(arg, cliProxy, out result))
+                    .WithParsed<WidgetConfigCommand>((WidgetConfigCommand arg) => HandleConfigCommand(arg, cliProxy, out result))
                     .WithParsed<WidgetEnableCommand>((WidgetEnableCommand arg) => HandleEnableCommand(arg, cliProxy, out result))
                     .WithParsed<WidgetDisableCommand>((WidgetDisableCommand arg) => HandleDisableCommand(arg, cliProxy, out result))
                     .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, Constants.WIDGET_SERVICE_NAME, out result));

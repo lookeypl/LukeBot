@@ -157,6 +157,9 @@ namespace LukeBot.API
             if (mToken == null)
                 throw new InvalidTokenException("Token has not been acquired yet");
 
+            // Forces refresh by resetting the expiration timestamp
+            mToken.expires_in = 0;
+
             // re-check validity, in case other thread already refreshed the Token for us
             if (IsValid)
             {

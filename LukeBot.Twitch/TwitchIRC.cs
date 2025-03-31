@@ -231,6 +231,7 @@ namespace LukeBot.Twitch
             int reconnectTimeout = 1; // in seconds
             int reconnectAttempt = 0;
             int reconnectCount = Constants.RECONNECT_ATTEMPTS;
+            int refreshTokenAfterTries = 3;
             bool successful = false;
 
             int reconnectCountConf = 0;
@@ -257,10 +258,16 @@ namespace LukeBot.Twitch
                 // connection failed - close, wait, retry
                 Logger.Log().Warning("Login to Twitch IRC server failed - retrying in {0} seconds...", reconnectTimeout);
                 mIRCClient.Close();
+                if (refreshTokenAfterTries == 0)
+                {
+                    Logger.Log().Warning("Attempting force-refresh of Twitch login token just in case...");
+                    mToken.Refresh();
+                }
 
                 Thread.Sleep(reconnectTimeout * 1000); // converted to ms
                 reconnectTimeout *= 2;
                 reconnectAttempt++;
+                refreshTokenAfterTries--;
             }
 
             if (!successful)

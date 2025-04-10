@@ -36,6 +36,9 @@ namespace LukeBot.Tests.Widget
             // NOTE public to make it easier to use...
             public int privateIntRegisteredViaAttribute = 202020;
 
+            public string restrictedField = "restricted";
+            public string manuallyRestrictedField = "manual";
+
             public bool boolRegisteredManually = false;
             // NOTE public to make it easier to use...
             public int privateIntRegisteredManually = 5060;
@@ -43,6 +46,36 @@ namespace LukeBot.Tests.Widget
             public EventTestConfiguration()
                 : base("TestConfiguration")
             {
+            }
+        }
+
+        private class TestRestrictedFieldValidator: IWidgetConfigurationFieldValidator<string>
+        {
+            public bool Validate(string input)
+            {
+                switch (input)
+                {
+                case "restricted":
+                case "unrestricted":
+                    return true;
+                default:
+                    return false;
+                }
+            }
+        }
+
+        private class TestManuallyRestrictedFieldValidator: IWidgetConfigurationFieldValidator<string>
+        {
+            public bool Validate(string input)
+            {
+                switch (input)
+                {
+                case "manual":
+                case "auto":
+                    return true;
+                default:
+                    return false;
+                }
             }
         }
 
@@ -70,6 +103,10 @@ namespace LukeBot.Tests.Widget
             public List<string> stringListField = new(EVENT_TEST_CONFIGURATION.stringListField);
             [WidgetConfigurationField]
             private int privateIntRegisteredViaAttribute = EVENT_TEST_CONFIGURATION.privateIntRegisteredViaAttribute;
+            [WidgetConfigurationRestrictedField<string>(typeof(TestRestrictedFieldValidator))]
+            public string restrictedField = EVENT_TEST_CONFIGURATION.restrictedField;
+
+            public string manuallyRestrictedField = EVENT_TEST_CONFIGURATION.manuallyRestrictedField;
 
             // below field on purpose has no attribute, as we are registering it manually with RegisterField()
             public bool boolRegisteredManually = EVENT_TEST_CONFIGURATION.boolRegisteredManually;
@@ -89,6 +126,7 @@ namespace LukeBot.Tests.Widget
                 Array.Copy(EVENT_TEST_CONFIGURATION.intArrayField, intArrayField, EVENT_TEST_CONFIGURATION.intArrayField.Length);
                 Array.Copy(EVENT_TEST_CONFIGURATION.stringArrayField, stringArrayField, EVENT_TEST_CONFIGURATION.stringArrayField.Length);
 
+                RegisterField(nameof(manuallyRestrictedField), () => manuallyRestrictedField, new TestManuallyRestrictedFieldValidator());
                 RegisterField(nameof(boolRegisteredManually), () => boolRegisteredManually);
                 RegisterField(nameof(privateIntRegisteredManually), () => privateIntRegisteredManually);
             }
@@ -105,9 +143,11 @@ namespace LukeBot.Tests.Widget
                 Assert.IsNotNull(Get(nameof(boolListField)));
                 Assert.IsNotNull(Get(nameof(intListField)));
                 Assert.IsNotNull(Get(nameof(stringListField)));
+                Assert.IsNotNull(Get(nameof(privateIntRegisteredViaAttribute)));
+                Assert.IsNotNull(Get(nameof(restrictedField)));
+                Assert.IsNotNull(Get(nameof(manuallyRestrictedField)));
                 Assert.IsNotNull(Get(nameof(boolRegisteredManually)));
                 Assert.IsNotNull(Get(nameof(privateIntRegisteredManually)));
-                Assert.IsNotNull(Get(nameof(privateIntRegisteredViaAttribute)));
 
                 // check if some random field does not exist
                 Assert.ThrowsException<WidgetConfigurationException>(() => Get(nameof(privateIntNotRegistered)));
@@ -136,6 +176,9 @@ namespace LukeBot.Tests.Widget
                 Assert.AreEqual(EVENT_TEST_CONFIGURATION.stringListField.Count, stringListField.Count);
                 for (int i = 0; i < stringListField.Count; ++i)
                     Assert.AreEqual(EVENT_TEST_CONFIGURATION.stringListField[i], stringListField[i]);
+
+                Assert.AreEqual(EVENT_TEST_CONFIGURATION.restrictedField, restrictedField);
+                Assert.AreEqual(EVENT_TEST_CONFIGURATION.manuallyRestrictedField, manuallyRestrictedField);
 
                 Assert.AreEqual(EVENT_TEST_CONFIGURATION.boolRegisteredManually, boolRegisteredManually);
 
@@ -238,6 +281,42 @@ namespace LukeBot.Tests.Widget
             Assert.AreEqual(newBool, conf.boolField);
             Assert.AreEqual(newInt, conf.intField);
             Assert.AreEqual(newString, conf.stringField);
+        }
+
+        [TestMethod]
+        public void WidgetConfiguration_UpdateRestricted()
+        {
+            const string fieldName = "restrictedField";
+
+            TestConfiguration conf = new();
+
+            // this should work
+            conf.Get<string>(fieldName).Set("unrestricted");
+            Assert.AreEqual("unrestricted", conf.restrictedField);
+
+            // this should throw
+            Assert.ThrowsException<WidgetConfigurationFieldValidatorException>(() => conf.Get<string>(fieldName).Set("what"));
+
+            // old value should still be there
+            Assert.AreEqual("unrestricted", conf.restrictedField);
+        }
+
+        [TestMethod]
+        public void WidgetConfiguration_UpdateManuallyRestricted()
+        {
+            const string fieldName = "manuallyRestrictedField";
+
+            TestConfiguration conf = new();
+
+            // this should work
+            conf.Get<string>(fieldName).Set("auto");
+            Assert.AreEqual("auto", conf.manuallyRestrictedField);
+
+            // this should throw
+            Assert.ThrowsException<WidgetConfigurationFieldValidatorException>(() => conf.Get<string>(fieldName).Set("nope"));
+
+            // old value should still be there
+            Assert.AreEqual("auto", conf.manuallyRestrictedField);
         }
 
         [TestMethod]

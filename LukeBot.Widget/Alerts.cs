@@ -29,9 +29,24 @@ namespace LukeBot.Widget
             }
         }
 
+        private class AlertWidgetConfigAlignmentValidator: IWidgetConfigurationFieldValidator<string>
+        {
+            public bool Validate(string s)
+            {
+                switch (s)
+                {
+                case "left":
+                case "right":
+                    return true;
+                default:
+                    return false;
+                }
+            }
+        }
+
         private class AlertWidgetConfig: WidgetConfiguration
         {
-            [WidgetConfigurationField]
+            [WidgetConfigurationRestrictedField<string>(typeof(AlertWidgetConfigAlignmentValidator))]
             private string Alignment = "right";
 
             public AlertWidgetConfig()

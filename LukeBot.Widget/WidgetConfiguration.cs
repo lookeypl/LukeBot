@@ -60,7 +60,12 @@ namespace LukeBot.Widget
             RegisterField(new WidgetConfigurationFieldAccessor<T>(name, field));
         }
 
-        private WidgetConfigurationField AllocateFieldAccessor(FieldInfo fi)
+        protected void RegisterField<T>(string name, Expression<Func<T>> field, IWidgetConfigurationFieldValidator<T> validator)
+        {
+            RegisterField(new WidgetConfigurationFieldAccessor<T>(name, field, validator));
+        }
+
+        private WidgetConfigurationField AllocateFieldAccessor(FieldInfo fi, WidgetConfigurationFieldAttribute attribute)
         {
             try
             {
@@ -84,13 +89,36 @@ namespace LukeBot.Widget
                 // Invoke Expression.Lambda<Func<T>>(fieldMemberAccess) <- no extra parameters here
                 LambdaExpression accessorExpression = lambdaCreator.Invoke(null, new object[] { fieldMemberAccess, new ParameterExpression[]{} }) as LambdaExpression;
 
+                // Fetch validator field info for our field type
+                Type restrictedFieldAttributeType = typeof(WidgetConfigurationRestrictedFieldAttribute<>).MakeGenericType(new[] { fi.FieldType });
+                FieldInfo validatorField = restrictedFieldAttributeType.GetField("validator", BindingFlags.Public | BindingFlags.Instance);
+
+                // Fetch validator object (if available)
+                object validator = null;
+                FieldInfo[] fields = attribute.GetType().GetFields();
+                foreach (FieldInfo f in fields)
+                {
+                    if (f.DeclaringType == restrictedFieldAttributeType && f.Name == "validator")
+                    {
+                        validator = f.GetValue(attribute);
+                        break;
+                    }
+                }
+
                 // finally, invoke the WidgetConfigurationFieldAccessor<T> constructor and return the object for registration
                 Type accessorType = typeof(WidgetConfigurationFieldAccessor<>);
                 Type[] typeArgs = { fi.FieldType };
                 Type constructedType = accessorType.MakeGenericType(typeArgs);
 
-                object[] args = { fi.Name, accessorExpression };
-                return Activator.CreateInstance(constructedType, args) as WidgetConfigurationField;
+                // if validator was present add it to constructor argument list
+                object[] constructorArgs = { fi.Name, accessorExpression };
+                if (validator != null)
+                {
+                    constructorArgs = constructorArgs.Append(validator).ToArray();
+                }
+
+                // how does this spaghetti work I still have no idea
+                return Activator.CreateInstance(constructedType, constructorArgs) as WidgetConfigurationField;
             }
             catch (System.Exception e)
             {
@@ -112,7 +140,8 @@ namespace LukeBot.Widget
 
             foreach (MemberInfo member in members)
             {
-                var attrs = Attribute.GetCustomAttributes(member, typeof(WidgetConfigurationFieldAttribute), true);
+                Attribute[] attrs = Attribute.GetCustomAttributes(member, typeof(WidgetConfigurationFieldAttribute), true);
+
                 if (attrs != null && attrs.Length == 1)
                 {
                     if (member.MemberType != MemberTypes.Field)
@@ -122,7 +151,7 @@ namespace LukeBot.Widget
                     }
 
                     // attribute found - register given member as a field
-                    WidgetConfigurationField field = AllocateFieldAccessor(member as FieldInfo);
+                    WidgetConfigurationField field = AllocateFieldAccessor(member as FieldInfo, attrs[0] as WidgetConfigurationFieldAttribute);
                     if (field == null)
                     {
                         Logger.Log().Error("WidgetConfiguration failed to allocate accessor for member {0} - skipping", member.Name);

@@ -74,7 +74,10 @@ namespace LukeBot
             CLIMessage("Available configuration options:");
             foreach (WidgetConfigurationField field in fields.Values)
             {
-                CLIMessage("  {0} - {1}", field.Name, field.GetValueString());
+                string msg = String.Format("  {0} - {1}", field.Name, field.GetValueString());
+                string allowed = field.DescribeAllowedValues();
+                if (allowed.Length > 0) msg += " [" + allowed + "]";
+                CLIMessage(msg);
             }
 
             string answer = CLIQuery(false, "Pick option to edit by name (or Q to exit)");

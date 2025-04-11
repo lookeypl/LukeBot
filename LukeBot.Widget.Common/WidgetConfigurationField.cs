@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
@@ -11,12 +12,46 @@ namespace LukeBot.Widget.Common
     public interface IWidgetConfigurationFieldValidator<T>
     {
         public bool Validate(T input);
+        public string Allowed(); // for printing and information purposes
     }
 
     // Default validator which assumes field is unrestricted
     public class WidgetConfigurationFieldUnrestricted<T>: IWidgetConfigurationFieldValidator<T>
     {
         public bool Validate(T input) { return true; }
+        public string Allowed() { return ""; }
+    }
+
+    // Helper validator with list of allowed elements
+    public class WidgetConfigurationFieldListRestricted<T>: IWidgetConfigurationFieldValidator<T>
+    {
+        public List<T> values = new();
+
+        public WidgetConfigurationFieldListRestricted(T[] vals)
+        {
+            foreach (T v in vals)
+            {
+                values.Add(v);
+            }
+        }
+
+        public bool Validate(T input)
+        {
+            return values.Contains(input);
+        }
+
+        public string Allowed()
+        {
+            string listString = "";
+
+            for (int i = 0; i < values.Count; ++i)
+            {
+                listString += values[i].ToString();
+                if (i < values.Count - 1) listString += ", ";
+            }
+
+            return listString;
+        }
     }
 
 
@@ -30,9 +65,27 @@ namespace LukeBot.Widget.Common
     {
         public IWidgetConfigurationFieldValidator<T> validator;
 
+        protected WidgetConfigurationRestrictedFieldAttribute()
+        {
+            this.validator = null; // assumes derived class will call Activator to set it
+        }
+
         public WidgetConfigurationRestrictedFieldAttribute(Type validatorType)
         {
+            if (!validatorType.IsAssignableTo(typeof(IWidgetConfigurationFieldValidator<T>)))
+                throw new WidgetConfigurationFieldException("Validator type {0} cannot be assigned to {1}",
+                                                            validatorType.Name, typeof(IWidgetConfigurationFieldValidator<T>).Name);
+
             this.validator = Activator.CreateInstance(validatorType) as IWidgetConfigurationFieldValidator<T>;
+        }
+    }
+
+    // Attribute which takes a list of allowed values instead of a validator type
+    public sealed class WidgetConfigurationListRestrictedFieldAttribute<T>: WidgetConfigurationRestrictedFieldAttribute<T>
+    {
+        public WidgetConfigurationListRestrictedFieldAttribute(T[] values)
+        {
+            this.validator = Activator.CreateInstance(typeof(WidgetConfigurationFieldListRestricted<T>), values) as IWidgetConfigurationFieldValidator<T>;
         }
     }
 
@@ -82,6 +135,7 @@ namespace LukeBot.Widget.Common
         public abstract JsonElement GetJson();
         public abstract string GetValueString();
         public abstract void SetFromString(string s);
+        public abstract string DescribeAllowedValues();
     }
 
     // Field accessor generic
@@ -150,6 +204,11 @@ namespace LukeBot.Widget.Common
         public override void SetFromString(string s)
         {
             Setter((T)Convert.ChangeType(s, typeof(T)));
+        }
+
+        public override string DescribeAllowedValues()
+        {
+            return mValidator.Allowed();
         }
     }
 }

@@ -67,68 +67,62 @@ namespace LukeBot.Widget
 
         private WidgetConfigurationField AllocateFieldAccessor(FieldInfo fi, WidgetConfigurationFieldAttribute attribute)
         {
-            try
+            // Form a field member access based on constant expression (this)
+            ConstantExpression thisConstant = Expression.Constant(this);
+            MemberExpression fieldMemberAccess = Expression.MakeMemberAccess(thisConstant, fi);
+
+            // Since Expression.Lambda<> is generic, and depends on @p fi type, we need to Reflection it too
+            // fetch the Expression.Lambda<Func<T>>(Expression, params ParameterExpression[]) call
+            Type funcType = typeof(Func<>);
+            Type funcTypeConstructed = funcType.MakeGenericType(new[] { fi.FieldType });
+
+            Type expressionType = typeof(Expression<>);
+            Type expressionTypeConstructed = expressionType.MakeGenericType(new[] { funcTypeConstructed });
+
+            MethodInfo lambdaCreatorGeneric = typeof(Expression).GetMethod(
+                "Lambda", 1, new Type[] { typeof(Expression), typeof(ParameterExpression[]) }
+            );
+            MethodInfo lambdaCreator = lambdaCreatorGeneric.MakeGenericMethod(new[] { funcTypeConstructed });
+
+            // Invoke Expression.Lambda<Func<T>>(fieldMemberAccess) <- no extra parameters here
+            LambdaExpression accessorExpression = lambdaCreator.Invoke(null, new object[] { fieldMemberAccess, new ParameterExpression[]{} }) as LambdaExpression;
+
+            // Fetch validator field info for our field type
+            FieldInfo validatorField = attribute.GetType().GetField("validator", BindingFlags.Public | BindingFlags.Instance);
+
+            // Fetch validator object (if available)
+            // TODO this needs type checks...
+            object validator = null;
+            Type attributeType = attribute.GetType();
+            FieldInfo[] fields = attributeType.GetFields();
+            foreach (FieldInfo f in fields)
             {
-                // Form a field member access based on constant expression (this)
-                ConstantExpression thisConstant = Expression.Constant(this);
-                MemberExpression fieldMemberAccess = Expression.MakeMemberAccess(thisConstant, fi);
-
-                // Since Expression.Lambda<> is generic, and depends on @p fi type, we need to Reflection it too
-                // fetch the Expression.Lambda<Func<T>>(Expression, params ParameterExpression[]) call
-                Type funcType = typeof(Func<>);
-                Type funcTypeConstructed = funcType.MakeGenericType(new[] { fi.FieldType });
-
-                Type expressionType = typeof(Expression<>);
-                Type expressionTypeConstructed = expressionType.MakeGenericType(new[] { funcTypeConstructed });
-
-                MethodInfo lambdaCreatorGeneric = typeof(Expression).GetMethod(
-                    "Lambda", 1, new Type[] { typeof(Expression), typeof(ParameterExpression[]) }
-                );
-                MethodInfo lambdaCreator = lambdaCreatorGeneric.MakeGenericMethod(new[] { funcTypeConstructed });
-
-                // Invoke Expression.Lambda<Func<T>>(fieldMemberAccess) <- no extra parameters here
-                LambdaExpression accessorExpression = lambdaCreator.Invoke(null, new object[] { fieldMemberAccess, new ParameterExpression[]{} }) as LambdaExpression;
-
-                // Fetch validator field info for our field type
-                Type restrictedFieldAttributeType = typeof(WidgetConfigurationRestrictedFieldAttribute<>).MakeGenericType(new[] { fi.FieldType });
-                FieldInfo validatorField = restrictedFieldAttributeType.GetField("validator", BindingFlags.Public | BindingFlags.Instance);
-
-                // Fetch validator object (if available)
-                object validator = null;
-                FieldInfo[] fields = attribute.GetType().GetFields();
-                foreach (FieldInfo f in fields)
+                if (f.Name == "validator")
                 {
-                    if (f.DeclaringType == restrictedFieldAttributeType && f.Name == "validator")
-                    {
-                        validator = f.GetValue(attribute);
-                        break;
-                    }
+                    Type validatorGenericArg = f.FieldType.GetGenericArguments()[0];
+                    if (fi.FieldType != validatorGenericArg)
+                        throw new WidgetConfigurationFieldException("Validator's generic type {0} does not match field type {1}",
+                                                                    validatorGenericArg.Name, fi.FieldType.Name);
+
+                    validator = f.GetValue(attribute);
+                    break;
                 }
-
-                // finally, invoke the WidgetConfigurationFieldAccessor<T> constructor and return the object for registration
-                Type accessorType = typeof(WidgetConfigurationFieldAccessor<>);
-                Type[] typeArgs = { fi.FieldType };
-                Type constructedType = accessorType.MakeGenericType(typeArgs);
-
-                // if validator was present add it to constructor argument list
-                object[] constructorArgs = { fi.Name, accessorExpression };
-                if (validator != null)
-                {
-                    constructorArgs = constructorArgs.Append(validator).ToArray();
-                }
-
-                // how does this spaghetti work I still have no idea
-                return Activator.CreateInstance(constructedType, constructorArgs) as WidgetConfigurationField;
             }
-            catch (System.Exception e)
+
+            // finally, invoke the WidgetConfigurationFieldAccessor<T> constructor and return the object for registration
+            Type accessorType = typeof(WidgetConfigurationFieldAccessor<>);
+            Type[] typeArgs = { fi.FieldType };
+            Type constructedType = accessorType.MakeGenericType(typeArgs);
+
+            // if validator was present add it to constructor argument list
+            object[] constructorArgs = { fi.Name, accessorExpression };
+            if (validator != null)
             {
-                Logger.Log().Error("Failed to allocate a FieldAccessor instance: {0}", e.Message);
-                if (e.InnerException != null)
-                {
-                    Logger.Log().Error("Inner exception {0}: {1}", e.InnerException.ToString(), e.InnerException.Message);
-                }
-                return null;
+                constructorArgs = constructorArgs.Append(validator).ToArray();
             }
+
+            // how does this spaghetti work I still have no idea
+            return Activator.CreateInstance(constructedType, constructorArgs) as WidgetConfigurationField;
         }
 
         public WidgetConfiguration(string eventName)

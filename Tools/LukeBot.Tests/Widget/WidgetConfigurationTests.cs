@@ -37,6 +37,7 @@ namespace LukeBot.Tests.Widget
             public int privateIntRegisteredViaAttribute = 202020;
 
             public string restrictedField = "restricted";
+            public int evenSingleDigitsField = 2;
             public string manuallyRestrictedField = "manual";
 
             public bool boolRegisteredManually = false;
@@ -62,6 +63,11 @@ namespace LukeBot.Tests.Widget
                     return false;
                 }
             }
+
+            public string Allowed()
+            {
+                return "restricted, unrestricted";
+            }
         }
 
         private class TestManuallyRestrictedFieldValidator: IWidgetConfigurationFieldValidator<string>
@@ -76,6 +82,11 @@ namespace LukeBot.Tests.Widget
                 default:
                     return false;
                 }
+            }
+
+            public string Allowed()
+            {
+                return "manual, auto";
             }
         }
 
@@ -105,6 +116,8 @@ namespace LukeBot.Tests.Widget
             private int privateIntRegisteredViaAttribute = EVENT_TEST_CONFIGURATION.privateIntRegisteredViaAttribute;
             [WidgetConfigurationRestrictedField<string>(typeof(TestRestrictedFieldValidator))]
             public string restrictedField = EVENT_TEST_CONFIGURATION.restrictedField;
+            [WidgetConfigurationListRestrictedField<int>(new[] {2, 4, 6, 8})]
+            public int evenSingleDigitsField = EVENT_TEST_CONFIGURATION.evenSingleDigitsField;
 
             public string manuallyRestrictedField = EVENT_TEST_CONFIGURATION.manuallyRestrictedField;
 
@@ -146,6 +159,7 @@ namespace LukeBot.Tests.Widget
                 Assert.IsNotNull(Get(nameof(privateIntRegisteredViaAttribute)));
                 Assert.IsNotNull(Get(nameof(restrictedField)));
                 Assert.IsNotNull(Get(nameof(manuallyRestrictedField)));
+                Assert.IsNotNull(Get(nameof(evenSingleDigitsField)));
                 Assert.IsNotNull(Get(nameof(boolRegisteredManually)));
                 Assert.IsNotNull(Get(nameof(privateIntRegisteredManually)));
 
@@ -190,6 +204,40 @@ namespace LukeBot.Tests.Widget
             {
                 // this should throw as boolField was already registered by attribute
                 RegisterField(nameof(boolField), () => boolField);
+            }
+        }
+
+        public class MismatchedAttributeAndFieldType: WidgetConfiguration
+        {
+            // Attribute generic type (string) matches validator generic type, but not field type (int)
+            [WidgetConfigurationRestrictedField<string>(typeof(TestRestrictedFieldValidator))]
+            public int myTypeDoesNotMatchAttributeType = 420;
+
+            static MismatchedAttributeAndFieldType()
+            {
+                WidgetConfiguration.RegisterAllocator(nameof(MismatchedAttributeAndFieldType), () => new MismatchedAttributeAndFieldType());
+            }
+
+            public MismatchedAttributeAndFieldType()
+                : base("MismatchedAttirbuteAndFieldType")
+            {
+            }
+        }
+
+        public class MismatchedAttributeAndValidatorType: WidgetConfiguration
+        {
+            // Attribute generic type (string) matches field type, but not validator generic type
+            [WidgetConfigurationRestrictedField<int>(typeof(TestRestrictedFieldValidator))]
+            public int myTypeMatchesButValidatorDoesNot = 420;
+
+            static MismatchedAttributeAndValidatorType()
+            {
+                WidgetConfiguration.RegisterAllocator(nameof(MismatchedAttributeAndValidatorType), () => new MismatchedAttributeAndValidatorType());
+            }
+
+            public MismatchedAttributeAndValidatorType()
+                : base("MismatchedAttributeAndValidatorType")
+            {
             }
         }
 
@@ -317,6 +365,36 @@ namespace LukeBot.Tests.Widget
 
             // old value should still be there
             Assert.AreEqual("auto", conf.manuallyRestrictedField);
+        }
+
+        [TestMethod]
+        public void WidgetConfiguration_UpdateListRestricted()
+        {
+            const string fieldName = "evenSingleDigitsField";
+
+            TestConfiguration conf = new();
+
+            // this should work
+            conf.Get<int>(fieldName).Set(4);
+            Assert.AreEqual(4, conf.evenSingleDigitsField);
+
+            // this should throw
+            Assert.ThrowsException<WidgetConfigurationFieldValidatorException>(() => conf.Get<int>(fieldName).Set(1));
+
+            // old value should still be there
+            Assert.AreEqual(4, conf.evenSingleDigitsField);
+        }
+
+        [TestMethod]
+        public void WidgetConfiguration_MismatchedAttributeAndFieldType()
+        {
+            Assert.ThrowsException<WidgetConfigurationFieldException>(() => new MismatchedAttributeAndFieldType());
+        }
+
+        [TestMethod]
+        public void WidgetConfiguration_MismatchedAttributeAndValidatorType()
+        {
+            Assert.ThrowsException<WidgetConfigurationFieldException>(() => new MismatchedAttributeAndValidatorType());
         }
 
         [TestMethod]

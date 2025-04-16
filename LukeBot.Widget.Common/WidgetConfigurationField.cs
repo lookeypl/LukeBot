@@ -8,6 +8,14 @@ using System.Text.Json;
 
 namespace LukeBot.Widget.Common
 {
+    // Editable interface definition
+    // Used to define some custom logic for more complex configuration fields
+    public interface IWidgetConfigurationFieldEditable<T> where T: class
+    {
+
+    }
+
+
     // Validator definition
     public interface IWidgetConfigurationFieldValidator<T>
     {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using LukeBot.Communication;
 using LukeBot.Communication.Common;
 using LukeBot.Logging;
@@ -42,64 +43,28 @@ namespace LukeBot.Widget
             }
         }
 
-        /*private class AudioPlayWidgetConfig: WidgetConfiguration
+        private class AudioPlayTrigger
         {
-            public List<string> Files { get; set; }
+            public string RedemptionName;
+            public List<string> Files;
+            public bool RepeatTotalTime;
+
+            public string ToString()
+            {
+                return String.Format("<{0}, [{1}], {2}>", RedemptionName, String.Join(", ", Files), RepeatTotalTime);
+            }
+        }
+
+        private class AudioPlayWidgetConfig: WidgetConfiguration
+        {
+            [WidgetConfigurationField]
+            public List<AudioPlayTrigger> Triggers { get; set; }
 
             public AudioPlayWidgetConfig()
                 : base("AudioPlayWidgetConfig")
             {
-                Files = new();
             }
-
-            public override void DeserializeConfiguration(string configString)
-            {
-                AudioPlayWidgetConfig config = JsonConvert.DeserializeObject<AudioPlayWidgetConfig>(configString);
-
-                Files = config.Files;
-            }
-
-            public override void ValidateUpdate(string field, string value)
-            {
-                switch (field)
-                {
-                case "Files":
-                {
-                    // TODO
-                    break;
-                }
-                default:
-                    Logger.Log().Warning("Unrecognized AudioPlay Widget config field: {0}", field);
-                    break;
-                }
-            }
-
-            public override void Update(string field, string value)
-            {
-                switch (field)
-                {
-                case "Files":
-                {
-                    Files = new();
-                    string[] vals = value.Split(',');
-                    // TODO
-                    break;
-                }
-                }
-            }
-
-            public override string ToFormattedString()
-            {
-                string result = "";
-                foreach (string f in Files)
-                {
-                    result += f;
-                    result += ',';
-                }
-                result.Remove(result.Length - 1);
-                return "  Files: " + result;
-            }
-        }*/
+        }
 
         private void AwaitEventCompletion()
         {

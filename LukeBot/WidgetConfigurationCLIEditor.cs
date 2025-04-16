@@ -14,6 +14,7 @@ namespace LukeBot
         {
             PickOption = 0,
             SetOption,
+            SetListOption,
             Exit,
         };
 
@@ -22,7 +23,6 @@ namespace LukeBot
         private IWidgetConfiguration mConfiguration = null;
         private CLIMessageProxy mCLI = null;
         private EditorState mState = EditorState.PickOption;
-        private WidgetConfigurationField mFieldToEdit = null;
 
         private IWidgetService GetWidgetService()
         {
@@ -66,7 +66,7 @@ namespace LukeBot
                 throw new ArgumentException(string.Format("Requested Widget has no configuration options"));
         }
 
-        public void ProcessPickOptionState()
+        public WidgetConfigurationField ProcessPickOptionState()
         {
             Dictionary<string, WidgetConfigurationField> fields = mConfiguration.GetFields();
 
@@ -75,42 +75,55 @@ namespace LukeBot
             foreach (WidgetConfigurationField field in fields.Values)
             {
                 string msg = String.Format("  {0} - {1}", field.Name, field.GetValueString());
+
                 string allowed = field.DescribeAllowedValues();
                 if (allowed.Length > 0) msg += " [" + allowed + "]";
                 CLIMessage(msg);
             }
 
-            string answer = CLIQuery(false, "Pick option to edit by name (or Q to exit)");
+            string answer = CLIQuery(false, "\nPick option to edit by name (or Q to exit)");
 
             if (answer == "Q" || answer == "q")
             {
                 mState = EditorState.Exit;
             }
-            else if (fields.TryGetValue(answer, out mFieldToEdit))
+            else if (fields.TryGetValue(answer, out WidgetConfigurationField fieldToEdit))
             {
-                mState = EditorState.SetOption;
+                if (fieldToEdit.Type.IsGenericType && fieldToEdit.Type.GetGenericTypeDefinition() == typeof(List<>))
+                    mState = EditorState.SetListOption;
+                else
+                    mState = EditorState.SetOption;
+
+                return fieldToEdit;
             }
             else
             {
-                CLIMessage("Invalid answer: {0}", answer);
+                CLIMessage("Invalid answer: {0}\n", answer);
             }
+
+            return null;
         }
 
-        public void ProcessSetOptionState()
+        public void ProcessSetOptionState(WidgetConfigurationField field)
         {
-            string newValue = CLIQuery(false, "Enter new value for {0}", mFieldToEdit.Name);
+            string newValue = CLIQuery(false, "Enter new value for {0}", field.Name);
 
             try
             {
-                mFieldToEdit.SetFromString(newValue);
+                field.SetFromString(newValue);
             }
             catch (WidgetConfigurationFieldException e)
             {
-                CLIMessage("Failed to set new value {0} for configuration field {1}: {2}", newValue, mFieldToEdit.Name, e.Message);
+                CLIMessage("Failed to set new value {0} for configuration field {1}: {2}", newValue, field.Name, e.Message);
             }
 
-            mFieldToEdit = null;
+            field = null;
             mState = EditorState.PickOption;
+        }
+
+        public void ProcessSetListOptionState(WidgetConfigurationField listField)
+        {
+            CLIMessage("Editing a list field - available fields:");
         }
 
         // This takes over CLI from main CLI code and provides a sub-UI
@@ -119,13 +132,39 @@ namespace LukeBot
             CLIMessage("Starting Widget Configuration editor");
 
             mState = EditorState.PickOption;
+            WidgetConfigurationField mField = null;
             while (mState != EditorState.Exit)
             {
                 switch (mState)
                 {
-                case EditorState.PickOption: ProcessPickOptionState(); break;
-                case EditorState.SetOption: ProcessSetOptionState(); break;
+                case EditorState.PickOption: mField = ProcessPickOptionState(); break;
+                case EditorState.SetOption:
+                {
+                    if (mField == null)
+                    {
+                        CLIMessage("ERROR: Field is null while we entered SetOption state. Exiting.");
+                        mState = EditorState.Exit;
+                        break;
+                    }
+
+                    ProcessSetOptionState(mField);
+                    break;
+                }
+                case EditorState.SetListOption:
+                {
+                    if (mField == null)
+                    {
+                        CLIMessage("ERROR: Field is null while we entered SetOption state. Exiting.");
+                        mState = EditorState.Exit;
+                        break;
+                    }
+
+                    ProcessSetListOptionState(mField);
+                    break;
+                }
                 default:
+                    CLIMessage("ERROR: Entered invalid state. Exiting.");
+                    mState = EditorState.Exit;
                     break;
                 }
             }

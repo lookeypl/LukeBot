@@ -29,9 +29,9 @@ namespace LukeBot.Widget
             }
         }
 
-        private class AlertWidgetConfig: WidgetConfiguration
+        public class AlertWidgetConfig: WidgetConfiguration
         {
-            [WidgetConfigurationListRestrictedField<string>(new[] { "left", "right" })]
+            [ConfigurationListRestrictedField<string>(new[] { "left", "right" })]
             private string Alignment = "right";
 
             public AlertWidgetConfig()

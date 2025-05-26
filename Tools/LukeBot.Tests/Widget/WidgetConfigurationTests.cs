@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 namespace LukeBot.Tests.Widget
 {
     [TestClass]
-    public class WidgetConfigurationTests
+    public class ConfigurationTests
     {
         // NOTE: For test purposes this mirrors actual config class that would be used to serialize
         // and send to Widget's WebSocket. Changes here might require changes to TestConfiguration
@@ -50,7 +50,7 @@ namespace LukeBot.Tests.Widget
             }
         }
 
-        private class TestRestrictedFieldValidator: IWidgetConfigurationFieldValidator<string>
+        private class TestRestrictedFieldValidator: IConfigurationFieldValidator<string>
         {
             public bool Validate(string input)
             {
@@ -70,7 +70,7 @@ namespace LukeBot.Tests.Widget
             }
         }
 
-        private class TestManuallyRestrictedFieldValidator: IWidgetConfigurationFieldValidator<string>
+        private class TestManuallyRestrictedFieldValidator: IConfigurationFieldValidator<string>
         {
             public bool Validate(string input)
             {
@@ -92,31 +92,31 @@ namespace LukeBot.Tests.Widget
 
         private static readonly EventTestConfiguration EVENT_TEST_CONFIGURATION = new();
 
-        private class TestConfiguration: WidgetConfiguration
+        private class TestConfiguration: Configuration
         {
-            [WidgetConfigurationField]
+            [ConfigurationField]
             public bool boolField = EVENT_TEST_CONFIGURATION.boolField;
-            [WidgetConfigurationField]
+            [ConfigurationField]
             public int intField = EVENT_TEST_CONFIGURATION.intField;
-            [WidgetConfigurationField]
+            [ConfigurationField]
             public string stringField = EVENT_TEST_CONFIGURATION.stringField;
-            [WidgetConfigurationField]
+            [ConfigurationField]
             public bool[] boolArrayField = new bool[EVENT_TEST_CONFIGURATION.boolArrayField.Length];
-            [WidgetConfigurationField]
+            [ConfigurationField]
             public int[] intArrayField = new int[EVENT_TEST_CONFIGURATION.intArrayField.Length];
-            [WidgetConfigurationField]
+            [ConfigurationField]
             public string[] stringArrayField = new string[EVENT_TEST_CONFIGURATION.stringArrayField.Length];
-            [WidgetConfigurationField]
+            [ConfigurationField]
             public List<bool> boolListField = new(EVENT_TEST_CONFIGURATION.boolListField);
-            [WidgetConfigurationField]
+            [ConfigurationField]
             public List<int> intListField = new(EVENT_TEST_CONFIGURATION.intListField);
-            [WidgetConfigurationField]
+            [ConfigurationField]
             public List<string> stringListField = new(EVENT_TEST_CONFIGURATION.stringListField);
-            [WidgetConfigurationField]
+            [ConfigurationField]
             private int privateIntRegisteredViaAttribute = EVENT_TEST_CONFIGURATION.privateIntRegisteredViaAttribute;
-            [WidgetConfigurationRestrictedField<string>(typeof(TestRestrictedFieldValidator))]
+            [ConfigurationRestrictedField<string>(typeof(TestRestrictedFieldValidator))]
             public string restrictedField = EVENT_TEST_CONFIGURATION.restrictedField;
-            [WidgetConfigurationListRestrictedField<int>(new[] {2, 4, 6, 8})]
+            [ConfigurationListRestrictedField<int>(new[] {2, 4, 6, 8})]
             public int evenSingleDigitsField = EVENT_TEST_CONFIGURATION.evenSingleDigitsField;
 
             public string manuallyRestrictedField = EVENT_TEST_CONFIGURATION.manuallyRestrictedField;
@@ -129,7 +129,7 @@ namespace LukeBot.Tests.Widget
 
             static TestConfiguration()
             {
-                WidgetConfiguration.RegisterAllocator(nameof(TestConfiguration), () => new TestConfiguration());
+                Configuration.RegisterAllocator(nameof(TestConfiguration), () => new TestConfiguration());
             }
 
             public TestConfiguration()
@@ -164,8 +164,8 @@ namespace LukeBot.Tests.Widget
                 Assert.IsNotNull(Get(nameof(privateIntRegisteredManually)));
 
                 // check if some random field does not exist
-                Assert.ThrowsException<WidgetConfigurationException>(() => Get(nameof(privateIntNotRegistered)));
-                Assert.ThrowsException<WidgetConfigurationException>(() => Get("randomNamedFieldWhichShouldNotExist"));
+                Assert.ThrowsException<ConfigurationException>(() => Get(nameof(privateIntNotRegistered)));
+                Assert.ThrowsException<ConfigurationException>(() => Get("randomNamedFieldWhichShouldNotExist"));
 
                 Assert.AreEqual(EVENT_TEST_CONFIGURATION.boolField, boolField);
                 Assert.AreEqual(EVENT_TEST_CONFIGURATION.intField, intField);
@@ -207,15 +207,15 @@ namespace LukeBot.Tests.Widget
             }
         }
 
-        public class MismatchedAttributeAndFieldType: WidgetConfiguration
+        public class MismatchedAttributeAndFieldType: Configuration
         {
             // Attribute generic type (string) matches validator generic type, but not field type (int)
-            [WidgetConfigurationRestrictedField<string>(typeof(TestRestrictedFieldValidator))]
+            [ConfigurationRestrictedField<string>(typeof(TestRestrictedFieldValidator))]
             public int myTypeDoesNotMatchAttributeType = 420;
 
             static MismatchedAttributeAndFieldType()
             {
-                WidgetConfiguration.RegisterAllocator(nameof(MismatchedAttributeAndFieldType), () => new MismatchedAttributeAndFieldType());
+                Configuration.RegisterAllocator(nameof(MismatchedAttributeAndFieldType), () => new MismatchedAttributeAndFieldType());
             }
 
             public MismatchedAttributeAndFieldType()
@@ -224,15 +224,15 @@ namespace LukeBot.Tests.Widget
             }
         }
 
-        public class MismatchedAttributeAndValidatorType: WidgetConfiguration
+        public class MismatchedAttributeAndValidatorType: Configuration
         {
             // Attribute generic type (string) matches field type, but not validator generic type
-            [WidgetConfigurationRestrictedField<int>(typeof(TestRestrictedFieldValidator))]
+            [ConfigurationRestrictedField<int>(typeof(TestRestrictedFieldValidator))]
             public int myTypeMatchesButValidatorDoesNot = 420;
 
             static MismatchedAttributeAndValidatorType()
             {
-                WidgetConfiguration.RegisterAllocator(nameof(MismatchedAttributeAndValidatorType), () => new MismatchedAttributeAndValidatorType());
+                Configuration.RegisterAllocator(nameof(MismatchedAttributeAndValidatorType), () => new MismatchedAttributeAndValidatorType());
             }
 
             public MismatchedAttributeAndValidatorType()
@@ -243,28 +243,28 @@ namespace LukeBot.Tests.Widget
 
 
         [TestMethod]
-        public void WidgetConfiguration_Register()
+        public void Configuration_Register()
         {
             TestConfiguration conf = new();
             conf.CheckFields();
         }
 
         [TestMethod]
-        public void WidgetConfiguration_RegisterExisting()
+        public void Configuration_RegisterExisting()
         {
             TestConfiguration conf = new();
             conf.CheckFields();
 
-            Assert.ThrowsException<WidgetConfigurationException>(() => conf.TryRegisterExisting());
+            Assert.ThrowsException<ConfigurationException>(() => conf.TryRegisterExisting());
         }
 
         [TestMethod]
-        public void WidgetConfiguration_GetFields()
+        public void Configuration_GetFields()
         {
             TestConfiguration mainConf = new TestConfiguration();
             IWidgetConfiguration conf = mainConf;
 
-            Dictionary<string, WidgetConfigurationField> fields = conf.GetFields();
+            Dictionary<string, ConfigurationField> fields = conf.GetFields();
 
             Assert.IsTrue(fields.ContainsKey(nameof(mainConf.boolField)));
             Assert.IsTrue(fields.ContainsKey(nameof(mainConf.intField)));
@@ -278,7 +278,7 @@ namespace LukeBot.Tests.Widget
         }
 
         [TestMethod]
-        public void WidgetConfiguration_Get_Field()
+        public void Configuration_Get_Field()
         {
             const bool newBool = false;
             const int newInt = 30;
@@ -296,7 +296,7 @@ namespace LukeBot.Tests.Widget
         }
 
         [TestMethod]
-        public void WidgetConfiguration_UpdateViaMember()
+        public void Configuration_UpdateViaMember()
         {
             const bool newBool = false;
             const int newInt = 30;
@@ -314,7 +314,7 @@ namespace LukeBot.Tests.Widget
         }
 
         [TestMethod]
-        public void WidgetConfiguration_UpdateViaSet()
+        public void Configuration_UpdateViaSet()
         {
             const bool newBool = false;
             const int newInt = 3000;
@@ -332,7 +332,7 @@ namespace LukeBot.Tests.Widget
         }
 
         [TestMethod]
-        public void WidgetConfiguration_UpdateRestricted()
+        public void Configuration_UpdateRestricted()
         {
             const string fieldName = "restrictedField";
 
@@ -343,14 +343,14 @@ namespace LukeBot.Tests.Widget
             Assert.AreEqual("unrestricted", conf.restrictedField);
 
             // this should throw
-            Assert.ThrowsException<WidgetConfigurationFieldValidatorException>(() => conf.Get<string>(fieldName).Set("what"));
+            Assert.ThrowsException<ConfigurationFieldValidatorException>(() => conf.Get<string>(fieldName).Set("what"));
 
             // old value should still be there
             Assert.AreEqual("unrestricted", conf.restrictedField);
         }
 
         [TestMethod]
-        public void WidgetConfiguration_UpdateManuallyRestricted()
+        public void Configuration_UpdateManuallyRestricted()
         {
             const string fieldName = "manuallyRestrictedField";
 
@@ -361,14 +361,14 @@ namespace LukeBot.Tests.Widget
             Assert.AreEqual("auto", conf.manuallyRestrictedField);
 
             // this should throw
-            Assert.ThrowsException<WidgetConfigurationFieldValidatorException>(() => conf.Get<string>(fieldName).Set("nope"));
+            Assert.ThrowsException<ConfigurationFieldValidatorException>(() => conf.Get<string>(fieldName).Set("nope"));
 
             // old value should still be there
             Assert.AreEqual("auto", conf.manuallyRestrictedField);
         }
 
         [TestMethod]
-        public void WidgetConfiguration_UpdateListRestricted()
+        public void Configuration_UpdateListRestricted()
         {
             const string fieldName = "evenSingleDigitsField";
 
@@ -379,26 +379,26 @@ namespace LukeBot.Tests.Widget
             Assert.AreEqual(4, conf.evenSingleDigitsField);
 
             // this should throw
-            Assert.ThrowsException<WidgetConfigurationFieldValidatorException>(() => conf.Get<int>(fieldName).Set(1));
+            Assert.ThrowsException<ConfigurationFieldValidatorException>(() => conf.Get<int>(fieldName).Set(1));
 
             // old value should still be there
             Assert.AreEqual(4, conf.evenSingleDigitsField);
         }
 
         [TestMethod]
-        public void WidgetConfiguration_MismatchedAttributeAndFieldType()
+        public void Configuration_MismatchedAttributeAndFieldType()
         {
-            Assert.ThrowsException<WidgetConfigurationFieldException>(() => new MismatchedAttributeAndFieldType());
+            Assert.ThrowsException<ConfigurationFieldException>(() => new MismatchedAttributeAndFieldType());
         }
 
         [TestMethod]
-        public void WidgetConfiguration_MismatchedAttributeAndValidatorType()
+        public void Configuration_MismatchedAttributeAndValidatorType()
         {
-            Assert.ThrowsException<WidgetConfigurationFieldException>(() => new MismatchedAttributeAndValidatorType());
+            Assert.ThrowsException<ConfigurationFieldException>(() => new MismatchedAttributeAndValidatorType());
         }
 
         [TestMethod]
-        public void WidgetConfiguration_JsonConverterTest_Serialize()
+        public void Configuration_JsonConverterTest_Serialize()
         {
             TestConfiguration conf = new();
             conf.CheckFields();
@@ -407,11 +407,11 @@ namespace LukeBot.Tests.Widget
         }
 
         [TestMethod]
-        public void WidgetConfiguration_JsonConverterTest_Deserialize()
+        public void Configuration_JsonConverterTest_Deserialize()
         {
             string serialized = JsonConvert.SerializeObject(EVENT_TEST_CONFIGURATION);
 
-            TestConfiguration conf = WidgetConfiguration.Deserialize(serialized) as TestConfiguration;
+            TestConfiguration conf = Configuration.Deserialize(serialized) as TestConfiguration;
             Assert.IsNotNull(conf);
             Assert.AreEqual(EVENT_TEST_CONFIGURATION.EventName, conf.EventName);
 

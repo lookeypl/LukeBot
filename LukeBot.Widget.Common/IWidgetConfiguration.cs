@@ -5,8 +5,8 @@ namespace LukeBot.Widget.Common
 {
     public interface IWidgetConfiguration
     {
-        public Dictionary<string, WidgetConfigurationField> GetFields();
-        public WidgetConfigurationField Get(string name);
-        public WidgetConfigurationFieldAccessor<T> Get<T>(string name);
+        public Dictionary<string, ConfigurationField> GetFields();
+        public ConfigurationField Get(string name);
+        public ConfigurationFieldAccessor<T> Get<T>(string name);
     }
 }

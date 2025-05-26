@@ -14,7 +14,10 @@ namespace LukeBot
         {
             PickOption = 0,
             SetOption,
-            SetListOption,
+            ListSetOption,
+            ListAdd,
+            ListDel,
+            ListMove,
             Exit,
         };
 
@@ -90,7 +93,7 @@ namespace LukeBot
             else if (fields.TryGetValue(answer, out WidgetConfigurationField fieldToEdit))
             {
                 if (fieldToEdit.Type.IsGenericType && fieldToEdit.Type.GetGenericTypeDefinition() == typeof(List<>))
-                    mState = EditorState.SetListOption;
+                    mState = EditorState.ListSetOption;
                 else
                     mState = EditorState.SetOption;
 
@@ -121,9 +124,59 @@ namespace LukeBot
             mState = EditorState.PickOption;
         }
 
-        public void ProcessSetListOptionState(WidgetConfigurationField listField)
+        public void ProcessListSetOptionState(WidgetConfigurationField listField)
         {
-            CLIMessage("Editing a list field - available fields:");
+            List<IWidgetConfigurationEditableField> list = listField.Get<List<IWidgetConfigurationEditableField>>();
+
+            bool done = false;
+            while (!done)
+            {
+                CLIMessage("Editing a list field - available fields:");
+
+                foreach (IWidgetConfigurationEditableField f in list)
+                {
+                    CLIMessage("  {0}", f.ToString());
+                }
+
+                string action = CLIQuery(false, "Choose action (add, del, move, quit):");
+                switch (action)
+                {
+                case "add":
+                    mState = EditorState.ListAdd;
+                    done = true;
+                    break;
+                case "del":
+                    mState = EditorState.ListDel;
+                    done = true;
+                    break;
+                case "move":
+                    mState = EditorState.ListMove;
+                    done = true;
+                    break;
+                case "quit":
+                    mState = EditorState.PickOption;
+                    done = true;
+                    break;
+                default:
+                    CLIMessage("Unrecognized option: {0}", action);
+                    break;
+                }
+            }
+        }
+
+        public void ProcessListAdd(WidgetConfigurationField field)
+        {
+
+        }
+
+        public void ProcessListDel(WidgetConfigurationField field)
+        {
+
+        }
+
+        public void ProcessListMove(WidgetConfigurationField field)
+        {
+
         }
 
         // This takes over CLI from main CLI code and provides a sub-UI
@@ -137,7 +190,9 @@ namespace LukeBot
             {
                 switch (mState)
                 {
-                case EditorState.PickOption: mField = ProcessPickOptionState(); break;
+                case EditorState.PickOption:
+                    mField = ProcessPickOptionState();
+                    break;
                 case EditorState.SetOption:
                 {
                     if (mField == null)
@@ -150,16 +205,80 @@ namespace LukeBot
                     ProcessSetOptionState(mField);
                     break;
                 }
-                case EditorState.SetListOption:
+                case EditorState.ListSetOption:
                 {
                     if (mField == null)
                     {
-                        CLIMessage("ERROR: Field is null while we entered SetOption state. Exiting.");
+                        CLIMessage("ERROR: Field is null while we entered ListSetOption state. Exiting.");
                         mState = EditorState.Exit;
                         break;
                     }
 
-                    ProcessSetListOptionState(mField);
+                    if (mField.Type.IsGenericType && mField.Type.GetGenericTypeDefinition() == typeof(List<>))
+                    {
+                        CLIMessage("ERROR: Field is not a List while we entered ListSetOption state. Exiting.");
+                        mState = EditorState.Exit;
+                        break;
+                    }
+
+                    ProcessListSetOptionState(mField);
+                    break;
+                }
+                case EditorState.ListAdd:
+                {
+                    if (mField == null)
+                    {
+                        CLIMessage("ERROR: Field is null while we entered ListAdd state. Exiting.");
+                        mState = EditorState.Exit;
+                        break;
+                    }
+
+                    if (mField.Type.IsGenericType && mField.Type.GetGenericTypeDefinition() == typeof(List<>))
+                    {
+                        CLIMessage("ERROR: Field is not a List while we entered ListAdd state. Exiting.");
+                        mState = EditorState.Exit;
+                        break;
+                    }
+
+                    ProcessListAdd(mField);
+                    break;
+                }
+                case EditorState.ListDel:
+                {
+                    if (mField == null)
+                    {
+                        CLIMessage("ERROR: Field is null while we entered ListDel state. Exiting.");
+                        mState = EditorState.Exit;
+                        break;
+                    }
+
+                    if (mField.Type.IsGenericType && mField.Type.GetGenericTypeDefinition() == typeof(List<>))
+                    {
+                        CLIMessage("ERROR: Field is not a List while we entered ListDel state. Exiting.");
+                        mState = EditorState.Exit;
+                        break;
+                    }
+
+                    ProcessListDel(mField);
+                    break;
+                }
+                case EditorState.ListMove:
+                {
+                    if (mField == null)
+                    {
+                        CLIMessage("ERROR: Field is null while we entered ListMove state. Exiting.");
+                        mState = EditorState.Exit;
+                        break;
+                    }
+
+                    if (mField.Type.IsGenericType && mField.Type.GetGenericTypeDefinition() == typeof(List<>))
+                    {
+                        CLIMessage("ERROR: Field is not a List while we entered ListMove state. Exiting.");
+                        mState = EditorState.Exit;
+                        break;
+                    }
+
+                    ProcessListMove(mField);
                     break;
                 }
                 default:

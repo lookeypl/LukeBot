@@ -19,7 +19,7 @@ namespace LukeBot.Widget
      */
     public class AudioPlay: IWidget
     {
-        private class AudioPlayInterrupt: EventArgsBase
+        public class AudioPlayInterrupt: EventArgsBase
         {
             public AudioPlayInterrupt()
                 : base("AudioPlayInterrupt")
@@ -27,7 +27,7 @@ namespace LukeBot.Widget
             }
         }
 
-        private class AudioPlayStartPlayback: EventArgsBase
+        public class AudioPlayStartPlayback: EventArgsBase
         {
             public string File { get; set; }
             public bool RandomRepeat { get; set; }
@@ -45,11 +45,24 @@ namespace LukeBot.Widget
 
         private class AudioPlayTrigger
         {
+            [ConfigurationField]
             public string RedemptionName;
+            [ConfigurationField]
             public List<string> Files;
+            [ConfigurationField]
             public bool RepeatTotalTime;
 
-            public string ToString()
+            public string Get(string field)
+            {
+                return "";
+            }
+
+            public void Set(string field, string value)
+            {
+
+            }
+
+            public override string ToString()
             {
                 return String.Format("<{0}, [{1}], {2}>", RedemptionName, String.Join(", ", Files), RepeatTotalTime);
             }
@@ -57,7 +70,7 @@ namespace LukeBot.Widget
 
         private class AudioPlayWidgetConfig: WidgetConfiguration
         {
-            [WidgetConfigurationField]
+            [ConfigurationField]
             public List<AudioPlayTrigger> Triggers { get; set; }
 
             public AudioPlayWidgetConfig()

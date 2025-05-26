@@ -9,17 +9,17 @@ using System.Text.Json.Serialization;
 
 namespace LukeBot.Widget
 {
-    internal class WidgetConfigurationJsonConverter: JsonConverter<WidgetConfiguration>
+    internal class ConfigurationJsonConverter: JsonConverter<Configuration>
     {
         public override bool CanConvert(Type typeToConvert)
         {
-            return typeof(WidgetConfiguration).IsAssignableFrom(typeToConvert);
+            return typeof(Configuration).IsAssignableFrom(typeToConvert);
         }
 
-        private void ReadElement(JsonElement element, WidgetConfiguration conf)
+        private void ReadElement(JsonElement element, Configuration conf)
         {
             JsonElement.ObjectEnumerator enumerator = element.EnumerateObject();
-            Dictionary<string, WidgetConfigurationField> fields = conf.GetFields();
+            Dictionary<string, ConfigurationField> fields = conf.GetFields();
 
             foreach (JsonProperty prop in enumerator)
             {
@@ -38,24 +38,24 @@ namespace LukeBot.Widget
             }
         }
 
-        public override WidgetConfiguration Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override Configuration Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             using (JsonDocument doc = JsonDocument.ParseValue(ref reader))
             {
                 string eventName = doc.RootElement.GetProperty("EventName").GetString();
 
-                WidgetConfiguration conf = WidgetConfiguration.AllocateInstanceOf(eventName);
+                Configuration conf = Configuration.AllocateInstanceOf(eventName);
                 ReadElement(doc.RootElement, conf);
                 return conf;
             }
         }
 
-        public sealed override void Write(Utf8JsonWriter writer, WidgetConfiguration configuration, JsonSerializerOptions options)
+        public sealed override void Write(Utf8JsonWriter writer, Configuration configuration, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
 
-            Dictionary<string, WidgetConfigurationField> fields = configuration.GetFields();
-            foreach (WidgetConfigurationField field in fields.Values)
+            Dictionary<string, ConfigurationField> fields = configuration.GetFields();
+            foreach (ConfigurationField field in fields.Values)
             {
                 writer.WritePropertyName(field.Name);
                 field.GetJson().WriteTo(writer);

@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using LukeBot.Communication.Common;
+using LukeBot.Common;
 using LukeBot.Logging;
 using LukeBot.Widget.Common;
 using Newtonsoft.Json;

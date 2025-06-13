@@ -1,8 +1,6 @@
-using LukeBot.Common;
-
-namespace LukeBot.Widget.Common
+namespace LukeBot.Common
 {
-    public class ConfigurationFieldException: LukeBot.Common.Exception
+    public class ConfigurationFieldException: Exception
     {
         public ConfigurationFieldException(string fmt, params object[] args)
             : base(string.Format(fmt, args))

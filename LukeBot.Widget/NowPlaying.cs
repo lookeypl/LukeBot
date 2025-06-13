@@ -1,5 +1,5 @@
 using LukeBot.Communication;
-using LukeBot.Communication.Common;
+using LukeBot.Common;
 using LukeBot.Spotify.Common;
 using LukeBot.Widget.Common;
 

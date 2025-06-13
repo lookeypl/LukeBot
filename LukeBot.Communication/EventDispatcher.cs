@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using LukeBot.Logging;
-using LukeBot.Communication.Common;
+using LukeBot.Common;
 
 [assembly: InternalsVisibleTo("LukeBot.Tests")]
 

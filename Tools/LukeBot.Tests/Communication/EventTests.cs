@@ -1,6 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using LukeBot.Communication;
-using LukeBot.Communication.Common;
+using LukeBot.Common;
 
 
 namespace LukeBot.Tests.Communication

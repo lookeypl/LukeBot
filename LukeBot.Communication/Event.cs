@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using LukeBot.Communication.Common;
+using LukeBot.Common;
 
 [assembly: InternalsVisibleTo("LukeBot.Tests")]
 

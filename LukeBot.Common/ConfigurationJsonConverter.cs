@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Generic;
-using LukeBot.Communication.Common;
-using LukeBot.Widget.Common;
-using LukeBot.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 
-namespace LukeBot.Widget
+namespace LukeBot.Common
 {
     internal class ConfigurationJsonConverter: JsonConverter<Configuration>
     {

@@ -4,13 +4,11 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
-using LukeBot.Communication.Common;
 using LukeBot.Logging;
-using LukeBot.Widget.Common;
 
-namespace LukeBot.Widget
+namespace LukeBot.Common
 {
-    public abstract class Configuration : EventArgsBase
+    public abstract class Configuration: EventArgsBase
     {
         protected Dictionary<string, ConfigurationField> mFields = new();
         public delegate Configuration ConfigurationAllocator();
@@ -117,8 +115,8 @@ namespace LukeBot.Widget
             return Activator.CreateInstance(constructedType, constructorArgs) as ConfigurationField;
         }
 
-        public Configuration(string eventName)
-            : base(eventName)
+        public Configuration(string name)
+            : base(name)
         {
             MemberInfo[] members = this.GetType().GetMembers(
                 BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic

@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LukeBot.API;
 using LukeBot.Communication;
-using LukeBot.Communication.Common;
+using LukeBot.Common;
 using LukeBot.Twitch.Common;
 using LukeBot.Logging;
 using Newtonsoft.Json;
@@ -354,7 +354,7 @@ namespace LukeBot.Twitch
                 result.Status = EventSub.InternalStatus.Reconnect;
                 return result;
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
                 Logger.Log().Warning("EventSubClient {0}: Other exception caught - attempting to reconnect...", mLBUser);
                 Logger.Log().Trace("Caught: {0}\n{1}", e.Message, e.StackTrace);
@@ -650,7 +650,7 @@ namespace LukeBot.Twitch
                         break;
                     }
                 }
-                catch (Exception e)
+                catch (System.Exception e)
                 {
                     Logger.Log().Error("EventSubClient {0}: Caught exception on EventSub recv thread: {1}", mLBUser, e.Message);
                     Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);

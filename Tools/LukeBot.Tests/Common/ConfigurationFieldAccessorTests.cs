@@ -1,11 +1,11 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using LukeBot.Widget.Common;
+using LukeBot.Common;
 
 
-namespace LukeBot.Tests.Widget.Common
+namespace LukeBot.Tests.Common
 {
     [TestClass]
-    public class WidgetConfigurationFieldAccessorTests
+    public class ConfigurationFieldAccessorTests
     {
         public class TestObject
         {
@@ -20,14 +20,14 @@ namespace LukeBot.Tests.Widget.Common
         }
 
         [TestMethod]
-        public void WidgetConfigurationFieldAccessor_Value()
+        public void ConfigurationFieldAccessor_Value()
         {
             const string name = "field";
             const int value = 20;
 
             int v = value;
 
-            WidgetConfigurationFieldAccessor<int> field = new WidgetConfigurationFieldAccessor<int>(name, () => v);
+            ConfigurationFieldAccessor<int> field = new ConfigurationFieldAccessor<int>(name, () => v);
             Assert.AreEqual(name, field.Name);
             Assert.AreEqual(value, v);
             Assert.AreEqual(value, field.Get());
@@ -40,14 +40,14 @@ namespace LukeBot.Tests.Widget.Common
         }
 
         [TestMethod]
-        public void WidgetConfigurationFieldAccessor_String()
+        public void ConfigurationFieldAccessor_String()
         {
             const string name = "field";
             const string value = "This is a test string";
 
             string v = value;
 
-            WidgetConfigurationFieldAccessor<string> field = new WidgetConfigurationFieldAccessor<string>(name, () => v);
+            ConfigurationFieldAccessor<string> field = new ConfigurationFieldAccessor<string>(name, () => v);
             Assert.AreEqual(name, field.Name);
             Assert.IsNotNull(field.Get());
             Assert.AreEqual(value, field.Get());
@@ -60,13 +60,13 @@ namespace LukeBot.Tests.Widget.Common
         }
 
         [TestMethod]
-        public void WidgetConfigurationFieldAccessor_Object()
+        public void ConfigurationFieldAccessor_Object()
         {
             const string name = "field";
 
             TestObject o = new(30, 4.2f);
 
-            WidgetConfigurationFieldAccessor<TestObject> field = new WidgetConfigurationFieldAccessor<TestObject>(name, () => o);
+            ConfigurationFieldAccessor<TestObject> field = new ConfigurationFieldAccessor<TestObject>(name, () => o);
             Assert.AreEqual(name, field.Name);
             Assert.IsNotNull(field.Get());
             Assert.AreEqual(30, field.Get().i);

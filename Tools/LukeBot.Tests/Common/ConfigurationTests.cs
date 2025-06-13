@@ -1,11 +1,11 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Collections.Generic;
-using LukeBot.Communication.Common;
+using LukeBot.Common;
 using LukeBot.Widget;
 using LukeBot.Widget.Common;
-using Newtonsoft.Json;
 
 
 namespace LukeBot.Tests.Widget
@@ -19,29 +19,45 @@ namespace LukeBot.Tests.Widget
         //
         // NOTE 2 ELECTRIC BOOGALOO: the ordering matters for Serialize test. Attribute-registered
         // members are registered when base constructor is called.
-        private class EventTestConfiguration: EventArgsBase
+
+        private class EventTestConfiguration : EventArgsBase
         {
+            [JsonInclude]
             public bool boolField = true;
+            [JsonInclude]
             public int intField = 42;
+            [JsonInclude]
             public string stringField = "test omg testing hello";
 
+            [JsonInclude]
             public bool[] boolArrayField = { true, false, true };
+            [JsonInclude]
             public int[] intArrayField = { 10, 23, 460, 21, 910 };
+            [JsonInclude]
             public string[] stringArrayField = { "test1", "test2", "test3", "test420" };
 
-            public List<bool> boolListField = new List<bool> {false, true, false};
+            [JsonInclude]
+            public List<bool> boolListField = new List<bool> { false, true, false };
+            [JsonInclude]
             public List<int> intListField = new List<int> { 1, 18, 22, 678, 901 };
+            [JsonInclude]
             public List<string> stringListField = new List<string> { "list50", "list12", "list1", "listtest420" };
 
             // NOTE public to make it easier to use...
+            [JsonInclude]
             public int privateIntRegisteredViaAttribute = 202020;
 
+            [JsonInclude]
             public string restrictedField = "restricted";
+            [JsonInclude]
             public int evenSingleDigitsField = 2;
+            [JsonInclude]
             public string manuallyRestrictedField = "manual";
 
+            [JsonInclude]
             public bool boolRegisteredManually = false;
             // NOTE public to make it easier to use...
+            [JsonInclude]
             public int privateIntRegisteredManually = 5060;
 
             public EventTestConfiguration()
@@ -262,7 +278,7 @@ namespace LukeBot.Tests.Widget
         public void Configuration_GetFields()
         {
             TestConfiguration mainConf = new TestConfiguration();
-            IWidgetConfiguration conf = mainConf;
+            Configuration conf = mainConf;
 
             Dictionary<string, ConfigurationField> fields = conf.GetFields();
 
@@ -403,13 +419,13 @@ namespace LukeBot.Tests.Widget
             TestConfiguration conf = new();
             conf.CheckFields();
 
-            Assert.AreEqual(JsonConvert.SerializeObject(EVENT_TEST_CONFIGURATION), conf.Serialize());
+            Assert.AreEqual(JsonSerializer.Serialize<EventTestConfiguration>(EVENT_TEST_CONFIGURATION), conf.Serialize());
         }
 
         [TestMethod]
         public void Configuration_JsonConverterTest_Deserialize()
         {
-            string serialized = JsonConvert.SerializeObject(EVENT_TEST_CONFIGURATION);
+            string serialized = JsonSerializer.Serialize<EventTestConfiguration>(EVENT_TEST_CONFIGURATION);
 
             TestConfiguration conf = Configuration.Deserialize(serialized) as TestConfiguration;
             Assert.IsNotNull(conf);

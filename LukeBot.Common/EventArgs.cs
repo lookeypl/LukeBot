@@ -1,5 +1,5 @@
 
-namespace LukeBot.Communication.Common
+namespace LukeBot.Common
 {
     public abstract class EventArgsBase
     {

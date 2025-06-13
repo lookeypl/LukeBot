@@ -1,6 +1,4 @@
-using LukeBot.Common;
-
-namespace LukeBot.Widget
+namespace LukeBot.Common
 {
     public class ConfigurationException: Exception
     {

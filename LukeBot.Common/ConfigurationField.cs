@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text.Json;
 
 
-namespace LukeBot.Widget.Common
+namespace LukeBot.Common
 {
     public struct ConfigurationFieldDescriptor
     {

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Logging;
 using LukeBot.Communication;
-using LukeBot.Communication.Common;
 using LukeBot.Twitch.Common;
 using Command = LukeBot.Twitch.Common.Command;
 using LukeBot.API;

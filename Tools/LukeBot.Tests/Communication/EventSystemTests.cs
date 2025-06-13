@@ -3,7 +3,7 @@ using System;
 using System.Reflection;
 using System.Collections.Generic;
 using LukeBot.Communication;
-using LukeBot.Communication.Common;
+using LukeBot.Common;
 
 
 namespace LukeBot.Tests.Communication

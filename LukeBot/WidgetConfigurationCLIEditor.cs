@@ -69,13 +69,13 @@ namespace LukeBot
                 throw new ArgumentException(string.Format("Requested Widget has no configuration options"));
         }
 
-        public WidgetConfigurationField ProcessPickOptionState()
+        public ConfigurationField ProcessPickOptionState()
         {
-            Dictionary<string, WidgetConfigurationField> fields = mConfiguration.GetFields();
+            Dictionary<string, ConfigurationField> fields = mConfiguration.GetFields();
 
             CLIMessage("Editing configuration of widget {0}", mPrintedName);
             CLIMessage("Available configuration options:");
-            foreach (WidgetConfigurationField field in fields.Values)
+            foreach (ConfigurationField field in fields.Values)
             {
                 string msg = String.Format("  {0} - {1}", field.Name, field.GetValueString());
 
@@ -90,7 +90,7 @@ namespace LukeBot
             {
                 mState = EditorState.Exit;
             }
-            else if (fields.TryGetValue(answer, out WidgetConfigurationField fieldToEdit))
+            else if (fields.TryGetValue(answer, out ConfigurationField fieldToEdit))
             {
                 if (fieldToEdit.Type.IsGenericType && fieldToEdit.Type.GetGenericTypeDefinition() == typeof(List<>))
                     mState = EditorState.ListSetOption;
@@ -107,7 +107,7 @@ namespace LukeBot
             return null;
         }
 
-        public void ProcessSetOptionState(WidgetConfigurationField field)
+        public void ProcessSetOptionState(ConfigurationField field)
         {
             string newValue = CLIQuery(false, "Enter new value for {0}", field.Name);
 
@@ -115,7 +115,7 @@ namespace LukeBot
             {
                 field.SetFromString(newValue);
             }
-            catch (WidgetConfigurationFieldException e)
+            catch (ConfigurationFieldException e)
             {
                 CLIMessage("Failed to set new value {0} for configuration field {1}: {2}", newValue, field.Name, e.Message);
             }
@@ -124,16 +124,16 @@ namespace LukeBot
             mState = EditorState.PickOption;
         }
 
-        public void ProcessListSetOptionState(WidgetConfigurationField listField)
+        public void ProcessListSetOptionState(ConfigurationField listField)
         {
-            List<IWidgetConfigurationEditableField> list = listField.Get<List<IWidgetConfigurationEditableField>>();
+            List<IConfigurationEditable> list = listField.Get<List<IConfigurationEditable>>();
 
             bool done = false;
             while (!done)
             {
                 CLIMessage("Editing a list field - available fields:");
 
-                foreach (IWidgetConfigurationEditableField f in list)
+                foreach (IConfigurationEditable f in list)
                 {
                     CLIMessage("  {0}", f.ToString());
                 }
@@ -164,17 +164,17 @@ namespace LukeBot
             }
         }
 
-        public void ProcessListAdd(WidgetConfigurationField field)
+        public void ProcessListAdd(ConfigurationField field)
         {
 
         }
 
-        public void ProcessListDel(WidgetConfigurationField field)
+        public void ProcessListDel(ConfigurationField field)
         {
 
         }
 
-        public void ProcessListMove(WidgetConfigurationField field)
+        public void ProcessListMove(ConfigurationField field)
         {
 
         }
@@ -185,7 +185,7 @@ namespace LukeBot
             CLIMessage("Starting Widget Configuration editor");
 
             mState = EditorState.PickOption;
-            WidgetConfigurationField mField = null;
+            ConfigurationField mField = null;
             while (mState != EditorState.Exit)
             {
                 switch (mState)

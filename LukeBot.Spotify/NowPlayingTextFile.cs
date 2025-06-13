@@ -2,7 +2,7 @@
 using LukeBot.Logging;
 using LukeBot.Spotify.Common;
 using LukeBot.Communication;
-using LukeBot.Communication.Common;
+using LukeBot.Common;
 
 
 namespace LukeBot.Spotify

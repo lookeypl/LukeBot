@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
+using LukeBot.Common;
 using LukeBot.Communication.Common;
 using LukeBot.Logging;
 using LukeBot.Widget.Common;
@@ -11,14 +12,13 @@ using LukeBot.Widget.Common;
 
 namespace LukeBot.Widget
 {
-    public abstract class WidgetConfiguration : Configuration, IWidgetConfiguration
+    public abstract class WidgetConfiguration: Configuration, IWidgetConfiguration
     {
         private IWidget mOwner = null;
 
-        public WidgetConfiguration(string eventName)
-            : base(eventName)
+        public WidgetConfiguration(string name)
+            : base(name)
         {
-
         }
 
         public void SetOwner(IWidget owner)

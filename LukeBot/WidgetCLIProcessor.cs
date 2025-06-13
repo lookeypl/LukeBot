@@ -175,7 +175,7 @@ namespace LukeBot
             {
                 wd = GetWidgetUserModule(CLI.GetCurrentUser()).GetWidgetInfo(cmd.Id);
                 conf = GetWidgetUserModule(CLI.GetCurrentUser()).GetWidgetConfiguration(cmd.Id);
-                Dictionary<string, WidgetConfigurationField> fields = conf.GetFields();
+                Dictionary<string, ConfigurationField> fields = conf.GetFields();
 
                 msg = "Widget " + cmd.Id + " info:\n" + wd.ToFormattedString();
                 msg += "\nConfiguration:";
@@ -186,7 +186,7 @@ namespace LukeBot
                 else
                 {
                     msg += "\n";
-                    foreach (WidgetConfigurationField field in fields.Values)
+                    foreach (ConfigurationField field in fields.Values)
                     {
                         msg += "  " + field.Name + ": " + field.GetValueString() + "\n";
                     }

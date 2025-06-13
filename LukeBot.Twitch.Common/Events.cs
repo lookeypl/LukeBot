@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using LukeBot.Logging;
-using LukeBot.Communication.Common;
+using LukeBot.Common;
 
 
 namespace LukeBot.Twitch.Common

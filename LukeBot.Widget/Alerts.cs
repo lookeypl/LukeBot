@@ -30,13 +30,12 @@ namespace LukeBot.Widget
             }
         }
 
-        public class AlertWidgetConfig: WidgetConfiguration
+        public class AlertWidgetConfig: Configuration<AlertWidgetConfig>
         {
             [ConfigurationListRestrictedField<string>(new[] { "left", "right" })]
             private string Alignment = "right";
 
             public AlertWidgetConfig()
-                : base("AlertWidgetConfig")
             {
             }
         }
@@ -151,11 +150,6 @@ namespace LukeBot.Widget
 
             collection.Event(Events.TWITCH_SUBSCRIPTION).Endpoint -= OnSubscriptionEvent;
             collection.Event(Events.TWITCH_SUBSCRIPTION).InterruptEndpoint -= OnEventInterrupt;
-        }
-
-        static Alerts()
-        {
-            WidgetConfiguration.RegisterAllocator(nameof(AlertWidgetConfig), () => new AlertWidgetConfig());
         }
 
         public Alerts(string lbUser, string id, string name)

@@ -76,7 +76,7 @@ namespace LukeBot.Common
     }
 
     // Attribute which contains a validator
-    public class ConfigurationRestrictedFieldAttribute<T>: ConfigurationFieldAttribute
+    public class ConfigurationRestrictedFieldAttribute<T> : ConfigurationFieldAttribute
     {
         public IConfigurationFieldValidator<T> validator;
 
@@ -104,22 +104,35 @@ namespace LukeBot.Common
         }
     }
 
+    public enum ConfigurationFieldType
+    {
+        Simple = 0,
+        String,
+        Class,
+        Array,
+        Enumerable,
+        Max
+    }
+
     // Base, abstract, type-agnostic configuration field class
     public abstract class ConfigurationField
     {
         public string Name { get; private set; }
+        public ConfigurationFieldType FieldType { get; }
         public abstract Type Type { get; }
-        public delegate void OnFieldSetDelegate();
-        public OnFieldSetDelegate mFieldSetDelegate = null;
+        public ConfigurationBase.OnUpdateDelegate mUpdateDelegate = null;
+        internal bool IsRoot { get; set; }
 
         protected void OnSetter()
         {
-            if (mFieldSetDelegate != null) mFieldSetDelegate();
+            if (mUpdateDelegate != null) mUpdateDelegate();
         }
 
-        protected ConfigurationField(string name)
+        protected ConfigurationField(string name, ConfigurationFieldType type)
         {
             Name = name;
+            FieldType = type;
+            IsRoot = ConfigurationBase.IsRootField(name);
         }
 
         // TODO maybe we could introduce a possibility to auto-cast the field
@@ -130,8 +143,8 @@ namespace LukeBot.Common
         // This would probably require getting our hands dirty with Reflection...
         public T Get<T>()
         {
-            if (typeof(T) != Type)
-                throw new ConfigurationFieldException("Invalid type {0}", typeof(T).ToString());
+            if (!Type.IsAssignableTo(typeof(T)))
+                throw new ConfigurationFieldException("Invalid type {0} - mismatched or cannot be assigned to", typeof(T).ToString());
 
             ConfigurationFieldAccessor<T> accessor = this as ConfigurationFieldAccessor<T>;
             return accessor.Get();
@@ -139,8 +152,8 @@ namespace LukeBot.Common
 
         public void Set<T>(T val)
         {
-            if (typeof(T) != Type)
-                throw new ConfigurationFieldException("Invalid type {0}", typeof(T).ToString());
+            if (!Type.IsAssignableFrom(typeof(T)))
+                throw new ConfigurationFieldException("Invalid type {0} - mismatched or cannot be assigned from", typeof(T).ToString());
 
             ConfigurationFieldAccessor<T> accessor = this as ConfigurationFieldAccessor<T>;
             accessor.Set(val);
@@ -168,7 +181,7 @@ namespace LukeBot.Common
         }
 
         public ConfigurationFieldAccessor(string name, Expression<Func<T>> expression, IConfigurationFieldValidator<T> validator)
-            : base(name)
+            : base(name, ConfigurationBase.DetermineFieldType(typeof(T)))
         {
             mValidator = validator;
 
@@ -203,7 +216,9 @@ namespace LukeBot.Common
 
         public override void SetJson(JsonElement element)
         {
-            Setter(element.Deserialize<T>());
+            JsonSerializerOptions opts = new();
+            opts.IncludeFields = true;
+            Setter(element.Deserialize<T>(opts));
         }
 
         public override JsonElement GetJson()

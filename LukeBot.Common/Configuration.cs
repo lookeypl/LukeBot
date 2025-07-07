@@ -1,25 +1,29 @@
 using System;
+using System.Buffers;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using LukeBot.Logging;
 
 namespace LukeBot.Common
 {
-    public abstract class Configuration: EventArgsBase
+    public class ConfigurationFactory
     {
-        protected Dictionary<string, ConfigurationField> mFields = new();
-        public delegate Configuration ConfigurationAllocator();
+        public delegate ConfigurationBase ConfigurationAllocator();
         private static Dictionary<string, ConfigurationAllocator> mAllocators = new();
 
-        public static void RegisterAllocator(string confName, ConfigurationAllocator allocator)
+        internal static void RegisterAllocator(string fullName, ConfigurationAllocator allocator)
         {
-            mAllocators.Add(confName, allocator);
+            mAllocators.Add(fullName, allocator);
         }
 
-        public static Configuration AllocateInstanceOf(string confName)
+        internal static ConfigurationBase AllocateInstanceOf(string confName)
         {
             if (!mAllocators.ContainsKey(confName))
                 throw new ConfigurationException("Allocator for configuration of type {0} does not exist", confName);
@@ -27,12 +31,135 @@ namespace LukeBot.Common
             return mAllocators[confName]();
         }
 
-        public static Configuration Deserialize(string confString)
+        public static Configurable Deserialize<Configurable>(string confString)
+            where Configurable : Configuration<Configurable>, new()
         {
-            JsonSerializerOptions opts = new();
-            opts.Converters.Add(new ConfigurationJsonConverter());
+            // ensures the Configurable's static constructor ran and registered its allocator
+            // C# Runtime ensures it will only be ran once too, so it's a win-win
+            RuntimeHelpers.RunClassConstructor(typeof(Configuration<Configurable>).TypeHandle);
 
-            return JsonSerializer.Deserialize<Configuration>(confString, opts);
+            JsonSerializerOptions opts = new();
+            opts.Converters.Add(new ConfigurationJsonConverter<Configurable>());
+            opts.IncludeFields = true;
+
+            return JsonSerializer.Deserialize<Configurable>(confString, opts);
+        }
+
+        public static ConfigurationBase Deserialize(string confString)
+        {
+            JsonDocument confDoc = JsonDocument.Parse(confString);
+            if (confDoc == null)
+                throw new ConfigurationException("Failed to parse configuration string");
+
+            JsonElement confNameElement = confDoc.RootElement.GetProperty("FullConfigurableTypeName");
+            if (confDoc == null)
+                throw new ConfigurationException("Failed to extract configuration type name element");
+
+            Type[] confType = AppDomain.CurrentDomain.GetAssemblies().Reverse()
+                .Where(a => !a.IsDynamic)
+                .SelectMany(a => a.GetTypes())
+                .Where(t => t.FullName.Equals(confNameElement.GetString()))
+                .ToArray();
+
+            if (confType.Length == 0)
+                throw new ConfigurationException("Target configuration Type not found");
+
+            if (confType.Length > 1)
+                throw new ConfigurationException("Target configuration Type is ambiguous");
+
+            MethodInfo deserializerGeneric = typeof(ConfigurationFactory).GetMethod(
+                "Deserialize",
+                1,
+                BindingFlags.Static | BindingFlags.Public,
+                null,
+                new Type[] { typeof(String) },
+                null
+            );
+
+            MethodInfo deserializer = deserializerGeneric.MakeGenericMethod(new Type[] { confType[0] });
+            return deserializer.Invoke(null, new[] { confString }) as ConfigurationBase;
+        }
+    }
+
+    /**
+     * Base for Configuration generic
+     */
+    public abstract class ConfigurationBase: EventArgsBase
+    {
+        public delegate void OnUpdateDelegate();
+
+        // used when calling ConfigurationFactory.Deserialize()
+        public string FullConfigurableTypeName;
+
+        internal static ConfigurationFieldType DetermineFieldType(Type fieldType)
+        {
+            if (fieldType.IsArray)
+            {
+                return ConfigurationFieldType.Array;
+            }
+            else if (fieldType.IsClass)
+            {
+                if (typeof(IEnumerable).IsAssignableFrom(fieldType))
+                {
+                    if (typeof(string).IsAssignableFrom(fieldType))
+                    {
+                        // String is an IEnumerable-implementing type, we use it
+                        // as a special case cause JSON might prefer to save it as ""
+                        // field instead of an array of chars
+                        return ConfigurationFieldType.String;
+                    }
+                    else
+                    {
+                        return ConfigurationFieldType.Enumerable;
+                    }
+                }
+                else
+                {
+                    return ConfigurationFieldType.Class;
+                }
+            }
+
+            return ConfigurationFieldType.Simple;
+        }
+
+        internal static bool IsRootField(string name)
+        {
+            return !name.Contains('.');
+        }
+
+        protected ConfigurationBase(string eventName, string configurableName)
+            : base(eventName)
+        {
+            FullConfigurableTypeName = configurableName;
+        }
+
+        public abstract string Serialize();
+        public abstract Dictionary<string, ConfigurationField> GetFields();
+    }
+
+    /**
+     * Configuration generic class, representing an object that is configurable.
+     *
+     * This implementation is done to make editing of any Configurable objects easy and possible
+     * via same CLI tools.
+     *
+     * Fields that are meant to be configurable in a Configurable object should have ConfigurationField
+     * attribute or one of its derivatives.
+     *
+     * Complex types (ex. classes) will be inspected internally for ConfigurationField-derived attributes.
+     * Any ConfigurationField-attributed fields which have simple/value types will be added as owner's
+     * sub-field with '.' delimiter. In case of encountering an array or an IEnumerable-derived type
+     * objects will be treated as an array and registered with standard array-access [] operator.
+     */
+    public abstract class Configuration<Configurable>: ConfigurationBase
+        where Configurable : Configuration<Configurable>, new()
+    {
+        protected Dictionary<string, ConfigurationField> mFields = new();
+        public OnUpdateDelegate OnUpdate;
+
+        static Configuration()
+        {
+            ConfigurationFactory.RegisterAllocator(typeof(Configurable).FullName, () => new Configurable());
         }
 
         protected void RegisterField(ConfigurationField field)
@@ -55,10 +182,10 @@ namespace LukeBot.Common
             RegisterField(new ConfigurationFieldAccessor<T>(name, field, validator));
         }
 
-        private ConfigurationField AllocateFieldAccessor(FieldInfo fi, ConfigurationFieldAttribute attribute)
+        private ConfigurationField AllocateFieldAccessor(object owner, FieldInfo fi, ConfigurationFieldAttribute attribute, string namePrefix)
         {
             // Form a field member access based on constant expression (this)
-            ConstantExpression thisConstant = Expression.Constant(this);
+            ConstantExpression thisConstant = Expression.Constant(owner);
             MemberExpression fieldMemberAccess = Expression.MakeMemberAccess(thisConstant, fi);
 
             // Since Expression.Lambda<> is generic, and depends on @p fi type, we need to Reflection it too
@@ -105,7 +232,7 @@ namespace LukeBot.Common
             Type constructedType = accessorType.MakeGenericType(typeArgs);
 
             // if validator was present add it to constructor argument list
-            object[] constructorArgs = { fi.Name, accessorExpression };
+            object[] constructorArgs = { namePrefix + fi.Name, accessorExpression };
             if (validator != null)
             {
                 constructorArgs = constructorArgs.Append(validator).ToArray();
@@ -115,10 +242,9 @@ namespace LukeBot.Common
             return Activator.CreateInstance(constructedType, constructorArgs) as ConfigurationField;
         }
 
-        public Configuration(string name)
-            : base(name)
+        private void RegisterConfigurationFields(object fieldRef, string prefix = "")
         {
-            MemberInfo[] members = this.GetType().GetMembers(
+            MemberInfo[] members = fieldRef.GetType().GetMembers(
                 BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic
             );
 
@@ -134,33 +260,49 @@ namespace LukeBot.Common
                         continue;
                     }
 
+                    FieldInfo field = member as FieldInfo;
+                    ConfigurationFieldType confFieldType = DetermineFieldType(field.FieldType);
+
                     // attribute found - register given member as a field
-                    ConfigurationField field = AllocateFieldAccessor(member as FieldInfo, attrs[0] as ConfigurationFieldAttribute);
-                    if (field == null)
+                    // NOTE: This will also register complex fields which are further processed below. This is fine.
+                    ConfigurationField confField = AllocateFieldAccessor(fieldRef, field, attrs[0] as ConfigurationFieldAttribute, prefix);
+                    if (confField == null)
                     {
-                        Logger.Log().Error("Configuration failed to allocate accessor for member {0} - skipping", member.Name);
+                        Logger.Log().Error("Configuration failed to allocate accessor for member {0} - skipping", field.Name);
                         continue;
                     }
 
-                    RegisterField(field);
+                    RegisterField(confField);
+
+                    if (confFieldType == ConfigurationFieldType.Class)
+                    {
+                        Logger.Log().Debug("Found class-type field! Inspecting it internally");
+                        RegisterConfigurationFields(field.GetValue(fieldRef), prefix + field.Name + ".");
+                    }
                 }
             }
         }
 
-        public string Serialize()
+        public Configuration()
+            : base(typeof(Configurable).Name, typeof(Configurable).FullName)
+        {
+            RegisterConfigurationFields(this);
+        }
+
+        public override string Serialize()
         {
             JsonSerializerOptions opts = new();
-            opts.Converters.Add(new ConfigurationJsonConverter());
+            opts.Converters.Add(new ConfigurationJsonConverter<Configurable>());
 
             return JsonSerializer.Serialize(this, opts);
         }
 
-        public Dictionary<string, ConfigurationField> GetFields()
+        public override Dictionary<string, ConfigurationField> GetFields()
         {
             return mFields;
         }
 
-        public ConfigurationField Get(string name)
+        public ConfigurationField Field(string name)
         {
             if (!mFields.ContainsKey(name))
             {
@@ -170,9 +312,34 @@ namespace LukeBot.Common
             return mFields[name];
         }
 
-        public ConfigurationFieldAccessor<T> Get<T>(string name)
+        public ConfigurationFieldAccessor<T> Accessor<T>(string name)
         {
-            return Get(name) as ConfigurationFieldAccessor<T>;
+            return Field(name) as ConfigurationFieldAccessor<T>;
+        }
+
+        public T Get<T>(string name)
+        {
+            return Field(name).Get<T>();
+        }
+
+        public void Parse(string name, string value)
+        {
+            if (!mFields.ContainsKey(name))
+            {
+                throw new ConfigurationException("Field {0} does not exist", name);
+            }
+
+            Field(name).SetFromString(value);
+        }
+
+        public void Set<T>(string name, T value)
+        {
+            if (!mFields.ContainsKey(name))
+            {
+                throw new ConfigurationException("Field {0} does not exist", name);
+            }
+
+            Field(name).Set<T>(value);
         }
     }
 }

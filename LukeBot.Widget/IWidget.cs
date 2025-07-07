@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LukeBot.Config;
 using LukeBot.Logging;
+using LukeBot.Common;
 using LukeBot.Widget.Common;
 
 
@@ -41,7 +42,7 @@ namespace LukeBot.Widget
         protected string mLBUser;
         private List<string> mHead;
         protected WebSocket mWS;
-        protected WidgetConfiguration mConfiguration;
+        protected ConfigurationBase mConfiguration;
         private ManualResetEvent mWSLifetimeEndEvent;
         private AutoResetEvent mWSRecvAvailableEvent;
         private Task mWSLifetimeTask;
@@ -54,7 +55,7 @@ namespace LukeBot.Widget
         protected abstract void OnLoad(); // called when widget is loaded. Can throw, which will leave widget in unloaded state.
         protected abstract void OnUnload(); // called when widget is loaded. Can throw, which will leave widget in unloaded state.
         protected abstract void OnConnected();
-        protected virtual void OnConfigurationUpdate() {}
+        protected virtual void OnConfigurationUpdate() { }
 
         private string GetWidgetCode()
         {
@@ -207,8 +208,7 @@ namespace LukeBot.Widget
         {
             if (Conf.TryGet<string>(mConfigurationPath, out string configStr))
             {
-                mConfiguration = WidgetConfiguration.Deserialize(configStr);
-                mConfiguration.SetOwner(this);
+                mConfiguration = ConfigurationFactory.Deserialize(configStr);
             }
         }
 
@@ -322,7 +322,7 @@ namespace LukeBot.Widget
             return page;
         }
 
-        public WidgetConfiguration GetConfig()
+        public ConfigurationBase GetConfig()
         {
             return mConfiguration;
         }

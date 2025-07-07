@@ -23,7 +23,7 @@ namespace LukeBot
 
         private string mWidgetID = "";
         private string mPrintedName = "";
-        private IWidgetConfiguration mConfiguration = null;
+        private ConfigurationBase mConfiguration = null;
         private CLIMessageProxy mCLI = null;
         private EditorState mState = EditorState.PickOption;
 
@@ -37,7 +37,7 @@ namespace LukeBot
             return GetWidgetService().GetModuleByWidgetUUID(mWidgetID) as IWidgetUserModule;
         }
 
-        private IWidgetConfiguration GetWidgetConfiguration()
+        private ConfigurationBase GetWidgetConfiguration()
         {
             return GetWidgetUserModule().GetWidgetConfiguration(mWidgetID);
         }

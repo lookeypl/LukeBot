@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
+using LukeBot.Common;
 using LukeBot.Widget.Common;
 
 using CommonConstants = LukeBot.Common.Constants;
@@ -125,7 +126,7 @@ namespace LukeBot.Widget
                 // Load() can fail, which will leave the Widget in unloaded state.
                 w.Load();
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
                 if (w.Name.Length > 0)
                     Logger.Log().Error("Failed to load Widget {0} ({1}): {2}", w.Name, w.ID, e.Message);
@@ -143,7 +144,7 @@ namespace LukeBot.Widget
                 // Unload() can fail, but we should ignore it and move on
                 w.Unload();
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
                 if (w.Name.Length > 0)
                     Logger.Log().Error("Failed to unload Widget {0} ({1}): {2}", w.Name, w.ID, e.Message);
@@ -266,7 +267,7 @@ namespace LukeBot.Widget
             mWidgets[GetActualWidgetId(id)].SaveConfiguration();
         }
 
-        public IWidgetConfiguration GetWidgetConfiguration(string id)
+        public ConfigurationBase GetWidgetConfiguration(string id)
         {
             return mWidgets[GetActualWidgetId(id)].GetConfig();
         }

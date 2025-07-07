@@ -10,9 +10,9 @@ using LukeBot.Logging;
 using LukeBot.Widget.Common;
 
 
-namespace LukeBot.Widget
+/*namespace LukeBot.Widget
 {
-    public abstract class WidgetConfiguration: Configuration, IWidgetConfiguration
+    public abstract class WidgetConfiguration: Configuration
     {
         private IWidget mOwner = null;
 
@@ -39,4 +39,4 @@ namespace LukeBot.Widget
             return Configuration.Deserialize(confString) as WidgetConfiguration;
         }
     }
-}
+}*/

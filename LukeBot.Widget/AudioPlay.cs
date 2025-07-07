@@ -44,42 +44,6 @@ namespace LukeBot.Widget
             }
         }
 
-        public class AudioPlayTrigger
-        {
-            [ConfigurationField]
-            public string RedemptionName;
-            [ConfigurationField]
-            public List<string> Files;
-            [ConfigurationField]
-            public bool RepeatTotalTime;
-
-            public string Get(string field)
-            {
-                return "";
-            }
-
-            public void Set(string field, string value)
-            {
-
-            }
-
-            public override string ToString()
-            {
-                return String.Format("<{0}, [{1}], {2}>", RedemptionName, String.Join(", ", Files), RepeatTotalTime);
-            }
-        }
-
-        private class AudioPlayWidgetConfig: WidgetConfiguration
-        {
-            [ConfigurationField]
-            public List<AudioPlayTrigger> Triggers { get; set; }
-
-            public AudioPlayWidgetConfig()
-                : base("AudioPlayWidgetConfig")
-            {
-            }
-        }
-
         private void AwaitEventCompletion()
         {
             if (!Connected)

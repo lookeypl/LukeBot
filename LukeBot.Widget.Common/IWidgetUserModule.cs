@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
 using LukeBot.Services;
+using LukeBot.Common;
 using LukeBot.User.Common;
 
 namespace LukeBot.Widget.Common
@@ -22,7 +23,7 @@ namespace LukeBot.Widget.Common
         public bool IsWidgetLoaded(string id);
         public void DeleteWidget(string id);
         public void ReloadWidget(string id);
-        public IWidgetConfiguration GetWidgetConfiguration(string id);
+        public ConfigurationBase GetWidgetConfiguration(string id);
         public void SaveConfiguration(string id);
     }
 }

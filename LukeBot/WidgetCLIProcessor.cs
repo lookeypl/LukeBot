@@ -169,7 +169,7 @@ namespace LukeBot
         public void HandleInfoCommand(WidgetInfoCommand cmd, CLIMessageProxy CLI, out string msg)
         {
             WidgetDesc wd;
-            IWidgetConfiguration conf;
+            ConfigurationBase conf;
 
             try
             {

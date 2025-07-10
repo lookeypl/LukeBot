@@ -307,8 +307,13 @@ namespace LukeBot.Twitch
         {
             EventSub.Message result = new();
 
-            if (mSocket.State != WebSocketState.Open)
+            if (mSocket == null || mSocket.State != WebSocketState.Open)
+            {
+                // Socket is broken, try reconnecting
+                Logger.Log().Warning("Socket is not open for unknown reason, attempting reconnect...");
+                result.Status = EventSub.InternalStatus.Reconnect;
                 return result;
+            }
 
             string recvMsgString = "";
             byte[] buffer = new byte[1024];
@@ -325,6 +330,22 @@ namespace LukeBot.Twitch
                     recvMsgString += Encoding.UTF8.GetString(buffer, 0, recvResult.Count);
                 }
                 while (!recvResult.EndOfMessage);
+
+                if (recvResult.MessageType == WebSocketMessageType.Close)
+                {
+                    result.Status = EventSub.InternalStatus.Closed;
+                    return result;
+                }
+
+                result = JsonConvert.DeserializeObject<EventSub.Message>(recvMsgString, new EventSub.Deserializer());
+                if (result == null)
+                {
+                    Logger.Log().Error("EventSubClient {0}: Failed to deserialize EventSub message. Closing connection just in case.", mLBUser);
+                    result = new();
+                    result.Status = EventSub.InternalStatus.Closed;
+                }
+                else
+                    result.Status = EventSub.InternalStatus.Fine;
             }
             catch (OperationCanceledException)
             {
@@ -340,15 +361,6 @@ namespace LukeBot.Twitch
                 result.Status = EventSub.InternalStatus.Reconnect;
                 return result;
             }
-
-            if (recvResult.MessageType == WebSocketMessageType.Close)
-            {
-                result.Status = EventSub.InternalStatus.Closed;
-                return result;
-            }
-
-            result = JsonConvert.DeserializeObject<EventSub.Message>(recvMsgString, new EventSub.Deserializer());
-            result.Status = EventSub.InternalStatus.Fine;
 
             return result;
         }

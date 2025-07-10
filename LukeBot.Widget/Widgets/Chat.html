@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans" rel="stylesheet">
-<script src="/js/lukebot-widget-common.js"></script>
+<script type="application/javascript" src="/js/lukebot-widget-common.js"></script>
 
 <style>
     html {
@@ -38,6 +38,12 @@
 
     .chat-text-fragment {
         vertical-align: baseline;
+    }
+
+    .chat-system-text-fragment {
+        font-style: italic;
+        color: grey;
+        text-shadow: none;
     }
 
     .chat-emote {
@@ -90,27 +96,40 @@
     }
 
     class Message {
-        constructor(msg) {
-            if (msg.EventName != "TwitchChatMessage")
+        constructor() {
+            this.mID = "";
+            this.mUserID = "";
+            this.mColor = "";
+            this.mNick = "";
+            this.mDisplayName = "";
+            this.mMessage = "";
+            this.mEmotes = [];
+            this.mBadges = [];
+            this.mIsSystem = false;
+        }
+
+        static fromEvent(msgObj) {
+            if (msgObj.EventName != "TwitchChatMessage")
                 throw new TypeError("Invalid message type");
 
-            this.mID = msg.MessageID;
-            this.mUserID = msg.UserID;
-            this.mColor = msg.Color;
-            this.mNick = msg.Nick;
-            this.mDisplayName = msg.DisplayName;
-            this.mMessage = msg.Message;
-            this.mEmotes = [];
-            if (msg.Emotes != undefined) {
-                msg.Emotes.forEach(function (e) {
+            let ret = new Message();
+
+            ret.mID = msgObj.MessageID;
+            ret.mUserID = msgObj.UserID;
+            ret.mColor = msgObj.Color;
+            ret.mNick = msgObj.Nick;
+            ret.mDisplayName = msgObj.DisplayName;
+            ret.mMessage = msgObj.Message;
+            if (msgObj.Emotes != undefined) {
+                msgObj.Emotes.forEach(function (e) {
                     e.Ranges.forEach(function (r) {
-                        this.mEmotes.push(new Emote(e.Source, e.ID, e.Width, e.Height, r.From, r.To, e.Animated));
-                    }, this);
-                }, this);
+                        ret.mEmotes.push(new Emote(e.Source, e.ID, e.Width, e.Height, r.From, r.To, e.Animated));
+                    }, ret);
+                }, ret);
 
                 // reverse-sort the emotes, mostly because it's easier to go through
                 // the message in reverse afterwards (less indexing/shifting magic)
-                this.mEmotes.sort(function(a, b) {
+                ret.mEmotes.sort(function(a, b) {
                     if (a.mFrom < b.mFrom)
                         return 1;
                     else if (a.mFrom > b.mFrom)
@@ -119,12 +138,22 @@
                         return 0;
                 });
             }
-            this.mBadges = [];
-            if (msg.Badges) {
-                msg.Badges.forEach((b) => {
-                    this.mBadges.push(new Badge(b.Name, b.Resource));
-                }, this);
+            if (msgObj.Badges) {
+                msgObj.Badges.forEach((b) => {
+                    ret.mBadges.push(new Badge(b.Name, b.Resource));
+                }, ret);
             }
+
+            return ret;
+        }
+
+        static fromSystem(msgString) {
+            let ret = new Message();
+
+            ret.mIsSystem = true;
+            ret.mMessage = msgString;
+
+            return ret;
         }
     }
 
@@ -132,8 +161,29 @@
         constructor() {
         }
 
-        add(msgObj) {
-            let lastMsg = new Message(msgObj);
+        appendToChat(msgNode) {
+            chat.appendChild(msgNode);
+            // TODO remove messages which exceed window height + backup height
+            if (chat.childNodes.length > 30) {
+                chat.removeChild(chat.firstChild);
+            }
+        }
+
+        add(lastMsg) {
+            if (lastMsg.mIsSystem) {
+                let textNode = document.createElement("span");
+                textNode.classList.add("chat-text-fragment");
+                textNode.classList.add("chat-system-text-fragment");
+                let textDataNode = document.createTextNode(`${lastMsg.mMessage}`);
+                textNode.appendChild(textDataNode);
+
+                let newMsgNode = document.createElement("span");
+                newMsgNode.classList.add("chat-line");
+                newMsgNode.appendChild(textNode);
+                newMsgNode.appendChild(document.createElement("br"));
+                this.appendToChat(newMsgNode);
+                return;
+            }
 
             let nick = lastMsg.mDisplayName;
             if (nick == "")
@@ -253,13 +303,7 @@
             newMsgNode.appendChild(colonNode);
             newMsgNode.appendChild(textNode);
             newMsgNode.appendChild(document.createElement("br"));
-
-            chat.appendChild(newMsgNode);
-
-            // TODO remove messages which exceed window height + backup height
-            if (chat.childNodes.length > 30) {
-                chat.removeChild(chat.firstChild);
-            }
+            this.appendToChat(newMsgNode);
         }
 
         remove(msgObj) {
@@ -288,12 +332,25 @@
 
     let chatWidget = new LukeBotWidget();
     chatWidget.registerMessage("TwitchChatMessage", (obj) => {
-        msgList.add(obj);
+        msgList.add(Message.fromEvent(obj));
     });
     chatWidget.registerMessage("TwitchChatClearUser", (obj) => {
         msgList.removeUser(obj);
     });
     chatWidget.registerMessage("TwitchChatClearMessage", (obj) => {
         msgList.remove(obj);
+    });
+    chatWidget.registerMessageError((error) => {
+        msgList.add(Message.fromSystem(`Error while processing new message: ${error}`));
+    });
+    chatWidget.registerConnectionError((error) => {
+        msgList.add(Message.fromSystem(`Connection error: ${error}`));
+    });
+    chatWidget.registerClose((e) => {
+        if (e.wasClean) {
+            msgList.add(Message.fromSystem(`Disconnected from LukeBot`));
+        } else {
+            msgList.add(Message.fromSystem(`Connection lost: ${e}`));
+        }
     });
 </script>

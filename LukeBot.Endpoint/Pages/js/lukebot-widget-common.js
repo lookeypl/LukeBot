@@ -22,6 +22,9 @@ class LukeBotWidget
         this.messages = {};
         this.serverAddress = getMeta('serveraddress');
         printDebug(this.serverAddress);
+        this.close = null;
+        this.messageError = null;
+        this.connectionError = null;
         this.socket = new WebSocket(this.serverAddress);
         this.socket.onopen = (e) => {
             printDebug(`Connected to server at ${this.serverAddress}`);
@@ -32,9 +35,13 @@ class LukeBotWidget
             } else {
                 printDebug(`Connection lost: ${e.code} (${e.reason})`);
             }
+            if (this.close)
+                this.close(e);
         }
         this.socket.onerror = (e) => {
             printDebug(`Error: ${e.message}`);
+            if (this.connectionError)
+                this.connectionError(e);
         }
         this.socket.onmessage = (e) => {
             try {
@@ -65,6 +72,10 @@ class LukeBotWidget
 
     registerMessageError(callback) {
         this.messageError = callback;
+    }
+
+    registerConnectionError(callback) {
+        this.connectionError = callback;
     }
 
     registerClose(callback) {

@@ -57,7 +57,6 @@ namespace LukeBot.Twitch
                 {
                     Logger.Log().Warning("Badge set {0} already contains version {1}, will be replaced", Name, version.id);
                     Versions.Remove(version.id);
-                    continue;
                 }
 
                 Versions.Add(version.id, new BadgeVersion(version));

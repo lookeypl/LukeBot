@@ -9,9 +9,9 @@ namespace LukeBot.Config
 {
     public abstract class Property
     {
-        public string Name { get; private set; }
+        public string Name { get; protected set; }
         public System.Type Type { get; private set; }
-        public bool Hidden { get; private set; }
+        public bool Hidden { get; protected set; }
 
         static private Type FindValueType(string typeName)
         {
@@ -42,7 +42,7 @@ namespace LukeBot.Config
 
             dynamic jObj = JsonConvert.DeserializeObject(val, t);
             Type propType = typeof(PropertyType<>).MakeGenericType(t);
-            return Activator.CreateInstance(propType, new object[] {jObj} ) as Property;
+            return Activator.CreateInstance(propType, new object[] { jObj }) as Property;
         }
 
         protected Property(System.Type type)
@@ -136,6 +136,7 @@ namespace LukeBot.Config
         }
 
         internal abstract void AcceptValue(PropertyStoreVisitor v);
+        internal abstract Property Duplicate();
     };
 
     public class PropertyType<T>: Property
@@ -156,6 +157,15 @@ namespace LukeBot.Config
         internal override void AcceptValue(PropertyStoreVisitor v)
         {
             v.Visit<T>(this);
+        }
+
+        internal override Property Duplicate()
+        {
+            PropertyType<T> p = new PropertyType<T>();
+            p.Name = this.Name;
+            p.Hidden = this.Hidden;
+            p.Value = this.Value;
+            return p;
         }
     }
 }

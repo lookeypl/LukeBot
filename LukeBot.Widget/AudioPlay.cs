@@ -44,6 +44,35 @@ namespace LukeBot.Widget
             }
         }
 
+        public class AudioTrigger: Configuration<AudioTrigger>
+        {
+            [ConfigurationField]
+            public string RedemptionName = "FILLMEIN";
+            [ConfigurationField]
+            public List<string> Files = new();
+            [ConfigurationField]
+            public int RepeatLength = 0;
+            [ConfigurationField]
+            public int MinRepeatInterval = 0;
+            [ConfigurationField]
+            public int MaxRepeatInterval = 0;
+
+            public override string ToString()
+            {
+                return String.Format("<{0}, [{1}], {2}>", RedemptionName, String.Join(", ", Files), RepeatLength);
+            }
+        }
+
+        public class Config: Configuration<Config>
+        {
+            [ConfigurationField]
+            public List<AudioTrigger> Triggers = new();
+
+            public Config()
+            {
+            }
+        }
+
         private void AwaitEventCompletion()
         {
             if (!Connected)
@@ -135,6 +164,11 @@ namespace LukeBot.Widget
         {
             // noop
             // TODO should pause any played music probably
+        }
+
+        protected override ConfigurationBase CreateDefaultConfiguration()
+        {
+            return new Config();
         }
 
         public AudioPlay(string lbUser, string id, string name)

@@ -42,7 +42,7 @@ namespace LukeBot.Widget
         protected string mLBUser;
         private List<string> mHead;
         protected WebSocket mWS;
-        protected ConfigurationBase mConfiguration;
+        private ConfigurationBase mConfiguration;
         private ManualResetEvent mWSLifetimeEndEvent;
         private AutoResetEvent mWSRecvAvailableEvent;
         private Task mWSLifetimeTask;
@@ -50,11 +50,13 @@ namespace LukeBot.Widget
         private bool mWSThreadDone;
         private Queue<string> mWSRecvQueue;
         private Config.Path mConfigurationPath;
+        private Config.Path mBackupConfigurationPath;
 
         protected bool Connected { get { return mWS != null && mWS.State == WebSocketState.Open; } }
         protected abstract void OnLoad(); // called when widget is loaded. Can throw, which will leave widget in unloaded state.
         protected abstract void OnUnload(); // called when widget is loaded. Can throw, which will leave widget in unloaded state.
         protected abstract void OnConnected();
+        protected abstract ConfigurationBase CreateDefaultConfiguration();
         protected virtual void OnConfigurationUpdate() { }
 
         private string GetWidgetCode()
@@ -79,6 +81,12 @@ namespace LukeBot.Widget
         {
             string serverAddress = Conf.Get<string>(LukeBot.Common.Constants.PROP_STORE_HTTPS_DOMAIN_PROP);
             return "wss://" + serverAddress + "/widgetws/" + ID;
+        }
+
+        private string GetPrintableWidgetID()
+        {
+            if (Name.Length > 0) return Name;
+            else return ID;
         }
 
         private async Task<WebSocketRecv> RecvFromWSInternalAsync()
@@ -120,8 +128,8 @@ namespace LukeBot.Widget
                         continue;
                     }
 
-                    Logger.Log().Debug("Enqueueing message");
-                    Logger.Log().Secure(" -> msg = {0}", recv.data);
+                    Logger.Log().Debug("{0}: Enqueueing message", GetPrintableWidgetID());
+                    Logger.Log().Secure("{0}:  -> msg = {1}", GetPrintableWidgetID(), recv.data);
                     mWSRecvQueue.Enqueue(recv.data);
                     mWSRecvAvailableEvent.Set();
                 }
@@ -206,9 +214,25 @@ namespace LukeBot.Widget
 
         protected void LoadConfiguration()
         {
-            if (Conf.TryGet<string>(mConfigurationPath, out string configStr))
+            try
             {
-                mConfiguration = ConfigurationFactory.Deserialize(configStr);
+                if (Conf.TryGet<string>(mConfigurationPath, out string configStr))
+                {
+                    mConfiguration = ConfigurationFactory.Deserialize(configStr);
+                }
+                else
+                {
+                    mConfiguration = CreateDefaultConfiguration();
+                }
+
+                mConfiguration.UpdateNotifier = OnConfigurationUpdate;
+            }
+            catch (ConfigurationException e)
+            {
+                Logger.Log().Error("Failed to load {0} Widget's configuration. This might be because it is either old or becuase of an error.");
+                Logger.Log().Error("If you're okay with losing the configuration data, try calling below CLI command to recreate it (it WILL lose old data!):");
+                Logger.Log().Error("  widget reload {0} --recreate-config", GetPrintableWidgetID());
+                throw e;
             }
         }
 
@@ -226,9 +250,19 @@ namespace LukeBot.Widget
             Conf.Save();
         }
 
-        internal void NotifyConfigurationUpdate()
+        public void ResetConfiguration()
         {
-            OnConfigurationUpdate();
+            // backup old configuration in case it needs to be looked at again (mostly for debugging)
+            if (Conf.Exists(mConfigurationPath))
+            {
+                if (Conf.Exists(mBackupConfigurationPath))
+                    Conf.Remove(mBackupConfigurationPath);
+
+                Conf.Copy(mConfigurationPath, mBackupConfigurationPath);
+            }
+
+            mConfiguration = CreateDefaultConfiguration();
+            SaveConfiguration();
         }
 
 
@@ -273,6 +307,11 @@ namespace LukeBot.Widget
                 .Push(mLBUser)
                 .Push(ID)
                 .Push(Constants.PROP_CONFIG);
+            mBackupConfigurationPath = Config.Path.Start()
+                .Push(Constants.PROP_STORE_WIDGET_DOMAIN)
+                .Push(mLBUser)
+                .Push(ID)
+                .Push(Constants.PROP_CONFIG_BACKUP);
             mConfiguration = new EmptyWidgetConfiguration();
         }
 

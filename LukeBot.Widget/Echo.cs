@@ -74,6 +74,11 @@ namespace LukeBot.Widget
         {
         }
 
+        protected override ConfigurationBase CreateDefaultConfiguration()
+        {
+            return new EmptyWidgetConfiguration();
+        }
+
         public Echo(string lbUser, string id, string name)
             : base(lbUser, "Widgets/Echo.html", id, name)
         {

@@ -8,21 +8,6 @@ using System.Text.Json;
 
 namespace LukeBot.Common
 {
-    public struct ConfigurationFieldDescriptor
-    {
-        public string name;
-    }
-
-    // Editable interface definition
-    // Used to define some custom logic for more complex configuration fields
-    public interface IConfigurationEditable
-    {
-        public List<ConfigurationFieldDescriptor> GetFields();
-        public string Get(string field);
-        public void Set(string field, string value);
-    }
-
-
     // Validator definition
     public interface IConfigurationFieldValidator<T>
     {
@@ -106,11 +91,13 @@ namespace LukeBot.Common
 
     public enum ConfigurationFieldType
     {
-        Simple = 0,
+        None = 0,
+        Simple,
         String,
         Class,
         Array,
         Enumerable,
+        List,
         Max
     }
 
@@ -119,7 +106,9 @@ namespace LukeBot.Common
     {
         public string Name { get; private set; }
         public ConfigurationFieldType FieldType { get; }
+        public ConfigurationFieldType UnderlyingFieldType { get; }
         public abstract Type Type { get; }
+        public abstract Type UnderlyingType { get; }
         public ConfigurationBase.OnUpdateDelegate mUpdateDelegate = null;
         internal bool IsRoot { get; set; }
 
@@ -133,6 +122,7 @@ namespace LukeBot.Common
             Name = name;
             FieldType = type;
             IsRoot = ConfigurationBase.IsRootField(name);
+            UnderlyingFieldType = ConfigurationBase.DetermineFieldType(UnderlyingType);
         }
 
         // TODO maybe we could introduce a possibility to auto-cast the field
@@ -174,6 +164,24 @@ namespace LukeBot.Common
         public IConfigurationFieldValidator<T> mValidator = null;
 
         public override Type Type { get => typeof(T); }
+        public override Type UnderlyingType
+        {
+            get
+            {
+                if (FieldType == ConfigurationFieldType.Array)
+                {
+                    return typeof(T).GetElementType();
+                }
+                else if (FieldType == ConfigurationFieldType.Enumerable || FieldType == ConfigurationFieldType.List)
+                {
+                    return typeof(T).GetGenericArguments()[0];
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
 
         public ConfigurationFieldAccessor(string name, Expression<Func<T>> expression)
             : this(name, expression, new ConfigurationFieldUnrestricted<T>())
@@ -223,7 +231,9 @@ namespace LukeBot.Common
 
         public override JsonElement GetJson()
         {
-            return JsonSerializer.SerializeToElement<T>(Getter());
+            JsonSerializerOptions opts = new();
+            opts.IncludeFields = true;
+            return JsonSerializer.SerializeToElement<T>(Getter(), opts);
         }
 
         public override string GetValueString()

@@ -1,6 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Text.Json;
 using LukeBot.Common;
+using System.Collections.Generic;
+using System;
 
 
 namespace LukeBot.Tests.Common
@@ -61,6 +63,51 @@ namespace LukeBot.Tests.Common
             Assert.ThrowsException<ConfigurationFieldException>(() => field.Set<bool>(true));
             Assert.ThrowsException<ConfigurationFieldException>(() => field.Set<float>(1.5f));
             Assert.ThrowsException<ConfigurationFieldException>(() => field.Set<string>("this should fail"));
+        }
+
+        public static IEnumerable<object[]> AttributeTestCases()
+        {
+            int intValue = 3;
+            float floatValue = 2.0f;
+            string stringValue = "test";
+            List<int> listValue = new List<int> { 1, 2, 3 };
+            int[] arrayValue = new[] { 1, 2, 3 };
+
+            return new[]
+            {
+                new object[] {
+                    new ConfigurationFieldAccessor<int>("field", () => intValue),
+                    typeof(int), null, ConfigurationFieldType.Simple
+                },
+                new object[] {
+                    new ConfigurationFieldAccessor<float>("field", () => floatValue),
+                    typeof(float), null, ConfigurationFieldType.Simple
+                },
+                new object[] {
+                    new ConfigurationFieldAccessor<string>("field", () => stringValue),
+                    typeof(string), null, ConfigurationFieldType.String
+                },
+                new object[] {
+                    new ConfigurationFieldAccessor<List<int>>("field", () => listValue),
+                    typeof(List<int>), typeof(int), ConfigurationFieldType.Enumerable
+                },
+                new object[] {
+                    new ConfigurationFieldAccessor<int[]>("field", () => arrayValue),
+                    typeof(int[]), typeof(int), ConfigurationFieldType.Array
+                },
+            };
+        }
+
+        [DataTestMethod]
+        [DynamicData(nameof(AttributeTestCases), DynamicDataSourceType.Method)]
+        public void ConfigurationField_Attributes(ConfigurationField field, Type expectedType, Type expectedUnderlyingType, ConfigurationFieldType expectedFieldType)
+        {
+            const string expectedName = "field";
+
+            Assert.AreEqual(expectedName, field.Name);
+            Assert.AreEqual(expectedType, field.Type);
+            Assert.AreEqual(expectedUnderlyingType, field.UnderlyingType);
+            Assert.AreEqual(expectedFieldType, field.FieldType);
         }
     }
 }

@@ -5,6 +5,7 @@ using LukeBot.Interface;
 using LukeBot.User.Common;
 using LukeBot.Widget.Common;
 using CommandLine;
+using LukeBot.Logging;
 
 
 namespace LukeBot
@@ -70,6 +71,11 @@ namespace LukeBot
     {
         [Value(0, MetaName = "id", Required = false, HelpText = "Widget's ID, can be either UUID or its name. Omit to reload all.")]
         public string Id { get; set; }
+
+        [Option("recreate-config", Default = false, HelpText =
+            "Recreates widget's configuration from scratch, in case something goes wrong when loading. Works only when Widget's ID is provided."
+        )]
+        public bool RecreateConfig { get; set; }
 
         public WidgetReloadCommand()
         {
@@ -216,9 +222,13 @@ namespace LukeBot
         {
             try
             {
-
                 if (cmd.Id != null && cmd.Id.Length > 0)
                 {
+                    if (cmd.RecreateConfig)
+                    {
+                        GetWidgetUserModule(CLI.GetCurrentUser()).ResetConfiguration(cmd.Id);
+                    }
+
                     GetWidgetUserModule(CLI.GetCurrentUser()).ReloadWidget(cmd.Id);
                     msg = "Widget " + cmd.Id + " reloaded.";
                 }
@@ -246,8 +256,10 @@ namespace LukeBot
 
             try
             {
-                string id = GetWidgetUserModule(CLI.GetCurrentUser()).GetActualWidgetId(arg.Id);
-                new WidgetConfigurationCLIEditor(id, arg.Id, CLI).MainLoop();
+                ConfigurationBase config = GetWidgetUserModule(CLI.GetCurrentUser()).GetWidgetConfiguration(arg.Id);
+
+                CLI.Message("Starting Widget Configuration Editor...");
+                new WidgetConfigurationCLIEditor(arg.Id, config, CLI).MainLoop();
 
                 GetWidgetUserModule(CLI.GetCurrentUser()).SaveConfiguration(arg.Id);
                 msg = "Widget Configuration Editor closed.";
@@ -255,6 +267,8 @@ namespace LukeBot
             catch (System.Exception e)
             {
                 msg = "Widget Configuration Editor error: " + e.Message;
+                Logger.Log().Error("Widget Configuration Editor error: {0}", e.Message);
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
             }
         }
 

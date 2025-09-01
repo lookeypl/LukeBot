@@ -17,6 +17,11 @@ namespace LukeBot.Config
             mStore.Add(path, p);
         }
 
+        public static void Copy(Path fromPath, Path toPath)
+        {
+            mStore.Copy(fromPath, toPath);
+        }
+
         public static bool Exists(Path path)
         {
             return mStore.Exists(path);

@@ -87,17 +87,23 @@ namespace LukeBot.Common
     public abstract class ConfigurationBase: EventArgsBase
     {
         public delegate void OnUpdateDelegate();
+        public abstract OnUpdateDelegate UpdateNotifier { set; }
 
         // used when calling ConfigurationFactory.Deserialize()
         public string FullConfigurableTypeName;
 
         internal static ConfigurationFieldType DetermineFieldType(Type fieldType)
         {
+            if (fieldType == null)
+            {
+                return ConfigurationFieldType.None;
+            }
+
             if (fieldType.IsArray)
             {
                 return ConfigurationFieldType.Array;
             }
-            else if (fieldType.IsClass)
+            else if (fieldType.IsClass || fieldType.IsInterface)
             {
                 if (typeof(IEnumerable).IsAssignableFrom(fieldType))
                 {
@@ -107,6 +113,10 @@ namespace LukeBot.Common
                         // as a special case cause JSON might prefer to save it as ""
                         // field instead of an array of chars
                         return ConfigurationFieldType.String;
+                    }
+                    else if (fieldType.GetGenericTypeDefinition() == typeof(List<>))
+                    {
+                        return ConfigurationFieldType.List;
                     }
                     else
                     {
@@ -155,7 +165,17 @@ namespace LukeBot.Common
         where Configurable : Configuration<Configurable>, new()
     {
         protected Dictionary<string, ConfigurationField> mFields = new();
-        public OnUpdateDelegate OnUpdate;
+
+        public override OnUpdateDelegate UpdateNotifier
+        {
+            set
+            {
+                foreach (ConfigurationField field in mFields.Values)
+                {
+                    field.mUpdateDelegate = value;
+                }
+            }
+        }
 
         static Configuration()
         {
@@ -256,7 +276,7 @@ namespace LukeBot.Common
                 {
                     if (member.MemberType != MemberTypes.Field)
                     {
-                        Logger.Log().Error("Configuration declared member {0} as configuration field, but it's not a Field - skipping", member.Name);
+                        Logger.Log().Warning("Configuration declared member {0} as configuration field, but it's not a Field - skipping", member.Name);
                         continue;
                     }
 
@@ -268,7 +288,7 @@ namespace LukeBot.Common
                     ConfigurationField confField = AllocateFieldAccessor(fieldRef, field, attrs[0] as ConfigurationFieldAttribute, prefix);
                     if (confField == null)
                     {
-                        Logger.Log().Error("Configuration failed to allocate accessor for member {0} - skipping", field.Name);
+                        Logger.Log().Warning("Configuration failed to allocate accessor for member {0} - skipping", field.Name);
                         continue;
                     }
 

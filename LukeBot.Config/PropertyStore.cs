@@ -64,6 +64,15 @@ namespace LukeBot.Config
             mRootDomain.Add(p.Copy(), v);
         }
 
+        // Copies one property into another
+        // Takes full names in form of ex. "doma.domb.name"
+        // If copy fails (ex. toPath exists or fromPath does not exist) throws an appropriate Exception.
+        public void Copy(Path fromPath, Path toPath)
+        {
+            Property dup = Get(fromPath).Duplicate();
+            mRootDomain.Add(toPath.Copy(), dup);
+        }
+
         // Get a Property from the Store.
         // Takes full name in form of ex. "doma.domb.name", unwraps it and returns value if found
         // If not found, or any other error occurs, an appropriate Exception is thrown.

@@ -1,9 +1,13 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using LukeBot.Common;
 using LukeBot.Services;
 using LukeBot.User.Common;
+using LukeBot.Widget;
 using LukeBot.Widget.Common;
+using Org.BouncyCastle.Asn1.X509.Qualified;
 
 
 namespace LukeBot
@@ -13,34 +17,33 @@ namespace LukeBot
         private enum EditorState
         {
             PickOption = 0,
-            SetOption,
-            ListSetOption,
-            ListAdd,
-            ListDel,
-            ListMove,
+            SetSimpleOption,
+            EditArrayOption,
+            EditListOption,
+            EditEnumerableOption,
             Exit,
         };
 
-        private string mWidgetID = "";
+        // not an error, but rather a way out from some CLI-while-query-loops
+        private class OperationAbortedException: Common.Exception
+        {
+            public OperationAbortedException()
+                : base("Current operation was aborted")
+            { }
+        }
+
+        // something that should not happen and probably should be fixed ASAP
+        private class InternalErrorException: Common.Exception
+        {
+            public InternalErrorException(string reason, params object[] args)
+                : base("Encountered an internal error: " + String.Format(reason, args))
+            { }
+        }
+
         private string mPrintedName = "";
         private ConfigurationBase mConfiguration = null;
         private CLIMessageProxy mCLI = null;
         private EditorState mState = EditorState.PickOption;
-
-        private IWidgetService GetWidgetService()
-        {
-            return Service.Get(Constants.WIDGET_SERVICE_NAME) as IWidgetService;
-        }
-
-        private IWidgetUserModule GetWidgetUserModule()
-        {
-            return GetWidgetService().GetModuleByWidgetUUID(mWidgetID) as IWidgetUserModule;
-        }
-
-        private ConfigurationBase GetWidgetConfiguration()
-        {
-            return GetWidgetUserModule().GetWidgetConfiguration(mWidgetID);
-        }
 
         private void CLIMessage(string msg, params object[] args)
         {
@@ -52,28 +55,154 @@ namespace LukeBot
             return mCLI.Query(mask, String.Format(msg, args));
         }
 
-        public WidgetConfigurationCLIEditor(string widgetID, CLIMessageProxy cli)
-            : this(widgetID, "", cli)
+        // min-max are inclusive, so with min=0 and max=5 answers "0" or "5" are accepted
+        private int CLIQueryNumber(int min, int max, string query)
         {
+            while (true)
+            {
+                string answer = CLIQuery(false, query + " (range {0}-{1}, \"q\" to abort)", min, max);
+
+                if (Int32.TryParse(answer, out int ret))
+                {
+                    if (ret < min)
+                    {
+                        CLIMessage("Provided too low number");
+                    }
+                    else if (ret > max)
+                    {
+                        CLIMessage("Provided too high number");
+                    }
+                    else
+                    {
+                        return ret;
+                    }
+                }
+                else if (answer == "q")
+                {
+                    throw new OperationAbortedException();
+                }
+                else
+                {
+                    CLIMessage("Provided answer is not a number\n");
+                }
+            }
         }
 
-        public WidgetConfigurationCLIEditor(string widgetID, string friendlyName, CLIMessageProxy cli)
+        private void ProcessFieldEdit(ConfigurationField field)
         {
-            mWidgetID = widgetID;
-            mPrintedName = (friendlyName != null && friendlyName.Length > 0) ? friendlyName : widgetID;
-            mCLI = cli;
-            mConfiguration = GetWidgetConfiguration();
+            try
+            {
+                switch (field.FieldType)
+                {
+                case ConfigurationFieldType.Simple:
+                case ConfigurationFieldType.String:
+                    string newValue = CLIQuery(false, "New value");
+                    field.SetFromString(newValue);
+                    break;
+                case ConfigurationFieldType.Class:
+                    if (!field.UnderlyingType.IsAssignableTo(typeof(ConfigurationBase)))
+                    {
+                        throw new InternalErrorException("Cannot edit field, it must inherit Configuration<T>.");
+                    }
 
-            // verify if we have any configuration to edit
-            if (mConfiguration.GetFields().Count == 0)
-                throw new ArgumentException(string.Format("Requested Widget has no configuration options"));
+                    new WidgetConfigurationCLIEditor(field.Name, field.Get<ConfigurationBase>(), mCLI).MainLoop();
+                    break;
+                default:
+                    CLIMessage("WARNING: Unrecognized field type {0}. Can't edit field {1}.", field.FieldType, field.Name);
+                    break;
+                }
+            }
+            catch (ConfigurationFieldException e)
+            {
+                CLIMessage("Failed to set new value for configuration field {0}: {1}", field.Name, e.Message);
+            }
         }
 
-        public ConfigurationField ProcessPickOptionState()
+        private void ProcessListAdd<T>(List<T> list)
+            where T : new()
+        {
+            int option = 0;
+            if (list.Count > 0)
+            {
+                option = CLIQueryNumber(0, list.Count, "Select index at which to add the new entry");
+            }
+
+            list.Insert(option, new T());
+        }
+
+        private void ProcessListRemove<T>(List<T> list)
+        {
+            int option = 0;
+            if (list.Count > 1)
+            {
+                option = CLIQueryNumber(0, list.Count - 1, "Select element to remove");
+            }
+
+            list.RemoveAt(option);
+        }
+
+        private void ProcessListMove<T>(List<T> list)
+        {
+            if (list.Count <= 1)
+            {
+                CLIMessage("Nothing to move");
+                return;
+            }
+
+            int who = CLIQueryNumber(0, list.Count - 1, "Select element to move");
+            int where = CLIQueryNumber(0, list.Count - 1, "Move to which index");
+            if (who == where)
+                return;
+
+            T item = list[who];
+            if (who < where)
+            {
+                for (; who < where; who++)
+                {
+                    list[who] = list[who + 1];
+                }
+
+                list[who] = item;
+            }
+            else
+            {
+                for (; who > where; who--)
+                {
+                    list[who] = list[who - 1];
+                }
+
+                list[who] = item;
+            }
+        }
+
+        private void ProcessListEdit<T>(ConfigurationFieldAccessor<List<T>> field, List<T> list)
+            where T : new()
+        {
+            int element = CLIQueryNumber(0, list.Count - 1, "Select element to edit");
+
+            switch (field.UnderlyingFieldType)
+            {
+            case ConfigurationFieldType.Simple:
+            case ConfigurationFieldType.String:
+                string newValue = CLIQuery(false, "New value: ");
+                list[element] = (T)Convert.ChangeType(newValue, typeof(T));
+                break;
+            case ConfigurationFieldType.Class:
+                if (!field.UnderlyingType.IsAssignableTo(typeof(ConfigurationBase)))
+                {
+                    throw new InternalErrorException("Cannot edit field, it must inherit Configuration<T>.");
+                }
+
+                new WidgetConfigurationCLIEditor(field.Name + "[" + element + "]", list[element] as ConfigurationBase, mCLI).MainLoop();
+                break;
+            }
+        }
+
+        private ConfigurationField ProcessPickOptionState()
         {
             Dictionary<string, ConfigurationField> fields = mConfiguration.GetFields();
 
-            CLIMessage("Editing configuration of widget {0}", mPrintedName);
+            CLIMessage("Editing {0} Configuration", mPrintedName);
             CLIMessage("Available configuration options:");
             foreach (ConfigurationField field in fields.Values)
             {
@@ -92,10 +221,28 @@ namespace LukeBot
             }
             else if (fields.TryGetValue(answer, out ConfigurationField fieldToEdit))
             {
-                if (fieldToEdit.Type.IsGenericType && fieldToEdit.Type.GetGenericTypeDefinition() == typeof(List<>))
-                    mState = EditorState.ListSetOption;
-                else
-                    mState = EditorState.SetOption;
+                switch (fieldToEdit.FieldType)
+                {
+                case ConfigurationFieldType.Simple:
+                case ConfigurationFieldType.String:
+                    mState = EditorState.SetSimpleOption;
+                    break;
+                case ConfigurationFieldType.Array:
+                    mState = EditorState.EditArrayOption;
+                    break;
+                case ConfigurationFieldType.List:
+                    mState = EditorState.EditListOption;
+                    break;
+                case ConfigurationFieldType.Enumerable:
+                    mState = EditorState.EditEnumerableOption;
+                    break;
+                case ConfigurationFieldType.Class:
+                    // TODO not true! should be edited via a new instance of the editor
+                    CLIMessage("Cannot edit Class fields! Edit their members by selecting them internally");
+                    break;
+                default:
+                    throw new InternalErrorException("Invalid field type {0}", fieldToEdit.FieldType);
+                }
 
                 return fieldToEdit;
             }
@@ -107,83 +254,139 @@ namespace LukeBot
             return null;
         }
 
-        public void ProcessSetOptionState(ConfigurationField field)
+        private void ProcessSetOptionState(ConfigurationField field)
         {
-            string newValue = CLIQuery(false, "Enter new value for {0}", field.Name);
+            if (field == null)
+            {
+                CLIMessage("ERROR: Field is null while we entered SetOption state. Exiting.");
+                mState = EditorState.Exit;
+                return;
+            }
 
-            try
-            {
-                field.SetFromString(newValue);
-            }
-            catch (ConfigurationFieldException e)
-            {
-                CLIMessage("Failed to set new value {0} for configuration field {1}: {2}", newValue, field.Name, e.Message);
-            }
+            ProcessFieldEdit(field);
 
             field = null;
             mState = EditorState.PickOption;
         }
 
-        public void ProcessListSetOptionState(ConfigurationField listField)
+        private void ProcessEditArrayOptionState(ConfigurationField arrayField)
         {
-            List<IConfigurationEditable> list = listField.Get<List<IConfigurationEditable>>();
+            // TODO
+            throw new NotImplementedException("TODO Arrays not yet supported");
+        }
+
+        private void ProcessEditListOptionStateGeneric<T>(ConfigurationFieldAccessor<List<T>> fieldAccessor)
+            where T: new()
+        {
+            if (fieldAccessor == null)
+            {
+                throw new InternalErrorException("Field accessor is NULL");
+            }
+
+            List<T> list = fieldAccessor.Get();
 
             bool done = false;
             while (!done)
             {
-                CLIMessage("Editing a list field - available fields:");
-
-                foreach (IConfigurationEditable f in list)
+                try
                 {
-                    CLIMessage("  {0}", f.ToString());
+                    CLIMessage("Editing a {0} list field - available fields:", typeof(T).ToString());
+                    int counter = 0;
+                    if (list.Count > 0)
+                    {
+                        foreach (object f in list)
+                        {
+                            CLIMessage("  {0}. {1}", counter, f.ToString());
+                            counter++;
+                        }
+                    }
+                    else
+                    {
+                        CLIMessage("  EMPTY");
+                    }
+
+                    string action = CLIQuery(false, "\nChoose action (add, del, move, edit, quit)");
+                    switch (action)
+                    {
+                    case "add":
+                        ProcessListAdd(list);
+                        break;
+                    case "del":
+                        ProcessListRemove(list);
+                        break;
+                    case "move":
+                        ProcessListMove(list);
+                        break;
+                    case "edit":
+                        ProcessListEdit(fieldAccessor, list);
+                        break;
+                    case "quit":
+                        mState = EditorState.PickOption;
+                        done = true;
+                        break;
+                    default:
+                        CLIMessage("Unrecognized option: {0}", action);
+                        break;
+                    }
                 }
-
-                string action = CLIQuery(false, "Choose action (add, del, move, quit):");
-                switch (action)
+                catch (OperationAbortedException)
                 {
-                case "add":
-                    mState = EditorState.ListAdd;
-                    done = true;
-                    break;
-                case "del":
-                    mState = EditorState.ListDel;
-                    done = true;
-                    break;
-                case "move":
-                    mState = EditorState.ListMove;
-                    done = true;
-                    break;
-                case "quit":
-                    mState = EditorState.PickOption;
-                    done = true;
-                    break;
-                default:
-                    CLIMessage("Unrecognized option: {0}", action);
-                    break;
+                    CLIMessage("Selected action was aborted.\n");
                 }
             }
         }
 
-        public void ProcessListAdd(ConfigurationField field)
+        private void ProcessEditListOptionState(ConfigurationField listField)
         {
+            if (listField == null)
+            {
+                CLIMessage("ERROR: Field is null while we entered EditListOption state. Exiting.");
+                mState = EditorState.PickOption;
+                return;
+            }
 
+            if (listField.FieldType != ConfigurationFieldType.List)
+            {
+                CLIMessage("ERROR: Field is not a List while we entered EditListOption state. Exiting.");
+                mState = EditorState.PickOption;
+                return;
+            }
+
+            if (listField.UnderlyingType == null)
+            {
+                CLIMessage("ERROR: Field's underlying type is not set.");
+                mState = EditorState.PickOption;
+                return;
+            }
+
+            Type underlyingType = listField.UnderlyingType;
+            if (underlyingType == typeof(AudioPlay.AudioTrigger))
+            {
+                ProcessEditListOptionStateGeneric(listField as ConfigurationFieldAccessor<List<AudioPlay.AudioTrigger>>);
+            }
+            else
+            {
+                CLIMessage("ERROR: Unrecognized underlying type {0}. Maybe something needs to be added here.", listField.UnderlyingType.ToString());
+                mState = EditorState.PickOption;
+                return;
+            }
         }
 
-        public void ProcessListDel(ConfigurationField field)
+
+        public WidgetConfigurationCLIEditor(string name, ConfigurationBase configuration, CLIMessageProxy cli)
         {
+            mPrintedName = name;
+            mCLI = cli;
+            mConfiguration = configuration;
 
-        }
-
-        public void ProcessListMove(ConfigurationField field)
-        {
-
+            // verify if we have any configuration to edit
+            if (mConfiguration.GetFields().Count == 0)
+                throw new ArgumentException(string.Format("Requested Widget has no configuration options"));
         }
 
         // This takes over CLI from main CLI code and provides a sub-UI
         public void MainLoop()
         {
-            CLIMessage("Starting Widget Configuration editor");
-
             mState = EditorState.PickOption;
             ConfigurationField mField = null;
             while (mState != EditorState.Exit)
@@ -193,92 +396,21 @@ namespace LukeBot
                 case EditorState.PickOption:
                     mField = ProcessPickOptionState();
                     break;
-                case EditorState.SetOption:
+                case EditorState.SetSimpleOption:
                 {
-                    if (mField == null)
-                    {
-                        CLIMessage("ERROR: Field is null while we entered SetOption state. Exiting.");
-                        mState = EditorState.Exit;
-                        break;
-                    }
-
                     ProcessSetOptionState(mField);
                     break;
                 }
-                case EditorState.ListSetOption:
+                case EditorState.EditArrayOption:
+                case EditorState.EditEnumerableOption:
                 {
-                    if (mField == null)
-                    {
-                        CLIMessage("ERROR: Field is null while we entered ListSetOption state. Exiting.");
-                        mState = EditorState.Exit;
-                        break;
-                    }
-
-                    if (mField.Type.IsGenericType && mField.Type.GetGenericTypeDefinition() == typeof(List<>))
-                    {
-                        CLIMessage("ERROR: Field is not a List while we entered ListSetOption state. Exiting.");
-                        mState = EditorState.Exit;
-                        break;
-                    }
-
-                    ProcessListSetOptionState(mField);
+                    CLIMessage("ERROR: TODO");
+                    mState = EditorState.PickOption;
                     break;
                 }
-                case EditorState.ListAdd:
+                case EditorState.EditListOption:
                 {
-                    if (mField == null)
-                    {
-                        CLIMessage("ERROR: Field is null while we entered ListAdd state. Exiting.");
-                        mState = EditorState.Exit;
-                        break;
-                    }
-
-                    if (mField.Type.IsGenericType && mField.Type.GetGenericTypeDefinition() == typeof(List<>))
-                    {
-                        CLIMessage("ERROR: Field is not a List while we entered ListAdd state. Exiting.");
-                        mState = EditorState.Exit;
-                        break;
-                    }
-
-                    ProcessListAdd(mField);
-                    break;
-                }
-                case EditorState.ListDel:
-                {
-                    if (mField == null)
-                    {
-                        CLIMessage("ERROR: Field is null while we entered ListDel state. Exiting.");
-                        mState = EditorState.Exit;
-                        break;
-                    }
-
-                    if (mField.Type.IsGenericType && mField.Type.GetGenericTypeDefinition() == typeof(List<>))
-                    {
-                        CLIMessage("ERROR: Field is not a List while we entered ListDel state. Exiting.");
-                        mState = EditorState.Exit;
-                        break;
-                    }
-
-                    ProcessListDel(mField);
-                    break;
-                }
-                case EditorState.ListMove:
-                {
-                    if (mField == null)
-                    {
-                        CLIMessage("ERROR: Field is null while we entered ListMove state. Exiting.");
-                        mState = EditorState.Exit;
-                        break;
-                    }
-
-                    if (mField.Type.IsGenericType && mField.Type.GetGenericTypeDefinition() == typeof(List<>))
-                    {
-                        CLIMessage("ERROR: Field is not a List while we entered ListMove state. Exiting.");
-                        mState = EditorState.Exit;
-                        break;
-                    }
-
-                    ProcessListMove(mField);
+                    ProcessEditListOptionState(mField);
                     break;
                 }
                 default:

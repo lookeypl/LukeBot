@@ -132,6 +132,7 @@ namespace LukeBot.Widget
                     Logger.Log().Error("Failed to load Widget {0} ({1}): {2}", w.Name, w.ID, e.Message);
                 else
                     Logger.Log().Error("Failed to load Widget {0}: {1}", w.ID, e.Message);
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
             }
         }
 
@@ -265,6 +266,11 @@ namespace LukeBot.Widget
         public void SaveConfiguration(string id)
         {
             mWidgets[GetActualWidgetId(id)].SaveConfiguration();
+        }
+
+        public void ResetConfiguration(string id)
+        {
+            mWidgets[GetActualWidgetId(id)].ResetConfiguration();
         }
 
         public ConfigurationBase GetWidgetConfiguration(string id)

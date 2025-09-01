@@ -530,7 +530,7 @@
             alertsWidget.send(new WidgetEventCompletionStatus(1, "Alert interrupted"));
         }
     });
-    alertsWidget.registerMessage("AlertWidgetConfig", (obj) => {
+    alertsWidget.registerMessage("Config", (obj) => {
         // picked up configuration message; read and adjust
         if (obj.Alignment && obj.Alignment == "left") {
             infoPanel.alignLeft();

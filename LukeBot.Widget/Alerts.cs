@@ -30,12 +30,12 @@ namespace LukeBot.Widget
             }
         }
 
-        public class AlertWidgetConfig: Configuration<AlertWidgetConfig>
+        public class Config: Configuration<Config>
         {
             [ConfigurationListRestrictedField<string>(new[] { "left", "right" })]
             private string Alignment = "right";
 
-            public AlertWidgetConfig()
+            public Config()
             {
             }
         }
@@ -113,14 +113,14 @@ namespace LukeBot.Widget
         protected override void OnConnected()
         {
             // must use internal serialization routine to use the proper Converter
-            SendToWS(mConfiguration.Serialize());
+            SendToWS(GetConfig().Serialize());
             AwaitEventCompletion();
         }
 
         protected override void OnConfigurationUpdate()
         {
             // must use internal serialization routine to use the proper Converter
-            SendToWS(mConfiguration.Serialize());
+            SendToWS(GetConfig().Serialize());
             AwaitEventCompletion();
         }
 
@@ -150,6 +150,11 @@ namespace LukeBot.Widget
 
             collection.Event(Events.TWITCH_SUBSCRIPTION).Endpoint -= OnSubscriptionEvent;
             collection.Event(Events.TWITCH_SUBSCRIPTION).InterruptEndpoint -= OnEventInterrupt;
+        }
+
+        protected override ConfigurationBase CreateDefaultConfiguration()
+        {
+            return new Config();
         }
 
         public Alerts(string lbUser, string id, string name)

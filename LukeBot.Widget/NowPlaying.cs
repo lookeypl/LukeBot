@@ -54,6 +54,11 @@ namespace LukeBot.Widget
             Comms.Event.User(mLBUser).Event(Events.SPOTIFY_TRACK_CHANGED).Endpoint -= OnTrackChanged;
         }
 
+        protected override ConfigurationBase CreateDefaultConfiguration()
+        {
+            return new EmptyWidgetConfiguration();
+        }
+
         public NowPlaying(string lbUser, string id, string name)
             : base(lbUser, "Widgets/NowPlaying.html", id, name)
         {

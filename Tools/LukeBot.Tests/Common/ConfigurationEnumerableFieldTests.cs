@@ -37,6 +37,8 @@ namespace LukeBot.Tests.Common
             public List<string> stringListField = new List<string>{ "test1", "test2", "test3", "test420" };
             [JsonInclude]
             public List<InternalObject> objectListField = new List<InternalObject>{ new InternalObject(20, "test1"), new InternalObject(40, "test2") };
+            [JsonInclude]
+            public List<int> enumerableField = new List<int>{ 20, 30, 40 };
 
             // metadata
             [JsonInclude]
@@ -55,6 +57,8 @@ namespace LukeBot.Tests.Common
             public List<string> stringListField = new(EVENT_TEST_CONFIGURATION.stringListField);
             [ConfigurationField]
             public List<InternalObject> objectListField = new(EVENT_TEST_CONFIGURATION.objectListField);
+            [ConfigurationField]
+            public IEnumerable<int> enumerableField = new List<int>(EVENT_TEST_CONFIGURATION.enumerableField);
 
             public void CheckFields()
             {
@@ -62,14 +66,17 @@ namespace LukeBot.Tests.Common
                 Assert.IsNotNull(Field(nameof(intListField)));
                 Assert.IsNotNull(Field(nameof(stringListField)));
                 Assert.IsNotNull(Field(nameof(objectListField)));
+                Assert.IsNotNull(Field(nameof(enumerableField)));
 
                 Assert.IsNotNull(Accessor<List<int>>(nameof(intListField)));
                 Assert.IsNotNull(Accessor<List<string>>(nameof(stringListField)));
                 Assert.IsNotNull(Accessor<List<InternalObject>>(nameof(objectListField)));
+                Assert.IsNotNull(Accessor<IEnumerable<int>>(nameof(enumerableField)));
 
-                Assert.AreEqual(ConfigurationFieldType.Enumerable, Field(nameof(intListField)).FieldType);
-                Assert.AreEqual(ConfigurationFieldType.Enumerable, Field(nameof(stringListField)).FieldType);
-                Assert.AreEqual(ConfigurationFieldType.Enumerable, Field(nameof(objectListField)).FieldType);
+                Assert.AreEqual(ConfigurationFieldType.List, Field(nameof(intListField)).FieldType);
+                Assert.AreEqual(ConfigurationFieldType.List, Field(nameof(stringListField)).FieldType);
+                Assert.AreEqual(ConfigurationFieldType.List, Field(nameof(objectListField)).FieldType);
+                Assert.AreEqual(ConfigurationFieldType.Enumerable, Field(nameof(enumerableField)).FieldType);
 
                 Assert.AreEqual(EVENT_TEST_CONFIGURATION.intListField.Count, intListField.Count);
                 for (int i = 0; i < intListField.Count; ++i)
@@ -83,6 +90,13 @@ namespace LukeBot.Tests.Common
                     Assert.AreEqual(EVENT_TEST_CONFIGURATION.objectListField[i].number, objectListField[i].number);
                     Assert.AreEqual(EVENT_TEST_CONFIGURATION.objectListField[i].str, objectListField[i].str);
                 }
+                int counter = 0;
+                foreach (int i in enumerableField)
+                {
+                    Assert.AreEqual(EVENT_TEST_CONFIGURATION.enumerableField[counter], i);
+                    counter++;
+                }
+                Assert.AreEqual(EVENT_TEST_CONFIGURATION.enumerableField.Count, counter);
             }
 
             public void TryRegisterExisting()

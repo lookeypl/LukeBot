@@ -50,6 +50,11 @@ namespace LukeBot.Widget
             Comms.Event.User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_MESSAGE).Endpoint -= OnClearMsg;
         }
 
+        protected override ConfigurationBase CreateDefaultConfiguration()
+        {
+            return new EmptyWidgetConfiguration();
+        }
+
         public Chat(string lbUser, string id, string name)
             : base(lbUser, "Widgets/Chat.html", id, name)
         {

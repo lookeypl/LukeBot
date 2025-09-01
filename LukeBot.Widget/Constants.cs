@@ -5,6 +5,7 @@ namespace LukeBot.Widget
         public const string PROP_WIDGETS = "widgets";
         public const string PROP_STORE_WIDGET_DOMAIN = "widget";
         public const string PROP_CONFIG = "config";
+        public const string PROP_CONFIG_BACKUP = "backupconfig";
 
         public const string EMPTY_WIDGET_CONFIGURATION_NAME = "EmptyWidgetConfiguration";
     }

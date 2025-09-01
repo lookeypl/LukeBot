@@ -24,6 +24,7 @@ namespace LukeBot.Widget.Common
         public void DeleteWidget(string id);
         public void ReloadWidget(string id);
         public ConfigurationBase GetWidgetConfiguration(string id);
+        public void ResetConfiguration(string id);
         public void SaveConfiguration(string id);
     }
 }

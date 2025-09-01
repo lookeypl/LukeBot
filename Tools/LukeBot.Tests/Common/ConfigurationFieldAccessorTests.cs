@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using LukeBot.Common;
+using System.Collections.Generic;
 
 
 namespace LukeBot.Tests.Common
@@ -31,6 +32,8 @@ namespace LukeBot.Tests.Common
             Assert.AreEqual(name, field.Name);
             Assert.AreEqual(value, v);
             Assert.AreEqual(value, field.Get());
+            Assert.AreEqual(typeof(int), field.Type);
+            Assert.AreEqual(null, field.UnderlyingType);
 
             v = 30;
             Assert.AreEqual(30, field.Get());
@@ -51,6 +54,8 @@ namespace LukeBot.Tests.Common
             Assert.AreEqual(name, field.Name);
             Assert.IsNotNull(field.Get());
             Assert.AreEqual(value, field.Get());
+            Assert.AreEqual(typeof(string), field.Type);
+            Assert.AreEqual(null, field.UnderlyingType);
 
             v = "This is another string";
             Assert.AreEqual("This is another string", field.Get());
@@ -71,6 +76,8 @@ namespace LukeBot.Tests.Common
             Assert.IsNotNull(field.Get());
             Assert.AreEqual(30, field.Get().i);
             Assert.AreEqual(4.2f, field.Get().f);
+            Assert.AreEqual(typeof(TestObject), field.Type);
+            Assert.AreEqual(null, field.UnderlyingType);
 
             o.i = 42;
             o.f = 3.0f;
@@ -82,6 +89,46 @@ namespace LukeBot.Tests.Common
             Assert.AreEqual(o, field.Get());
             Assert.AreEqual(1, field.Get().i);
             Assert.AreEqual(0.5f, field.Get().f);
+        }
+
+        [TestMethod]
+        public void ConfigurationFieldAccessor_Enumerable()
+        {
+            string name = "arrayField";
+            int[] values = { 3, 2, 1 };
+
+            ConfigurationFieldAccessor<int[]> field = new ConfigurationFieldAccessor<int[]>(name, () => values);
+            Assert.AreEqual(name, field.Name);
+            Assert.IsNotNull(field.Get());
+            Assert.AreEqual(values, field.Get());
+            Assert.AreEqual(typeof(int[]), field.Type);
+            Assert.AreEqual(typeof(int), field.UnderlyingType);
+
+            values[1] = 4;
+            Assert.AreEqual(4, field.Get()[1]);
+
+            field.Set(new int[] { 2, 3 });
+            Assert.AreEqual(2, values.Length);
+        }
+
+        [TestMethod]
+        public void ConfigurationFieldAccessor_Array()
+        {
+            string name = "listField";
+            List<int> values = new List<int>{ 3, 2, 1 };
+
+            ConfigurationFieldAccessor<List<int>> field = new ConfigurationFieldAccessor<List<int>>(name, () => values);
+            Assert.AreEqual(name, field.Name);
+            Assert.IsNotNull(field.Get());
+            Assert.AreEqual(values, field.Get());
+            Assert.AreEqual(typeof(List<int>), field.Type);
+            Assert.AreEqual(typeof(int), field.UnderlyingType);
+
+            values[1] = 4;
+            Assert.AreEqual(4, field.Get()[1]);
+
+            field.Set(new List<int> { 2, 3 });
+            Assert.AreEqual(2, values.Count);
         }
     }
 }

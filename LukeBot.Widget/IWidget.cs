@@ -229,10 +229,13 @@ namespace LukeBot.Widget
             }
             catch (ConfigurationException e)
             {
-                Logger.Log().Error("Failed to load {0} Widget's configuration. This might be because it is either old or becuase of an error.");
-                Logger.Log().Error("If you're okay with losing the configuration data, try calling below CLI command to recreate it (it WILL lose old data!):");
+                Logger.Log().Error("Failed to load {0} Widget's configuration. This might be because it is either old or becuase of some other error.");
+                Logger.Log().Error("If you're okay with losing the configuration data, try calling below CLI command to recreate it:");
                 Logger.Log().Error("  widget reload {0} --recreate-config", GetPrintableWidgetID());
+                Logger.Log().Error("Old configuration will be backed up in config for cross-reference.");
+                #pragma warning disable CA2200
                 throw e;
+                #pragma warning restore CA2200
             }
         }
 

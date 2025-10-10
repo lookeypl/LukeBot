@@ -145,6 +145,7 @@ namespace LukeBot.Common
 
         public abstract string Serialize();
         public abstract Dictionary<string, ConfigurationField> GetFields();
+        public virtual string ToShortString() { return EventName; }
     }
 
     /**
@@ -173,6 +174,13 @@ namespace LukeBot.Common
                 foreach (ConfigurationField field in mFields.Values)
                 {
                     field.mUpdateDelegate = value;
+
+                    // place the update notifier on complex Fields as well (if we have any)
+                    if (field.FieldType == ConfigurationFieldType.Class &&
+                        field.Type.IsAssignableTo(typeof(ConfigurationBase)))
+                    {
+                        field.Get<ConfigurationBase>().UpdateNotifier = value;
+                    }
                 }
             }
         }

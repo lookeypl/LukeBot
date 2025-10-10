@@ -2,11 +2,19 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 using LukeBot.Common;
 using LukeBot.Services;
+using LukeBot.Twitch.Command;
 using LukeBot.User.Common;
 using LukeBot.Widget;
 using LukeBot.Widget.Common;
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Authentication.BearerToken;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc.TagHelpers;
 using Org.BouncyCastle.Asn1.X509.Qualified;
 
 
@@ -44,6 +52,7 @@ namespace LukeBot
         private ConfigurationBase mConfiguration = null;
         private CLIMessageProxy mCLI = null;
         private EditorState mState = EditorState.PickOption;
+        private MethodInfo mListEditGenericMethodInfo = null;
 
         private void CLIMessage(string msg, params object[] args)
         {
@@ -60,7 +69,7 @@ namespace LukeBot
         {
             while (true)
             {
-                string answer = CLIQuery(false, query + " (range {0}-{1}, \"q\" to abort)", min, max);
+                string answer = CLIQuery(false, query + " (range {0}-{1}, \"Q\" to abort)", min, max);
 
                 if (Int32.TryParse(answer, out int ret))
                 {
@@ -77,7 +86,7 @@ namespace LukeBot
                         return ret;
                     }
                 }
-                else if (answer == "q")
+                else if (answer == "Q")
                 {
                     throw new OperationAbortedException();
                 }
@@ -118,39 +127,63 @@ namespace LukeBot
             }
         }
 
-        private void ProcessListAdd<T>(List<T> list)
+        private int ValidateOrFetchSpot(int spot, int limit, string queryMsg)
+        {
+            if (spot > limit)
+            {
+                throw new ArgumentException(String.Format("Spot {0} is larger than limit {1}", spot, limit));
+            }
+
+            int ret = spot;
+            if (ret < 0)
+            {
+                if (limit > 0)
+                {
+                    ret = CLIQueryNumber(0, limit, queryMsg);
+                }
+                else ret = 0;
+            }
+
+            return ret;
+        }
+
+        private int ProcessListAdd<T>(List<T> list, int spot)
             where T : new()
         {
-            int option = 0;
-            if (list.Count > 0)
-            {
-                option = CLIQueryNumber(0, list.Count, "Select index at which to add the new entry");
-            }
-
-            list.Insert(option, new T());
+            spot = ValidateOrFetchSpot(spot, list.Count, "Spot for new entry");
+            list.Insert(spot, new T());
+            return spot;
         }
 
-        private void ProcessListRemove<T>(List<T> list)
+        private int ProcessListAdd(List<string> list, int spot)
         {
-            int option = 0;
-            if (list.Count > 1)
-            {
-                option = CLIQueryNumber(0, list.Count - 1, "Select element to remove");
-            }
-
-            list.RemoveAt(option);
+            spot = ValidateOrFetchSpot(spot, list.Count, "Spot for new entry");
+            list.Insert(spot, "");
+            return spot;
         }
 
-        private void ProcessListMove<T>(List<T> list)
+        private void ProcessListRemove<T>(List<T> list, int spot)
         {
-            if (list.Count <= 1)
+            if (list.Count < 1)
+            {
+                CLIMessage("Nothing to remove");
+                return;
+            }
+
+            spot = ValidateOrFetchSpot(spot, list.Count - 1, "Which entry to remove");
+            list.RemoveAt(spot);
+        }
+
+        private void ProcessListMove<T>(List<T> list, int who, int where)
+        {
+            if (list.Count < 1)
             {
                 CLIMessage("Nothing to move");
                 return;
             }
 
-            int who = CLIQueryNumber(0, list.Count - 1, "Select element to move");
-            int where = CLIQueryNumber(0, list.Count - 1, "Move to which index");
+            who = ValidateOrFetchSpot(who, list.Count - 1, "Select element to move");
+            where = ValidateOrFetchSpot(where, list.Count - 1, "Move to which index");
             if (who == where)
                 return;
 
@@ -175,17 +208,26 @@ namespace LukeBot
             }
         }
 
-        private void ProcessListEdit<T>(ConfigurationFieldAccessor<List<T>> field, List<T> list)
-            where T : new()
+        private void ProcessListEdit<T>(ConfigurationField field, List<T> list, int spot, string newValue)
         {
-            int element = CLIQueryNumber(0, list.Count - 1, "Select element to edit");
+            if (list.Count < 1)
+            {
+                CLIMessage("Nothing to edit");
+                return;
+            }
+
+            spot = ValidateOrFetchSpot(spot, list.Count - 1, "Select element to edit");
 
             switch (field.UnderlyingFieldType)
             {
             case ConfigurationFieldType.Simple:
             case ConfigurationFieldType.String:
-                string newValue = CLIQuery(false, "New value: ");
-                list[element] = (T)Convert.ChangeType(newValue, typeof(T));
+                if (newValue == "")
+                {
+                    newValue = CLIQuery(false, "New value");
+                }
+
+                list[spot] = (T)Convert.ChangeType(newValue, typeof(T));
                 break;
             case ConfigurationFieldType.Class:
                 if (!field.UnderlyingType.IsAssignableTo(typeof(ConfigurationBase)))
@@ -193,8 +235,29 @@ namespace LukeBot
                     throw new InternalErrorException("Cannot edit field, it must inherit Configuration<T>.");
                 }
 
-                new WidgetConfigurationCLIEditor(field.Name + "[" + element + "]", list[element] as ConfigurationBase, mCLI).MainLoop();
+                new WidgetConfigurationCLIEditor(field.Name + "[" + spot + "]", list[spot] as ConfigurationBase, mCLI).MainLoop();
                 break;
+            }
+        }
+
+        private void PrintListContents<T>(ConfigurationFieldAccessor<List<T>> listAccessor)
+        {
+            CLIMessage("Available list fields:");
+
+            List<T> list = listAccessor.Get();
+
+            int counter = 0;
+            if (list.Count > 0)
+            {
+                foreach (object o in list)
+                {
+                    CLIMessage("  {0}. {1}", counter, o.ToString());
+                    counter++;
+                }
+            }
+            else
+            {
+                CLIMessage("  EMPTY");
             }
         }
 
@@ -207,7 +270,6 @@ namespace LukeBot
             foreach (ConfigurationField field in fields.Values)
             {
                 string msg = String.Format("  {0} - {1}", field.Name, field.GetValueString());
-
                 string allowed = field.DescribeAllowedValues();
                 if (allowed.Length > 0) msg += " [" + allowed + "]";
                 CLIMessage(msg);
@@ -215,7 +277,7 @@ namespace LukeBot
 
             string answer = CLIQuery(false, "\nPick option to edit by name (or Q to exit)");
 
-            if (answer == "Q" || answer == "q")
+            if (answer == "Q")
             {
                 mState = EditorState.Exit;
             }
@@ -237,8 +299,12 @@ namespace LukeBot
                     mState = EditorState.EditEnumerableOption;
                     break;
                 case ConfigurationFieldType.Class:
-                    // TODO not true! should be edited via a new instance of the editor
-                    CLIMessage("Cannot edit Class fields! Edit their members by selecting them internally");
+                    if (!fieldToEdit.Type.IsAssignableTo(typeof(ConfigurationBase)))
+                    {
+                        throw new InternalErrorException("Cannot edit field, it must inherit Configuration<T>.");
+                    }
+
+                    new WidgetConfigurationCLIEditor(fieldToEdit.Name, fieldToEdit.GetRawObject() as ConfigurationBase, mCLI).MainLoop();
                     break;
                 default:
                     throw new InternalErrorException("Invalid field type {0}", fieldToEdit.FieldType);
@@ -275,50 +341,104 @@ namespace LukeBot
             throw new NotImplementedException("TODO Arrays not yet supported");
         }
 
-        private void ProcessEditListOptionStateGeneric<T>(ConfigurationFieldAccessor<List<T>> fieldAccessor)
-            where T: new()
+        private void ProcessListHelp()
         {
-            if (fieldAccessor == null)
+            CLIMessage("\nAvailable actions are: add, del, move, edit, help, quit");
+            CLIMessage("Actions can be followed by an index stating which element to affect.");
+            CLIMessage("All indexes are checked against list's current length. \"add\" allows to");
+            CLIMessage("add an element at the end of the list by providing the first out-of-bounds index.");
+            CLIMessage("Examples:");
+            CLIMessage("  add       - simply adds an element, querying for spot where to insert the element to");
+            CLIMessage("  add 3     - adds a new element at index 3 ");
+            CLIMessage("  del 2     - removes an element at index 2");
+            CLIMessage("  move 2 5  - moves element at index 2 to index 5 preserving existing element order");
+            CLIMessage("  edit 1    - edits an element at index 1");
+        }
+
+        private void QueryListUserAction(out string action, out int spot, out int where, out string remainder)
+        {
+            action = "";
+            spot = -1;
+            where = -1;
+            remainder = "";
+
+            string a = CLIQuery(false, "\nChoose action (add, del, move, edit, help, quit)");
+            string[] tokenizedAction = a.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (tokenizedAction.Length < 1)
             {
-                throw new InternalErrorException("Field accessor is NULL");
+                throw new ArgumentException("Provide an action");
             }
 
-            List<T> list = fieldAccessor.Get();
+            action = tokenizedAction[0];
+            int currentIdx = 1;
+            while (currentIdx < tokenizedAction.Length)
+            {
+                if (action == "move")
+                {
+                    if (currentIdx == 1 || currentIdx == 2)
+                    {
+                        int val;
+                        if (!Int32.TryParse(tokenizedAction[currentIdx], out val))
+                        {
+                            remainder = String.Join(' ', tokenizedAction[currentIdx..]);
+                            break;
+                        }
+
+                        if (currentIdx == 1) spot = val;
+                        if (currentIdx == 2) where = val;
+                    }
+                    else
+                    {
+                        remainder = String.Join(' ', tokenizedAction[currentIdx..]);
+                        break;
+                    }
+                }
+                else
+                {
+                    if (currentIdx == 1)
+                    {
+                        if (!Int32.TryParse(tokenizedAction[currentIdx], out spot))
+                        {
+                            remainder = String.Join(' ', tokenizedAction[currentIdx..]);
+                            break;
+                        }
+                    }
+                }
+
+                currentIdx++;
+            }
+        }
+
+        private void ProcessEditListOptionStateGeneric<T>(ConfigurationFieldAccessor<List<T>> listAccessor)
+            where T : new()
+        {
+            List<T> list = listAccessor.Get();
 
             bool done = false;
             while (!done)
             {
                 try
                 {
-                    CLIMessage("Editing a {0} list field - available fields:", typeof(T).ToString());
-                    int counter = 0;
-                    if (list.Count > 0)
-                    {
-                        foreach (object f in list)
-                        {
-                            CLIMessage("  {0}. {1}", counter, f.ToString());
-                            counter++;
-                        }
-                    }
-                    else
-                    {
-                        CLIMessage("  EMPTY");
-                    }
+                    PrintListContents(listAccessor);
+                    QueryListUserAction(out string action, out int spot, out int where, out string remainder);
 
-                    string action = CLIQuery(false, "\nChoose action (add, del, move, edit, quit)");
                     switch (action)
                     {
                     case "add":
-                        ProcessListAdd(list);
+                        spot = ProcessListAdd(list, spot);
+                        if (remainder != "")
+                        {
+                            ProcessListEdit(listAccessor, list, spot, remainder);
+                        }
                         break;
                     case "del":
-                        ProcessListRemove(list);
+                        ProcessListRemove(list, spot);
                         break;
                     case "move":
-                        ProcessListMove(list);
+                        ProcessListMove(list, spot, where);
                         break;
                     case "edit":
-                        ProcessListEdit(fieldAccessor, list);
+                        ProcessListEdit(listAccessor, list, spot, remainder);
                         break;
                     case "quit":
                         mState = EditorState.PickOption;
@@ -328,6 +448,71 @@ namespace LukeBot
                         CLIMessage("Unrecognized option: {0}", action);
                         break;
                     }
+                }
+                catch (ArgumentException e)
+                {
+                    CLIMessage("Invalid input: " + e.Message);
+                }
+                catch (OperationAbortedException)
+                {
+                    CLIMessage("Selected action was aborted.\n");
+                }
+            }
+        }
+
+        private void ProcessEditListOptionStateString(ConfigurationFieldAccessor<List<string>> listAccessor)
+        {
+            List<string> list = listAccessor.Get();
+
+            bool done = false;
+            while (!done)
+            {
+                try
+                {
+                    PrintListContents(listAccessor);
+                    QueryListUserAction(out string action, out int spot, out int where, out string remainder);
+
+                    switch (action)
+                    {
+                    case "add":
+                        ProcessListAdd(list, spot);
+                        if (remainder != "")
+                        {
+                            ProcessListEdit(listAccessor, list, spot, remainder);
+                        }
+                        break;
+                    case "del":
+                        ProcessListRemove(list, spot);
+                        break;
+                    case "move":
+                        ProcessListMove(list, spot, where);
+                        break;
+                    case "edit":
+                        ProcessListEdit(listAccessor, list, spot, remainder);
+                        break;
+                    case "help":
+                        ProcessListHelp();
+                        CLIMessage("\nFor this String-type list you can also provide the contents of a String after the command");
+                        CLIMessage("Examples:");
+                        CLIMessage("    add             - queries where to add a string, then queries for the string to add");
+                        CLIMessage("    add 4           - queries fro the string to add, then adds an string at index 4");
+                        CLIMessage("    add Test string - queries where to add a string, afterwards adds \"Test string\" at that spot");
+                        CLIMessage("    add 5 Test test - adds \"Test test\" string at index 5");
+                        CLIMessage("    edit 3 ab cd    - Replaces string at index 3 with \"ab cd\"");
+                        CLIMessage("    edit 1          - Queries for replacement string, then replaces string at index 1 with it");
+                        break;
+                    case "quit":
+                        mState = EditorState.PickOption;
+                        done = true;
+                        break;
+                    default:
+                        CLIMessage("Unrecognized option: {0}", action);
+                        break;
+                    }
+                }
+                catch (ArgumentException e)
+                {
+                    CLIMessage("Invalid input: " + e.Message);
                 }
                 catch (OperationAbortedException)
                 {
@@ -359,16 +544,17 @@ namespace LukeBot
                 return;
             }
 
-            Type underlyingType = listField.UnderlyingType;
-            if (underlyingType == typeof(AudioPlay.AudioTrigger))
+            switch (listField.UnderlyingFieldType)
             {
-                ProcessEditListOptionStateGeneric(listField as ConfigurationFieldAccessor<List<AudioPlay.AudioTrigger>>);
-            }
-            else
-            {
-                CLIMessage("ERROR: Unrecognized underlying type {0}. Maybe something needs to be added here.", listField.UnderlyingType.ToString());
-                mState = EditorState.PickOption;
-                return;
+            case ConfigurationFieldType.String:
+                ProcessEditListOptionStateString(listField as ConfigurationFieldAccessor<List<string>>);
+                break;
+            default:
+                MethodInfo editMethod = mListEditGenericMethodInfo.MakeGenericMethod(new Type[] { listField.UnderlyingType });
+                if (editMethod == null)
+                    throw new InternalErrorException("Failed to make generic editor method for list field with type {0}", listField.UnderlyingType.ToString());
+                editMethod.Invoke(this, new[] { listField });
+                break;
             }
         }
 
@@ -382,6 +568,13 @@ namespace LukeBot
             // verify if we have any configuration to edit
             if (mConfiguration.GetFields().Count == 0)
                 throw new ArgumentException(string.Format("Requested Widget has no configuration options"));
+
+            Type accessorTypeGeneric = typeof(ConfigurationFieldAccessor<>);
+            MethodInfo[] methods = typeof(WidgetConfigurationCLIEditor).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance);
+            mListEditGenericMethodInfo = methods.Single(m => m.Name == "ProcessEditListOptionStateGeneric" &&
+                                                             m.IsGenericMethodDefinition &&
+                                                             m.GetParameters().Length == 1 &&
+                                                             m.GetParameters()[0].ParameterType.GetGenericTypeDefinition() == accessorTypeGeneric);
         }
 
         // This takes over CLI from main CLI code and provides a sub-UI
@@ -397,22 +590,16 @@ namespace LukeBot
                     mField = ProcessPickOptionState();
                     break;
                 case EditorState.SetSimpleOption:
-                {
                     ProcessSetOptionState(mField);
                     break;
-                }
                 case EditorState.EditArrayOption:
                 case EditorState.EditEnumerableOption:
-                {
                     CLIMessage("ERROR: TODO");
                     mState = EditorState.PickOption;
                     break;
-                }
                 case EditorState.EditListOption:
-                {
                     ProcessEditListOptionState(mField);
                     break;
-                }
                 default:
                     CLIMessage("ERROR: Entered invalid state. Exiting.");
                     mState = EditorState.Exit;

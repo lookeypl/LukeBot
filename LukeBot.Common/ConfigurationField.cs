@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Text.Json;
 
 
@@ -125,19 +127,12 @@ namespace LukeBot.Common
             UnderlyingFieldType = ConfigurationBase.DetermineFieldType(UnderlyingType);
         }
 
-        // TODO maybe we could introduce a possibility to auto-cast the field
-        // example:
-        //   int x = 10;
-        //   ConfigurationField f = new ConfigurationFieldAccessor<int>(nameof(x), () => x);
-        //   float y = f.Get<float>();
-        // This would probably require getting our hands dirty with Reflection...
         public T Get<T>()
         {
             if (!Type.IsAssignableTo(typeof(T)))
                 throw new ConfigurationFieldException("Invalid type {0} - mismatched or cannot be assigned to", typeof(T).ToString());
 
-            ConfigurationFieldAccessor<T> accessor = this as ConfigurationFieldAccessor<T>;
-            return accessor.Get();
+            return (T)GetRawObject();
         }
 
         public void Set<T>(T val)
@@ -151,6 +146,7 @@ namespace LukeBot.Common
 
         public abstract void SetJson(JsonElement element);
         public abstract JsonElement GetJson();
+        public abstract object GetRawObject();
         public abstract string GetValueString();
         public abstract void SetFromString(string s);
         public abstract string DescribeAllowedValues();
@@ -183,6 +179,32 @@ namespace LukeBot.Common
             }
         }
 
+        private MethodInfo mListValuesGetterGeneric = null;
+
+        private string GetListValuesString<ListT>(List<ListT> list)
+        {
+            string result = "[";
+            bool first = true;
+
+            foreach (ListT item in list)
+            {
+                if (!first) result += ", ";
+                else first = false;
+
+                if (typeof(ConfigurationBase).IsAssignableFrom(typeof(ListT)))
+                {
+                    ConfigurationBase confBaseItem = item as ConfigurationBase;
+                    result += confBaseItem.ToShortString();
+                }
+                else
+                {
+                    result += item.ToString();
+                }
+            }
+
+            return result + ']';
+        }
+
         public ConfigurationFieldAccessor(string name, Expression<Func<T>> expression)
             : this(name, expression, new ConfigurationFieldUnrestricted<T>())
         {
@@ -192,6 +214,9 @@ namespace LukeBot.Common
             : base(name, ConfigurationBase.DetermineFieldType(typeof(T)))
         {
             mValidator = validator;
+            mListValuesGetterGeneric = typeof(ConfigurationFieldAccessor<>).MakeGenericType(new Type[] { typeof(T) })
+                    .GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
+                    .Single(m => m.Name == "GetListValuesString" && m.IsGenericMethodDefinition && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType.GetGenericTypeDefinition() == typeof(List<>));
 
             if (expression.Body is not MemberExpression memberExpression)
                 throw new ConfigurationFieldException("Accessor can only be used with member expressions");
@@ -221,6 +246,7 @@ namespace LukeBot.Common
 
         public void Set(T v) => Setter(v);
         public T Get() => Getter();
+        public override object GetRawObject() => Getter();
 
         public override void SetJson(JsonElement element)
         {
@@ -238,7 +264,12 @@ namespace LukeBot.Common
 
         public override string GetValueString()
         {
-            return Getter().ToString();
+            if (FieldType == ConfigurationFieldType.List)
+            {
+                MethodInfo stringValuesGetter = mListValuesGetterGeneric.MakeGenericMethod(new Type[] { UnderlyingType });
+                return (string)stringValuesGetter.Invoke(this, new object[] { Getter() });
+            }
+            else return Getter().ToString();
         }
 
         public override void SetFromString(string s)

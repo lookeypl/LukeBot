@@ -33,10 +33,16 @@ namespace LukeBot.Widget
         public class Config: Configuration<Config>
         {
             [ConfigurationListRestrictedField<string>(new[] { "left", "right" })]
-            private string Alignment = "right";
+            private string Alignment;
 
             public Config()
+                : this("right")
             {
+            }
+
+            public Config(string alignment)
+            {
+                Alignment = alignment;
             }
         }
 

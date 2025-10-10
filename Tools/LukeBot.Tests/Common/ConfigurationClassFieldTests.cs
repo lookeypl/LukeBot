@@ -16,8 +16,10 @@ namespace LukeBot.Tests.Common
         public class InternalObject
         {
             [ConfigurationField]
+            [JsonInclude]
             public int intField = 30;
             [ConfigurationField]
+            [JsonInclude]
             public string stringField = "This is an internal string test";
 
             #pragma warning disable CS0414
@@ -28,6 +30,7 @@ namespace LukeBot.Tests.Common
         public class ObjectWithAnObject
         {
             [ConfigurationField]
+            [JsonInclude]
             public InternalObject internalObject = new();
 
             InternalObject shouldNotBeRegistered = new();

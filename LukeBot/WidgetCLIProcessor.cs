@@ -204,7 +204,7 @@ namespace LukeBot
             }
         }
 
-        public void HandleDeleteCommand(WidgetDeleteCommand cmd, CLIMessageProxy CLI, out string msg)
+    public void HandleDeleteCommand(WidgetDeleteCommand cmd, CLIMessageProxy CLI, out string msg)
         {
             try
             {

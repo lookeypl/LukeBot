@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+//using System.Linq;
 using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Communication.Common;
@@ -51,6 +51,8 @@ namespace LukeBot.Widget
             [ConfigurationField]
             public List<string> Files = new();
             [ConfigurationField]
+            public List<int> SomeNumbers = new();
+            [ConfigurationField]
             public int RepeatLength = 0;
             [ConfigurationField]
             public int MinRepeatInterval = 0;
@@ -59,9 +61,16 @@ namespace LukeBot.Widget
 
             public override string ToString()
             {
-                return String.Format("<{0}, [{1}], {2}>", RedemptionName, String.Join(", ", Files), RepeatLength);
+                return String.Format("<{0}, [{1}], {2}, {3}, {4}>", RedemptionName, String.Join(", ", Files), RepeatLength, MinRepeatInterval, MaxRepeatInterval);
+            }
+
+            public override string ToShortString()
+            {
+                return RedemptionName;
             }
         }
+
+        private Dictionary<string, AudioTrigger> mTriggers;
 
         public class Config: Configuration<Config>
         {
@@ -101,33 +110,33 @@ namespace LukeBot.Widget
             if (a == null)
                 return; // quiet exit, not of our concern
 
-             // TODO should be configurable
-            if (a.Title != "Noise" && a.Title != "One hour noise")
+            if (!mTriggers.ContainsKey(a.Title))
                 return;
 
-            // TODO should come from config
-            string[] files = [
+            /*string[] files = [
                 "/content/bad_to_the_bone.ogg",
                 "/content/gnome_reverb.ogg",
                 "/content/megalovania.ogg",
                 "/content/metal_pipe_sfx.ogg"
-            ];
+            ];*/
+
+            AudioTrigger trigger = mTriggers[a.Title];
 
             Random rng = new Random();
-            int fileIdx = rng.Next() % files.Length;
-            AudioPlayStartPlayback playback = new(files[fileIdx]);
+            int fileIdx = rng.Next() % trigger.Files.Count;
 
-            if (a.Title == "One hour noise")
+            AudioPlayStartPlayback playback = new(trigger.Files[fileIdx]);
+
+            if (trigger.RepeatLength > 0)
             {
                 playback.RandomRepeat = true;
-                playback.TotalLength = 60 * 60;
-                playback.MinInterval = 1 * 60;
-                playback.MaxInterval = 4 * 60;
+                playback.TotalLength = trigger.RepeatLength;
+                playback.MinInterval = trigger.MinRepeatInterval;
+                playback.MaxInterval = trigger.MaxRepeatInterval;
             }
 
             SendToWS(playback);
             AwaitEventCompletion();
-            // TODO should have its own event for playback stopping?
         }
 
         private void OnEventInterrupt(object o, EventArgsBase args)
@@ -138,15 +147,17 @@ namespace LukeBot.Widget
 
         protected override void OnConnected()
         {
-            //SendToWS(mConfiguration);
-            //AwaitEventCompletion();
         }
 
         protected override void OnConfigurationUpdate()
         {
-            // TODO
-            //SendToWS(mConfiguration);
-            //AwaitEventCompletion();
+            mTriggers.Clear();
+
+            Config c = GetConfig() as Config;
+            foreach (AudioTrigger t in c.Triggers)
+            {
+                mTriggers.Add(t.RedemptionName, t);
+            }
         }
 
         protected override void OnLoad()

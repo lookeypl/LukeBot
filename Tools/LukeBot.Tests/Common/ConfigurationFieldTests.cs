@@ -71,6 +71,7 @@ namespace LukeBot.Tests.Common
             float floatValue = 2.0f;
             string stringValue = "test";
             List<int> listValue = new List<int> { 1, 2, 3 };
+            IEnumerable<float> enumerableValue = new List<float> { 1.0f, 2.0f, 3.5f };
             int[] arrayValue = new[] { 1, 2, 3 };
 
             return new[]
@@ -89,7 +90,11 @@ namespace LukeBot.Tests.Common
                 },
                 new object[] {
                     new ConfigurationFieldAccessor<List<int>>("field", () => listValue),
-                    typeof(List<int>), typeof(int), ConfigurationFieldType.Enumerable
+                    typeof(List<int>), typeof(int), ConfigurationFieldType.List
+                },
+                new object[] {
+                    new ConfigurationFieldAccessor<IEnumerable<float>>("field", () => enumerableValue),
+                    typeof(IEnumerable<float>), typeof(float), ConfigurationFieldType.Enumerable
                 },
                 new object[] {
                     new ConfigurationFieldAccessor<int[]>("field", () => arrayValue),

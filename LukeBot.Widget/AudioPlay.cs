@@ -44,14 +44,30 @@ namespace LukeBot.Widget
             }
         }
 
+        public class AudioTriggerFile: Configuration<AudioTriggerFile>
+        {
+            [ConfigurationField]
+            public string FileName = "FILLMEIN";
+            [ConfigurationField]
+            public int Odds = 1;
+
+            public override string ToString()
+            {
+                return String.Format("\"{0}\", Odds = {1}", FileName, Odds);
+            }
+
+            public override string ToShortString()
+            {
+                return FileName;
+            }
+        }
+
         public class AudioTrigger: Configuration<AudioTrigger>
         {
             [ConfigurationField]
             public string RedemptionName = "FILLMEIN";
             [ConfigurationField]
-            public List<string> Files = new();
-            [ConfigurationField]
-            public List<int> SomeNumbers = new();
+            public List<AudioTriggerFile> Files = new();
             [ConfigurationField]
             public int RepeatLength = 0;
             [ConfigurationField]
@@ -59,9 +75,11 @@ namespace LukeBot.Widget
             [ConfigurationField]
             public int MaxRepeatInterval = 0;
 
+            internal int TotalOdds = 0;
+
             public override string ToString()
             {
-                return String.Format("<{0}, [{1}], {2}, {3}, {4}>", RedemptionName, String.Join(", ", Files), RepeatLength, MinRepeatInterval, MaxRepeatInterval);
+                return String.Format("<{0}, {1} files, {2}, {3}, {4}>", RedemptionName, Files.Count, RepeatLength, MinRepeatInterval, MaxRepeatInterval);
             }
 
             public override string ToShortString()
@@ -70,7 +88,7 @@ namespace LukeBot.Widget
             }
         }
 
-        private Dictionary<string, AudioTrigger> mTriggers;
+        private Dictionary<string, AudioTrigger> mTriggers = new();
 
         public class Config: Configuration<Config>
         {
@@ -111,21 +129,42 @@ namespace LukeBot.Widget
                 return; // quiet exit, not of our concern
 
             if (!mTriggers.ContainsKey(a.Title))
+            {
+                Logger.Log().Debug("Audio trigger {0} does not exist", a.Title);
                 return;
-
-            /*string[] files = [
-                "/content/bad_to_the_bone.ogg",
-                "/content/gnome_reverb.ogg",
-                "/content/megalovania.ogg",
-                "/content/metal_pipe_sfx.ogg"
-            ];*/
+            }
 
             AudioTrigger trigger = mTriggers[a.Title];
 
             Random rng = new Random();
-            int fileIdx = rng.Next() % trigger.Files.Count;
+            int fileIdx = -1;
+            if (trigger.TotalOdds == 0)
+            {
+                if (trigger.Files.Count == 0)
+                {
+                    Logger.Log().Warning("Audio trigger {0} has no files added", a.Title);
+                    return;
+                }
 
-            AudioPlayStartPlayback playback = new(trigger.Files[fileIdx]);
+                // TotalOdds are 0 for some reason, as a backup randomize equally between all files
+                fileIdx = rng.Next() % trigger.Files.Count;
+            }
+            else
+            {
+                int rngRoll = rng.Next() % trigger.TotalOdds;
+
+                // iterate over all files until odds weight falls where needed
+                fileIdx = 0;
+                foreach (AudioTriggerFile f in trigger.Files)
+                {
+                    if (f.Odds > rngRoll) break;
+
+                    rngRoll -= f.Odds;
+                    fileIdx++;
+                }
+            }
+
+            AudioPlayStartPlayback playback = new(trigger.Files[fileIdx].FileName);
 
             if (trigger.RepeatLength > 0)
             {
@@ -156,6 +195,12 @@ namespace LukeBot.Widget
             Config c = GetConfig() as Config;
             foreach (AudioTrigger t in c.Triggers)
             {
+                t.TotalOdds = 0;
+                foreach (AudioTriggerFile f in t.Files)
+                {
+                    t.TotalOdds += f.Odds;
+                }
+
                 mTriggers.Add(t.RedemptionName, t);
             }
         }
@@ -164,17 +209,18 @@ namespace LukeBot.Widget
         {
             EventCollection collection = Comms.Event.User(mLBUser);
 
-            // TODO this should all be configurable. This widget should be able to:
-            //  - Accept events from multiple sources
-            //  - Provide its own events so that it is controllable in some way
             collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Endpoint += OnChannelPoints;
             collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).InterruptEndpoint += OnEventInterrupt;
         }
 
         protected override void OnUnload()
         {
-            // noop
             // TODO should pause any played music probably
+
+            EventCollection collection = Comms.Event.User(mLBUser);
+
+            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Endpoint -= OnChannelPoints;
+            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).InterruptEndpoint -= OnEventInterrupt;
         }
 
         protected override ConfigurationBase CreateDefaultConfiguration()

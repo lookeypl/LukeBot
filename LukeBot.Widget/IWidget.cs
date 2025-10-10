@@ -225,7 +225,9 @@ namespace LukeBot.Widget
                     mConfiguration = CreateDefaultConfiguration();
                 }
 
+                // Add the UpdateNotifier and afterwards manually trigger the Configuration update
                 mConfiguration.UpdateNotifier = OnConfigurationUpdate;
+                OnConfigurationUpdate();
             }
             catch (ConfigurationException e)
             {

@@ -26,6 +26,9 @@ namespace LukeBot.Tests.Common
 
             [ConfigurationField]
             public InnerConfiguration innerConf = new();
+
+            [ConfigurationField]
+            public List<InnerConfiguration> listOfInnerConfs = new();
         }
 
 
@@ -65,6 +68,40 @@ namespace LukeBot.Tests.Common
 
             Assert.AreEqual(42, conf.innerConf.otherIntField);
             Assert.IsTrue(updated);
+        }
+
+        [TestMethod]
+        public void Configuration_UpdateNotifier_InnerList()
+        {
+            const int COUNTER_TARGET = 5;
+            int updatedCounter = 0;
+            ConfigurationBase.OnUpdateDelegate updater = () =>
+            {
+                updatedCounter++;
+            };
+
+            // create config and fill the list
+            TestConfiguration conf = new();
+            for (int i = 0; i < COUNTER_TARGET; ++i)
+            {
+                conf.listOfInnerConfs.Add(new InnerConfiguration());
+            }
+
+            // attach the notifier to the config
+            // it should automatically propagate inside all the list items
+            conf.UpdateNotifier = updater;
+
+            for (int i = 0; i < COUNTER_TARGET; ++i)
+            {
+                conf.Get<List<InnerConfiguration>>("listOfInnerConfs")[i].Set("otherIntField", 42 + i);
+            }
+
+            for (int i = 0; i < COUNTER_TARGET; ++i)
+            {
+                Assert.AreEqual(42 + i, conf.listOfInnerConfs[i].otherIntField);
+            }
+
+            Assert.AreEqual(COUNTER_TARGET, updatedCounter);
         }
     }
 }

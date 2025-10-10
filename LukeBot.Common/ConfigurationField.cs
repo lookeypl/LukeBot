@@ -104,6 +104,8 @@ namespace LukeBot.Common
     }
 
     // Base, abstract, type-agnostic configuration field class
+    // TODO: Fields (especially Class fields) could sometimes want to query for a value
+    //       required to initialize (ala constructors). Figure out a way to integrate this somehow.
     public abstract class ConfigurationField
     {
         public string Name { get; private set; }
@@ -266,7 +268,7 @@ namespace LukeBot.Common
         {
             if (FieldType == ConfigurationFieldType.List)
             {
-                MethodInfo stringValuesGetter = mListValuesGetterGeneric.MakeGenericMethod(new Type[] { UnderlyingType });
+                MethodInfo stringValuesGetter = mListValuesGetterGeneric.MakeGenericMethod(UnderlyingType);
                 return (string)stringValuesGetter.Invoke(this, new object[] { Getter() });
             }
             else return Getter().ToString();

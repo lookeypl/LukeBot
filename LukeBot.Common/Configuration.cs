@@ -167,6 +167,15 @@ namespace LukeBot.Common
     {
         protected Dictionary<string, ConfigurationField> mFields = new();
 
+        private void ListNotifierUpdater<ListT>(List<ListT> list, OnUpdateDelegate notifier)
+            where ListT: ConfigurationBase
+        {
+            foreach (ListT l in list)
+            {
+                l.UpdateNotifier = notifier;
+            }
+        }
+
         public override OnUpdateDelegate UpdateNotifier
         {
             set
@@ -180,6 +189,20 @@ namespace LukeBot.Common
                         field.Type.IsAssignableTo(typeof(ConfigurationBase)))
                     {
                         field.Get<ConfigurationBase>().UpdateNotifier = value;
+                    }
+                    else if (field.FieldType == ConfigurationFieldType.List &&
+                             field.UnderlyingFieldType == ConfigurationFieldType.Class &&
+                             field.UnderlyingType.IsAssignableTo(typeof(ConfigurationBase)))
+                    {
+                        // get the List updater and invoke
+                        MethodInfo updater = typeof(Configuration<>).MakeGenericType(new Type[] { typeof(Configurable) })
+                            .GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
+                            .Single(m => m.Name == "ListNotifierUpdater" && m.IsGenericMethodDefinition &&
+                                         m.GetParameters().Length == 2 &&
+                                         m.GetParameters()[0].ParameterType.GetGenericTypeDefinition() == typeof(List<>) &&
+                                         m.GetParameters()[1].ParameterType == typeof(OnUpdateDelegate))
+                            .MakeGenericMethod(field.UnderlyingType);
+                        updater.Invoke(this, new object[] { field.GetRawObject(), value });
                     }
                 }
             }

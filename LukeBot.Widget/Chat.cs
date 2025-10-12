@@ -2,6 +2,9 @@
 using LukeBot.Common;
 using LukeBot.Twitch.Common;
 using LukeBot.Widget.Common;
+using LukeBot.Services;
+using System.Runtime.CompilerServices;
+using LukeBot.User.Common;
 
 
 namespace LukeBot.Widget
@@ -34,6 +37,12 @@ namespace LukeBot.Widget
         protected override void OnConnected()
         {
             // noop
+            IUserService userService = Service.Get(LukeBot.Common.Constants.USER_SERVICE_NAME) as IUserService;
+            IUserContext userContext = userService.GetUser(mLBUser);
+
+            ITwitchService service = Service.Get(LukeBot.Common.Constants.TWITCH_SERVICE_NAME) as ITwitchService;
+            ITwitchUserModule userModule = service.GetModule(userContext) as ITwitchUserModule;
+            userModule.RefreshEmotes();
         }
 
         protected override void OnLoad()

@@ -13,16 +13,19 @@ namespace LukeBot.Config
 
         private PropertyDomain mRootDomain;
         private IStorageBackend mStorage;
+        private bool mStorageDirty;
 
         private void Load()
         {
             mStorage.Load(this);
             ValidateMetadata();
+            mStorageDirty = false; // just loaded so identical to what Storage stores
         }
 
         private void FillStoreMetadata()
         {
             Add(PROP_STORE_VERSION_PROP, Property.Create<int>(PROP_STORE_FILE_VERSION));
+            mStorageDirty = true;
         }
 
         private void ValidateMetadata()
@@ -62,6 +65,7 @@ namespace LukeBot.Config
         public void Add(Path p, Property v)
         {
             mRootDomain.Add(p.Copy(), v);
+            mStorageDirty = true;
         }
 
         // Copies one property into another
@@ -71,6 +75,7 @@ namespace LukeBot.Config
         {
             Property dup = Get(fromPath).Duplicate();
             mRootDomain.Add(toPath.Copy(), dup);
+            mStorageDirty = true;
         }
 
         // Get a Property from the Store.
@@ -103,16 +108,22 @@ namespace LukeBot.Config
         {
             // Get copies the Path, we don't have to do it here
             Get(p).Set<T>(value);
+            mStorageDirty = true;
         }
 
         public void Remove(Path p)
         {
             mRootDomain.Remove(p.Copy());
+            mStorageDirty = true;
         }
 
         public void Save()
         {
-            mStorage.Save(this);
+            if (mStorageDirty)
+            {
+                mStorage.Save(this);
+                mStorageDirty = false;
+            }
         }
 
         public void PrintDebug(LogLevel level)

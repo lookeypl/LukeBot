@@ -25,6 +25,12 @@ namespace LukeBot.Twitch
         private Token mUserToken;
         private API.Twitch.GetUserData mUserData;
         private EventSubClient mEventSub;
+        private readonly List<string> mEventSubEvents = new List<string>
+        {
+            EventSubClient.SUB_CHANNEL_POINTS_REDEMPTION_ADD,
+            EventSubClient.SUB_SUBSCRIPTION_GIFT,
+            EventSubClient.SUB_SUBSCRIPTION_MESSAGE
+        };
 
 
         private Path GetCommandCollectionPropertyName()
@@ -219,6 +225,16 @@ namespace LukeBot.Twitch
             mIRCChannel.RefreshEmotes();
         }
 
+        public void RestartEventSub()
+        {
+            mEventSub.RequestShutdown();
+            mEventSub.WaitForShutdown();
+
+            mEventSub = new(mLBUser);
+            mEventSub.Connect(mUserToken, mUserData.id);
+            mEventSub.Subscribe(mEventSubEvents);
+        }
+
         public void UpdateLogin(string newLogin)
         {
             // TODO:
@@ -237,12 +253,7 @@ namespace LukeBot.Twitch
                 LoadCommandsFromConfig();
 
                 mEventSub.Connect(mUserToken, mUserData.id);
-
-                List<string> events = new();
-                events.Add(EventSubClient.SUB_CHANNEL_POINTS_REDEMPTION_ADD);
-                events.Add(EventSubClient.SUB_SUBSCRIPTION_GIFT);
-                events.Add(EventSubClient.SUB_SUBSCRIPTION_MESSAGE);
-                mEventSub.Subscribe(events);
+                mEventSub.Subscribe(mEventSubEvents);
             }
             catch (System.Exception e)
             {

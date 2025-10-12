@@ -17,6 +17,7 @@ namespace LukeBot.Twitch.Common
         public void DenyChatCommandPrivilege(string name, Command.ChatUser privilege);
         public void SetChatCommandEnabled(string name, bool enabled);
         public void RefreshEmotes();
+        public void RestartEventSub();
         public void UpdateLogin(string newLogin);
     }
 }

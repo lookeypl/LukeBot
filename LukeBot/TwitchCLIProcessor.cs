@@ -22,6 +22,11 @@ namespace LukeBot
     {
     }
 
+    [Verb("eventsub-restart", HelpText = "Restarts EventSub thread for current user. Useful if the thread happens to die for some reason")]
+    public class TwitchEventSubRestartSubverb
+    {
+    }
+
     [Verb("login", HelpText = "Set login to Twitch servers. This will invalidate current auth token if it exists.")]
     public class TwitchLoginSubverb
     {
@@ -77,7 +82,7 @@ namespace LukeBot
             result = mCommandCLIProcessor.Parse(CLI, args);
         }
 
-        private void HandleEmoteRefreshSubverb(TwitchEmoteRefreshSubverb arg, CLIMessageProxy CLI, out string result)
+        private void HandleEmoteRefreshSubverb(CLIMessageProxy CLI, out string result)
         {
             try
             {
@@ -87,6 +92,20 @@ namespace LukeBot
             catch (System.Exception e)
             {
                 result = "Failed to refresh emotes: " + e.Message;
+            }
+        }
+
+        private void HandleEventSubRestartSubverb(CLIMessageProxy CLI, out string result)
+        {
+            try
+            {
+                GetTwitchUserModule(CLI.GetCurrentUser()).RestartEventSub();
+
+                result = "EventSub restarted";
+            }
+            catch (System.Exception e)
+            {
+                result = "Failed to restart EventSub thread: " + e.Message;
             }
         }
 
@@ -111,7 +130,7 @@ namespace LukeBot
             }
         }
 
-        public void HandleEnableSubverb(TwitchEnableSubverb arg, CLIMessageProxy CLI, out string msg)
+        public void HandleEnableSubverb(CLIMessageProxy CLI, out string msg)
         {
             msg = "";
 
@@ -127,7 +146,7 @@ namespace LukeBot
             }
         }
 
-        public void HandleDisableSubverb(TwitchDisableSubverb arg, CLIMessageProxy CLI, out string msg)
+        public void HandleDisableSubverb(CLIMessageProxy CLI, out string msg)
         {
             msg = "";
 
@@ -152,12 +171,13 @@ namespace LukeBot
                 string result = "";
                 string[] cmdArgs = args.Take(2).ToArray(); // filters out any additional options/commands that might confuse CommandLine
                 Parser p = new Parser(with => with.HelpWriter = new CLIUtils.CLIMessageProxyTextWriter(cliProxy));
-                p.ParseArguments<TwitchCommandSubverb, TwitchEmoteRefreshSubverb, TwitchLoginSubverb, TwitchEnableSubverb, TwitchDisableSubverb>(cmdArgs)
+                p.ParseArguments<TwitchCommandSubverb, TwitchEmoteRefreshSubverb, TwitchEventSubRestartSubverb, TwitchLoginSubverb, TwitchEnableSubverb, TwitchDisableSubverb>(cmdArgs)
                     .WithParsed<TwitchCommandSubverb>((TwitchCommandSubverb arg) => HandleCommandSubverb(arg, cliProxy, args.Skip(1).ToArray(), out result))
-                    .WithParsed<TwitchEmoteRefreshSubverb>((TwitchEmoteRefreshSubverb arg) => HandleEmoteRefreshSubverb(arg, cliProxy, out result))
+                    .WithParsed<TwitchEmoteRefreshSubverb>((TwitchEmoteRefreshSubverb arg) => HandleEmoteRefreshSubverb(cliProxy, out result))
+                    .WithParsed<TwitchEventSubRestartSubverb>((TwitchEventSubRestartSubverb arg) => HandleEventSubRestartSubverb(cliProxy, out result))
                     .WithParsed<TwitchLoginSubverb>((TwitchLoginSubverb arg) => HandleLoginSubverb(arg, cliProxy, args.Skip(1).ToArray(), out result))
-                    .WithParsed<TwitchEnableSubverb>((TwitchEnableSubverb arg) => HandleEnableSubverb(arg, cliProxy, out result))
-                    .WithParsed<TwitchDisableSubverb>((TwitchDisableSubverb arg) => HandleDisableSubverb(arg, cliProxy, out result))
+                    .WithParsed<TwitchEnableSubverb>((TwitchEnableSubverb arg) => HandleEnableSubverb(cliProxy, out result))
+                    .WithParsed<TwitchDisableSubverb>((TwitchDisableSubverb arg) => HandleDisableSubverb(cliProxy, out result))
                     .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, Constants.TWITCH_SERVICE_NAME, out result));
                 return result;
             });

@@ -30,11 +30,24 @@ namespace LukeBot.Common
             }
         }
 
-        Thread mWorkerThread = null;
-        bool mWorkerDone = false;
-        ManualResetEvent mCommandAvailableEvent = new(false);
-        Queue<CommandTask> mCommandQueue = new();
-        Mutex mCommandQueueMutex = new();
+        private Thread mWorkerThread = null;
+        private bool mWorkerDone = false;
+        private bool mIsProcessing = false;
+        private readonly object mIsProcessingLock = new();
+        private ManualResetEvent mCommandAvailableEvent = new(false);
+        private Queue<CommandTask> mCommandQueue = new();
+        private Mutex mCommandQueueMutex = new();
+
+        public bool IsProcessing
+        {
+            get
+            {
+                lock (mIsProcessingLock)
+                {
+                    return mIsProcessing;
+                }
+            }
+        }
 
         private async void ThreadMain()
         {
@@ -42,12 +55,22 @@ namespace LukeBot.Common
             {
                 if (GetCommandCount() == 0)
                 {
+                    lock (mIsProcessingLock)
+                    {
+                        mIsProcessing = false;
+                    }
+
                     mCommandAvailableEvent.WaitOne();
                     mCommandAvailableEvent.Reset();
                 }
 
                 if (mWorkerDone)
                     break;
+
+                lock (mIsProcessingLock)
+                {
+                    mIsProcessing = true;
+                }
 
                 CommandTask cmd = DequeueCommand();
                 if (cmd != null)

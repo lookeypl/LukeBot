@@ -191,6 +191,12 @@ namespace LukeBotClient
                         break;
                     }
 
+                    if (mQueryExecutor.IsProcessing)
+                    {
+                        PrintLine("WARNING - Received a query while already processing a Query. This should NOT happen.");
+                        break;
+                    }
+
                     mQueryExecutor.ExecuteAsync(async () =>
                     {
                         QueryServerMessage m = msg as QueryServerMessage;

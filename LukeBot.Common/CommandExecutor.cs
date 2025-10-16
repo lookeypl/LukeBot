@@ -4,10 +4,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using LukeBot.Logging;
 
-namespace LukeBot
+namespace LukeBot.Common
 {
     // Delegates executing commands to its own separate worker thread
-    internal class CommandExecutor: IDisposable
+    public class CommandExecutor: IDisposable
     {
         public delegate void CommandDelegate();
 

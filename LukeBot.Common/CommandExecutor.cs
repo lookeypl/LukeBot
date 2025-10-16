@@ -10,14 +10,33 @@ namespace LukeBot.Common
     public class CommandExecutor: IDisposable
     {
         public delegate void CommandDelegate();
+        public delegate Task CommandDelegateAsync();
+
+        private class CommandTask
+        {
+            public CommandDelegate task;
+            public CommandDelegateAsync asyncTask;
+
+            public CommandTask(CommandDelegate d)
+            {
+                task = d;
+                asyncTask = null;
+            }
+
+            public CommandTask(CommandDelegateAsync d)
+            {
+                asyncTask = d;
+                task = null;
+            }
+        }
 
         Thread mWorkerThread = null;
         bool mWorkerDone = false;
         ManualResetEvent mCommandAvailableEvent = new(false);
-        Queue<CommandDelegate> mCommandQueue = new();
+        Queue<CommandTask> mCommandQueue = new();
         Mutex mCommandQueueMutex = new();
 
-        private void ThreadMain()
+        private async void ThreadMain()
         {
             while (!mWorkerDone)
             {
@@ -30,10 +49,23 @@ namespace LukeBot.Common
                 if (mWorkerDone)
                     break;
 
-                CommandDelegate cmd = DequeueCommand();
+                CommandTask cmd = DequeueCommand();
                 if (cmd != null)
                 {
-                    cmd();
+                    if (cmd.task != null && cmd.asyncTask != null)
+                    {
+                        throw new InvalidOperationException("Both task and asyncTask were not null - should not happen");
+                    }
+
+                    try
+                    {
+                        if (cmd.task != null) cmd.task();
+                        else if (cmd.asyncTask != null) await cmd.asyncTask();
+                    }
+                    catch (System.Exception e)
+                    {
+                        Logger.Log().Error("Caught {0} while executing a Command: {1}", e.GetType().Name, e.Message);
+                    }
                 }
             }
         }
@@ -50,13 +82,20 @@ namespace LukeBot.Common
         private void EnqueueCommand(CommandDelegate command)
         {
             mCommandQueueMutex.WaitOne();
-            mCommandQueue.Enqueue(command);
+            mCommandQueue.Enqueue(new CommandTask(command));
             mCommandQueueMutex.ReleaseMutex();
         }
 
-        private CommandDelegate DequeueCommand()
+        private void EnqueueCommand(CommandDelegateAsync asyncCommand)
         {
-            CommandDelegate cmd = null;
+            mCommandQueueMutex.WaitOne();
+            mCommandQueue.Enqueue(new CommandTask(asyncCommand));
+            mCommandQueueMutex.ReleaseMutex();
+        }
+
+        private CommandTask DequeueCommand()
+        {
+            CommandTask cmd = null;
 
             mCommandQueueMutex.WaitOne();
 
@@ -78,6 +117,12 @@ namespace LukeBot.Common
         }
 
         public void Execute(CommandDelegate command)
+        {
+            EnqueueCommand(command);
+            mCommandAvailableEvent.Set();
+        }
+
+        public void ExecuteAsync(CommandDelegateAsync command)
         {
             EnqueueCommand(command);
             mCommandAvailableEvent.Set();

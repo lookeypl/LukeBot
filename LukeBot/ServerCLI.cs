@@ -106,11 +106,17 @@ namespace LukeBot
                     msg.Type != ServerMessageType.Login; // Login messages are not accepted at this point
             }
 
+            private void ResetPingTimer()
+            {
+                mPingTimer.Stop();
+                mPingTimer.Start();
+            }
+
             public ClientContext(TcpClient client, Stream stream, Dictionary<string, Command> commands, OnClientDoneDelegate clientDoneDelegate)
             {
                 mClient = client;
                 mStream = stream; // passed on separately to wrap it into SslStream
-                mStream.ReadTimeout = 125 * 1000; // 2 minutes
+                mStream.ReadTimeout = 125 * 1000; // 2 minutes and 5 seconds of buffer
                 mPermissionLevel = PermissionLevel.None;
                 mClientDoneDelegate = clientDoneDelegate;
                 mCommands = commands;
@@ -195,6 +201,8 @@ namespace LukeBot
                         break;
                     }
 
+                    // Message is validated, reset the Ping timer and continue processing
+                    ResetPingTimer();
                     switch (msg.Type)
                     {
                     case ServerMessageType.Logout:
@@ -227,7 +235,7 @@ namespace LukeBot
                         CommandServerMessage cmd = msg as CommandServerMessage;
 
                         // delegates execution to separate thread in order to free this one
-                        // this is to ensure any other requests
+                        // this is to ensure any other requests come through
                         mCommandExecutor.Execute(() =>
                         {
                             string[] cmdTokens = cmd.Command.Split(' ');

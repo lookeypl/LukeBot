@@ -32,6 +32,7 @@ namespace LukeBotClient
         private SessionData mSessionData = null;
         private byte[] mRecvBuffer = null;
         private Thread mRecvThread = null;
+        private CommandExecutor mQueryExecutor = null;
         private Queue<string> mRecvQueue = new();
         private bool mRecvThreadDone = false;
         private Mutex mPrintMutex = new();
@@ -190,19 +191,22 @@ namespace LukeBotClient
                         break;
                     }
 
-                    QueryServerMessage m = msg as QueryServerMessage;
-                    string answer;
-                    if (m.IsYesNo)
+                    mQueryExecutor.ExecuteAsync(async () =>
                     {
-                        answer = Ask(m.Query);
-                    }
-                    else
-                    {
-                        answer = Query(m.MaskAnswer, m.Query);
-                    }
+                        QueryServerMessage m = msg as QueryServerMessage;
+                        string answer;
+                        if (m.IsYesNo)
+                        {
+                            answer = Ask(m.Query);
+                        }
+                        else
+                        {
+                            answer = Query(m.MaskAnswer, m.Query);
+                        }
 
-                    QueryResponseServerMessage r = new(m, answer);
-                    await SendObject(r);
+                        QueryResponseServerMessage r = new(m, answer);
+                        await SendObject(r);
+                    });
                     break;
                 }
                 case ServerMessageType.CurrentUserChange:
@@ -337,6 +341,8 @@ namespace LukeBotClient
                 mRecvBuffer = new byte[Constants.CLIENT_BUFFER_SIZE];
                 await Login();
 
+                mQueryExecutor = new();
+
                 mRecvThread = new Thread(ReceiveThreadMain);
                 mRecvThread.Name = "Receive Thread";
                 mRecvThread.Start();
@@ -355,10 +361,10 @@ namespace LukeBotClient
                         Print(mCurrentPrompt);
                         msg = ReadConsoleLine();
 
-                        if (msg == null || msg.Length == 0)
+                        if (msg == null)
                         {
                             mState = State.Done;
-                            PrintLine("Connection lost, quitting.");
+                            PrintLine("CLI error, received a NULL message.");
                             break;
                         }
 
@@ -370,7 +376,7 @@ namespace LukeBotClient
                             break;
                         }
 
-                        if (mState == State.InCLI)
+                        if (mState == State.InCLI && msg.Length > 0)
                         {
                             mState = State.AwaitingResponse;
 
@@ -400,6 +406,7 @@ namespace LukeBotClient
                 mClient.Close();
 
                 mRecvThread.Join();
+                mQueryExecutor.Dispose();
             }
             catch (System.Exception e)
             {

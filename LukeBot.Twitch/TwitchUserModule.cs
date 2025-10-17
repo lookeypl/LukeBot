@@ -24,6 +24,7 @@ namespace LukeBot.Twitch
         private IRCChannel mIRCChannel;
         private Token mUserToken;
         private API.Twitch.GetUserData mUserData;
+        private object mImplLock = new();
         private EventSubClient mEventSub;
         private readonly List<string> mEventSubEvents = new List<string>
         {
@@ -173,66 +174,99 @@ namespace LukeBot.Twitch
 
         public void AddChatCommand(Descriptor d)
         {
-            ICommand cmd = AllocateChatCommand(d);
-            mIRCChannel.AddCommand(d.Name, cmd);
-            SaveCommandToConfig(d.Name, cmd);
+            lock (mImplLock)
+            {
+                ICommand cmd = AllocateChatCommand(d);
+                mIRCChannel.AddCommand(d.Name, cmd);
+                SaveCommandToConfig(d.Name, cmd);
+            }
         }
 
         public void AddChatCommand(string commandName, Common.Command.Type type, string value)
         {
-            AddChatCommand(new Descriptor(commandName, type, value));
+            lock (mImplLock)
+            {
+                AddChatCommand(new Descriptor(commandName, type, value));
+            }
         }
 
         public void DeleteChatCommand(string commandName)
         {
-            mIRCChannel.DeleteCommand(commandName);
-            RemoveCommandFromConfig(commandName);
+            lock (mImplLock)
+            {
+                mIRCChannel.DeleteCommand(commandName);
+                RemoveCommandFromConfig(commandName);
+            }
         }
 
         public void EditChatCommand(string commandName, string newValue)
         {
-            mIRCChannel.EditCommand(commandName, newValue);
-            UpdateCommandInConfig(commandName);
+            lock (mImplLock)
+            {
+                mIRCChannel.EditCommand(commandName, newValue);
+                UpdateCommandInConfig(commandName);
+            }
         }
 
         public List<Descriptor> GetChatCommandDescriptors()
         {
-            return mIRCChannel.GetCommandDescriptors();
+            lock (mImplLock)
+            {
+                return mIRCChannel.GetCommandDescriptors();
+            }
         }
 
         public Descriptor GetChatCommandDescriptor(string commandName)
         {
-            return mIRCChannel.GetCommandDescriptor(commandName);
+            lock (mImplLock)
+            {
+                return mIRCChannel.GetCommandDescriptor(commandName);
+            }
         }
 
         public void AllowChatCommandPrivilege(string commandName, ChatUser privilege)
         {
-            mIRCChannel.GetCommand(commandName).AllowUsers(privilege);
+            lock (mImplLock)
+            {
+                mIRCChannel.GetCommand(commandName).AllowUsers(privilege);
+            }
         }
 
         public void DenyChatCommandPrivilege(string commandName, ChatUser privilege)
         {
-            mIRCChannel.GetCommand(commandName).DenyUsers(privilege);
+            lock (mImplLock)
+            {
+                mIRCChannel.GetCommand(commandName).DenyUsers(privilege);
+            }
         }
 
         public void SetChatCommandEnabled(string commandName, bool enabled)
         {
-            mIRCChannel.GetCommand(commandName).SetEnabled(enabled);
+            lock (mImplLock)
+            {
+                mIRCChannel.GetCommand(commandName).SetEnabled(enabled);
+            }
         }
 
         public void RefreshEmotes()
         {
-            mIRCChannel.RefreshEmotes();
+            lock (mImplLock)
+            {
+                mIRCChannel.RefreshEmotes();
+            }
         }
 
         public void RestartEventSub()
         {
-            mEventSub.RequestShutdown();
-            mEventSub.WaitForShutdown();
+            lock (mImplLock)
+            {
+                mEventSub.RequestShutdown();
+                mEventSub.WaitForShutdown();
 
-            mEventSub = new(mLBUser);
-            mEventSub.Connect(mUserToken, mUserData.id);
-            mEventSub.Subscribe(mEventSubEvents);
+                mEventSub = new(mLBUser);
+                mEventSub.Connect(mUserToken, mUserData.id);
+                mEventSub.Subscribe(mEventSubEvents);
+            }
         }
 
         public void UpdateLogin(string newLogin)

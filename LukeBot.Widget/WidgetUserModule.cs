@@ -19,6 +19,7 @@ namespace LukeBot.Widget
         private Dictionary<string, IWidget> mWidgets = new();
         private Dictionary<string, string> mNameToId = new();
         private string mLBUser;
+        private object mImplLock = new();
 
 
         private Path GetWidgetCollectionPropertyName()
@@ -156,20 +157,26 @@ namespace LukeBot.Widget
 
         public string GetWidgetPage(string widgetID)
         {
-            if (!mWidgets.TryGetValue(widgetID, out IWidget widget))
-                throw new WidgetNotFoundException(widgetID);
+            lock (mImplLock)
+            {
+                if (!mWidgets.TryGetValue(widgetID, out IWidget widget))
+                    throw new WidgetNotFoundException(widgetID);
 
-            return widget.GetPage();
+                return widget.GetPage();
+            }
         }
 
         public Task AssignWidgetWebSocket(string widgetID, WebSocket ws)
         {
-            if (!mWidgets.TryGetValue(widgetID, out IWidget widget))
+            lock (mImplLock)
             {
-                throw new WidgetNotFoundException(widgetID);
-            }
+                if (!mWidgets.TryGetValue(widgetID, out IWidget widget))
+                {
+                    throw new WidgetNotFoundException(widgetID);
+                }
 
-            return widget.AcquireWS(ws);
+                return widget.AcquireWS(ws);
+            }
         }
 
 
@@ -196,86 +203,116 @@ namespace LukeBot.Widget
         // With nothing found throws an exception.
         public string GetActualWidgetId(string id)
         {
-            if (mWidgets.ContainsKey(id))
-                return id;
+            lock (mImplLock)
+            {
+                if (mWidgets.ContainsKey(id))
+                    return id;
 
-            // not an id in widgets dict, try cross-checking it with user friendly names
-            if (!mNameToId.TryGetValue(id, out string actualId))
-                throw new WidgetNotFoundException(id);
+                // not an id in widgets dict, try cross-checking it with user friendly names
+                if (!mNameToId.TryGetValue(id, out string actualId))
+                    throw new WidgetNotFoundException(id);
 
-            return actualId;
+                return actualId;
+            }
         }
 
         public string AddWidget(WidgetType type, string name)
         {
-            if (mNameToId.ContainsKey(name))
-                throw new WidgetAlreadyExistsException(name, mNameToId[name]);
+            lock (mImplLock)
+            {
+                if (mNameToId.ContainsKey(name))
+                    throw new WidgetAlreadyExistsException(name, mNameToId[name]);
 
-            string id = Guid.NewGuid().ToString();
+                string id = Guid.NewGuid().ToString();
 
-            IWidget w = AllocateWidget(type, id, name);
-            mWidgets.Add(id, w);
+                IWidget w = AllocateWidget(type, id, name);
+                mWidgets.Add(id, w);
 
-            if (name != null && name.Length > 0)
-                mNameToId.Add(name, id);
+                if (name != null && name.Length > 0)
+                    mNameToId.Add(name, id);
 
-            SaveWidgetToConfig(w);
+                SaveWidgetToConfig(w);
 
-            LoadWidget(id);
+                LoadWidget(id);
 
-            return w.ID;
+                return w.ID;
+            }
         }
 
         public IEnumerable<WidgetDesc> ListWidgets()
         {
-            List<WidgetDesc> widgets = new List<WidgetDesc>();
-
-            foreach (IWidget w in mWidgets.Values)
+            lock (mImplLock)
             {
-                widgets.Add(w.GetDesc());
-            }
+                List<WidgetDesc> widgets = new List<WidgetDesc>();
 
-            return widgets;
+                foreach (IWidget w in mWidgets.Values)
+                {
+                    widgets.Add(w.GetDesc());
+                }
+
+                return widgets;
+            }
         }
 
         public WidgetDesc GetWidgetInfo(string id)
         {
-            return mWidgets[GetActualWidgetId(id)].GetDesc();
+            lock (mImplLock)
+            {
+                return mWidgets[GetActualWidgetId(id)].GetDesc();
+            }
         }
 
         public bool IsWidgetLoaded(string id)
         {
-            return mWidgets[GetActualWidgetId(id)].Loaded;
+            lock (mImplLock)
+            {
+                return mWidgets[GetActualWidgetId(id)].Loaded;
+            }
         }
 
         public void DeleteWidget(string id)
         {
-            string actualId = GetActualWidgetId(id);
+            lock (mImplLock)
+            {
+                string actualId = GetActualWidgetId(id);
 
-            RemoveWidget(actualId);
+                RemoveWidget(actualId);
+            }
         }
 
         public void ReloadWidget(string id)
         {
-            string actualId = GetActualWidgetId(id);
+            lock (mImplLock)
+            {
+                string actualId = GetActualWidgetId(id);
 
-            UnloadWidget(actualId);
-            LoadWidget(actualId);
+                UnloadWidget(actualId);
+                LoadWidget(actualId);
+            }
         }
 
         public void SaveConfiguration(string id)
         {
-            mWidgets[GetActualWidgetId(id)].SaveConfiguration();
+            lock (mImplLock)
+            {
+                mWidgets[GetActualWidgetId(id)].SaveConfiguration();
+            }
         }
 
         public void ResetConfiguration(string id)
         {
-            mWidgets[GetActualWidgetId(id)].ResetConfiguration();
+            lock (mImplLock)
+            {
+                mWidgets[GetActualWidgetId(id)].ResetConfiguration();
+            }
         }
 
         public ConfigurationBase GetWidgetConfiguration(string id)
         {
-            return mWidgets[GetActualWidgetId(id)].GetConfig();
+            lock (mImplLock)
+            {
+                return mWidgets[GetActualWidgetId(id)].GetConfig();
+            }
         }
 
         public void RequestShutdown()

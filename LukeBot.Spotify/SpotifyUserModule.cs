@@ -19,6 +19,7 @@ namespace LukeBot.Spotify
         private API.Spotify.UserProfile mProfile;
         private NowPlaying mNowPlaying;
         private NowPlayingTextFile mNowPlayingTextFile;
+        private object mImplLock = new();
 
 
         private bool CheckIfLoginSuccessful()
@@ -89,47 +90,50 @@ namespace LukeBot.Spotify
         // returns formatted artist-title if added successfuly; throws on errors
         public API.Spotify.Track AddSongToQueue(string url)
         {
-            Logger.Log().Debug("Adding {0} to play queue", url);
-
-            Uri uri;
-            try
+            lock (mImplLock)
             {
-                uri = new Uri(url);
-            }
-            catch (Exception)
-            {
-                throw new InvalidSpotifyURLException(url);
-            }
+                Logger.Log().Debug("Adding {0} to play queue", url);
 
-            // some error checking just in case
-            // example URL: https://open.spotify.com/track/2aWm2jIf91nByHThBYNppw?si=add63868785b4a36
-            if (!uri.Host.Equals("open.spotify.com"))
-            {
-                throw new InvalidSpotifyURLException(url);
-            }
+                Uri uri;
+                try
+                {
+                    uri = new Uri(url);
+                }
+                catch (Exception)
+                {
+                    throw new InvalidSpotifyURLException(url);
+                }
 
-            if (uri.Segments.Length != 3 || !uri.Segments[1].Equals("track/"))
-            {
-                throw new InvalidSpotifyURLException(url);
-            }
+                // some error checking just in case
+                // example URL: https://open.spotify.com/track/2aWm2jIf91nByHThBYNppw?si=add63868785b4a36
+                if (!uri.Host.Equals("open.spotify.com"))
+                {
+                    throw new InvalidSpotifyURLException(url);
+                }
 
-            string trackID = uri.Segments[2];
-            API.Spotify.Track track = API.Spotify.GetTrack(mToken, trackID);
-            if (track.code != HttpStatusCode.OK)
-            {
-                Logger.Log().Error("Failed to get Track from Spotify: {0}", track.code);
-                throw new SpotifyQueueAddFailedException(track.code);
-            }
+                if (uri.Segments.Length != 3 || !uri.Segments[1].Equals("track/"))
+                {
+                    throw new InvalidSpotifyURLException(url);
+                }
 
-            Response resp = API.Spotify.AddItemToPlaybackQueue(mToken, trackID);
-            if (!resp.IsSuccess)
-            {
-                Logger.Log().Error("Failed to add Track to queue: {0}", resp.code);
-                throw new SpotifyQueueAddFailedException(resp.code);
-            }
+                string trackID = uri.Segments[2];
+                API.Spotify.Track track = API.Spotify.GetTrack(mToken, trackID);
+                if (track.code != HttpStatusCode.OK)
+                {
+                    Logger.Log().Error("Failed to get Track from Spotify: {0}", track.code);
+                    throw new SpotifyQueueAddFailedException(track.code);
+                }
 
-            Logger.Log().Debug("Added {0} - {1} to play queue successfully", track.artists[0].name, track.name);
-            return track;
+                Response resp = API.Spotify.AddItemToPlaybackQueue(mToken, trackID);
+                if (!resp.IsSuccess)
+                {
+                    Logger.Log().Error("Failed to add Track to queue: {0}", resp.code);
+                    throw new SpotifyQueueAddFailedException(resp.code);
+                }
+
+                Logger.Log().Debug("Added {0} - {1} to play queue successfully", track.artists[0].name, track.name);
+                return track;
+            }
         }
 
         public void UpdateLogin(string newLogin)

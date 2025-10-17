@@ -36,7 +36,6 @@ namespace LukeBot.Widget
 
         protected override void OnConnected()
         {
-            // noop
             IUserService userService = Service.Get(LukeBot.Common.Constants.USER_SERVICE_NAME) as IUserService;
             IUserContext userContext = userService.GetUser(mLBUser);
 

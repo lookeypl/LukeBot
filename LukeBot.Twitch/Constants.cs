@@ -6,8 +6,6 @@ namespace LukeBot.Twitch
 {
     internal class Constants
     {
-        public static readonly string SYSTEM_USER = "tmi.twitch.tv";
-
         public static readonly string PROP_TWITCH_COMMANDS = "commands";
         public static readonly int RECONNECT_ATTEMPTS = 10;
 

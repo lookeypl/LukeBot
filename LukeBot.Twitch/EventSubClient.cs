@@ -534,7 +534,16 @@ namespace LukeBot.Twitch
                 try
                 {
                     // attempt to gracefully close the socket
-                    await mOldSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
+                    if (mSocket.State == WebSocketState.Open || mSocket.State == WebSocketState.CloseSent || mSocket.State == WebSocketState.CloseReceived)
+                    {
+                        Logger.Log().Info("EventSubClient {0}: Closing old socket...", mThreadLogPreamble.Value);
+                        await mOldSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
+                    }
+                    else
+                    {
+                        Logger.Log().Info("EventSubClient {0}: Old socket in an invalid state, aborting its connection...", mThreadLogPreamble.Value);
+                        mOldSocket.Abort();
+                    }
                 }
                 catch (System.Exception e)
                 {

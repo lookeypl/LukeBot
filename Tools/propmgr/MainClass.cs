@@ -30,6 +30,11 @@ public class MainClass
         mProcessor.ModifyProperty(cmd);
     }
 
+    private static void HandleRenameCommand(RenameCommand cmd)
+    {
+        mProcessor.RenameProperty(cmd);
+    }
+
     private static void HandleListCommand(ListCommand cmd)
     {
         mProcessor.ListProperties(cmd);
@@ -54,11 +59,12 @@ public class MainClass
 
         try
         {
-            Parser.Default.ParseArguments<CreateCommand, AddCommand, RemoveCommand, ModifyCommand, ListCommand>(args)
+            Parser.Default.ParseArguments<CreateCommand, AddCommand, RemoveCommand, ModifyCommand, RenameCommand, ListCommand>(args)
                 .WithParsed<CreateCommand>(HandleCreateCommand)
                 .WithParsed<AddCommand>(HandleAddCommand)
                 .WithParsed<RemoveCommand>(HandleRemoveCommand)
                 .WithParsed<ModifyCommand>(HandleModifyCommand)
+                .WithParsed<RenameCommand>(HandleRenameCommand)
                 .WithParsed<ListCommand>(HandleListCommand)
                 .WithNotParsed(HandleParseError);
         }

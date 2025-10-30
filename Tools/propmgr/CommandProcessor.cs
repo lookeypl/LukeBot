@@ -82,6 +82,21 @@ public class ModifyCommand: Command
     }
 }
 
+[Verb("rename", HelpText = "Rename existing property.")]
+public class RenameCommand: Command
+{
+    [Value(0, MetaName = "prop_name", Required = true, HelpText = "Name of property to rename")]
+    public string OldName { get; set; }
+    [Value(1, MetaName = "new_name", Required = true, HelpText = "New name for the property")]
+    public string NewName { get; set; }
+
+    public RenameCommand()
+    {
+        OldName = "";
+        NewName = "";
+    }
+}
+
 [Verb("list", HelpText = "List all existing properties in the Store.")]
 public class ListCommand: Command
 {
@@ -192,6 +207,16 @@ public class CommandProcessor
         Logger.Log().Info("Modify Property {0} in store {1}", cmd.Name, cmd.StoreDir);
         PropertyStore store = OpenStore(cmd);
         store.Modify(LukeBot.Config.Path.Parse(cmd.Name), cmd.Value);
+        store.Save();
+    }
+
+    public void RenameProperty(RenameCommand cmd)
+    {
+        Logger.Log().Info("Renaming Property {0} to {1}", cmd.OldName, cmd.NewName);
+        PropertyStore store = OpenStore(cmd);
+        LukeBot.Config.Path oldPath = LukeBot.Config.Path.Parse(cmd.OldName);
+        store.Copy(oldPath, LukeBot.Config.Path.Parse(cmd.NewName));
+        store.Remove(oldPath);
         store.Save();
     }
 

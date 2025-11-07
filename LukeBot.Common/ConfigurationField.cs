@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 
 
@@ -57,13 +58,70 @@ namespace LukeBot.Common
     }
 
 
+    // Visibility attribute base
+    // Inherit this to define a custom visibility predicate
+    public abstract class ConfigurationFieldVisibilityAttribute: Attribute
+    {
+        internal abstract bool Visible { get; }
+    }
+
+    // Default visibility - field is always visible
+    public sealed class ConfigurationFieldVisibleAttribute: ConfigurationFieldVisibilityAttribute
+    {
+        internal override bool Visible { get => true; }
+    }
+
+    // Hidden visibility - field always should be hidden
+    public sealed class ConfigurationFieldHiddenAttribute: ConfigurationFieldVisibilityAttribute
+    {
+        internal override bool Visible { get => false; }
+    }
+
+    public abstract class ConfigurationParameterizedVisibilityBaseAttribute: ConfigurationFieldVisibilityAttribute
+    {
+        private protected ConfigurationField mPredicateAccessor;
+        internal string mParameterName;
+
+        private protected ConfigurationParameterizedVisibilityBaseAttribute(string parameterName)
+        {
+            mParameterName = parameterName;
+        }
+
+        internal void SetPredicateAccessor(ConfigurationField accessor)
+        {
+            mPredicateAccessor = accessor;
+        }
+    }
+
+    /*
+     * Parameterized visibility attribute
+     * Inherit this to define a custom visibility predicate dependent on some other field inside
+     * this Configuration. Note that this name has to be an existing Field. It is recommended to
+     * use nameof(...) when defining this (or inheriting) attribute.
+     *
+     * Configuration will first register all fields and then fetch predicate names,
+     * so this Attribute can refer to a field defined later in the class.
+     */
+    public abstract class ConfigurationParameterizedVisibilityAttribute<T>: ConfigurationParameterizedVisibilityBaseAttribute
+    {
+        internal override bool Visible { get { return Predicate(mPredicateAccessor.Get<T>()); } }
+
+        public ConfigurationParameterizedVisibilityAttribute(string parameterName)
+            : base(parameterName)
+        {
+        }
+
+        public abstract bool Predicate(T parameter);
+    }
+
+
     // Default, unrestricted attribute
     public class ConfigurationFieldAttribute: Attribute
     {
     }
 
     // Attribute which contains a validator
-    public class ConfigurationRestrictedFieldAttribute<T> : ConfigurationFieldAttribute
+    public class ConfigurationRestrictedFieldAttribute<T>: ConfigurationFieldAttribute
     {
         public IConfigurationFieldValidator<T> validator;
 
@@ -113,7 +171,9 @@ namespace LukeBot.Common
         public ConfigurationFieldType UnderlyingFieldType { get; }
         public abstract Type Type { get; }
         public abstract Type UnderlyingType { get; }
+        public bool Visible { get => mVisibility.Visible; }
         public ConfigurationBase.OnUpdateDelegate mUpdateDelegate = null;
+        private ConfigurationFieldVisibilityAttribute mVisibility = new ConfigurationFieldVisibleAttribute();
         internal bool IsRoot { get; set; }
 
         protected void OnSetter()
@@ -132,7 +192,7 @@ namespace LukeBot.Common
         public T Get<T>()
         {
             if (!Type.IsAssignableTo(typeof(T)))
-                throw new ConfigurationFieldException("Invalid type {0} - mismatched or cannot be assigned to", typeof(T).ToString());
+                throw new ConfigurationFieldException("Invalid type {0} - mismatched or cannot be assigned to {1}", typeof(T).ToString(), Type.ToString());
 
             return (T)GetRawObject();
         }
@@ -152,6 +212,16 @@ namespace LukeBot.Common
         public abstract string GetValueString();
         public abstract void SetFromString(string s);
         public abstract string DescribeAllowedValues();
+
+        internal void SetVisibilityPredicate(ConfigurationFieldVisibilityAttribute visibilityAttribute)
+        {
+            if (visibilityAttribute == null)
+            {
+                throw new NullReferenceException("Visibility predicate cannot be set to null");
+            }
+
+            mVisibility = visibilityAttribute;
+        }
     }
 
     // Field accessor generic

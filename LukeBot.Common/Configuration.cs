@@ -301,7 +301,19 @@ namespace LukeBot.Common
 
             foreach (MemberInfo member in members)
             {
+                ConfigurationField confField = null;
                 Attribute[] attrs = Attribute.GetCustomAttributes(member, typeof(ConfigurationFieldAttribute), true);
+
+                if (attrs == null)
+                {
+                    // no attributes, quietly ignore this member
+                    continue;
+                }
+
+                if (attrs.Length > 1)
+                {
+                    throw new ConfigurationFieldException("Field {0} can only have one ConfigurationField attribute.", member.Name);
+                }
 
                 if (attrs != null && attrs.Length == 1)
                 {
@@ -316,7 +328,7 @@ namespace LukeBot.Common
 
                     // attribute found - register given member as a field
                     // NOTE: This will also register complex fields which are further processed below. This is fine.
-                    ConfigurationField confField = AllocateFieldAccessor(fieldRef, field, attrs[0] as ConfigurationFieldAttribute, prefix);
+                    confField = AllocateFieldAccessor(fieldRef, field, attrs[0] as ConfigurationFieldAttribute, prefix);
                     if (confField == null)
                     {
                         Logger.Log().Warning("Configuration failed to allocate accessor for member {0} - skipping", field.Name);
@@ -334,10 +346,85 @@ namespace LukeBot.Common
             }
         }
 
+        private bool InheritsRawGeneric(Type type, Type genericBase)
+        {
+            while (type != null && type != typeof(object))
+            {
+                Type current = type.IsGenericType ? type.GetGenericTypeDefinition() : type;
+                if (current == genericBase) return true;
+                type = current;
+            }
+            return false;
+        }
+
+        public void CollectConfigurationVisibilityAttributes(object fieldRef)
+        {
+            MemberInfo[] members = fieldRef.GetType().GetMembers(
+                BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic
+            );
+
+            foreach (MemberInfo member in members)
+            {
+                Attribute[] attrs = Attribute.GetCustomAttributes(member, typeof(ConfigurationFieldVisibilityAttribute), true);
+
+                if (attrs == null)
+                {
+                    // no attributes, quietly ignore this member
+                    continue;
+                }
+
+                if (attrs.Length > 1)
+                {
+                    throw new ConfigurationFieldException("Field {0} can only have one visibility attribute.", member.Name);
+                }
+
+                if (attrs.Length == 1)
+                {
+                    if (member.MemberType != MemberTypes.Field)
+                    {
+                        Logger.Log().Warning("Configuration declared member {0} as configuration field, but it's not a Field - skipping", member.Name);
+                        continue;
+                    }
+
+                    FieldInfo field = member as FieldInfo;
+
+                    // dig out the field from our preexisting collection
+                    if (!mFields.ContainsKey(field.Name))
+                    {
+                        // if it doesn't exist, it means we should simply ignore it
+                        // visibility attribute will have no effect
+                        // TODO should we though?
+                        continue;
+                    }
+
+                    ConfigurationFieldVisibilityAttribute visibility = attrs[0] as ConfigurationFieldVisibilityAttribute;
+                    ConfigurationField confField = mFields[field.Name];
+
+                    if (visibility.GetType().IsAssignableTo(typeof(ConfigurationParameterizedVisibilityBaseAttribute)))
+                    {
+                        ConfigurationParameterizedVisibilityBaseAttribute baseVisibility = visibility as ConfigurationParameterizedVisibilityBaseAttribute;
+
+                        if (!mFields.ContainsKey(baseVisibility.mParameterName))
+                        {
+                            throw new ConfigurationFieldException("Predicate-based visibility attribute refers to non-existent field: {0}", baseVisibility.mParameterName);
+                        }
+
+                        baseVisibility.SetPredicateAccessor(mFields[baseVisibility.mParameterName]);
+                    }
+
+                    // check if visibility attribute is actually a derivative of ConfigurationParameterizedVisibilityAttribute
+                    // if it is, we need to perform field resolution so that Predicate() calls work
+
+                    confField.SetVisibilityPredicate(visibility);
+                }
+            }
+        }
+
         public Configuration()
             : base(typeof(Configurable).Name, typeof(Configurable).FullName)
         {
             RegisterConfigurationFields(this);
+            CollectConfigurationVisibilityAttributes(this);
         }
 
         public override string Serialize()

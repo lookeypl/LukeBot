@@ -143,7 +143,7 @@ namespace LukeBot.Common
             FullConfigurableTypeName = configurableName;
         }
 
-        public abstract string Serialize();
+        public abstract string Serialize(bool includeHidden = false);
         public abstract Dictionary<string, ConfigurationField> GetFields();
         public virtual string ToShortString() { return EventName; }
     }
@@ -427,10 +427,10 @@ namespace LukeBot.Common
             CollectConfigurationVisibilityAttributes(this);
         }
 
-        public override string Serialize()
+        public override string Serialize(bool includeHidden = false)
         {
             JsonSerializerOptions opts = new();
-            opts.Converters.Add(new ConfigurationJsonConverter<Configurable>());
+            opts.Converters.Add(new ConfigurationJsonConverter<Configurable>(includeHidden));
 
             return JsonSerializer.Serialize(this, opts);
         }

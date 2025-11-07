@@ -20,7 +20,7 @@ namespace LukeBot.Tests.Common
         // NOTE 2 ELECTRIC BOOGALOO: the ordering matters for Serialize test. Attribute-registered
         // members are registered when base constructor is called.
 
-        private class EventTestConfiguration
+        private class DefaultTestConfiguration
         {
             [JsonInclude]
             public bool boolField = true;
@@ -52,7 +52,10 @@ namespace LukeBot.Tests.Common
             [JsonInclude]
             public string FullConfigurableTypeName = typeof(TestConfiguration).FullName;
 
-            public EventTestConfiguration()
+            // non-JsonInclude-d for purpose, hidden fields should be omitted from JSON drop
+            public int hiddenField = 420;
+
+            public DefaultTestConfiguration()
             {
             }
         }
@@ -97,30 +100,34 @@ namespace LukeBot.Tests.Common
             }
         }
 
-        private static readonly EventTestConfiguration EVENT_TEST_CONFIGURATION = new();
+        private static readonly DefaultTestConfiguration DEFAULT_TEST_CONFIGURATION = new();
 
         private class TestConfiguration: Configuration<TestConfiguration>
         {
             [ConfigurationField]
-            public bool boolField = EVENT_TEST_CONFIGURATION.boolField;
+            public bool boolField = DEFAULT_TEST_CONFIGURATION.boolField;
             [ConfigurationField]
-            public int intField = EVENT_TEST_CONFIGURATION.intField;
+            public int intField = DEFAULT_TEST_CONFIGURATION.intField;
             [ConfigurationField]
-            public string stringField = EVENT_TEST_CONFIGURATION.stringField;
+            public string stringField = DEFAULT_TEST_CONFIGURATION.stringField;
             [ConfigurationField]
-            private int privateIntRegisteredViaAttribute = EVENT_TEST_CONFIGURATION.privateIntRegisteredViaAttribute;
+            private int privateIntRegisteredViaAttribute = DEFAULT_TEST_CONFIGURATION.privateIntRegisteredViaAttribute;
             [ConfigurationRestrictedField<string>(typeof(TestRestrictedFieldValidator))]
-            public string restrictedField = EVENT_TEST_CONFIGURATION.restrictedField;
-            [ConfigurationListRestrictedField<int>(new[] {2, 4, 6, 8})]
-            public int evenSingleDigitsField = EVENT_TEST_CONFIGURATION.evenSingleDigitsField;
+            public string restrictedField = DEFAULT_TEST_CONFIGURATION.restrictedField;
+            [ConfigurationListRestrictedField<int>(new[] { 2, 4, 6, 8 })]
+            public int evenSingleDigitsField = DEFAULT_TEST_CONFIGURATION.evenSingleDigitsField;
 
-            public string manuallyRestrictedField = EVENT_TEST_CONFIGURATION.manuallyRestrictedField;
+            public string manuallyRestrictedField = DEFAULT_TEST_CONFIGURATION.manuallyRestrictedField;
 
             // below field on purpose has no attribute, as we are registering it manually with RegisterField()
-            public bool boolRegisteredManually = EVENT_TEST_CONFIGURATION.boolRegisteredManually;
-            private int privateIntRegisteredManually = EVENT_TEST_CONFIGURATION.privateIntRegisteredManually;
+            public bool boolRegisteredManually = DEFAULT_TEST_CONFIGURATION.boolRegisteredManually;
+            private int privateIntRegisteredManually = DEFAULT_TEST_CONFIGURATION.privateIntRegisteredManually;
 
             private int privateIntNotRegistered = 0;
+
+            [ConfigurationField]
+            [ConfigurationFieldHidden]
+            public int hiddenField = DEFAULT_TEST_CONFIGURATION.hiddenField;
 
             public TestConfiguration()
             {
@@ -141,6 +148,7 @@ namespace LukeBot.Tests.Common
                 Assert.IsNotNull(Field(nameof(evenSingleDigitsField)));
                 Assert.IsNotNull(Field(nameof(boolRegisteredManually)));
                 Assert.IsNotNull(Field(nameof(privateIntRegisteredManually)));
+                Assert.IsNotNull(Field(nameof(hiddenField)));
 
                 // check if accessors exist
                 Assert.IsNotNull(Accessor<bool>(nameof(boolField)));
@@ -152,6 +160,7 @@ namespace LukeBot.Tests.Common
                 Assert.IsNotNull(Accessor<int>(nameof(evenSingleDigitsField)));
                 Assert.IsNotNull(Accessor<bool>(nameof(boolRegisteredManually)));
                 Assert.IsNotNull(Accessor<int>(nameof(privateIntRegisteredManually)));
+                Assert.IsNotNull(Accessor<int>(nameof(hiddenField)));
 
                 // check if some random field does not exist
                 Assert.ThrowsException<ConfigurationException>(() => Field(nameof(privateIntNotRegistered)));
@@ -172,17 +181,29 @@ namespace LukeBot.Tests.Common
                 Assert.AreEqual(ConfigurationFieldType.Simple, Field(nameof(boolRegisteredManually)).FieldType);
                 Assert.AreEqual(ConfigurationFieldType.Simple, Field(nameof(privateIntRegisteredManually)).FieldType);
 
-                Assert.AreEqual(EVENT_TEST_CONFIGURATION.boolField, boolField);
-                Assert.AreEqual(EVENT_TEST_CONFIGURATION.intField, intField);
-                Assert.AreEqual(EVENT_TEST_CONFIGURATION.stringField, stringField);
+                Assert.AreEqual(DEFAULT_TEST_CONFIGURATION.boolField, boolField);
+                Assert.AreEqual(DEFAULT_TEST_CONFIGURATION.intField, intField);
+                Assert.AreEqual(DEFAULT_TEST_CONFIGURATION.stringField, stringField);
 
-                Assert.AreEqual(EVENT_TEST_CONFIGURATION.restrictedField, restrictedField);
-                Assert.AreEqual(EVENT_TEST_CONFIGURATION.manuallyRestrictedField, manuallyRestrictedField);
+                Assert.AreEqual(DEFAULT_TEST_CONFIGURATION.restrictedField, restrictedField);
+                Assert.AreEqual(DEFAULT_TEST_CONFIGURATION.manuallyRestrictedField, manuallyRestrictedField);
 
-                Assert.AreEqual(EVENT_TEST_CONFIGURATION.boolRegisteredManually, boolRegisteredManually);
+                Assert.AreEqual(DEFAULT_TEST_CONFIGURATION.boolRegisteredManually, boolRegisteredManually);
 
-                Assert.AreEqual(EVENT_TEST_CONFIGURATION.privateIntRegisteredManually, privateIntRegisteredManually);
-                Assert.AreEqual(EVENT_TEST_CONFIGURATION.privateIntRegisteredViaAttribute, privateIntRegisteredViaAttribute);
+                Assert.AreEqual(DEFAULT_TEST_CONFIGURATION.privateIntRegisteredManually, privateIntRegisteredManually);
+                Assert.AreEqual(DEFAULT_TEST_CONFIGURATION.privateIntRegisteredViaAttribute, privateIntRegisteredViaAttribute);
+
+                // check field default visibility
+                Assert.IsTrue(Field(nameof(boolField)).Visible);
+                Assert.IsTrue(Field(nameof(intField)).Visible);
+                Assert.IsTrue(Field(nameof(stringField)).Visible);
+                Assert.IsTrue(Field(nameof(privateIntRegisteredViaAttribute)).Visible);
+                Assert.IsTrue(Field(nameof(restrictedField)).Visible);
+                Assert.IsTrue(Field(nameof(manuallyRestrictedField)).Visible);
+                Assert.IsTrue(Field(nameof(evenSingleDigitsField)).Visible);
+                Assert.IsTrue(Field(nameof(boolRegisteredManually)).Visible);
+                Assert.IsTrue(Field(nameof(privateIntRegisteredManually)).Visible);
+                Assert.IsFalse(Field(nameof(hiddenField)).Visible);
             }
 
             public void TryRegisterExisting()
@@ -204,6 +225,18 @@ namespace LukeBot.Tests.Common
             // Attribute generic type (string) matches field type, but not validator generic type
             [ConfigurationRestrictedField<int>(typeof(TestRestrictedFieldValidator))]
             public int myTypeMatchesButValidatorDoesNot = 420;
+        }
+
+        public class DefaultRestrictedFieldTestConfiguration: Configuration<DefaultRestrictedFieldTestConfiguration>
+        {
+            [ConfigurationListRestrictedField<string>(new string[] { "first", "second", "third" })]
+            public string restrictedSetToSecond = "second";
+
+            [ConfigurationListRestrictedField<string>(new string[] { "first", "second", "third" })]
+            public string restrictedEmpty;
+
+            [ConfigurationListRestrictedField<string>(new string[] { "first", "second", "third" })]
+            public string restrictedBadDefault = "wrong";
         }
 
 
@@ -370,19 +403,39 @@ namespace LukeBot.Tests.Common
             TestConfiguration conf = new();
             conf.CheckFields();
 
-            Assert.AreEqual(JsonSerializer.Serialize<EventTestConfiguration>(EVENT_TEST_CONFIGURATION), conf.Serialize());
+            // default serialization should skip hidden fields
+            string expected = JsonSerializer.Serialize<DefaultTestConfiguration>(DEFAULT_TEST_CONFIGURATION);
+            Assert.AreEqual(expected, conf.Serialize());
+
+            // we can force Serialize to add hidden fields as well
+            // do a simple check to see if it will contain those
+            string serializedWithAllFields = conf.Serialize(true);
+            Assert.IsTrue(serializedWithAllFields.Contains(nameof(conf.hiddenField)));
         }
 
         [TestMethod]
         public void Configuration_JsonConverterTest_Deserialize()
         {
-            string serialized = JsonSerializer.Serialize<EventTestConfiguration>(EVENT_TEST_CONFIGURATION);
+            string serialized = JsonSerializer.Serialize<DefaultTestConfiguration>(DEFAULT_TEST_CONFIGURATION);
 
             TestConfiguration conf = ConfigurationFactory.Deserialize(serialized) as TestConfiguration;
             Assert.IsNotNull(conf);
-            Assert.AreEqual(EVENT_TEST_CONFIGURATION.EventName, conf.EventName);
-            Assert.AreEqual(EVENT_TEST_CONFIGURATION.FullConfigurableTypeName, conf.FullConfigurableTypeName);
+            Assert.AreEqual(DEFAULT_TEST_CONFIGURATION.EventName, conf.EventName);
+            Assert.AreEqual(DEFAULT_TEST_CONFIGURATION.FullConfigurableTypeName, conf.FullConfigurableTypeName);
             conf.CheckFields();
+        }
+
+        [TestMethod]
+        public void Configuration_RestrictedDefaults()
+        {
+            // this should not throw
+            DefaultRestrictedFieldTestConfiguration conf = new();
+
+            // default value that is part of the restriction list should be left alone
+            Assert.AreEqual("second", conf.restrictedSetToSecond);
+
+            // empty
+            Assert.AreEqual("first", conf.restrictedEmpty);
         }
     }
 }

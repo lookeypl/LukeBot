@@ -9,6 +9,18 @@ namespace LukeBot.Common
     internal class ConfigurationJsonConverter<Configurable>: JsonConverter<Configurable>
         where Configurable: Configuration<Configurable>, new()
     {
+        private bool IncludeHidden { get; init; }
+
+        public ConfigurationJsonConverter()
+            : this(false)
+        {
+        }
+
+        public ConfigurationJsonConverter(bool includeHidden)
+        {
+            IncludeHidden = includeHidden;
+        }
+
         public override bool CanConvert(Type typeToConvert)
         {
             return typeof(ConfigurationBase).IsAssignableFrom(typeToConvert);
@@ -56,6 +68,8 @@ namespace LukeBot.Common
             Dictionary<string, ConfigurationField> fields = configuration.GetFields();
             foreach (ConfigurationField field in fields.Values)
             {
+                if (!IncludeHidden && !field.Visible) continue;
+
                 // TODO while this prevents writing sub-objects as "separate" objects,
                 // this also will simply write down every single field inside that object, not just ConfigurationFieldAttribute-ones
                 // This needs adjusting, most likely some deeper inspection based on the Dictionary above

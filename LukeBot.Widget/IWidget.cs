@@ -83,7 +83,7 @@ namespace LukeBot.Widget
             return "wss://" + serverAddress + "/widgetws/" + ID;
         }
 
-        private string GetPrintableWidgetID()
+        internal string GetPrintableWidgetID()
         {
             if (Name.Length > 0) return Name;
             else return ID;
@@ -214,31 +214,18 @@ namespace LukeBot.Widget
 
         protected void LoadConfiguration()
         {
-            try
+            if (Conf.TryGet<string>(mConfigurationPath, out string configStr))
             {
-                if (Conf.TryGet<string>(mConfigurationPath, out string configStr))
-                {
-                    mConfiguration = ConfigurationFactory.Deserialize(configStr);
-                }
-                else
-                {
-                    mConfiguration = CreateDefaultConfiguration();
-                }
+                mConfiguration = ConfigurationFactory.Deserialize(configStr);
+            }
+            else
+            {
+                mConfiguration = CreateDefaultConfiguration();
+            }
 
-                // Add the UpdateNotifier and afterwards manually trigger the Configuration update
-                mConfiguration.UpdateNotifier = OnConfigurationUpdate;
-                OnConfigurationUpdate();
-            }
-            catch (ConfigurationException e)
-            {
-                Logger.Log().Error("Failed to load {0} Widget's configuration. This might be because it is either old or becuase of some other error.");
-                Logger.Log().Error("If you're okay with losing the configuration data, try calling below CLI command to recreate it:");
-                Logger.Log().Error("  widget reload {0} --recreate-config", GetPrintableWidgetID());
-                Logger.Log().Error("Old configuration will be backed up in config for cross-reference.");
-                #pragma warning disable CA2200
-                throw e;
-                #pragma warning restore CA2200
-            }
+            // Add the UpdateNotifier and afterwards manually trigger the Configuration update
+            mConfiguration.UpdateNotifier = OnConfigurationUpdate;
+            OnConfigurationUpdate();
         }
 
         public void SaveConfiguration()

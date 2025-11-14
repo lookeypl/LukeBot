@@ -447,8 +447,11 @@ namespace LukeBot.Tests.Common
             Assert.AreEqual("second", conf.restrictedSetToSecond);
 
             // empty or incorrect fields should be default-assigned to first value on the list
-            Assert.ThrowsException<ConfigurationFieldException>(() => new EmptyRestrictedFieldTestConfiguration());
-            Assert.ThrowsException<ConfigurationFieldException>(() => new WrongDefaultRestrictedFieldTestConfiguration());
+            ConfigurationException e = Assert.ThrowsException<ConfigurationException>(() => new EmptyRestrictedFieldTestConfiguration());
+            Assert.IsInstanceOfType(e.InnerException, typeof(ConfigurationFieldException));
+
+            e = Assert.ThrowsException<ConfigurationException>(() => new WrongDefaultRestrictedFieldTestConfiguration());
+            Assert.IsInstanceOfType(e.InnerException, typeof(ConfigurationFieldException));
         }
     }
 }

@@ -77,7 +77,15 @@ namespace LukeBot.Common
             );
 
             MethodInfo deserializer = deserializerGeneric.MakeGenericMethod(new Type[] { confType[0] });
-            return deserializer.Invoke(null, new[] { confString }) as ConfigurationBase;
+
+            try
+            {
+                return deserializer.Invoke(null, new[] { confString }) as ConfigurationBase;
+            }
+            catch (TargetInvocationException e)
+            {
+                throw new ConfigurationException("Deserialization failed, deserializer caught an exception", e.InnerException);
+            }
         }
     }
 
@@ -296,7 +304,7 @@ namespace LukeBot.Common
             }
             catch (TargetInvocationException e)
             {
-                throw e.InnerException;
+                throw new ConfigurationException("Configuration Field constructor threw an Exception", e.InnerException);
             }
         }
 

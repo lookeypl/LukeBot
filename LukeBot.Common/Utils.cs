@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using LukeBot.Config;
+using LukeBot.Logging;
 
 
 namespace LukeBot.Common
@@ -221,6 +222,33 @@ namespace LukeBot.Common
             }
 
             return messages;
+        }
+
+        private static bool PrintAllExceptionsInner(System.Exception e)
+        {
+            if (e == null) return false;
+
+            if (!PrintAllExceptionsInner(e.InnerException))
+            {
+                Logger.Log().Error("Caused by {0}: {1}", e.GetType().ToString(), e.Message);
+            }
+            else
+            {
+                Logger.Log().Error("...which caused {0}: {1}", e.GetType().ToString(), e.Message);
+            }
+            Logger.Log().Trace("Stack trace:{0}\n", e.StackTrace);
+            return true;
+        }
+
+        /**
+         * Prints exception chain until InnerException is null
+         */
+        public static void PrintAllExceptions(string errorMsg, System.Exception e)
+        {
+            if (e == null) return;
+
+            Logger.Log().Error(errorMsg);
+            PrintAllExceptionsInner(e);
         }
 
         // Common Config interactions //

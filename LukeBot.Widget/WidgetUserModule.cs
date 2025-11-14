@@ -127,13 +127,24 @@ namespace LukeBot.Widget
                 // Load() can fail, which will leave the Widget in unloaded state.
                 w.Load();
             }
+            catch (ConfigurationException e)
+            {
+                Logger.Log().Error("Failed to load {0} Widget's configuration. This might be because it is either old or becuase of some other error.", w.GetPrintableWidgetID());
+                Logger.Log().Error("If you're okay with losing the configuration data, try calling below CLI command to recreate it:");
+                Logger.Log().Error("  widget reload {0} --recreate-config", w.GetPrintableWidgetID());
+                Logger.Log().Error("Old configuration will be backed up in config for cross-reference.");
+                Utils.PrintAllExceptions("Widget load failed because of a Configuration error.", e);
+            }
             catch (System.Exception e)
             {
+                string errorMsg;
+
                 if (w.Name.Length > 0)
-                    Logger.Log().Error("Failed to load Widget {0} ({1}): {2}", w.Name, w.ID, e.Message);
+                    errorMsg = String.Format("Failed to load Widget {0} ({1}): {2}", w.Name, w.ID, e.Message);
                 else
-                    Logger.Log().Error("Failed to load Widget {0}: {1}", w.ID, e.Message);
-                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
+                    errorMsg = String.Format("Failed to load Widget {0}: {1}", w.ID, e.Message);
+
+                Utils.PrintAllExceptions(errorMsg, e);
             }
         }
 

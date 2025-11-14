@@ -30,20 +30,24 @@ namespace LukeBot.Widget
             }
         }
 
+        public class AlertTrigger
+        {
+            [ConfigurationListRestrictedField<string>(new[] { "sub", "giftsub", "cheer" })]
+            private string EventType = "sub";
+            [ConfigurationListRestrictedField<int>(new[] { 1, 2, 3 })]
+            private int SubTier = 1;
+            private int FromMonths = 0;
+            private int ToMonths = 0;
+        }
+
         public class Config: Configuration<Config>
         {
             [ConfigurationListRestrictedField<string>(new[] { "left", "right" })]
-            private string Alignment;
+            private string Alignment = "right";
+            [ConfigurationListRestrictedField<string>(new[] { "simple", "classic" })]
+            private string Style = "simple";
 
-            public Config()
-                : this("right")
-            {
-            }
-
-            public Config(string alignment)
-            {
-                Alignment = alignment;
-            }
+            public Config() {}
         }
 
         private void AwaitEventCompletion()

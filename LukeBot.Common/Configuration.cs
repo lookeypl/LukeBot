@@ -290,7 +290,14 @@ namespace LukeBot.Common
             }
 
             // how does this spaghetti work I still have no idea
-            return Activator.CreateInstance(constructedType, constructorArgs) as ConfigurationField;
+            try
+            {
+                return Activator.CreateInstance(constructedType, constructorArgs) as ConfigurationField;
+            }
+            catch (TargetInvocationException e)
+            {
+                throw e.InnerException;
+            }
         }
 
         private void RegisterConfigurationFields(object fieldRef, string prefix = "")

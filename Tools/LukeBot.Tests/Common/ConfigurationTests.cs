@@ -233,10 +233,22 @@ namespace LukeBot.Tests.Common
             public string restrictedSetToSecond = "second";
 
             [ConfigurationListRestrictedField<string>(new string[] { "first", "second", "third" })]
-            public string restrictedEmpty;
+            public string restrictedSetToFirst = "first";
 
+            [ConfigurationListRestrictedField<int>(new int[] { 10, 20, 30 })]
+            public int restrictedSetTo30 = 30;
+        }
+
+        public class EmptyRestrictedFieldTestConfiguration: Configuration<EmptyRestrictedFieldTestConfiguration>
+        {
             [ConfigurationListRestrictedField<string>(new string[] { "first", "second", "third" })]
-            public string restrictedBadDefault = "wrong";
+            public string restrictedEmpty = "";
+        }
+
+        public class WrongDefaultRestrictedFieldTestConfiguration: Configuration<WrongDefaultRestrictedFieldTestConfiguration>
+        {
+            [ConfigurationListRestrictedField<string>(new string[] { "first", "second", "third" })]
+            public string badDefaultRestricted = "wrong";
         }
 
 
@@ -434,8 +446,9 @@ namespace LukeBot.Tests.Common
             // default value that is part of the restriction list should be left alone
             Assert.AreEqual("second", conf.restrictedSetToSecond);
 
-            // empty
-            Assert.AreEqual("first", conf.restrictedEmpty);
+            // empty or incorrect fields should be default-assigned to first value on the list
+            Assert.ThrowsException<ConfigurationFieldException>(() => new EmptyRestrictedFieldTestConfiguration());
+            Assert.ThrowsException<ConfigurationFieldException>(() => new WrongDefaultRestrictedFieldTestConfiguration());
         }
     }
 }

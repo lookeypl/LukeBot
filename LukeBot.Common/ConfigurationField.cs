@@ -12,6 +12,9 @@ using System.Text.Json;
 namespace LukeBot.Common
 {
     // Validator definition
+    // Note that ConfigurationField constructor WILL run the validator when initializing the accessor.
+    // This means your object should be defaulted to a value that makes the validation pass.
+    // If validation during Field construction fails, ConfigurationFieldException will be thrown.
     public interface IConfigurationFieldValidator<T>
     {
         public bool Validate(T input);
@@ -314,6 +317,11 @@ namespace LukeBot.Common
             );
             Setter = Expression.Lambda<Action<T>>(body, parameter).Compile();
             Getter = expression.Compile();
+
+            if (!mValidator.Validate(Getter()))
+            {
+                throw new ConfigurationFieldException("Default value \"{0}\" that field {1} is set to is invalid", Getter(), Name);
+            }
         }
 
         public void Set(T v) => Setter(v);

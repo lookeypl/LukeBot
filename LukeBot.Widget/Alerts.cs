@@ -110,7 +110,7 @@ namespace LukeBot.Widget
                 break;
             }
 
-            SendToWS(a);
+            SendToWS(a, new TwitchSubscriptionArgsJsonConverter());
 
             AwaitEventCompletion();
         }

@@ -10,6 +10,7 @@ using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Common;
 using LukeBot.Widget.Common;
+using System.Text.Json.Serialization;
 
 
 namespace LukeBot.Widget
@@ -195,22 +196,35 @@ namespace LukeBot.Widget
             }
         }
 
-        protected async Task SendToWSAsync<T>(T obj)
-        {
-            await SendToWSAsync(JsonSerializer.Serialize(obj));
-        }
-
         protected void SendToWS(string msg)
         {
             Task t = SendToWSAsync(msg);
             t.Wait();
         }
 
-        protected void SendToWS<T>(T obj)
+        protected async Task SendToWSAsync<T>(T obj, JsonConverter<T> converter)
         {
-            Task t = SendToWSAsync<T>(obj);
+            JsonSerializerOptions options = new();
+            if (converter != null) options.Converters.Add(converter);
+            await SendToWSAsync(JsonSerializer.Serialize(obj, options));
+        }
+
+        protected async Task SendToWSAsync<T>(T obj)
+        {
+            await SendToWSAsync(obj, null);
+        }
+
+        protected void SendToWS<T>(T obj, JsonConverter<T> converter)
+        {
+            Task t = SendToWSAsync<T>(obj, converter);
             t.Wait();
         }
+
+        protected void SendToWS<T>(T obj)
+        {
+            SendToWS(obj, null);
+        }
+
 
         protected void LoadConfiguration()
         {

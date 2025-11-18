@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using LukeBot.Logging;
 using LukeBot.Twitch.Common;
 
 
@@ -19,7 +20,16 @@ namespace LukeBot.Twitch
         public void AddEmoteSource(IEmoteSource source)
         {
             mEmoteSources.Add(source);
-            source.FetchEmoteSet(ref mEmoteSet);
+
+            try
+            {
+                source.FetchEmoteSet(ref mEmoteSet);
+            }
+            catch (System.Exception e)
+            {
+                Logger.Log().Error("Failed to fetch emote set for source {0}: {1} - {2}", e.GetType().ToString(), e.Message);
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
+            }
         }
 
         public List<MessageEmote> ParseEmotes(string str)
@@ -48,7 +58,15 @@ namespace LukeBot.Twitch
 
             foreach (IEmoteSource source in mEmoteSources)
             {
-                source.FetchEmoteSet(ref mEmoteSet);
+                try
+                {
+                    source.FetchEmoteSet(ref mEmoteSet);
+                }
+                catch (System.Exception e)
+                {
+                    Logger.Log().Error("Failed to fetch emote set for source {0}: {1} - {2}", e.GetType().ToString(), e.Message);
+                    Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
+                }
             }
         }
     }

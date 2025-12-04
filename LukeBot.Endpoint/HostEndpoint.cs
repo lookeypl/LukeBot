@@ -1,14 +1,17 @@
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using LukeBot.Logging;
 using LukeBot.Config;
-using System.IO;
-using Microsoft.AspNetCore.Server.Kestrel.Https;
+using System.Net;
 
 
 namespace LukeBot.Endpoint
@@ -29,35 +32,35 @@ namespace LukeBot.Endpoint
                 await mHost.StopAsync();
         }
 
+        public static void AddUrl(string domain, int port, ref List<string> URLs)
+        {
+            if (port == LukeBot.Common.Constants.DEFAULT_SERVER_PORT)
+            {
+                URLs.Add(String.Format("https://{0}/", domain));
+            }
+            else
+            {
+                URLs.Add(String.Format("https://{0}:{1}/", domain, port));
+            }
+        }
+
         public IHostBuilder CreateHostBuilder()
         {
             IHostBuilder builder = Host.CreateDefaultBuilder();
 
-            string domain;
-            string[] URLs;
+            List<string> URLs = new();
+            string domain = LukeBot.Common.Constants.DEFAULT_SERVER_HTTPS_DOMAIN;
+            int port = LukeBot.Common.Constants.DEFAULT_SERVER_PORT;
 
-            if (!Conf.TryGet<string>(Common.Constants.PROP_STORE_HTTPS_DOMAIN_PROP, out domain))
-            {
-                domain = "localhost";
-            }
+            Conf.TryGet<string>(Common.Constants.PROP_STORE_HTTPS_DOMAIN_PROP, out domain);
+            Conf.TryGet<int>(Common.Constants.PROP_STORE_SERVER_PORT_PROP, out port);
 
-            if (domain.Contains("localhost"))
+            AddUrl(domain, port, ref URLs);
+
+            if (!domain.Contains("localhost"))
             {
-                // manually set only localhost
-                // we do this path just in case someone prefers to use different-than-default port 5000
-                URLs = new string[]
-                {
-                    "https://" + domain + "/",
-                };
-            }
-            else
-            {
-                // add defined address + localhost:5000
-                URLs = new string[]
-                {
-                    "https://" + domain + "/",
-                    "https://localhost:5000/"
-                };
+                // add localhost for local testing purposes
+                AddUrl("localhost", port, ref URLs);
             }
 
             Logger.Log().Info("Endpoint using host addresses:");
@@ -68,7 +71,7 @@ namespace LukeBot.Endpoint
 
             builder.ConfigureWebHostDefaults(webBuilder =>
             {
-                webBuilder.UseUrls(URLs);
+                webBuilder.UseUrls(URLs.ToArray());
                 webBuilder.UseStartup<Startup>();
                 webBuilder.UseContentRoot(Directory.GetCurrentDirectory() + "/Data/ContentRoot");
             });
@@ -100,6 +103,14 @@ namespace LukeBot.Endpoint
                     Logger.Log().Warning("=== NOTE ===");
                     Logger.Log().Warning("HTTPS domain is set to localhost - assuming we're in dev environment");
                     Logger.Log().Warning("If something fails, remember to run \"dotnet dev-certs https --trust\"");
+                    #if (LINUX)
+                    Logger.Log().Warning("=== LINUX-SPECIFIC NOTE ===");
+                    Logger.Log().Warning("On Linux even this might not work, as dotnet dev-certs only trusts certificates user-side.");
+                    Logger.Log().Warning("An example of potential issues would be OBS running from Flatpak not loading any LukeBot Widgets.");
+                    Logger.Log().Warning("To fix this, call above command and then add dotnet dev-cert system-wide (requires root access) with:");
+                    Logger.Log().Warning("  dotnet tool update -g linux-dev-certs");
+                    Logger.Log().Warning("  dotnet linux-dev-certs install");
+                    #endif
                     Logger.Log().Warning("============");
                 }
             });

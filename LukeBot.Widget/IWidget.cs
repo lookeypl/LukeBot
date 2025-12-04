@@ -74,14 +74,22 @@ namespace LukeBot.Widget
 
         internal string GetWidgetAddress()
         {
+            int port = LukeBot.Common.Constants.DEFAULT_SERVER_PORT;
+
             string serverAddress = Conf.Get<string>(LukeBot.Common.Constants.PROP_STORE_HTTPS_DOMAIN_PROP);
-            return "https://" + serverAddress + "/widget/" + ID;
+            Conf.TryGet<int>(LukeBot.Common.Constants.PROP_STORE_SERVER_PORT_PROP, out port);
+
+            return String.Format("https://{0}:{1}/widget/{2}", serverAddress, port, ID);
         }
 
         private string GetWidgetWSAddress()
         {
+            int port = LukeBot.Common.Constants.DEFAULT_SERVER_PORT;
+
             string serverAddress = Conf.Get<string>(LukeBot.Common.Constants.PROP_STORE_HTTPS_DOMAIN_PROP);
-            return "wss://" + serverAddress + "/widgetws/" + ID;
+            Conf.TryGet<int>(LukeBot.Common.Constants.PROP_STORE_SERVER_PORT_PROP, out port);
+
+            return String.Format("wss://{0}:{1}/widgetws/{2}", serverAddress, port, ID);
         }
 
         internal string GetPrintableWidgetID()

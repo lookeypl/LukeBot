@@ -17,7 +17,7 @@ namespace LukeBot
 {
     internal class LukeBot
     {
-        private List<ICLIProcessor> mCommandProcessors = new List<ICLIProcessor>{
+        private List<ICLIProcessor> mCommandProcessors = new List<ICLIProcessor> {
             new EventCLIProcessor(),
             new ModuleCLIProcessor(),
             new TestCLIProcessor(),

@@ -87,6 +87,8 @@ namespace LukeBot.Endpoint
                 return;
             }
 
+            context.Response.Headers.ContentType = "text/html";
+
             string state = context.Request.Query["state"];
 
             if (context.Request.Query.ContainsKey("error"))
@@ -134,6 +136,7 @@ namespace LukeBot.Endpoint
             {
                 IWidgetUserModule wum = GetWidgetService().GetModuleByWidgetUUID(widgetUUID);
                 string pageContents = wum.GetWidgetPage(widgetUUID);
+                context.Response.Headers.ContentType = "text/html";
                 await context.Response.WriteAsync(pageContents);
             }
             catch (Exception e)

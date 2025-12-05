@@ -77,7 +77,10 @@ namespace LukeBot.Widget
             int port = LukeBot.Common.Constants.DEFAULT_SERVER_PORT;
 
             string serverAddress = Conf.Get<string>(LukeBot.Common.Constants.PROP_STORE_HTTPS_DOMAIN_PROP);
-            Conf.TryGet<int>(LukeBot.Common.Constants.PROP_STORE_SERVER_PORT_PROP, out port);
+            if (Conf.TryGet<int>(LukeBot.Common.Constants.PROP_STORE_SERVER_PORT_PROP, out int gotPort))
+            {
+                port = gotPort;
+            }
 
             return String.Format("https://{0}:{1}/widget/{2}", serverAddress, port, ID);
         }
@@ -87,7 +90,10 @@ namespace LukeBot.Widget
             int port = LukeBot.Common.Constants.DEFAULT_SERVER_PORT;
 
             string serverAddress = Conf.Get<string>(LukeBot.Common.Constants.PROP_STORE_HTTPS_DOMAIN_PROP);
-            Conf.TryGet<int>(LukeBot.Common.Constants.PROP_STORE_SERVER_PORT_PROP, out port);
+            if (Conf.TryGet<int>(LukeBot.Common.Constants.PROP_STORE_SERVER_PORT_PROP, out int gotPort))
+            {
+                port = gotPort;
+            }
 
             return String.Format("wss://{0}:{1}/widgetws/{2}", serverAddress, port, ID);
         }
@@ -277,6 +283,11 @@ namespace LukeBot.Widget
 
             mConfiguration = CreateDefaultConfiguration();
             SaveConfiguration();
+        }
+
+        public void PushConfigurationUpdate()
+        {
+            OnConfigurationUpdate();
         }
 
 

@@ -26,5 +26,6 @@ namespace LukeBot.Widget.Common
         public ConfigurationBase GetWidgetConfiguration(string id);
         public void ResetConfiguration(string id);
         public void SaveConfiguration(string id);
+        public void PushConfigurationUpdate(string id);
     }
 }

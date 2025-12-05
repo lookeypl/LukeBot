@@ -318,6 +318,14 @@ namespace LukeBot.Widget
             }
         }
 
+        public void PushConfigurationUpdate(string id)
+        {
+            lock (mImplLock)
+            {
+                mWidgets[GetActualWidgetId(id)].PushConfigurationUpdate();
+            }
+        }
+
         public ConfigurationBase GetWidgetConfiguration(string id)
         {
             lock (mImplLock)

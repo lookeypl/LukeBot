@@ -378,48 +378,57 @@
         }
 
         setPath(path) {
-            this.mAudioBlobPromise = fetch(path);
+            this.mAudioPath = path;
         }
 
         execute(next, status) {
-            this.mAudioBlobPromise.then((response) => response.blob())
-                                  .then((blob) => {
-                var audioURL = window.URL.createObjectURL(blob);
-                this.mAudio = new Audio(audioURL);
-                this.mAudio.addEventListener("canplaythrough", (event) => {
-                    this.mAudio.play().catch(
-                        (reason) => {
-                            status.fail(`ERROR play failed: ${reason}`);
-                            setTimeout(() => {
-                                next()
-                            }, 5000);
-                        }
-                    );
-                });
-                this.mAudio.addEventListener("ended", (value) => {
-                    if (this.mEnsureLongEnough && this.mAudio.duration < 5.0) {
-                        // Wait to make the alert last at least 5 seconds
-                        setTimeout(() => {
-                            next();
-                        }, (5.0 - this.mAudio.duration) * 1000);
+            fetch(this.mAudioPath)
+                .catch((error) => {
+                    status.fail(`ERROR fetching audio file: ${error}`);
+                    setTimeout(() => { next() }, 5000);
+                })
+                .then((response) => {
+                    if (response.ok) {
+                        return response.blob();
                     } else {
-                        // Audio was longer than non-message alert, continue
-                        next();
+                        throw new Error(`Bad response from fetching audio file: ${response.status}`);
                     }
+                })
+                .catch((error) => {
+                    status.fail(`ERROR getting response blob: ${error}`);
+                    setTimeout(() => { next() }, 5000);
+                })
+                .then((blob) => {
+                    var audioURL = window.URL.createObjectURL(blob);
+                    this.mAudio = new Audio(audioURL);
+                    this.mAudio.addEventListener("canplaythrough", (event) => {
+                        this.mAudio.play().catch(
+                            (reason) => {
+                                status.fail(`ERROR play failed: ${reason}`);
+                                setTimeout(() => { next() }, 5000);
+                            }
+                        );
+                    });
+                    this.mAudio.addEventListener("ended", (value) => {
+                        if (this.mEnsureLongEnough && this.mAudio.duration < 5.0) {
+                            // Wait to make the alert last at least 5 seconds
+                            setTimeout(() => {
+                                next();
+                            }, (5.0 - this.mAudio.duration) * 1000);
+                        } else {
+                            // Audio was longer than non-message alert, continue
+                            next();
+                        }
+                    });
+                    this.mAudio.addEventListener("error", (event) => {
+                        status.fail(`ERROR playing audio alert: ${this.mAudio.error.message}`);
+                        setTimeout(() => { next() }, 5000);
+                    });
+                    this.setupScroll();
+                }).catch((error) => {
+                    status.fail(`ERROR fetching audio file: ${error}`);
+                    setTimeout(() => { next() }, 5000);
                 });
-                this.mAudio.addEventListener("error", (event) => {
-                    status.fail(`ERROR playing audio alert: ${this.mAudio.error.message}`);
-                    setTimeout(() => {
-                        next()
-                    }, 5000);
-                });
-                this.setupScroll();
-            }).catch((error) => {
-                status.fail(`ERROR fetching audio file: ${error}`);
-                setTimeout(() => {
-                    next()
-                }, 5000);
-            });
         }
 
         setupScroll() {

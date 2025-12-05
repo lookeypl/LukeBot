@@ -52,16 +52,17 @@ namespace LukeBot.Endpoint
             string domain = LukeBot.Common.Constants.DEFAULT_SERVER_HTTPS_DOMAIN;
             int port = LukeBot.Common.Constants.DEFAULT_SERVER_PORT;
 
-            Conf.TryGet<string>(Common.Constants.PROP_STORE_HTTPS_DOMAIN_PROP, out domain);
-            Conf.TryGet<int>(Common.Constants.PROP_STORE_SERVER_PORT_PROP, out port);
+            if (Conf.TryGet<string>(Common.Constants.PROP_STORE_HTTPS_DOMAIN_PROP, out string gotDomain))
+            {
+                domain = gotDomain;
+            }
+
+            if (Conf.TryGet<int>(Common.Constants.PROP_STORE_SERVER_PORT_PROP, out int gotPort))
+            {
+                port = gotPort;
+            }
 
             AddUrl(domain, port, ref URLs);
-
-            if (!domain.Contains("localhost"))
-            {
-                // add localhost for local testing purposes
-                AddUrl("localhost", port, ref URLs);
-            }
 
             Logger.Log().Info("Endpoint using host addresses:");
             foreach (string addr in URLs)

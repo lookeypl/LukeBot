@@ -67,26 +67,46 @@
         }
 
         setPath(path) {
-            this.mAudioBlobPromise = fetch(path);
+            this.mAudioPath = path;
         }
 
         execute(next, status) {
-            this.mAudioBlobPromise.then((response) => response.blob())
-                                  .then((blob) => {
-                var audioURL = window.URL.createObjectURL(blob);
-                this.mAudio = new Audio(audioURL);
-                this.mAudio.addEventListener("canplaythrough", (event) => {
-                    this.mAudio.play()
-                        .then(() => next())
-                        .catch((reason) => {
-                            status.fail(`ERROR playing audio: ${reason}`);
-                            next();
-                        })
+            fetch(this.mAudioPath)
+                .catch((error) => {
+                    status.fail(`ERROR fetching audio file: ${error}`);
+                    next();
+                })
+                .then((response) => {
+                    if (response.ok) {
+                        return response.blob();
+                    } else {
+                        throw new Error(`Bad response from fetching audio file: ${response.status}`);
+                    }
+                })
+                .catch((error) => {
+                    status.fail(`ERROR getting response blob: ${error}`);
+                    next();
+                })
+                .then((blob) => {
+                    try {
+                        var audioURL = window.URL.createObjectURL(blob);
+                        this.mAudio = new Audio(audioURL);
+                        this.mAudio.addEventListener("canplaythrough", (event) => {
+                            this.mAudio.play()
+                                .then(() => next())
+                                .catch((reason) => {
+                                    status.fail(`ERROR playing audio: ${reason}`);
+                                    next();
+                                })
+                        });
+                    } catch (e) {
+                        status.fail(`ERROR caught while trying to play audio: ${e}`);
+                        next();
+                    }
+                }).catch((error) => {
+                    status.fail(`ERROR playing audio: ${error}`);
+                    next();
                 });
-            }).catch((error) => {
-                status.fail(`ERROR fetching audio file: ${error}`);
-                next();
-            });
         }
 
         interrupt() {
@@ -109,42 +129,63 @@
         }
 
         setPath(path) {
-            this.mAudioBlobPromise = fetch(path);
+            this.mAudioPath = path;
         }
 
         execute(next, status) {
-            this.mAudioBlobPromise.then((response) => response.blob())
-                                  .then((blob) => {
-                var audioURL = window.URL.createObjectURL(blob);
-                this.mAudio = new Audio(audioURL);
-                this.mAudio.addEventListener("ended", (event) => {
-                    // note that this happens after we send back the response that we're done
-                    // since this is supposed to stack and run in parallel
-                    // as such, there can be NO status modifications here
-                    console.log(`ended, time ${this.mTotalTime} length ${this.mTotalLength}`);
-                    if (this.mTotalTime > this.mTotalLength)
-                        return;
+            fetch(this.mAudioPath)
+                .catch((error) => {
+                    status.fail(`ERROR fetching audio file: ${error}`);
+                    next();
+                })
+                .then((response) => {
+                    if (response.ok) {
+                        return response.blob();
+                    } else {
+                        throw new Error(`Bad response from fetching audio file: ${response.status}`);
+                    }
+                })
+                .catch((error) => {
+                    status.fail(`ERROR getting response blob: ${error}`);
+                    next();
+                })
+                .then((blob) => {
+                    try {
+                        var audioURL = window.URL.createObjectURL(blob);
+                        this.mAudio = new Audio(audioURL);
+                        this.mAudio.addEventListener("ended", (event) => {
+                            // note that this happens after we send back the response that we're done
+                            // since this is supposed to stack and run in parallel
+                            // as such, there can be NO status modifications here
+                            console.log(`ended, time ${this.mTotalTime} length ${this.mTotalLength}`);
+                            if (this.mTotalTime > this.mTotalLength)
+                                return;
 
-                    var time = Math.random() * this.mIntervalLength;
-                    this.mTotalTime += this.mMinInterval + time;
-                    setTimeout(() => {
-                        console.log("replay");
-                        this.mAudio.currentTime = 0;
-                        this.mAudio.play();
-                    }, (this.mMinInterval + time) * 1000);
-                });
-                this.mAudio.addEventListener("canplaythrough", (event) => {
-                    this.mAudio.play()
-                        .then(() => next())
-                        .catch((reason) => {
-                            status.fail(`ERROR playing audio: ${reason}`);
-                            next();
+                            var time = Math.random() * this.mIntervalLength;
+                            this.mTotalTime += this.mMinInterval + time;
+                            setTimeout(() => {
+                                console.log("replay");
+                                this.mAudio.currentTime = 0;
+                                this.mAudio.play();
+                            }, (this.mMinInterval + time) * 1000);
                         });
+                        this.mAudio.addEventListener("canplaythrough", (event) => {
+                            this.mAudio.play()
+                                .catch((reason) => {
+                                    status.fail(`ERROR playing audio: ${reason}`);
+                                    next();
+                                })
+                                .then(() => next());
+                        });
+                    } catch (e) {
+                        status.fail(`ERROR caught while trying to play audio: ${e}`);
+                        next();
+                    }
+                })
+                .catch((error) => {
+                    status.fail(`ERROR playing audio: ${error}`);
+                    next();
                 });
-            }).catch((error) => {
-                status.fail(`ERROR fetching audio file: ${error}`);
-                next();
-            });
         }
 
         interrupt() {

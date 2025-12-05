@@ -85,6 +85,10 @@ namespace LukeBot
     [Verb("config", HelpText = "Launches Widget Configuration editor.")]
     public class WidgetConfigCommand: WidgetBaseCommand
     {
+        [Option("update", Default = false, HelpText =
+            "Forces a Configuration push to the Widget. This should happen automatically when editing, but if it doesn't the update can be manually triggered with this flag. Config editor WON'T be started."
+        )]
+        public bool Update { get; set; }
     }
 
     [Verb("enable", HelpText = "Enable Widget support for current user.")]
@@ -256,6 +260,14 @@ namespace LukeBot
 
             try
             {
+                if (arg.Update)
+                {
+                    GetWidgetUserModule(CLI.GetCurrentUser()).PushConfigurationUpdate(arg.Id);
+
+                    msg = "Configuration update pushed for widget " + arg.Id;
+                    return;
+                }
+
                 ConfigurationBase config = GetWidgetUserModule(CLI.GetCurrentUser()).GetWidgetConfiguration(arg.Id);
 
                 CLI.Message("Starting Widget Configuration Editor...");

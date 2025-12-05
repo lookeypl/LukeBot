@@ -311,13 +311,6 @@
     }
     let infoPanel = new InfoPanel();
 
-    class WidgetEventCompletionStatus {
-        constructor(status, reason) {
-            this.Status = status;
-            this.Reason = reason;
-        }
-    }
-
     const TwitchSubscriptionType = {
         New: 0,
         Resub: 1,
@@ -343,13 +336,14 @@
         next() {
             this.mCurrent += 1;
             if (this.mCurrent < this.mChain.length) {
-                this.mChain[this.mCurrent].execute(this.next.bind(this));
+                this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
             }
         }
 
         play() {
             this.mCurrent = 0;
-            this.mChain[this.mCurrent].execute(this.next.bind(this));
+            this.mChainStatus = new WidgetEventCompletionStatus();
+            this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
         }
 
         interrupt() {
@@ -366,7 +360,7 @@
             }
         }
 
-        execute(next) {
+        execute(next, status) {
             throw new Error("execute() has not been implemented");
         }
 
@@ -387,7 +381,7 @@
             this.mAudioBlobPromise = fetch(path);
         }
 
-        execute(next) {
+        execute(next, status) {
             this.mAudioBlobPromise.then((response) => response.blob())
                                   .then((blob) => {
                 var audioURL = window.URL.createObjectURL(blob);
@@ -395,7 +389,10 @@
                 this.mAudio.addEventListener("canplaythrough", (event) => {
                     this.mAudio.play().catch(
                         (reason) => {
-                            alertsWidget.send(new WidgetEventCompletionStatus(2, `ERROR play failed: ${reason}`));
+                            status.fail(`ERROR play failed: ${reason}`);
+                            setTimeout(() => {
+                                next()
+                            }, 5000);
                         }
                     );
                 });
@@ -411,11 +408,17 @@
                     }
                 });
                 this.mAudio.addEventListener("error", (event) => {
-                    alertsWidget.send(new WidgetEventCompletionStatus(2, `ERROR playing audio alert: ${audio.error.message}`));
+                    status.fail(`ERROR playing audio alert: ${this.mAudio.error.message}`);
+                    setTimeout(() => {
+                        next()
+                    }, 5000);
                 });
                 this.setupScroll();
             }).catch((error) => {
-                alertsWidget.send(new WidgetEventCompletionStatus(2, `ERROR fetching audio file: ${error}`));
+                status.fail(`ERROR fetching audio file: ${error}`);
+                setTimeout(() => {
+                    next()
+                }, 5000);
             });
         }
 
@@ -454,7 +457,7 @@
             this.mDetails = details;
         }
 
-        execute(next) {
+        execute(next, status) {
             infoPanel.setTitle(this.mTitle);
             infoPanel.setDetails(this.mDetails);
             infoPanel.show();
@@ -471,7 +474,7 @@
             super();
         }
 
-        execute(next) {
+        execute(next, status) {
             infoPanel.hide(next);
         }
 
@@ -487,7 +490,7 @@
             this.mTimer = null;
         }
 
-        execute(next) {
+        execute(next, status) {
             this.mTimer = setTimeout((wait) => {
                 next();
                 this.mTimer = null;
@@ -505,12 +508,10 @@
     class AlertChainComplete extends AlertBase {
         constructor() {
             super();
-            this.mStatus = 0;
-            this.mReason = "OK";
         }
 
-        execute(next) {
-            alertsWidget.send(new WidgetEventCompletionStatus(this.mStatus, this.mReason));
+        execute(next, status) {
+            alertsWidget.send(status);
         }
 
         interrupt() {
@@ -527,7 +528,7 @@
             alertChain.interrupt();
             alertChain = null;
 
-            alertsWidget.send(new WidgetEventCompletionStatus(1, "Alert interrupted"));
+            alertsWidget.send(new WidgetEventCompletionStatus().fail("Alert interrupted"));
         }
     });
     alertsWidget.registerMessage("Config", (obj) => {
@@ -538,25 +539,7 @@
             infoPanel.alignRight();
         }
 
-        alertsWidget.send(new WidgetEventCompletionStatus(0, "Configuration applied"));
-    });
-    alertsWidget.registerMessage("TwitchChannelPointsRedemption", (obj) => {
-        alertChain = new AlertChain(obj);
-
-        // TODO widget's configuration should adjust this
-        switch (obj.Title)
-        {
-        case "Brian":
-            if (obj.Message) alertChain.add(new TTSAlert("Brian", obj.Message));
-            break;
-        case "Jacek":
-            if (obj.Message) alertChain.add(new TTSAlert("Jacek", obj.Message));
-            break;
-        default: break;
-        }
-
-        alertChain.add(new AlertChainComplete());
-        alertChain.play();
+        alertsWidget.send(new WidgetEventCompletionStatus());
     });
     alertsWidget.registerMessage("TwitchCheer", (obj) => {
         alertChain = new AlertChain(obj);
@@ -604,7 +587,7 @@
         alertChain.play();
     });
     alertsWidget.registerMessageError((error) => {
-        alertsWidget.send(new WidgetEventCompletionStatus(1, `ERROR exception while preparing/playing alert: ${error}`));
+        alertsWidget.send(new WidgetEventCompletionStatus().fail(`ERROR exception while preparing/playing alert: ${error}`));
     });
 
 

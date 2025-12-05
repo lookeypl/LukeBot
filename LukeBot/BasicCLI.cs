@@ -234,8 +234,11 @@ namespace LukeBot
         {
             try
             {
-                Console.CancelKeyPress += delegate
+                Console.CancelKeyPress += (_, e) =>
                 {
+                    // Cancel process termination at this point, the Bot has to close properly
+                    e.Cancel = true;
+
                     Logger.Log().Info("Ctrl+C handled: Requested shutdown");
                     mState = State.DONE;
                     Utils.CancelConsoleIO();

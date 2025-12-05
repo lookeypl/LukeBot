@@ -20,6 +20,9 @@ namespace LukeBot.Widget
      */
     public class AudioPlay: IWidget
     {
+        private const string FILE_REDEMPTION = "file";
+        private const string TTS_REDEMPTION = "tts";
+
         public class AudioPlayInterrupt: EventArgsBase
         {
             public AudioPlayInterrupt()
@@ -30,19 +33,44 @@ namespace LukeBot.Widget
 
         public class AudioPlayStartPlayback: EventArgsBase
         {
+            public string Type { get; set; }
+
+            public AudioPlayStartPlayback(string eventName, string type)
+                : base(eventName)
+            {
+                Type = type;
+            }
+        }
+
+        public class AudioPlayStartFilePlayback: AudioPlayStartPlayback
+        {
             public string File { get; set; }
             public bool RandomRepeat { get; set; }
             public int TotalLength { get; set; }
             public int MinInterval { get; set; }
             public int MaxInterval { get; set; }
 
-            public AudioPlayStartPlayback(string file)
-                : base("AudioPlayStartPlayback")
+            public AudioPlayStartFilePlayback(string file)
+                : base("AudioPlayStartFilePlayback", FILE_REDEMPTION)
             {
                 File = file;
                 RandomRepeat = false;
             }
         }
+
+        public class AudioPlayStartTTSPlayback: AudioPlayStartPlayback
+        {
+            public string Voice { get; set; }
+            public string Message { get; set; }
+
+            public AudioPlayStartTTSPlayback(string voice, string message)
+                : base("AudioPlayStartTTSPlayback", TTS_REDEMPTION)
+            {
+                Voice = voice;
+                Message = message;
+            }
+        }
+
 
         public class AudioTriggerFile: Configuration<AudioTriggerFile>
         {
@@ -62,29 +90,83 @@ namespace LukeBot.Widget
             }
         }
 
+        public class VisibleForFileRedemption: ConfigurationParameterizedVisibilityAttribute<string>
+        {
+            public VisibleForFileRedemption(): base(nameof(AudioTrigger.RedemptionType)) {}
+
+            public override bool Predicate(string parameter)
+            {
+                return parameter == FILE_REDEMPTION;
+            }
+        }
+
+        public class VisibleForTTSRedemption: ConfigurationParameterizedVisibilityAttribute<string>
+        {
+            public VisibleForTTSRedemption(): base(nameof(AudioTrigger.RedemptionType)) {}
+
+            public override bool Predicate(string parameter)
+            {
+                return parameter == TTS_REDEMPTION;
+            }
+        }
+
         public class AudioTrigger: Configuration<AudioTrigger>
         {
             [ConfigurationField]
             public string RedemptionName = "FILLMEIN";
+            [ConfigurationListRestrictedField<string>(new[] { FILE_REDEMPTION, TTS_REDEMPTION })]
+            public string RedemptionType = FILE_REDEMPTION;
+
+            // File redemption details
             [ConfigurationField]
+            [VisibleForFileRedemption]
             public List<AudioTriggerFile> Files = new();
             [ConfigurationField]
+            [VisibleForFileRedemption]
             public int RepeatLength = 0;
             [ConfigurationField]
+            [VisibleForFileRedemption]
             public int MinRepeatInterval = 0;
             [ConfigurationField]
+            [VisibleForFileRedemption]
             public int MaxRepeatInterval = 0;
+
+            [ConfigurationField]
+            [VisibleForTTSRedemption]
+            public string Voice = "";
 
             internal int TotalOdds = 0;
 
             public override string ToString()
             {
-                return String.Format("<{0}, {1} files, {2}, {3}, {4}>", RedemptionName, Files.Count, RepeatLength, MinRepeatInterval, MaxRepeatInterval);
+                string ret = String.Format("<{0}, {1}, ", RedemptionName, RedemptionType);
+                switch (RedemptionType)
+                {
+                case FILE_REDEMPTION:
+                {
+                    ret += String.Format("{0} files, repeat for {1}, every {2}-{3}",
+                        Files.Count,
+                        RepeatLength,
+                        MinRepeatInterval,
+                        MaxRepeatInterval
+                    );
+                    break;
+                }
+                case TTS_REDEMPTION:
+                {
+                    ret += String.Format("{0}", Voice);
+                    break;
+                }
+                }
+
+                ret += ">";
+
+                return ret;
             }
 
             public override string ToShortString()
             {
-                return RedemptionName;
+                return String.Format("{0} ({1})", RedemptionName, RedemptionType);
             }
         }
 
@@ -112,13 +194,21 @@ namespace LukeBot.Widget
                 return;
             }
 
-            if (resp.Status != 0)
+            if (resp.ErrorCount == 0)
             {
-                Logger.Log().Warning("Widget failed to complete the event: {0}", resp.Reason);
+                Logger.Log().Debug("Widget completed event successfully");
+            }
+            else if (resp.ErrorCount == 1)
+            {
+                Logger.Log().Warning("Widget failed to complete the event: {0}", resp.Reason[0]);
             }
             else
             {
-                Logger.Log().Debug("Widget completed event");
+                Logger.Log().Warning("{0} errors occured during Widget's event completion attempt:", resp.ErrorCount);
+                for (int i = 0; i < resp.Reason.Length; ++i)
+                {
+                    Logger.Log().Warning("  - {0}", resp.Reason[i]);
+                }
             }
         }
 
@@ -136,45 +226,54 @@ namespace LukeBot.Widget
 
             AudioTrigger trigger = mTriggers[a.Title];
 
-            Random rng = new Random();
-            int fileIdx = -1;
-            if (trigger.TotalOdds == 0)
+            if (trigger.RedemptionType == FILE_REDEMPTION)
             {
-                if (trigger.Files.Count == 0)
+                Random rng = new Random();
+                int fileIdx = -1;
+                if (trigger.TotalOdds == 0)
                 {
-                    Logger.Log().Warning("Audio trigger {0} has no files added", a.Title);
-                    return;
+                    if (trigger.Files.Count == 0)
+                    {
+                        Logger.Log().Warning("Audio trigger {0} has no files added", a.Title);
+                        return;
+                    }
+
+                    // TotalOdds are 0 for some reason, as a backup randomize equally between all files
+                    fileIdx = rng.Next() % trigger.Files.Count;
+                }
+                else
+                {
+                    int rngRoll = rng.Next() % trigger.TotalOdds;
+
+                    // iterate over all files until odds weight falls where needed
+                    fileIdx = 0;
+                    foreach (AudioTriggerFile f in trigger.Files)
+                    {
+                        if (f.Odds > rngRoll) break;
+
+                        rngRoll -= f.Odds;
+                        fileIdx++;
+                    }
                 }
 
-                // TotalOdds are 0 for some reason, as a backup randomize equally between all files
-                fileIdx = rng.Next() % trigger.Files.Count;
-            }
-            else
-            {
-                int rngRoll = rng.Next() % trigger.TotalOdds;
+                AudioPlayStartFilePlayback playback = new(trigger.Files[fileIdx].FileName);
 
-                // iterate over all files until odds weight falls where needed
-                fileIdx = 0;
-                foreach (AudioTriggerFile f in trigger.Files)
+                if (trigger.RepeatLength > 0)
                 {
-                    if (f.Odds > rngRoll) break;
-
-                    rngRoll -= f.Odds;
-                    fileIdx++;
+                    playback.RandomRepeat = true;
+                    playback.TotalLength = trigger.RepeatLength;
+                    playback.MinInterval = trigger.MinRepeatInterval;
+                    playback.MaxInterval = trigger.MaxRepeatInterval;
                 }
+
+                SendToWS(playback);
             }
-
-            AudioPlayStartPlayback playback = new(trigger.Files[fileIdx].FileName);
-
-            if (trigger.RepeatLength > 0)
+            else if (trigger.RedemptionType == TTS_REDEMPTION)
             {
-                playback.RandomRepeat = true;
-                playback.TotalLength = trigger.RepeatLength;
-                playback.MinInterval = trigger.MinRepeatInterval;
-                playback.MaxInterval = trigger.MaxRepeatInterval;
+                AudioPlayStartTTSPlayback playback = new(trigger.Voice, a.Message);
+                SendToWS(playback);
             }
 
-            SendToWS(playback);
             AwaitEventCompletion();
         }
 
@@ -195,10 +294,13 @@ namespace LukeBot.Widget
             Config c = GetConfig() as Config;
             foreach (AudioTrigger t in c.Triggers)
             {
-                t.TotalOdds = 0;
-                foreach (AudioTriggerFile f in t.Files)
+                if (t.RedemptionType == FILE_REDEMPTION)
                 {
-                    t.TotalOdds += f.Odds;
+                    t.TotalOdds = 0;
+                    foreach (AudioTriggerFile f in t.Files)
+                    {
+                        t.TotalOdds += f.Odds;
+                    }
                 }
 
                 mTriggers.Add(t.RedemptionName, t);

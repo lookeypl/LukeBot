@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
 using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Communication.Common;
@@ -64,13 +65,21 @@ namespace LukeBot.Widget
                     return;
                 }
 
-                if (resp.Status != 0)
+                if (resp.ErrorCount == 0)
                 {
-                    Logger.Log().Warning("Widget failed to complete the event: {0}", resp.Reason);
+                    Logger.Log().Debug("Widget completed event successfully");
+                }
+                else if (resp.ErrorCount == 1)
+                {
+                    Logger.Log().Warning("Widget failed to complete the event: {0}", resp.Reason[0]);
                 }
                 else
                 {
-                    Logger.Log().Debug("Widget completed event");
+                    Logger.Log().Warning("{0} errors occured during Widget's event completion attempt:", resp.ErrorCount);
+                    for (int i = 0; i < resp.Reason.Length; ++i)
+                    {
+                        Logger.Log().Warning("  - {0}", resp.Reason[i]);
+                    }
                 }
             }
             catch (System.Exception e)
@@ -138,9 +147,6 @@ namespace LukeBot.Widget
         {
             EventCollection collection = Comms.Event.User(mLBUser);
 
-            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Endpoint += OnSimpleEvent<TwitchChannelPointsRedemptionArgs>;
-            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).InterruptEndpoint += OnEventInterrupt;
-
             collection.Event(Events.TWITCH_CHEER).Endpoint += OnSimpleEvent<TwitchCheerArgs>;
             collection.Event(Events.TWITCH_CHEER).InterruptEndpoint += OnEventInterrupt;
 
@@ -151,9 +157,6 @@ namespace LukeBot.Widget
         protected override void OnUnload()
         {
             EventCollection collection = Comms.Event.User(mLBUser);
-
-            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Endpoint -= OnSimpleEvent<TwitchChannelPointsRedemptionArgs>;
-            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).InterruptEndpoint -= OnEventInterrupt;
 
             collection.Event(Events.TWITCH_CHEER).Endpoint -= OnSimpleEvent<TwitchCheerArgs>;
             collection.Event(Events.TWITCH_CHEER).InterruptEndpoint -= OnEventInterrupt;

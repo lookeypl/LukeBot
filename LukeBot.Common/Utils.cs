@@ -12,7 +12,8 @@ namespace LukeBot.Common
 {
     public class Utils
     {
-        // WinAPI "reconstruction" to al
+        #if OS_WINDOWS
+        // WinAPI "reconstruction" to allow cancelling STDIN
         private const int STD_INPUT_HANDLE = -10;
 
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -20,23 +21,31 @@ namespace LukeBot.Common
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool CancelIoEx(IntPtr handle, IntPtr lpOverlapped);
+        #elif OS_LINUX
+        // TODO
+        #else
+        #error Platform not supported
+        #endif // (WINDOWS)
 
         public static IntPtr GetHandleForStdin()
         {
+            #if OS_WINDOWS
             return GetStdHandle(STD_INPUT_HANDLE);
+            #else
+            return 0;
+            #endif
         }
 
         public static void CancelIo(IntPtr handle)
         {
+            #if OS_WINDOWS
             CancelIoEx(handle, IntPtr.Zero);
+            #endif
         }
 
         public static void CancelConsoleIO()
         {
-        #if (WINDOWS)
             CancelIo(GetHandleForStdin());
-        #elif (LINUX)
-        #endif
         }
 
         public static string HttpStatusCodeToHTTPString(HttpStatusCode code)

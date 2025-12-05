@@ -16,6 +16,18 @@ function getMeta(name) {
     return '';
 }
 
+class WidgetEventCompletionStatus {
+    constructor() {
+        this.ErrorCount = 0;
+        this.Reason = [];
+    }
+
+    fail(reason) {
+        this.ErrorCount = this.ErrorCount + 1;
+        this.Reason.push(reason);
+    }
+}
+
 class LukeBotWidget
 {
     constructor() {

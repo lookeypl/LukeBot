@@ -4,12 +4,7 @@
 <script src="/js/lukebot-widget-common.js"></script>
 
 <script>
-    class WidgetEventCompletionStatus {
-        constructor(status, reason) {
-            this.Status = status;
-            this.Reason = reason;
-        }
-    }
+    const STREAMELEMENTS_SPEECH_API = "https://api.streamelements.com/kappa/v2/speech";
 
     // TODO copied from Alerts.html. Should be probably common-ized
     class AlertChain {
@@ -31,13 +26,14 @@
         next() {
             this.mCurrent += 1;
             if (this.mCurrent < this.mChain.length) {
-                this.mChain[this.mCurrent].execute(this.next.bind(this));
+                this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
             }
         }
 
         play() {
             this.mCurrent = 0;
-            this.mChain[this.mCurrent].execute(this.next.bind(this));
+            this.mChainStatus = new WidgetEventCompletionStatus();
+            this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
         }
 
         interrupt() {
@@ -54,7 +50,7 @@
             }
         }
 
-        execute(next) {
+        execute(next, status) {
             throw new Error("execute() has not been implemented");
         }
 
@@ -74,22 +70,22 @@
             this.mAudioBlobPromise = fetch(path);
         }
 
-        execute(next) {
+        execute(next, status) {
             this.mAudioBlobPromise.then((response) => response.blob())
                                   .then((blob) => {
                 var audioURL = window.URL.createObjectURL(blob);
                 this.mAudio = new Audio(audioURL);
                 this.mAudio.addEventListener("canplaythrough", (event) => {
-                    this.mAudio.play();
-                    next();
-                });
-                this.mAudio.addEventListener("error", (event) => {
-                    let completionStatus = new WidgetEventCompletionStatus(2, `ERROR playing audio alert: ${audio.error.message}`);
-                    socket.send(JSON.stringify(completionStatus));
+                    this.mAudio.play()
+                        .then(() => next())
+                        .catch((reason) => {
+                            status.fail(`ERROR playing audio: ${reason}`);
+                            next();
+                        })
                 });
             }).catch((error) => {
-                let completionStatus = new WidgetEventCompletionStatus(2, `ERROR fetching audio file: ${error}`);
-                socket.send(JSON.stringify(completionStatus));
+                status.fail(`ERROR fetching audio file: ${error}`);
+                next();
             });
         }
 
@@ -116,12 +112,15 @@
             this.mAudioBlobPromise = fetch(path);
         }
 
-        execute(next) {
+        execute(next, status) {
             this.mAudioBlobPromise.then((response) => response.blob())
                                   .then((blob) => {
                 var audioURL = window.URL.createObjectURL(blob);
                 this.mAudio = new Audio(audioURL);
                 this.mAudio.addEventListener("ended", (event) => {
+                    // note that this happens after we send back the response that we're done
+                    // since this is supposed to stack and run in parallel
+                    // as such, there can be NO status modifications here
                     console.log(`ended, time ${this.mTotalTime} length ${this.mTotalLength}`);
                     if (this.mTotalTime > this.mTotalLength)
                         return;
@@ -134,23 +133,40 @@
                         this.mAudio.play();
                     }, (this.mMinInterval + time) * 1000);
                 });
-                this.mAudio.addEventListener("error", (event) => {
-                    let completionStatus = new WidgetEventCompletionStatus(2, `ERROR playing audio alert: ${audio.error.message}`);
-                    socket.send(JSON.stringify(completionStatus));
-                });
                 this.mAudio.addEventListener("canplaythrough", (event) => {
-                    this.mAudio.play();
-                    next();
+                    this.mAudio.play()
+                        .then(() => next())
+                        .catch((reason) => {
+                            status.fail(`ERROR playing audio: ${reason}`);
+                            next();
+                        });
                 });
             }).catch((error) => {
-                let completionStatus = new WidgetEventCompletionStatus(2, `ERROR fetching audio file: ${error}`);
-                socket.send(JSON.stringify(completionStatus));
+                status.fail(`ERROR fetching audio file: ${error}`);
+                next();
             });
         }
 
         interrupt() {
             if (this.mAudio)
                 this.mAudio.pause();
+        }
+    }
+
+    class TTSAlert extends AudioAlert {
+        constructor(voice, message) {
+            super();
+            this.mURL = new URL(STREAMELEMENTS_SPEECH_API);
+            this.mURL.searchParams.append("voice", voice);
+            this.mURL.searchParams.append("text", message);
+            this.setPath(this.mURL.toString());
+            this.mEnsureLongEnough = true;
+        }
+
+        setupScroll() {
+            this.mAudio.addEventListener("loadedmetadata", (event) => {
+                infoPanel.launchScroll(event.target.duration);
+            })
         }
     }
 
@@ -161,8 +177,8 @@
             this.mReason = "OK";
         }
 
-        execute(next) {
-            audioPlayWidget.send(new WidgetEventCompletionStatus(this.mStatus, this.mReason));
+        execute(next, status) {
+            audioPlayWidget.send(status);
         }
 
         interrupt() {
@@ -178,9 +194,9 @@
             audioTrack = null;
         }
     });
-    audioPlayWidget.registerMessage("AudioPlayStartPlayback", (obj) => {
+    audioPlayWidget.registerMessage("AudioPlayStartFilePlayback", (obj) => {
         if (!obj.File) {
-            audioPlayWidget.send(new WidgetEventCompletionStatus(1, `ERROR undefined file to play`));
+            audioPlayWidget.send(new WidgetEventCompletionStatus().fail(`ERROR undefined file to play`));
         }
 
         console.log(`LKDEBUG start playback of ${obj.File}, repeat ${obj.RandomRepeat}`);
@@ -197,7 +213,15 @@
         audioPlayChain.add(new AlertChainComplete());
         audioPlayChain.play();
     });
+    audioPlayWidget.registerMessage("AudioPlayStartTTSPlayback", (obj) => {
+        console.log(`LKDEBUG start TTS playback voice ${obj.Voice} message ${obj.Message}`);
+
+        audioPlayChain = new AlertChain(obj);
+        audioPlayChain.add(new TTSAlert(obj.Voice, obj.Message));
+        audioPlayChain.add(new AlertChainComplete());
+        audioPlayChain.play();
+    });
     audioPlayWidget.registerMessageError((error) => {
-        audioPlayWidget.send(new WidgetEventCompletionStatus(1, `ERROR exception while preparing/playing audio file: ${error}`));
+        audioPlayWidget.send(new WidgetEventCompletionStatus().fail(`ERROR exception while preparing/playing audio file: ${error}`));
     });
 </script>

@@ -17,8 +17,8 @@ namespace LukeBot.Widget
 {
     internal class WidgetEventCompletionResponse
     {
-        public int Status { get; set; }
-        public string Reason { get; set; }
+        public int ErrorCount { get; set; }
+        public string[] Reason { get; set; }
     }
 
     public abstract class IWidget

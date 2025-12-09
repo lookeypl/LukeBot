@@ -17,12 +17,20 @@ using Intercom = LukeBot.Communication.Common.Intercom;
 using LukeBot.Services;
 using LukeBot.Widget.Common;
 using Microsoft.Extensions.FileProviders;
+using System.Net.Http;
+using NgrokExtensions;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 
 
 namespace LukeBot.Endpoint
 {
     public class Startup
     {
+        private string mTTSEndpoint = "";
+
         private IWidgetService GetWidgetService()
         {
             return Service.Get(Constants.WIDGET_SERVICE_NAME) as IWidgetService;
@@ -33,6 +41,18 @@ namespace LukeBot.Endpoint
             StreamReader reader = File.OpenText("Pages/" + page);
             string p = reader.ReadToEnd();
             reader.Close();
+
+            context.Response.Headers.ContentType = "text/html";
+            await context.Response.WriteAsync(p);
+        }
+
+        async Task LoadJSPage(string page, HttpContext context)
+        {
+            StreamReader reader = File.OpenText("Pages/" + page);
+            string p = reader.ReadToEnd();
+            reader.Close();
+
+            context.Response.Headers.ContentType = "text/javascript";
             await context.Response.WriteAsync(p);
         }
 
@@ -139,7 +159,7 @@ namespace LukeBot.Endpoint
                 context.Response.Headers.ContentType = "text/html";
                 await context.Response.WriteAsync(pageContents);
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
                 await context.Response.WriteAsync("Couldn't load widget: " + e.Message);
             }
@@ -172,11 +192,62 @@ namespace LukeBot.Endpoint
                 // I'm not sure why this happens, probably should be taken care of but I couldn't find any reason why
                 // or how to remedy it.
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
                 Logger.Log().Error("Error while processing WS connection for widget: {0}", e.Message);
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             }
+        }
+
+        async Task HandleTTSCallback(HttpContext context)
+        {
+            // TODO this endpoint MUST validate the request came from an active widget
+            if (mTTSEndpoint == "")
+            {
+                context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                await context.Response.WriteAsync("TTS Endpoint not available");
+                return;
+            }
+
+            if (!context.Request.Query.ContainsKey("voice") ||
+                !context.Request.Query.ContainsKey("text"))
+            {
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                await context.Response.WriteAsync("Cannot generate TTS, arguments invalid");
+                return;
+            }
+
+            string voice = context.Request.Query["voice"];
+            string text = context.Request.Query["text"];
+
+            HttpClient client = new HttpClient();
+
+            Dictionary<string, string> query = new();
+            query.Add("voice", voice);
+            query.Add("text", text);
+
+            UriBuilder builder = new UriBuilder(new Uri(mTTSEndpoint));
+            builder.Query += String.Join('&', query.Select(x => x.Key + '=' + x.Value).ToArray());
+
+            HttpResponseMessage ttsFetchResponse = await client.GetAsync(builder.ToString());
+
+            if (!ttsFetchResponse.IsSuccessStatusCode)
+            {
+                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                await context.Response.WriteAsync(String.Format("Failed to fetch TTS: {0} ({1})", ttsFetchResponse.StatusCode, ttsFetchResponse.ReasonPhrase));
+                return;
+            }
+
+            byte[] data = await ttsFetchResponse.Content.ReadAsByteArrayAsync();
+
+            // BIG TODO
+            // This step requires some sort of file manager
+            // We should cache these results somewhere, maybe invalidate them after some time
+            // And forward a path to resource that the Widget can use
+
+            // forward data to the response
+            context.Response.ContentType = "audio/ogg";
+            await context.Response.BodyWriter.WriteAsync(data);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -184,6 +255,11 @@ namespace LukeBot.Endpoint
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+            }
+
+            if (!Conf.TryGet<string>(Common.Constants.PROP_STORE_TTS_ENDPOINT_PROP, out mTTSEndpoint))
+            {
+                Logger.Log().Warning("TTS Endpoint not configured, TTS not available");
             }
 
             app.UseHttpsRedirection();
@@ -206,7 +282,7 @@ namespace LukeBot.Endpoint
                 });*/
                 endpoints.MapGet("js/{script}", async context => {
                     var script = context.Request.RouteValues["script"];
-                    await LoadPage($"js/{script}", context);
+                    await LoadJSPage($"js/{script}", context);
                 });
                 /*endpoints.MapGet("views/{view}", async context => {
                     var view = context.Request.RouteValues["view"];
@@ -227,6 +303,9 @@ namespace LukeBot.Endpoint
                 endpoints.Map("widgetws/{widget}", async context => {
                     var widget = context.Request.RouteValues["widget"];
                     await HandleWidgetWSCallback($"{widget}", context);
+                });
+                endpoints.Map("widget/tts", async context => {
+                    await HandleTTSCallback(context);
                 });
             });
         }

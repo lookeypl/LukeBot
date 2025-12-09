@@ -4,8 +4,6 @@
 <script src="/js/lukebot-widget-common.js"></script>
 
 <script>
-    const STREAMELEMENTS_SPEECH_API = "https://api.streamelements.com/kappa/v2/speech";
-
     // TODO copied from Alerts.html. Should be probably common-ized
     class AlertChain {
         constructor(receivedObject) {
@@ -197,10 +195,10 @@
     class TTSAlert extends AudioAlert {
         constructor(voice, message) {
             super();
-            this.mURL = new URL(STREAMELEMENTS_SPEECH_API);
-            this.mURL.searchParams.append("voice", voice);
-            this.mURL.searchParams.append("text", message);
-            this.setPath(this.mURL.toString());
+            var urlParams = new URLSearchParams();
+            urlParams.append("voice", voice);
+            urlParams.append("text", message);
+            this.setPath("/widget/tts?" + urlParams.toString());
             this.mEnsureLongEnough = true;
         }
 

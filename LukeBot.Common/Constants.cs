@@ -16,6 +16,7 @@ namespace LukeBot.Common
         public const string PROP_STORE_LOGIN_PROP = "login";
         public const string PROP_STORE_RECONNECT_COUNT_PROP_NAME = "reconnect_count";
         public const string PROP_STORE_SERVER_PING_THRESHOLD_PROP_NAME = "ping_threshold";
+        public const string PROP_STORE_TTS_ENDPOINT_PROP_NAME = "tts_endpoint";
 
         public static readonly Path PROP_STORE_SERVER_IP_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_SERVER_IP_PROP_NAME);
         public static readonly Path PROP_STORE_SERVER_PORT_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_SERVER_PORT_PROP_NAME);
@@ -24,6 +25,7 @@ namespace LukeBot.Common
         public static readonly Path PROP_STORE_USERS_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_USERS_PROP_NAME);
         public static readonly Path PROP_STORE_RECONNECT_COUNT_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_RECONNECT_COUNT_PROP_NAME);
         public static readonly Path PROP_STORE_SERVER_PING_THRESHOLD_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_SERVER_PING_THRESHOLD_PROP_NAME);
+        public static readonly Path PROP_STORE_TTS_ENDPOINT_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_TTS_ENDPOINT_PROP_NAME);
 
         public const string DEFAULT_SERVER_IP = "127.0.0.1";
         public const int DEFAULT_SERVER_PORT = 443;

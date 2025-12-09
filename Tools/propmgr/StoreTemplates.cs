@@ -20,11 +20,13 @@ public class DefaultStoreTemplate: StoreTemplate
     public override void Fill(PropertyStore store)
     {
         store.Add(LukeBot.Common.Constants.PROP_STORE_SERVER_IP_PROP, Property.Create<string>(LukeBot.Common.Constants.DEFAULT_SERVER_IP));
+        store.Add(LukeBot.Common.Constants.PROP_STORE_SERVER_PORT_PROP, Property.Create<int>(LukeBot.Common.Constants.DEFAULT_SERVER_PORT));
         store.Add(LukeBot.Common.Constants.PROP_STORE_HTTPS_DOMAIN_PROP, Property.Create<string>(LukeBot.Common.Constants.DEFAULT_SERVER_HTTPS_DOMAIN));
         store.Add(LukeBot.Common.Constants.PROP_STORE_HTTPS_EMAIL_PROP, Property.Create<string>("my@email.com"));
         store.Add(LukeBot.Common.Constants.PROP_STORE_USERS_PROP, Property.Create<string[]>(new string[] {}));
         store.Add(LukeBot.Common.Constants.PROP_STORE_RECONNECT_COUNT_PROP, Property.Create<int>(10));
         store.Add(LukeBot.Common.Constants.PROP_STORE_SERVER_PING_THRESHOLD_PROP, Property.Create<int>(LukeBot.Common.Constants.DEFAULT_PING_TIMER_THRESHOLD));
+        store.Add(LukeBot.Common.Constants.PROP_STORE_TTS_ENDPOINT_PROP, Property.Create<string>(""));
 
         store.Add(LukeBot.Config.Path.Parse("twitch.api_endpoint"), Property.Create<string>(Twitch.DEFAULT_API_URI));
         store.Add(LukeBot.Config.Path.Parse("twitch.login"), Property.Create<string>(LukeBot.Common.Constants.DEFAULT_LOGIN_NAME));

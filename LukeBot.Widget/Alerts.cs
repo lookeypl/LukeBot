@@ -41,14 +41,14 @@ namespace LukeBot.Widget
             private int ToMonths = 0;
         }
 
-        public class Config: Configuration<Config>
+        public class AlertsConfig: Configuration<AlertsConfig>
         {
             [ConfigurationListRestrictedField<string>(new[] { "left", "right" })]
             private string Alignment = "right";
             [ConfigurationListRestrictedField<string>(new[] { "simple", "classic" })]
             private string Style = "simple";
 
-            public Config() {}
+            public AlertsConfig() {}
         }
 
         private void AwaitEventCompletion()
@@ -167,7 +167,7 @@ namespace LukeBot.Widget
 
         protected override ConfigurationBase CreateDefaultConfiguration()
         {
-            return new Config();
+            return new AlertsConfig();
         }
 
         public Alerts(string lbUser, string id, string name)

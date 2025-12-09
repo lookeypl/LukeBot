@@ -145,7 +145,18 @@
 </div>
 
 <script>
-    const STREAMELEMENTS_SPEECH_API = "https://api.streamelements.com/kappa/v2/speech";
+    class AlertsConfig {
+        constructor(recvObj) {
+            if (recvObj.EventName != "AlertsConfig") {
+                throw new Error("Invalid config object received");
+            }
+
+            this.Alignment = recvObj.Alignment;
+            this.Style = recvObj.Style;
+        }
+    }
+
+    let Settings = null;
 
     class InfoPanel {
         constructor() {
@@ -444,10 +455,10 @@
     class TTSAlert extends AudioAlert {
         constructor(voice, message) {
             super();
-            this.mURL = new URL(STREAMELEMENTS_SPEECH_API);
-            this.mURL.searchParams.append("voice", voice);
-            this.mURL.searchParams.append("text", message);
-            this.setPath(this.mURL.toString());
+            var urlParams = new URLSearchParams();
+            urlParams.append("voice", voice);
+            urlParams.append("text", message);
+            this.setPath("/widget/tts?" + urlParams.toString());
             this.mEnsureLongEnough = true;
         }
 
@@ -531,6 +542,9 @@
     let alertChain = null;
 
     let alertsWidget = new LukeBotWidget();
+    alertsWidget.registerMessageError((error) => {
+        alertsWidget.send(new WidgetEventCompletionStatus().fail(`ERROR exception while preparing/playing alert: ${error}`));
+    });
     alertsWidget.registerMessage("AlertInterrupt", (obj) => {
         // interrupt has been triggerred, let's pause the chain and clear it
         if (alertChain != null) {
@@ -540,11 +554,13 @@
             alertsWidget.send(new WidgetEventCompletionStatus().fail("Alert interrupted"));
         }
     });
-    alertsWidget.registerMessage("Config", (obj) => {
+    alertsWidget.registerMessage("AlertsConfig", (obj) => {
+        Settings = new AlertsConfig(obj);
+
         // picked up configuration message; read and adjust
-        if (obj.Alignment && obj.Alignment == "left") {
+        if (Settings.Alignment && Settings.Alignment == "left") {
             infoPanel.alignLeft();
-        } else if (obj.Alignment && obj.Alignment == "right") {
+        } else if (Settings.Alignment && Settings.Alignment == "right") {
             infoPanel.alignRight();
         }
 
@@ -594,9 +610,6 @@
         alertChain.add(new HideInfoAlert());
         alertChain.add(new AlertChainComplete());
         alertChain.play();
-    });
-    alertsWidget.registerMessageError((error) => {
-        alertsWidget.send(new WidgetEventCompletionStatus().fail(`ERROR exception while preparing/playing alert: ${error}`));
     });
 
 

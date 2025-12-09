@@ -25,6 +25,7 @@ class WidgetEventCompletionStatus {
     fail(reason) {
         this.ErrorCount = this.ErrorCount + 1;
         this.Reason.push(reason);
+        return this;
     }
 }
 

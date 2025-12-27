@@ -3,12 +3,12 @@ using System.Threading;
 using System.Collections.Generic;
 using LukeBot.Logging;
 using LukeBot.API;
-using LukeBot.Spotify.Common;
+using LukeBot.Spotify;
 using LukeBot.Communication;
 using LukeBot.Common;
 
 
-namespace LukeBot.Spotify
+namespace LukeBot.Spotify.Impl
 {
     class NowPlaying: IEventPublisher
     {
@@ -39,13 +39,13 @@ namespace LukeBot.Spotify
 
             events.Add(new EventDescriptor()
             {
-                Name = Spotify.Common.Events.SPOTIFY_STATE_UPDATE,
+                Name = Spotify.Events.SPOTIFY_STATE_UPDATE,
                 Description = "Spotify Player state update. Emitted regularly when playback state is fetched from Spotify servers.",
                 Dispatcher = null
             });
             events.Add(new EventDescriptor()
             {
-                Name = Spotify.Common.Events.SPOTIFY_TRACK_CHANGED,
+                Name = Spotify.Events.SPOTIFY_TRACK_CHANGED,
                 Description = "Spotify Player track update. Emitted when played track is changed to a different one.",
                 Dispatcher = null
             });
@@ -72,10 +72,10 @@ namespace LukeBot.Spotify
             {
                 switch (e.eventName)
                 {
-                case Spotify.Common.Events.SPOTIFY_STATE_UPDATE:
+                case Spotify.Events.SPOTIFY_STATE_UPDATE:
                     mStateUpdateCallback = e;
                     break;
-                case Spotify.Common.Events.SPOTIFY_TRACK_CHANGED:
+                case Spotify.Events.SPOTIFY_TRACK_CHANGED:
                     mTrackChangedCallback = e;
                     break;
                 default:

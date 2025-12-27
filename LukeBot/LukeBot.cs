@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.Threading;
+using LukeBot.Spotify.Impl;
 using LukeBot.User.Impl;
 
 
@@ -95,7 +96,7 @@ namespace LukeBot
                 Logger.Log().Info("Initializing Services...");
                 Service.Register(UserService.Create());
                 Service.Register(new Twitch.TwitchService());
-                Service.Register(new Spotify.SpotifyService());
+                Service.Register(SpotifyService.Create());
                 Service.Register(new Widget.WidgetService());
 
                 InterfaceType uiType = opts.CLI;

@@ -4,12 +4,12 @@ using System.Net;
 using LukeBot.Logging;
 using LukeBot.API;
 using LukeBot.Config;
-using LukeBot.Spotify.Common;
+using LukeBot.Spotify;
 using CommonConstants = LukeBot.Common.Constants;
 using System.Net.Http;
 
 
-namespace LukeBot.Spotify
+namespace LukeBot.Spotify.Impl
 {
     public class SpotifyUserModule: ISpotifyUserModule
     {

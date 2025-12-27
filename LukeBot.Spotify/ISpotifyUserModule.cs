@@ -1,7 +1,7 @@
 using LukeBot.Services;
 using LukeBot.User;
 
-namespace LukeBot.Spotify.Common
+namespace LukeBot.Spotify
 {
     public interface ISpotifyUserModule: IUserModule
     {

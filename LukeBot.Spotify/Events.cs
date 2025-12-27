@@ -2,7 +2,7 @@ using System;
 using LukeBot.Common;
 
 
-namespace LukeBot.Spotify.Common
+namespace LukeBot.Spotify
 {
     public class Events
     {

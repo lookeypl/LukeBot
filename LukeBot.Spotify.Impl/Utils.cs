@@ -1,10 +1,10 @@
 using System.Net;
-using LukeBot.Spotify.Common;
+using LukeBot.Spotify;
 using LukeBot.Communication.Common;
 using LukeBot.API;
 
 
-namespace LukeBot.Spotify
+namespace LukeBot.Spotify.Impl
 {
     public class Utils
     {

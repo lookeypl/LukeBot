@@ -6,13 +6,13 @@ using LukeBot.Communication.Common.Intercom;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
-using LukeBot.Spotify.Common;
+using LukeBot.Spotify;
 using LukeBot.User;
 using CommonConstants = LukeBot.Common.Constants;
 using CommonUtils = LukeBot.Common.Utils;
 
 
-namespace LukeBot.Spotify
+namespace LukeBot.Spotify.Impl
 {
     public class SpotifyService: ISpotifyService
     {
@@ -107,8 +107,13 @@ namespace LukeBot.Spotify
 
         // Publics //
 
-        public SpotifyService()
+        private SpotifyService()
         {
+        }
+
+        public static ISpotifyService Create()
+        {
+            return new SpotifyService();
         }
 
         public string GetServiceName()

@@ -1,11 +1,11 @@
 ﻿using System.IO;
 using LukeBot.Logging;
-using LukeBot.Spotify.Common;
+using LukeBot.Spotify;
 using LukeBot.Communication;
 using LukeBot.Common;
 
 
-namespace LukeBot.Spotify
+namespace LukeBot.Spotify.Impl
 {
     class NowPlayingTextFile
     {

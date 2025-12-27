@@ -4,7 +4,7 @@ using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Services;
 using LukeBot.Interface;
-using LukeBot.Spotify.Common;
+using LukeBot.Spotify;
 using LukeBot.User;
 using CommandLine;
 

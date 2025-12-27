@@ -1,4 +1,4 @@
-namespace LukeBot.Spotify.Common
+namespace LukeBot.Spotify
 {
     public enum PlayerState
     {

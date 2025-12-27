@@ -1,6 +1,6 @@
 using LukeBot.Communication;
 using LukeBot.Communication.Common.Intercom;
-using LukeBot.Spotify.Common;
+using LukeBot.Spotify;
 using Command = LukeBot.Twitch.Common.Command;
 
 

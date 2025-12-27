@@ -1,4 +1,4 @@
-﻿namespace LukeBot.User.Common
+﻿namespace LukeBot.User
 {
     public interface IUserModule
     {

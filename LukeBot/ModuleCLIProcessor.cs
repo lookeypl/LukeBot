@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using LukeBot.Interface;
 using LukeBot.Services;
-using LukeBot.User.Common;
+using LukeBot.User;
 using CommandLine;
 
 namespace LukeBot

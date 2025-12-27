@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using LukeBot.Services;
 
 
-namespace LukeBot.User.Common
+namespace LukeBot.User
 {
     public interface IUserService: IService
     {

@@ -16,7 +16,7 @@ using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Interface.Protocols;
 using LukeBot.Services;
-using LukeBot.User.Common;
+using LukeBot.User;
 using Newtonsoft.Json;
 using System.Timers;
 

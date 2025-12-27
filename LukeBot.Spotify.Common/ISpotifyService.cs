@@ -1,5 +1,5 @@
 using LukeBot.Services;
-using LukeBot.User.Common;
+using LukeBot.User;
 
 namespace LukeBot.Spotify.Common
 {

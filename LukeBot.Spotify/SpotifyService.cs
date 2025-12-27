@@ -7,7 +7,7 @@ using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
 using LukeBot.Spotify.Common;
-using LukeBot.User.Common;
+using LukeBot.User;
 using CommonConstants = LukeBot.Common.Constants;
 using CommonUtils = LukeBot.Common.Utils;
 

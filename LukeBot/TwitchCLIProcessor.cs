@@ -6,7 +6,7 @@ using LukeBot.Config;
 using LukeBot.Services;
 using LukeBot.Interface;
 using LukeBot.Twitch.Common;
-using LukeBot.User.Common;
+using LukeBot.User;
 using CommandLine;
 
 

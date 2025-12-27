@@ -6,7 +6,7 @@ using System.Threading;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
-using LukeBot.User.Common;
+using LukeBot.User;
 using LukeBot.Widget.Common;
 
 using CommonConstants = LukeBot.Common.Constants;

@@ -1,4 +1,4 @@
-﻿using LukeBot.User.Common;
+﻿using LukeBot.User;
 
 namespace LukeBot
 {

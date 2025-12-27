@@ -3,8 +3,8 @@ using LukeBot.Common;
 using LukeBot.Twitch.Common;
 using LukeBot.Widget.Common;
 using LukeBot.Services;
+using LukeBot.User;
 using System.Runtime.CompilerServices;
-using LukeBot.User.Common;
 
 
 namespace LukeBot.Widget

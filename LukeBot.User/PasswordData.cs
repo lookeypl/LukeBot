@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 [assembly: InternalsVisibleTo("LukeBot.Tests")]
 
-namespace LukeBot.User.Common
+namespace LukeBot.User
 {
     public class PasswordData
     {

@@ -3,13 +3,13 @@ using LukeBot.Communication;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
-using LukeBot.User.Common;
+using LukeBot.User;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 
 
-namespace LukeBot.User
+namespace LukeBot.User.Impl
 {
     public class UserService: IUserService
     {
@@ -48,10 +48,16 @@ namespace LukeBot.User
             mUsers.Add(username, new UserContext(username));
         }
 
-
-        public UserService()
+        private UserService()
         {
         }
+
+
+        public static IUserService Create()
+        {
+            return new UserService();
+        }
+
 
         public string GetServiceName()
         {
@@ -208,21 +214,6 @@ namespace LukeBot.User
             {
                 return username.Length != 0 && mUsers.ContainsKey(username);
             }
-        }
-
-        public IUserModule CreateModule(string lbUser)
-        {
-            throw new NotImplementedException("User service does not create its own user modules");
-        }
-
-        public IUserModule GetModule(string lbUser)
-        {
-            throw new NotImplementedException("User service does not create its own user modules");
-        }
-
-        public void DisableModule(string lbUser)
-        {
-            throw new NotImplementedException("User service does not create its own user modules");
         }
 
         public void Run()

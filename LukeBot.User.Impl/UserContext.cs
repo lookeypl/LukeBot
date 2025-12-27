@@ -4,10 +4,10 @@ using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
-using LukeBot.User.Common;
+using LukeBot.User;
 
 
-namespace LukeBot.User
+namespace LukeBot.User.Impl
 {
     internal class UserContext: IUserContext
     {

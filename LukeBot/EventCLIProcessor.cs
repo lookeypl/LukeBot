@@ -4,7 +4,7 @@ using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Logging;
 using LukeBot.Interface;
-using LukeBot.User.Common;
+using LukeBot.User;
 using CommandLine;
 
 namespace LukeBot

@@ -1,4 +1,4 @@
-﻿namespace LukeBot.User.Common
+﻿namespace LukeBot.User
 {
     // TODO This isn't really used in other way than having a common interface for Services
     //      User service should hold references to IUserModuleFactories and call CreateModule()

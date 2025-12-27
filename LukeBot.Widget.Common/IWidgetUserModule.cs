@@ -3,7 +3,7 @@ using System.Net.WebSockets;
 using System.Threading.Tasks;
 using LukeBot.Services;
 using LukeBot.Common;
-using LukeBot.User.Common;
+using LukeBot.User;
 
 namespace LukeBot.Widget.Common
 {

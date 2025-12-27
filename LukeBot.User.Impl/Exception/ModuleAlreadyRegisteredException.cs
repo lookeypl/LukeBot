@@ -1,6 +1,6 @@
 using LukeBot.Common;
 
-namespace LukeBot.User
+namespace LukeBot.User.Impl
 {
     public class ModuleAlreadyAttachedException: Exception
     {

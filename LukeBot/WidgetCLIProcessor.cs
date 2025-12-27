@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Services;
 using LukeBot.Interface;
-using LukeBot.User.Common;
+using LukeBot.User;
 using LukeBot.Widget.Common;
 using CommandLine;
 using LukeBot.Logging;

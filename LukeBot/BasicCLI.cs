@@ -7,7 +7,7 @@ using System.Threading;
 using LukeBot.Common;
 using LukeBot.Logging;
 using LukeBot.Services;
-using LukeBot.User.Common;
+using LukeBot.User;
 
 
 namespace LukeBot

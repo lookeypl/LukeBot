@@ -8,7 +8,7 @@ using System.Reflection;
 using LukeBot.Common;
 using LukeBot.Services;
 using LukeBot.Twitch.Command;
-using LukeBot.User.Common;
+using LukeBot.User;
 using LukeBot.Widget;
 using LukeBot.Widget.Common;
 using Microsoft.AspNetCore;

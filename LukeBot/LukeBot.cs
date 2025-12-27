@@ -6,11 +6,12 @@ using LukeBot.Logging;
 using LukeBot.Services;
 using LukeBot.Communication;
 using LukeBot.Communication.Common;
-using LukeBot.User.Common;
+using LukeBot.User;
 using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.Threading;
+using LukeBot.User.Impl;
 
 
 namespace LukeBot
@@ -92,7 +93,7 @@ namespace LukeBot
                 mEndpoint.Start();
 
                 Logger.Log().Info("Initializing Services...");
-                Service.Register(new User.UserService());
+                Service.Register(UserService.Create());
                 Service.Register(new Twitch.TwitchService());
                 Service.Register(new Spotify.SpotifyService());
                 Service.Register(new Widget.WidgetService());

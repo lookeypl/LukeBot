@@ -12,6 +12,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using LukeBot.Spotify.Impl;
+using LukeBot.Twitch.Impl;
 using LukeBot.User.Impl;
 
 
@@ -95,7 +96,7 @@ namespace LukeBot
 
                 Logger.Log().Info("Initializing Services...");
                 Service.Register(UserService.Create());
-                Service.Register(new Twitch.TwitchService());
+                Service.Register(TwitchService.Create());
                 Service.Register(SpotifyService.Create());
                 Service.Register(new Widget.WidgetService());
 

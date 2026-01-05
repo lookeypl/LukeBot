@@ -5,7 +5,7 @@ using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Communication.Common;
 using LukeBot.Logging;
-using LukeBot.Twitch.Common;
+using LukeBot.Twitch;
 using LukeBot.Widget.Common;
 using Newtonsoft.Json;
 

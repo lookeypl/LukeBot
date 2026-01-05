@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using LukeBot.Services;
-using LukeBot.Twitch.Common;
-using LukeBot.Twitch.Common.Command;
+using LukeBot.Twitch;
+using LukeBot.Twitch.Command;
 using LukeBot.User;
-using TwitchCommand = LukeBot.Twitch.Common.Command;
 using CommandLine;
 
 
@@ -20,7 +19,7 @@ namespace LukeBot
             "Type of command to add. Available command types: " +
             "  print, shoutout, addcom, editcom, delcom, counter, songrequest"
         )]
-        public TwitchCommand::Type Type { get; set; }
+        public CommandType Type { get; set; }
 
         [Value(2, MetaName = "value", Required = false, HelpText = "Value for the command.")]
         public IEnumerable<string> Value { get; set; }
@@ -28,7 +27,7 @@ namespace LukeBot
         public TwitchAddCommand()
         {
             Name = "";
-            Type = TwitchCommand::Type.print;
+            Type = CommandType.print;
         }
     }
 
@@ -178,9 +177,9 @@ namespace LukeBot
             {
                 msg = "Available commands:\n";
 
-                List<TwitchCommand::Descriptor> cmds = GetTwitchUserModule(CLI.GetCurrentUser()).GetChatCommandDescriptors();
+                List<Descriptor> cmds = GetTwitchUserModule(CLI.GetCurrentUser()).GetChatCommandDescriptors();
 
-                foreach (TwitchCommand::Descriptor c in cmds)
+                foreach (Descriptor c in cmds)
                 {
                     msg += String.Format("  {0} ({1})\n", c.Name, c.Type.ToString());
                 }
@@ -197,7 +196,7 @@ namespace LukeBot
             {
                 if (cmd.List)
                 {
-                    TwitchCommand::Descriptor d = GetTwitchUserModule(CLI.GetCurrentUser()).GetChatCommandDescriptor(cmd.Name);
+                    Descriptor d = GetTwitchUserModule(CLI.GetCurrentUser()).GetChatCommandDescriptor(cmd.Name);
 
                     msg = "Modifiers of Twitch command " + cmd.Name + ":\n";
                     msg += "  Privileges: " + d.Privilege.GetStringRepresentation();
@@ -205,7 +204,7 @@ namespace LukeBot
                 }
                 else if (cmd.Allowed != null && cmd.Allowed.Length > 0)
                 {
-                    TwitchCommand::ChatUser priv = cmd.Allowed.ToUserEnum();
+                    ChatUser priv = cmd.Allowed.ToUserEnum();
                     if (priv == 0)
                     {
                         msg = "Invalid privilege list: " + cmd.Allowed;
@@ -218,7 +217,7 @@ namespace LukeBot
                 }
                 else if (cmd.Denied != null && cmd.Denied.Length > 0)
                 {
-                    TwitchCommand::ChatUser priv = cmd.Denied.ToUserEnum();
+                    ChatUser priv = cmd.Denied.ToUserEnum();
                     if (priv == 0)
                     {
                         msg = "Invalid privilege list: " + cmd.Allowed;

@@ -34,7 +34,7 @@
     <ProjectReference Include="..\LukeBot.Interface.Protocols\LukeBot.Interface.Protocols.csproj" />
     <ProjectReference Include="..\LukeBot.Services\LukeBot.Services.csproj" />
     <ProjectReference Include="..\LukeBot.Spotify.Impl\LukeBot.Spotify.Impl.csproj" />
-    <ProjectReference Include="..\LukeBot.Twitch\LukeBot.Twitch.csproj" />
+    <ProjectReference Include="..\LukeBot.Twitch.Impl\LukeBot.Twitch.Impl.csproj" />
     <ProjectReference Include="..\LukeBot.User.Impl\LukeBot.User.Impl.csproj" />
     <ProjectReference Include="..\LukeBot.Widget\LukeBot.Widget.csproj" />
   </ItemGroup>

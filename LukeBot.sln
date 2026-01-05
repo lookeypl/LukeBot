@@ -22,7 +22,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data", "Data", "{10B3DA8C-4
 		Data\twitch.client_secret.lukebot = Data\twitch.client_secret.lukebot
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Twitch", "LukeBot.Twitch\LukeBot.Twitch.csproj", "{564B1BE4-C13B-4168-A9E4-34061DA82052}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Twitch.Impl", "LukeBot.Twitch.Impl\LukeBot.Twitch.Impl.csproj", "{564B1BE4-C13B-4168-A9E4-34061DA82052}"
 	ProjectSection(ProjectDependencies) = postProject
 		{93D23CA9-0CBA-4025-8DA9-103283B3887A} = {93D23CA9-0CBA-4025-8DA9-103283B3887A}
 	EndProjectSection
@@ -45,7 +45,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{0EA88F14
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpotifyManager", "Tools\SpotifyManager\SpotifyManager.csproj", "{1FBF5DE7-BCAD-49C2-B3D1-CDEB6004A6F3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Twitch.Common", "LukeBot.Twitch.Common\LukeBot.Twitch.Common.csproj", "{1BB0DC54-42CF-46FD-BE38-FB6B7C8D8FF1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Twitch", "LukeBot.Twitch\LukeBot.Twitch.csproj", "{1BB0DC54-42CF-46FD-BE38-FB6B7C8D8FF1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Spotify", "LukeBot.Spotify\LukeBot.Spotify.csproj", "{283EE86E-47C6-4248-BC2D-BA185CF37A80}"
 EndProject

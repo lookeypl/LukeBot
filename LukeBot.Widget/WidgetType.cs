@@ -1,4 +1,4 @@
-﻿namespace LukeBot.Widget.Common
+﻿namespace LukeBot.Widget
 {
     public enum WidgetType
     {

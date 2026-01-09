@@ -5,11 +5,10 @@ using LukeBot.Communication;
 using LukeBot.Communication.Common;
 using LukeBot.Logging;
 using LukeBot.Twitch;
-using LukeBot.Widget.Common;
 using Newtonsoft.Json;
 
 
-namespace LukeBot.Widget
+namespace LukeBot.Widget.Impl
 {
     /**
      * Widget responsible for everything that could be considered an "Alert".

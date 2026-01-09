@@ -2,11 +2,10 @@ using System;
 using System.Linq;
 using LukeBot.Common;
 using LukeBot.Logging;
-using LukeBot.Widget.Common;
 using Newtonsoft.Json;
 
 
-namespace LukeBot.Widget
+namespace LukeBot.Widget.Impl
 {
     /**
      * Simple Echo "widget" which is meant only for WebSocket communication testing.

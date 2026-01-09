@@ -9,11 +9,10 @@ using System.Threading.Tasks;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Common;
-using LukeBot.Widget.Common;
 using System.Text.Json.Serialization;
 
 
-namespace LukeBot.Widget
+namespace LukeBot.Widget.Impl
 {
     internal class WidgetEventCompletionResponse
     {

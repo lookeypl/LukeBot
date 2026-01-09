@@ -3,7 +3,7 @@ using LukeBot.Common;
 using LukeBot.Services;
 using LukeBot.Interface;
 using LukeBot.User;
-using LukeBot.Widget.Common;
+using LukeBot.Widget;
 using CommandLine;
 using LukeBot.Logging;
 

@@ -51,7 +51,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Spotify", "LukeBot.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Communication.Common", "LukeBot.Communication.Common\LukeBot.Communication.Common.csproj", "{5A13C2EA-88E6-4691-986F-57C337DE1EFF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Widget", "LukeBot.Widget\LukeBot.Widget.csproj", "{8F60A7EE-B21A-4323-B587-DD171F1A0DFE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Widget.Impl", "LukeBot.Widget.Impl\LukeBot.Widget.Impl.csproj", "{8F60A7EE-B21A-4323-B587-DD171F1A0DFE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Tests", "Tools\LukeBot.Tests\LukeBot.Tests.csproj", "{70859DAB-A460-4119-88CA-A5994408328B}"
 EndProject
@@ -59,7 +59,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "propmgr", "Tools\propmgr\pr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Config", "LukeBot.Config\LukeBot.Config.csproj", "{EA80514F-0F69-4894-9077-572D9522851B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Widget.Common", "LukeBot.Widget.Common\LukeBot.Widget.Common.csproj", "{D10E2AA7-867C-45F8-A600-764E58A608FF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Widget", "LukeBot.Widget\LukeBot.Widget.csproj", "{D10E2AA7-867C-45F8-A600-764E58A608FF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LukeBot.Logging", "LukeBot.Logging\LukeBot.Logging.csproj", "{C97344BC-C3DB-4080-8DDE-E3EDB755061B}"
 EndProject

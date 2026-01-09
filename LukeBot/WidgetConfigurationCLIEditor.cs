@@ -10,7 +10,6 @@ using LukeBot.Services;
 using LukeBot.Twitch.Command;
 using LukeBot.User;
 using LukeBot.Widget;
-using LukeBot.Widget.Common;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Http.HttpResults;

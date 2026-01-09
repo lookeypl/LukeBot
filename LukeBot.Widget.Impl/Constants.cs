@@ -1,4 +1,4 @@
-namespace LukeBot.Widget
+namespace LukeBot.Widget.Impl
 {
     internal class Constants
     {

@@ -7,10 +7,9 @@ using System.Text.Json;
 using LukeBot.Common;
 using LukeBot.Communication.Common;
 using LukeBot.Logging;
-using LukeBot.Widget.Common;
 
 
-/*namespace LukeBot.Widget
+/*namespace LukeBot.Widget.Impl
 {
     public abstract class WidgetConfiguration: Configuration
     {

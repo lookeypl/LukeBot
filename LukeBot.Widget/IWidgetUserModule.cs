@@ -5,7 +5,7 @@ using LukeBot.Services;
 using LukeBot.Common;
 using LukeBot.User;
 
-namespace LukeBot.Widget.Common
+namespace LukeBot.Widget
 {
     public interface IWidgetUserModule: IUserModule
     {

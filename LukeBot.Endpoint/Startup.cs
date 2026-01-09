@@ -15,7 +15,7 @@ using LukeBot.Config;
 using LukeBot.Logging;
 using Intercom = LukeBot.Communication.Common.Intercom;
 using LukeBot.Services;
-using LukeBot.Widget.Common;
+using LukeBot.Widget;
 using Microsoft.Extensions.FileProviders;
 using System.Net.Http;
 using NgrokExtensions;

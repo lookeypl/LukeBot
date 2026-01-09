@@ -1,10 +1,9 @@
 using LukeBot.Communication;
 using LukeBot.Common;
 using LukeBot.Spotify;
-using LukeBot.Widget.Common;
 
 
-namespace LukeBot.Widget
+namespace LukeBot.Widget.Impl
 {
     /**
      * Widget reflecting currently played track on Spotify service.

@@ -6,11 +6,10 @@ using LukeBot.Communication;
 using LukeBot.Communication.Common;
 using LukeBot.Logging;
 using LukeBot.Twitch;
-using LukeBot.Widget.Common;
 using Newtonsoft.Json;
 
 
-namespace LukeBot.Widget
+namespace LukeBot.Widget.Impl
 {
     /**
      * Widget responsible for playing an audio file available to it from the bot. That's

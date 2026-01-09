@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Intercom = LukeBot.Communication.Common.Intercom;
 
 
-namespace LukeBot.Widget.Common
+namespace LukeBot.Widget
 {
     public class Endpoints
     {

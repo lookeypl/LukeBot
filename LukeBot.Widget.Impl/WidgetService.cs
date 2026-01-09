@@ -7,13 +7,12 @@ using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
 using LukeBot.User;
-using LukeBot.Widget.Common;
 
 using CommonConstants = LukeBot.Common.Constants;
 using CommonUtils = LukeBot.Common.Utils;
 
 
-namespace LukeBot.Widget
+namespace LukeBot.Widget.Impl
 {
     public class WidgetService: IWidgetService
     {
@@ -71,6 +70,10 @@ namespace LukeBot.Widget
             return user;
         }
 
+        private WidgetService()
+        {
+        }
+
 
         // IUserModuleFactory interfaces //
 
@@ -104,8 +107,9 @@ namespace LukeBot.Widget
 
         // Public methods //
 
-        public WidgetService()
+        public static IWidgetService Create()
         {
+            return new WidgetService();
         }
 
         public string GetServiceName()

@@ -1,6 +1,6 @@
 using LukeBot.Common;
 
-namespace LukeBot.Widget
+namespace LukeBot.Widget.Impl
 {
     public class InvalidWidgetTypeException: Exception
     {

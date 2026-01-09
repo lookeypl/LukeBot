@@ -3,7 +3,7 @@ using LukeBot.Logging;
 using LukeBot.Common;
 
 
-namespace LukeBot.Widget
+namespace LukeBot.Widget.Impl
 {
     internal class EmptyWidgetConfiguration : Configuration<EmptyWidgetConfiguration>
     {

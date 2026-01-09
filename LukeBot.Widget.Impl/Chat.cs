@@ -1,13 +1,12 @@
 ﻿using LukeBot.Communication;
 using LukeBot.Common;
 using LukeBot.Twitch;
-using LukeBot.Widget.Common;
 using LukeBot.Services;
 using LukeBot.User;
 using System.Runtime.CompilerServices;
 
 
-namespace LukeBot.Widget
+namespace LukeBot.Widget.Impl
 {
     /**
      * Widget used to display messages from Twitch Chat.

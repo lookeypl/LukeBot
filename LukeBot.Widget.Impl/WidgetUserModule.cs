@@ -6,12 +6,11 @@ using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
 using LukeBot.Common;
-using LukeBot.Widget.Common;
 
 using CommonConstants = LukeBot.Common.Constants;
 
 
-namespace LukeBot.Widget
+namespace LukeBot.Widget.Impl
 {
     public class WidgetUserModule: IWidgetUserModule
     {

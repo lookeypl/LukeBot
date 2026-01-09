@@ -37,7 +37,7 @@
     <ProjectReference Include="..\..\LukeBot.Twitch\LukeBot.Twitch.csproj" />
     <ProjectReference Include="..\..\LukeBot.Twitch.Impl\LukeBot.Twitch.Impl.csproj" />
     <ProjectReference Include="..\..\LukeBot.Widget\LukeBot.Widget.csproj" />
-    <ProjectReference Include="..\..\LukeBot.Widget.Common\LukeBot.Widget.Common.csproj" />
+    <ProjectReference Include="..\..\LukeBot.Widget.Impl\LukeBot.Widget.Impl.csproj" />
   </ItemGroup>
 
   <ItemGroup>

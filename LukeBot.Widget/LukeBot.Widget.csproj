@@ -19,7 +19,6 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DefineConstants>TRACE</DefineConstants>
     <OutputPath>$(SolutionDir)Bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)Obj\$(MSBuildProjectName)\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
@@ -29,24 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Widgets/" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="Widgets/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="Data/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\LukeBot.Communication\LukeBot.Communication.csproj" />
     <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
-    <ProjectReference Include="..\LukeBot.Config\LukeBot.Config.csproj" />
     <ProjectReference Include="..\LukeBot.Communication.Common\LukeBot.Communication.Common.csproj" />
-    <ProjectReference Include="..\LukeBot.Logging\LukeBot.Logging.csproj" />
     <ProjectReference Include="..\LukeBot.Services\LukeBot.Services.csproj" />
-    <ProjectReference Include="..\LukeBot.Spotify\LukeBot.Spotify.csproj" />
-    <ProjectReference Include="..\LukeBot.Twitch\LukeBot.Twitch.csproj" />
-    <ProjectReference Include="..\LukeBot.Widget.Common\LukeBot.Widget.Common.csproj" />
+    <ProjectReference Include="..\LukeBot.User\LukeBot.User.csproj" />
   </ItemGroup>
 
 </Project>

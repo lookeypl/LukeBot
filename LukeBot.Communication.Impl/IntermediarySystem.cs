@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 
-namespace LukeBot.Communication
+namespace LukeBot.Communication.Impl
 {
     public sealed class IntermediarySystem
     {

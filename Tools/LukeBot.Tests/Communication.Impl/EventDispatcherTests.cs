@@ -1,10 +1,10 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading;
-using LukeBot.Communication;
 using LukeBot.Common;
+using LukeBot.Communication.Impl;
 
 
-namespace LukeBot.Tests.Communication
+namespace LukeBot.Tests.Communication.Impl
 {
     [TestClass]
     public class EventDispatcherTests

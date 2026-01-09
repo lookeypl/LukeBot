@@ -1,6 +1,6 @@
 using System.Net;
 using LukeBot.Spotify;
-using LukeBot.Communication.Common;
+using LukeBot.Communication;
 using LukeBot.API;
 
 

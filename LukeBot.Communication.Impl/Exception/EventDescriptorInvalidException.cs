@@ -1,7 +1,7 @@
-﻿using LukeBot.Communication.Common;
+﻿using LukeBot.Communication;
 
 
-namespace LukeBot.Communication
+namespace LukeBot.Communication.Impl
 {
     public class EventDescriptorInvalidException: System.Exception
     {

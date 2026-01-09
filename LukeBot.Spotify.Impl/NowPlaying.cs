@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using LukeBot.Logging;
 using LukeBot.API;
 using LukeBot.Spotify;
-using LukeBot.Communication;
+using LukeBot.Communication.Impl;
 using LukeBot.Common;
 
 

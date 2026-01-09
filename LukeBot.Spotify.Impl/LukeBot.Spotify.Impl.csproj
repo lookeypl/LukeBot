@@ -25,8 +25,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LukeBot.API\LukeBot.API.csproj" />
+    <ProjectReference Include="..\LukeBot.Communication.Impl\LukeBot.Communication.Impl.csproj" />
     <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
-    <ProjectReference Include="..\LukeBot.Communication.Common\LukeBot.Communication.Common.csproj" />
     <ProjectReference Include="..\LukeBot.Config\LukeBot.Config.csproj" />
     <ProjectReference Include="..\LukeBot.Logging\LukeBot.Logging.csproj" />
     <ProjectReference Include="..\LukeBot.Services\LukeBot.Services.csproj" />

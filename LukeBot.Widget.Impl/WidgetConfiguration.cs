@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
 using LukeBot.Common;
-using LukeBot.Communication.Common;
+using LukeBot.Communication;
 using LukeBot.Logging;
 
 

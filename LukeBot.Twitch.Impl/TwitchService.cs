@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using LukeBot.API;
-using LukeBot.Communication;
+using LukeBot.Communication.Impl;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
@@ -10,7 +10,7 @@ using LukeBot.User;
 
 using CommonConstants = LukeBot.Common.Constants;
 using CommonUtils = LukeBot.Common.Utils;
-using Intercom = LukeBot.Communication.Common.Intercom;
+using Intercom = LukeBot.Communication.Intercom;
 
 
 namespace LukeBot.Twitch.Impl

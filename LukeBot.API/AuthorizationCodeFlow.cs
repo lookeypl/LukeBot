@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Text.Json;
 using LukeBot.Common;
-using LukeBot.Communication;
+using LukeBot.Communication.Impl;
 using LukeBot.Logging;
 
 

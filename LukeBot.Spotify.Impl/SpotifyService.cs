@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using LukeBot.Communication;
-using LukeBot.Communication.Common.Intercom;
+using LukeBot.Communication.Intercom;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;

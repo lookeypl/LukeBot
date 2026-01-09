@@ -1,13 +1,13 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using LukeBot.Communication;
+using LukeBot.Communication.Impl;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System;
 using System.Threading;
-using Intercom = LukeBot.Communication.Common.Intercom;
+using Intercom = LukeBot.Communication.Intercom;
 
 
-namespace LukeBot.Tests.Communication
+namespace LukeBot.Tests.Communication.Impl
 {
     [TestClass]
     public class IntercomSystemTests

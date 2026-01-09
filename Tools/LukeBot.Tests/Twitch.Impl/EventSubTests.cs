@@ -1,6 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using LukeBot.Config;
-using LukeBot.Communication;
+using LukeBot.Communication.Impl;
 using LukeBot.Twitch;
 using LukeBot.Twitch.Impl;
 using System.Threading.Tasks;

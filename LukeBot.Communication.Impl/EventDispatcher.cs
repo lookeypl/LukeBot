@@ -7,7 +7,7 @@ using LukeBot.Common;
 
 [assembly: InternalsVisibleTo("LukeBot.Tests")]
 
-namespace LukeBot.Communication
+namespace LukeBot.Communication.Impl
 {
     public enum EventDispatcherType
     {

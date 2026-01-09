@@ -5,7 +5,7 @@ using LukeBot.Endpoint;
 using LukeBot.Logging;
 using LukeBot.Services;
 using LukeBot.Communication;
-using LukeBot.Communication.Common;
+using LukeBot.Communication.Impl;
 using LukeBot.User;
 using System.Collections.Generic;
 using System;

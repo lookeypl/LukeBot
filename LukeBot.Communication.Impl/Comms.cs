@@ -1,4 +1,4 @@
-﻿namespace LukeBot.Communication
+﻿namespace LukeBot.Communication.Impl
 {
     public class Comms
     {

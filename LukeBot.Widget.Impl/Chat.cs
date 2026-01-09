@@ -1,5 +1,5 @@
-﻿using LukeBot.Communication;
-using LukeBot.Common;
+﻿using LukeBot.Common;
+using LukeBot.Communication.Impl;
 using LukeBot.Twitch;
 using LukeBot.Services;
 using LukeBot.User;

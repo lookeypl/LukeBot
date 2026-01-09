@@ -1,6 +1,6 @@
 using System.Net.WebSockets;
 using System.Threading.Tasks;
-using Intercom = LukeBot.Communication.Common.Intercom;
+using Intercom = LukeBot.Communication.Intercom;
 
 
 namespace LukeBot.Widget

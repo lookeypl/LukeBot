@@ -3,7 +3,7 @@ using System.Collections.Generic;
 //using System.Linq;
 using LukeBot.Common;
 using LukeBot.Communication;
-using LukeBot.Communication.Common;
+using LukeBot.Communication.Impl;
 using LukeBot.Logging;
 using LukeBot.Twitch;
 using Newtonsoft.Json;

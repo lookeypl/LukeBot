@@ -1,4 +1,4 @@
-using Intercom = LukeBot.Communication.Common.Intercom;
+using Intercom = LukeBot.Communication.Intercom;
 
 
 namespace LukeBot.Spotify

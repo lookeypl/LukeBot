@@ -1,8 +1,6 @@
 using System.Collections.Generic;
-using Intercom = LukeBot.Communication.Common.Intercom;
 
-
-namespace LukeBot.Communication
+namespace LukeBot.Communication.Impl
 {
     // basic idea - replacement for CommunicationSystem
     // A wants to request something from B, but they gotta be hidden behind some abstraction
@@ -12,21 +10,21 @@ namespace LukeBot.Communication
     //  * Wait for response from B to A
     public class IntercomSystem
     {
-        public Dictionary<string, Intercom::EndpointInfo> mIntercomEndpoints;
+        public Dictionary<string, Intercom.EndpointInfo> mIntercomEndpoints;
 
         public IntercomSystem()
         {
-            mIntercomEndpoints = new Dictionary<string, Intercom::EndpointInfo>();
+            mIntercomEndpoints = new Dictionary<string, Intercom.EndpointInfo>();
         }
 
-        public void Register(Intercom::EndpointInfo info)
+        public void Register(Intercom.EndpointInfo info)
         {
             mIntercomEndpoints.Add(info.mName, info);
         }
 
         public TResp Request<TResp, TMsg>(TMsg message)
-            where TResp: Intercom::ResponseBase, new()
-            where TMsg: Intercom::MessageBase
+            where TResp: Intercom.ResponseBase, new()
+            where TMsg: Intercom.MessageBase
         {
             if (!mIntercomEndpoints.TryGetValue(message.Endpoint, out Intercom.EndpointInfo endpointInfo))
             {
@@ -42,7 +40,7 @@ namespace LukeBot.Communication
                 return r;
             }
 
-            Intercom::ResponseBase resp = endpointInfo.mResponseAllocator(message);
+            Intercom.ResponseBase resp = endpointInfo.mResponseAllocator(message);
             endpointDelegate(message, ref resp);
             return resp as TResp;
         }

@@ -1,5 +1,5 @@
-using LukeBot.Communication;
-using LukeBot.Communication.Common.Intercom;
+using LukeBot.Communication.Impl;
+using LukeBot.Communication.Intercom;
 using LukeBot.Spotify;
 using LukeBot.Twitch.Command;
 

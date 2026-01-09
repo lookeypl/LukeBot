@@ -2,11 +2,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Reflection;
 using System.Collections.Generic;
-using LukeBot.Communication;
+using LukeBot.Communication.Impl;
 using LukeBot.Common;
 
 
-namespace LukeBot.Tests.Communication
+namespace LukeBot.Tests.Communication.Impl
 {
     [TestClass]
     public class EventSystemTests: IEventPublisher

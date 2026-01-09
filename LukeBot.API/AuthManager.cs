@@ -3,9 +3,9 @@ using System.Threading;
 using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Communication;
+using LukeBot.Communication.Impl;
 using LukeBot.Config;
 using LukeBot.Logging;
-using LukeBot.Communication.Common;
 
 
 namespace LukeBot.API

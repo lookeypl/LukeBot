@@ -1,6 +1,6 @@
 using LukeBot.Twitch;
 using LukeBot.Twitch.Command;
-using Intercom = LukeBot.Communication.Common.Intercom;
+using Intercom = LukeBot.Communication.Intercom;
 
 
 namespace LukeBot.Twitch.Impl

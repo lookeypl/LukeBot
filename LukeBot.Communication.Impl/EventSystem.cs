@@ -6,11 +6,11 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using LukeBot.Common;
-using LukeBot.Communication.Common;
+using LukeBot.Communication;
 using LukeBot.Logging;
 
 
-namespace LukeBot.Communication
+namespace LukeBot.Communication.Impl
 {
     /**
      * Interface that event publishers should inherit from. Provides us

@@ -9,7 +9,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using LukeBot.API;
-using LukeBot.Communication;
+using LukeBot.Communication.Impl;
 using LukeBot.Common;
 using LukeBot.Twitch;
 using LukeBot.Logging;

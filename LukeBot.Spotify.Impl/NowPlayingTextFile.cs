@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using LukeBot.Logging;
 using LukeBot.Spotify;
-using LukeBot.Communication;
+using LukeBot.Communication.Impl;
 using LukeBot.Common;
 
 

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Logging;
-using LukeBot.Communication;
+using LukeBot.Communication.Impl;
 using LukeBot.Twitch;
 using LukeBot.Twitch.Command;
 using LukeBot.API;

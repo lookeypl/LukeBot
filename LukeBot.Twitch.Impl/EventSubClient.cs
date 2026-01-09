@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using LukeBot.API;
@@ -12,7 +13,6 @@ using LukeBot.Communication;
 using LukeBot.Common;
 using LukeBot.Twitch;
 using LukeBot.Logging;
-using Newtonsoft.Json;
 
 
 [assembly: InternalsVisibleTo("LukeBot.Tests")]
@@ -66,6 +66,7 @@ namespace LukeBot.Twitch.Impl
         private ClientWebSocket mOldSocket = null; // only used to store old connection until we switch to a new one
 
         // mostly used for tests to halt the test until Reconnect arrives and passes through
+        public event EventHandler Connected;
         public event EventHandler Reconnected;
 
         public string SessionID
@@ -73,6 +74,15 @@ namespace LukeBot.Twitch.Impl
             get
             {
                 return mSessionID;
+            }
+        }
+
+        private void OnConnected()
+        {
+            EventHandler handler = Connected;
+            if (handler != null)
+            {
+                handler(this, null);
             }
         }
 
@@ -339,7 +349,9 @@ namespace LukeBot.Twitch.Impl
                     return result;
                 }
 
-                result = JsonConvert.DeserializeObject<EventSub.Message>(recvMsgString, new EventSub.Deserializer());
+                JsonSerializerOptions opts = new();
+                opts.Converters.Add(new EventSub.MessageDeserializer());
+                result = JsonSerializer.Deserialize<EventSub.Message>(recvMsgString, opts);
                 if (result == null)
                 {
                     Logger.Log().Error("EventSubClient {0}: Failed to deserialize EventSub message. Closing connection just in case.", mLBUser);
@@ -347,7 +359,9 @@ namespace LukeBot.Twitch.Impl
                     result.Status = EventSub.InternalStatus.Closed;
                 }
                 else
+                {
                     result.Status = EventSub.InternalStatus.Fine;
+                }
             }
             catch (OperationCanceledException)
             {
@@ -402,9 +416,15 @@ namespace LukeBot.Twitch.Impl
         {
             EventSub.PayloadChannelPointRedemptionEvent data = eventData as EventSub.PayloadChannelPointRedemptionEvent;
 
+            if (data == null)
+            {
+                Logger.Log().Error("EventSubClient {0}: Got invalid Event Data payload, ignoring notification", mLBUser);
+                return;
+            }
+
             if (data.reward == null)
             {
-                Logger.Log().Warning("EventSub: Reward data is null, ignoring notification");
+                Logger.Log().Error("EventSubClient {0}: Reward data is null, ignoring notification", mLBUser);
                 return;
             }
 
@@ -570,6 +590,8 @@ namespace LukeBot.Twitch.Impl
                 OnReconnected();
                 Logger.Log().Info("EventSubClient {0}: Reconnect completed", mThreadLogPreamble.Value);
             }
+
+            OnConnected();
         }
 
         private void HandleSessionKeepalive()

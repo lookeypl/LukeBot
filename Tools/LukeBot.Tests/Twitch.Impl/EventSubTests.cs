@@ -64,15 +64,18 @@ namespace LukeBot.Tests.Twitch.Impl
             if (mTwitchCLIFullPath == null)
             {
                 // test if twitch binary exists in PATH
-                // TODO multi-platform...
                 string str = Environment.GetEnvironmentVariable("PATH");
                 if (str == null)
                     return true;
 
+                string twitchBinaryName = "twitch";
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                    twitchBinaryName += ".exe";
+
                 string[] paths = str.Split(System.IO.Path.PathSeparator);
                 foreach (string path in paths)
                 {
-                    string fullPath = System.IO.Path.Combine(path, "twitch.exe");
+                    string fullPath = System.IO.Path.Combine(path, twitchBinaryName);
                     if (File.Exists(fullPath) && IsBinaryActuallyTwitchCLI(fullPath))
                     {
                         mTwitchCLIFullPath = fullPath;
@@ -132,6 +135,10 @@ namespace LukeBot.Tests.Twitch.Impl
         private static readonly string EVENT_SUB_TEST_USER = "testUserEventSub";
         private static readonly string TWITCH_MOCK_USERID = "420691234";
         private static readonly string TWITCH_MOCK_URI = "ws://127.0.0.1:8080/ws";
+        private static readonly string EVENT_SUB_TEST_REDEMPTION_USER = "chatter";
+        private static readonly string EVENT_SUB_TEST_REDEMPTION_ID = "thisisatestid";
+        private static readonly string EVENT_SUB_TEST_REDEMPTION_NAME = "Test reward";
+        private static readonly int EVENT_SUB_TEST_REDEMPTION_COST = 420;
 
         private EventSubClient es = null;
 
@@ -203,6 +210,19 @@ namespace LukeBot.Tests.Twitch.Impl
             }
         }
 
+        private async Task ConnectEventSub()
+        {
+            AutoResetEvent connectedEvent = new(false);
+            es.Connected += (e, a) =>
+            {
+                connectedEvent.Set();
+            };
+
+            await es.ConnectAsync(null, TWITCH_MOCK_USERID, TWITCH_MOCK_URI);
+
+            Assert.IsTrue(connectedEvent.WaitOne(5 * 1000));
+        }
+
         [ClassInitialize]
         static public void EventSub_Initialize(TestContext context)
         {
@@ -253,13 +273,13 @@ namespace LukeBot.Tests.Twitch.Impl
         [TestMethodSkippedWithoutTwitchCLI]
         public async Task EventSub_ConnectAsync()
         {
-            await es.ConnectAsync(null, TWITCH_MOCK_USERID, TWITCH_MOCK_URI);
+            await ConnectEventSub();
         }
 
         [TestMethodSkippedWithoutTwitchCLI]
         public async Task EventSub_Subscribe()
         {
-            await es.ConnectAsync(null, TWITCH_MOCK_USERID, TWITCH_MOCK_URI);
+            await ConnectEventSub();
 
             List<string> events = new();
             events.Add(EventSubClient.SUB_CHANNEL_POINTS_REDEMPTION_ADD);
@@ -286,7 +306,7 @@ namespace LukeBot.Tests.Twitch.Impl
                 reconnectedEvent.Set();
             };
 
-            await es.ConnectAsync(null, TWITCH_MOCK_USERID, TWITCH_MOCK_URI);
+            await ConnectEventSub();
 
             Assert.AreNotEqual(TwitchWSStatus.Unknown, mTwitchWSStatus);
 
@@ -309,7 +329,11 @@ namespace LukeBot.Tests.Twitch.Impl
                 "event", "trigger",
                 "channel.channel_points_custom_reward_redemption.add",
                 "--transport", "websocket",
-                "--session", es.SessionID
+                "--session", es.SessionID,
+                "--item-id", EVENT_SUB_TEST_REDEMPTION_ID,
+                "--item-name", EVENT_SUB_TEST_REDEMPTION_NAME,
+                "--cost", EVENT_SUB_TEST_REDEMPTION_COST.ToString(),
+                "--from-user", EVENT_SUB_TEST_REDEMPTION_USER
             );
             await eventTriggerCall.WaitForExitAsync();
             Assert.AreEqual(0, eventTriggerCall.ExitCode);
@@ -322,16 +346,28 @@ namespace LukeBot.Tests.Twitch.Impl
         public async Task EventSub_Notification()
         {
             AutoResetEvent notificationReceivedEvent = new(false);
+
+            // it's a litt
             bool castedSuccessfully = false;
+            bool correctID = false;
+            bool correctCost = false;
+            bool correctTitle = false;
+
             Comms.Event.User(EVENT_SUB_TEST_USER).Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Endpoint += (e, a) =>
             {
                 TwitchChannelPointsRedemptionArgs args = a as TwitchChannelPointsRedemptionArgs;
-                castedSuccessfully = (args != null);
+
                 Console.Error.WriteLine(String.Format("user: {0} name: {1} title: {2}", args.User, args.DisplayName, args.Title));
+
+                castedSuccessfully = (args != null);
+                correctID = (EVENT_SUB_TEST_REDEMPTION_ID == args.ID);
+                correctCost = (EVENT_SUB_TEST_REDEMPTION_COST == args.Cost);
+                correctTitle = (EVENT_SUB_TEST_REDEMPTION_NAME == args.Title);
+
                 notificationReceivedEvent.Set();
             };
 
-            await es.ConnectAsync(null, TWITCH_MOCK_USERID, TWITCH_MOCK_URI);
+            await ConnectEventSub();
 
             Assert.AreNotEqual(TwitchWSStatus.Unknown, mTwitchWSStatus);
 
@@ -344,14 +380,20 @@ namespace LukeBot.Tests.Twitch.Impl
                 "event", "trigger",
                 "channel.channel_points_custom_reward_redemption.add",
                 "--transport", "websocket",
-                "--session", es.SessionID
+                "--session", es.SessionID,
+                "--item-id", EVENT_SUB_TEST_REDEMPTION_ID,
+                "--item-name", EVENT_SUB_TEST_REDEMPTION_NAME,
+                "--cost", EVENT_SUB_TEST_REDEMPTION_COST.ToString()
             );
             await eventTriggerCall.WaitForExitAsync();
             Assert.AreEqual(0, eventTriggerCall.ExitCode);
 
-            notificationReceivedEvent.WaitOne(5 * 1000);
+            Assert.IsTrue(notificationReceivedEvent.WaitOne(5 * 1000));
 
             Assert.IsTrue(castedSuccessfully);
+            Assert.IsTrue(correctID);
+            Assert.IsTrue(correctCost);
+            Assert.IsTrue(correctTitle);
         }
 
         [ClassCleanup]

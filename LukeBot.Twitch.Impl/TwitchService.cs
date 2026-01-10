@@ -10,7 +10,6 @@ using LukeBot.User;
 
 using CommonConstants = LukeBot.Common.Constants;
 using CommonUtils = LukeBot.Common.Utils;
-using Intercom = LukeBot.Communication.Intercom;
 
 
 namespace LukeBot.Twitch.Impl
@@ -108,65 +107,6 @@ namespace LukeBot.Twitch.Impl
         }
 
 
-        // Intercom interactions //
-        // These are mostly used by Chat Commands to affect other Commands //
-        // Used via !addcom, !delcom and !editcom
-
-        private void IntercomAddCommandDelegate(Intercom::MessageBase msg, ref Intercom::ResponseBase resp)
-        {
-            AddCommandIntercomMsg m = (AddCommandIntercomMsg)msg;
-
-            try
-            {
-                TwitchUserModule module = mUserModules[m.lbUser];
-                module.AddChatCommand(m.Name, m.Type, m.Param);
-            }
-            catch (System.Exception e)
-            {
-                resp.SignalError(e.Message);
-                return;
-            }
-
-            resp.SignalSuccess();
-        }
-
-        private void IntercomEditCommandDelegate(Intercom::MessageBase msg, ref Intercom::ResponseBase resp)
-        {
-            EditCommandIntercomMsg m = (EditCommandIntercomMsg)msg;
-
-            try
-            {
-                TwitchUserModule module = mUserModules[m.lbUser];
-                module.EditChatCommand(m.Name, m.Param);
-            }
-            catch (System.Exception e)
-            {
-                resp.SignalError(e.Message);
-                return;
-            }
-
-            resp.SignalSuccess();
-        }
-
-        private void IntercomDeleteCommandDelegate(Intercom::MessageBase msg, ref Intercom::ResponseBase resp)
-        {
-            DeleteCommandIntercomMsg m = (DeleteCommandIntercomMsg)msg;
-
-            try
-            {
-                TwitchUserModule module = mUserModules[m.lbUser];
-                module.DeleteChatCommand(m.Name);
-            }
-            catch (System.Exception e)
-            {
-                resp.SignalError(e.Message);
-                return;
-            }
-
-            resp.SignalSuccess();
-        }
-
-
         // IUserModuleFactory //
 
         public IUserModule CreateModule(IUserContext user)
@@ -214,12 +154,6 @@ namespace LukeBot.Twitch.Impl
             {
                 throw new PropertyFileInvalidException("Bot's Twitch login has not been provided in Property Store");
             }
-
-            Intercom::EndpointInfo epInfo = new Intercom::EndpointInfo(Endpoints.TWITCH_MAIN_MODULE);
-            epInfo.AddMessage(Messages.ADD_COMMAND, IntercomAddCommandDelegate);
-            epInfo.AddMessage(Messages.EDIT_COMMAND, IntercomEditCommandDelegate);
-            epInfo.AddMessage(Messages.DELETE_COMMAND, IntercomDeleteCommandDelegate);
-            Comms.Intercom.Register(epInfo);
         }
 
         // Public methods //

@@ -1,8 +1,10 @@
 using System;
+using LukeBot.Common;
 using LukeBot.Logging;
 using LukeBot.Communication.Impl;
+using LukeBot.Services;
 using LukeBot.Twitch.Command;
-using Intercom = LukeBot.Communication.Intercom;
+using LukeBot.User;
 
 
 namespace LukeBot.Twitch.Impl.Command
@@ -10,6 +12,12 @@ namespace LukeBot.Twitch.Impl.Command
     public class EditCommand: ICommand
     {
         public string mLBUser;
+
+        private ITwitchUserModule GetUserModule()
+        {
+            IUserContext userContext = (Service.Get(Common.Constants.USER_SERVICE_NAME) as IUserService).GetUser(mLBUser);
+            return (Service.Get(Common.Constants.TWITCH_SERVICE_NAME) as ITwitchService).GetModule(userContext) as ITwitchUserModule;
+        }
 
         public EditCommand(Descriptor d, string lbUser)
             : base(d)
@@ -29,26 +37,21 @@ namespace LukeBot.Twitch.Impl.Command
                 return "Not enough parameters - provide command name and new message to print";
             }
 
-            EditCommandIntercomMsg msg = new EditCommandIntercomMsg();
-            msg.lbUser = mLBUser;
-            msg.Name = args[1];
-            msg.Param = String.Join(' ', args, 2, args.Length - 2);
+            string cmdName = args[1];
 
-            Intercom::ResponseBase resp = Comms.Intercom.Request<Intercom::ResponseBase, EditCommandIntercomMsg>(msg);
-
-            // we don't want to hang the bot for longer than 1 second (this is all internal communications
-            // anyway so it shouldn't take long)
-            resp.Wait(1000);
-
-            if (resp.Status == Intercom::MessageStatus.SUCCESS)
+            try
             {
-                return String.Format("Edited {0} command successfully", msg.Name);
+                // TODO this can edit other commands than just print commands - prevent from doing that
+                // ex. add a parameter stating which type of command we want to delete/edit.
+                GetUserModule().EditChatCommand(args[1], String.Join(' ', args, 2, args.Length - 2));
             }
-            else
+            catch (System.Exception e)
             {
-                Logger.Log().Warning("Failed to edit command {0} for user {1} via chat: {2}", msg.Name, mLBUser, resp.ErrorReason);
-                return String.Format("Failed to edit command {0}", msg.Name);
+                Logger.Log().Warning("Failed to edit command {0} for user {1} via chat: {2}", cmdName, mLBUser, e.Message);
+                return String.Format("Failed to edit command {0}", cmdName);
             }
+
+            return String.Format("Edited {0} command successfully", cmdName);
         }
 
         public override Descriptor ToDescriptor()

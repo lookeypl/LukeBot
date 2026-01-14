@@ -7,6 +7,7 @@ using LukeBot.Config;
 using LukeBot.Spotify;
 using CommonConstants = LukeBot.Common.Constants;
 using System.Net.Http;
+using System.Security;
 
 
 namespace LukeBot.Spotify.Impl
@@ -87,8 +88,8 @@ namespace LukeBot.Spotify.Impl
             mNowPlaying = null;
         }
 
-        // returns formatted artist-title if added successfuly; throws on errors
-        public API.Spotify.Track AddSongToQueue(string url)
+        // returns artist-title of added track if successful; throws on errors
+        public TrackData AddSongToQueue(string url)
         {
             lock (mImplLock)
             {
@@ -131,8 +132,10 @@ namespace LukeBot.Spotify.Impl
                     throw new SpotifyQueueAddFailedException(resp.code);
                 }
 
-                Logger.Log().Debug("Added {0} - {1} to play queue successfully", track.artists[0].name, track.name);
-                return track;
+                TrackData returnData = new (track.artists[0].name, track.name);
+
+                Logger.Log().Debug("Added {0} - {1} to play queue successfully", returnData.Artist, returnData.Title);
+                return returnData;
             }
         }
 

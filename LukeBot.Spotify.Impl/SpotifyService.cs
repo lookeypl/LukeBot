@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using LukeBot.Communication;
-using LukeBot.Communication.Intercom;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
@@ -38,38 +37,6 @@ namespace LukeBot.Spotify.Impl
                     Logger.Log().Error("Spotify user module for user {0} will be skipped on this load.", u);
                     Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
                 }
-            }
-        }
-
-
-        // Intercom interface
-
-        private ResponseBase Intercom_ResponseAllocator(MessageBase msg)
-        {
-            switch (msg.Message)
-            {
-            case Messages.ADD_SONG_TO_QUEUE: return new AddSongToQueueResponse();
-            }
-
-            Debug.Assert(false, "Message should be validated by now - should not happen");
-            return new ResponseBase();
-        }
-
-        private void Intercom_AddSongToQueueDelegate(MessageBase mb, ref ResponseBase rb)
-        {
-            AddSongToQueueMsg message = (AddSongToQueueMsg)mb;
-            AddSongToQueueResponse response = (AddSongToQueueResponse)rb;
-
-            try
-            {
-                API.Spotify.Track t = mModules[message.User].AddSongToQueue(message.URL);
-                response.Artist = t.artists[0].name;
-                response.Title = t.name;
-                response.SignalSuccess();
-            }
-            catch (Exception e)
-            {
-                response.SignalError(string.Format("{0}", e.Message));
             }
         }
 

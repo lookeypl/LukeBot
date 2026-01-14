@@ -85,8 +85,10 @@ namespace LukeBot.API
                                                   where TResp: Response, new()
         {
             HttpResponseMessage response = Send(method, uri, token, uriQuery, content);
-            if (!response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NoContent)
+            if (typeof(TResp) == typeof(Response) ||
+                !response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NoContent)
             {
+                //Logger.Log().Secure("{0} {1} returned {2} with no content", method.ToString(), uri, response.StatusCode);
                 TResp r = new TResp();
                 r.Fill(response);
                 return r;
@@ -94,7 +96,8 @@ namespace LukeBot.API
 
             Task<string> retContentStrTask = response.Content.ReadAsStringAsync();
             retContentStrTask.Wait();
-            //Logger.Log().Secure("{0}: {1}", method.ToString(), retContentStrTask.Result);
+
+            //Logger.Log().Secure("{0} {1} returned {2}: {3}", method.ToString(), uri, response.StatusCode, retContentStrTask.Result);
             TResp ret = JsonConvert.DeserializeObject<TResp>(retContentStrTask.Result);
             ret.Fill(response);
             return ret;

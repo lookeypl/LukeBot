@@ -23,14 +23,6 @@ namespace LukeBot.Twitch.Impl
         private Dictionary<string, TwitchUserModule> mUserModules = new();
 
 
-        // Other Services interactions //
-
-        private IIntermediaryService GetIntermediaryService()
-        {
-            return Service.Get(CommonConstants.INTERMEDIARY_SERVICE_NAME) as IIntermediaryService;
-        }
-
-
         // Config interactions //
 
         private void LoadUserModulesFromConfig()
@@ -41,8 +33,7 @@ namespace LukeBot.Twitch.Impl
             {
                 try
                 {
-                    IUserService userService = Service.Get(CommonConstants.USER_SERVICE_NAME) as IUserService;
-                    CreateModule(userService.GetUser(u));
+                    CreateModule(ServiceUtils.GetUserService().GetUser(u));
                 }
                 catch (System.Exception e)
                 {
@@ -151,7 +142,7 @@ namespace LukeBot.Twitch.Impl
 
         private TwitchService()
         {
-            GetIntermediaryService().Register(CommonConstants.TWITCH_SERVICE_NAME);
+            ServiceUtils.GetIntermediaryService().Register(CommonConstants.TWITCH_SERVICE_NAME);
 
             mBotLogin = Conf.Get<string>(Path.Start()
                 .Push(CommonConstants.TWITCH_SERVICE_NAME)

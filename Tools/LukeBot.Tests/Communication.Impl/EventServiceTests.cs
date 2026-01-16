@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Reflection;
 using System.Collections.Generic;
+using LukeBot.Communication;
 using LukeBot.Communication.Impl;
 using LukeBot.Common;
 
@@ -9,14 +10,14 @@ using LukeBot.Common;
 namespace LukeBot.Tests.Communication.Impl
 {
     [TestClass]
-    public class EventSystemTests: IEventPublisher
+    public class EventServiceTests: IEventPublisher
     {
         private const string USER_EVENT_USERNAME = "test";
         private const string USER_EVENT_USERNAME_2 = "test2";
         private const string TEST_EVENT_NAME = "TestEvent";
         private const string TEST_EVENT_TWO_NAME = "TestEventTwo";
 
-        private EventSystem mEventSystem;
+        private IEventService mEventService;
         private List<EventDescriptor> mEventsToTest = new();
 
         public class TestEventArgs: EventArgsBase
@@ -27,11 +28,11 @@ namespace LukeBot.Tests.Communication.Impl
             }
         }
 
-        public class EventSystemSecondPublisher: IEventPublisher
+        public class EventServiceSecondPublisher: IEventPublisher
         {
             private List<EventDescriptor> mEvents = new();
 
-            public EventSystemSecondPublisher(string[] events, string dispatcher)
+            public EventServiceSecondPublisher(string[] events, string dispatcher)
             {
                 foreach (string ev in events)
                 {
@@ -45,7 +46,7 @@ namespace LukeBot.Tests.Communication.Impl
 
             public string GetEventPublisherName()
             {
-                return "EventSystemSecondPublisher";
+                return "EventServiceSecondPublisher";
             }
 
             public List<EventDescriptor> GetEvents()
@@ -56,7 +57,7 @@ namespace LukeBot.Tests.Communication.Impl
 
         public string GetEventPublisherName()
         {
-            return "EventSystemTestPublisher";
+            return "EventServiceTestPublisher";
         }
 
         public List<EventDescriptor> GetEvents()
@@ -82,7 +83,7 @@ namespace LukeBot.Tests.Communication.Impl
                 }
             }
 
-            List<EventCallback> cbs = mEventSystem.Global().RegisterPublisher(this);
+            List<EventCallback> cbs = mEventService.Global().RegisterPublisher(this);
 
             Assert.AreEqual(expectedEventCount, cbs.Count);
             for (int i = 0; i < cbs.Count; ++i)
@@ -113,7 +114,7 @@ namespace LukeBot.Tests.Communication.Impl
                 }
             }
 
-            List<EventCallback> cbs = mEventSystem.User(user).RegisterPublisher(this);
+            List<EventCallback> cbs = mEventService.User(user).RegisterPublisher(this);
 
             Assert.AreEqual(expectedEventCount, cbs.Count);
             for (int i = 0; i < cbs.Count; ++i)
@@ -127,28 +128,28 @@ namespace LukeBot.Tests.Communication.Impl
         }
 
         [TestInitialize]
-        public void EventSystem_TestStartup()
+        public void EventService_TestStartup()
         {
-            mEventSystem = new EventSystem();
-            mEventSystem.AddUser(USER_EVENT_USERNAME);
-            mEventSystem.AddUser(USER_EVENT_USERNAME_2);
+            mEventService = EventService.Create();
+            mEventService.AddUser(USER_EVENT_USERNAME);
+            mEventService.AddUser(USER_EVENT_USERNAME_2);
         }
 
         [TestMethod]
-        public void EventSystem_RegisterGlobalSingle()
+        public void EventService_RegisterGlobalSingle()
         {
             RegisterAndCheckCallbacksGlobal(new string[]{ TEST_EVENT_NAME }, null);
         }
 
         [TestMethod]
-        public void EventSystem_RegisterUserSingle()
+        public void EventService_RegisterUserSingle()
         {
             RegisterAndCheckCallbacksUser(USER_EVENT_USERNAME, new string[]{ TEST_EVENT_NAME }, "");
             RegisterAndCheckCallbacksUser(USER_EVENT_USERNAME_2, new string[]{ TEST_EVENT_NAME }, "");
         }
 
         [TestMethod]
-        public void EventSystem_RegisterToNone()
+        public void EventService_RegisterToNone()
         {
             Assert.ThrowsException<NoEventProvidedException>(() => RegisterAndCheckCallbacksGlobal(null, ""));
             Assert.ThrowsException<NoEventProvidedException>(() => RegisterAndCheckCallbacksUser(USER_EVENT_USERNAME, null, ""));
@@ -156,7 +157,7 @@ namespace LukeBot.Tests.Communication.Impl
         }
 
         [TestMethod]
-        public void EventSystem_RegisterDuplicatePublisher()
+        public void EventService_RegisterDuplicatePublisher()
         {
             // registering the same publisher to the same collection should throw an exception
             RegisterAndCheckCallbacksGlobal(new string[] { TEST_EVENT_NAME }, "");
@@ -164,88 +165,88 @@ namespace LukeBot.Tests.Communication.Impl
         }
 
         [TestMethod]
-        public void EventSystem_RegisterDuplicateEvent()
+        public void EventService_RegisterDuplicateEvent()
         {
             // registering two different publishers offering the same event also should fail
             RegisterAndCheckCallbacksGlobal(new string[] { TEST_EVENT_NAME }, "");
             Assert.ThrowsException<EventDescriptorInvalidException>(() =>
-                mEventSystem.Global().RegisterPublisher(new EventSystemSecondPublisher(new string[] { TEST_EVENT_NAME }, ""))
+                mEventService.Global().RegisterPublisher(new EventServiceSecondPublisher(new string[] { TEST_EVENT_NAME }, ""))
             );
 
             // similarly, a different dispatcher name should not matter (events should be exclusive)
-            mEventSystem.Global().AddEventDispatcher("test", EventDispatcherType.Immediate);
+            mEventService.Global().AddEventDispatcher("test", EventDispatcherType.Immediate);
             Assert.ThrowsException<EventDescriptorInvalidException>(() =>
-                mEventSystem.Global().RegisterPublisher(new EventSystemSecondPublisher(new string[] { TEST_EVENT_NAME }, "test"))
+                mEventService.Global().RegisterPublisher(new EventServiceSecondPublisher(new string[] { TEST_EVENT_NAME }, "test"))
             );
         }
 
         [TestMethod]
-        public void EventSystem_RegisterDuplicatePublisherForSeparateUser()
+        public void EventService_RegisterDuplicatePublisherForSeparateUser()
         {
             // registering the same publisher for different users should work just fine
         }
 
         [TestMethod]
-        public void EventSystem_RegisterDuplicateEventForSeparateUser()
+        public void EventService_RegisterDuplicateEventForSeparateUser()
         {
             // registering two publishers with the same event name but for separate user should work
             RegisterAndCheckCallbacksUser(USER_EVENT_USERNAME, new string[] { TEST_EVENT_NAME }, "");
-            mEventSystem.User(USER_EVENT_USERNAME_2).RegisterPublisher(
-                new EventSystemSecondPublisher(new string[] { TEST_EVENT_NAME }, "")
+            mEventService.User(USER_EVENT_USERNAME_2).RegisterPublisher(
+                new EventServiceSecondPublisher(new string[] { TEST_EVENT_NAME }, "")
             );
         }
 
         [TestMethod]
-        public void EventSystem_Global()
+        public void EventService_Global()
         {
             List<EventCallback> cbs = RegisterAndCheckCallbacksGlobal(new string[] { TEST_EVENT_NAME }, null);
 
             bool eventFired = false;
-            mEventSystem.Global().Event(TEST_EVENT_NAME).Endpoint += (o, args) =>
+            mEventService.Global().Event(TEST_EVENT_NAME).Subscribe((o, args) =>
             {
                 Assert.IsInstanceOfType(args, typeof(TestEventArgs));
                 eventFired = true;
-            };
+            });
 
             cbs[0].PublishEvent(new TestEventArgs());
             Assert.IsTrue(eventFired);
         }
 
         [TestMethod]
-        public void EventSystem_User()
+        public void EventService_User()
         {
             List<EventCallback> cbs = RegisterAndCheckCallbacksUser(USER_EVENT_USERNAME, new string[] { TEST_EVENT_NAME }, null);
 
             bool eventFired = false;
-            mEventSystem.User(USER_EVENT_USERNAME).Event(TEST_EVENT_NAME).Endpoint += (o, args) =>
+            mEventService.User(USER_EVENT_USERNAME).Event(TEST_EVENT_NAME).Subscribe((o, args) =>
             {
                 Assert.IsInstanceOfType(args, typeof(TestEventArgs));
                 eventFired = true;
-            };
+            });
 
             cbs[0].PublishEvent(new TestEventArgs());
             Assert.IsTrue(eventFired);
         }
 
         [TestMethod]
-        public void EventSystem_UserSeparation()
+        public void EventService_UserSeparation()
         {
             List<EventCallback> cbs1 = RegisterAndCheckCallbacksUser(USER_EVENT_USERNAME, new string[] { TEST_EVENT_NAME }, null);
             List<EventCallback> cbs2 = RegisterAndCheckCallbacksUser(USER_EVENT_USERNAME_2, new string[] { TEST_EVENT_NAME }, null);
 
             bool eventFired1 = false;
             bool eventFired2 = false;
-            mEventSystem.User(USER_EVENT_USERNAME).Event(TEST_EVENT_NAME).Endpoint += (o, args) =>
+            mEventService.User(USER_EVENT_USERNAME).Event(TEST_EVENT_NAME).Subscribe((o, args) =>
             {
                 Assert.IsInstanceOfType(args, typeof(TestEventArgs));
                 eventFired1 = true;
-            };
+            });
 
-            mEventSystem.User(USER_EVENT_USERNAME_2).Event(TEST_EVENT_NAME).Endpoint += (o, args) =>
+            mEventService.User(USER_EVENT_USERNAME_2).Event(TEST_EVENT_NAME).Subscribe((o, args) =>
             {
                 Assert.IsInstanceOfType(args, typeof(TestEventArgs));
                 eventFired2 = true;
-            };
+            });
 
             cbs1[0].PublishEvent(new TestEventArgs());
             Assert.IsTrue(eventFired1);
@@ -264,9 +265,9 @@ namespace LukeBot.Tests.Communication.Impl
         // - etc etc... there's lots of scenarios to tackle :)
 
         [TestCleanup]
-        public void EventSystem_TestTeardown()
+        public void EventService_TestTeardown()
         {
-            mEventSystem = null;
+            mEventService = null;
         }
     }
 }

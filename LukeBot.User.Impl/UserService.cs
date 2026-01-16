@@ -1,5 +1,5 @@
 using LukeBot.Common;
-using LukeBot.Communication.Impl;
+using LukeBot.Communication;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
@@ -44,7 +44,8 @@ namespace LukeBot.User.Impl
             if (mUsers.ContainsKey(username) || username == Constants.LUKEBOT_USER_ID)
                 throw new UsernameNotAvailableException(username);
 
-            Comms.Event.AddUser(username);
+            IEventService evs = Service.Get(Common.Constants.EVENT_SERVICE_NAME) as IEventService;
+            evs.AddUser(username);
             mUsers.Add(username, new UserContext(username));
         }
 
@@ -195,7 +196,9 @@ namespace LukeBot.User.Impl
 
                 RemoveUserFromConfig(lbUsername);
                 mUsers.Remove(lbUsername);
-                Comms.Event.RemoveUser(lbUsername);
+
+                IEventService evs = Service.Get(Common.Constants.EVENT_SERVICE_NAME) as IEventService;
+                evs.RemoveUser(lbUsername);
             }
         }
 

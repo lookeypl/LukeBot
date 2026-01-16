@@ -2,7 +2,6 @@
 using System.Runtime.Serialization;
 using LukeBot.Common;
 using LukeBot.Communication;
-using LukeBot.Communication.Impl;
 using LukeBot.Logging;
 using LukeBot.Twitch;
 using Newtonsoft.Json;
@@ -144,24 +143,24 @@ namespace LukeBot.Widget.Impl
 
         protected override void OnLoad()
         {
-            EventCollection collection = Comms.Event.User(mLBUser);
+            IEventCollection collection = ServiceUtils.GetEventService().User(mLBUser);
 
-            collection.Event(Events.TWITCH_CHEER).Endpoint += OnSimpleEvent<TwitchCheerArgs>;
-            collection.Event(Events.TWITCH_CHEER).InterruptEndpoint += OnEventInterrupt;
+            collection.Event(Events.TWITCH_CHEER).Subscribe(OnSimpleEvent<TwitchCheerArgs>);
+            collection.Event(Events.TWITCH_CHEER).InterruptSubscribe(OnEventInterrupt);
 
-            collection.Event(Events.TWITCH_SUBSCRIPTION).Endpoint += OnSubscriptionEvent;
-            collection.Event(Events.TWITCH_SUBSCRIPTION).InterruptEndpoint += OnEventInterrupt;
+            collection.Event(Events.TWITCH_SUBSCRIPTION).Subscribe(OnSubscriptionEvent);
+            collection.Event(Events.TWITCH_SUBSCRIPTION).InterruptSubscribe(OnEventInterrupt);
         }
 
         protected override void OnUnload()
         {
-            EventCollection collection = Comms.Event.User(mLBUser);
+            IEventCollection collection = ServiceUtils.GetEventService().User(mLBUser);
 
-            collection.Event(Events.TWITCH_CHEER).Endpoint -= OnSimpleEvent<TwitchCheerArgs>;
-            collection.Event(Events.TWITCH_CHEER).InterruptEndpoint -= OnEventInterrupt;
+            collection.Event(Events.TWITCH_CHEER).Unsubscribe(OnSimpleEvent<TwitchCheerArgs>);
+            collection.Event(Events.TWITCH_CHEER).InterruptUnsubscribe(OnEventInterrupt);
 
-            collection.Event(Events.TWITCH_SUBSCRIPTION).Endpoint -= OnSubscriptionEvent;
-            collection.Event(Events.TWITCH_SUBSCRIPTION).InterruptEndpoint -= OnEventInterrupt;
+            collection.Event(Events.TWITCH_SUBSCRIPTION).Unsubscribe(OnSubscriptionEvent);
+            collection.Event(Events.TWITCH_SUBSCRIPTION).InterruptUnsubscribe(OnEventInterrupt);
         }
 
         protected override ConfigurationBase CreateDefaultConfiguration()

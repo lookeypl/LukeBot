@@ -9,49 +9,6 @@ using LukeBot.Common;
 
 namespace LukeBot.Communication.Impl
 {
-    public enum EventDispatcherType
-    {
-        Immediate = 0,
-        Queued
-    }
-
-    public enum EventDispatcherState
-    {
-        Stopped = 0,
-        Running,
-        OnHold,
-        Disabled,
-        Done
-    }
-
-    public struct EventDispatcherStatus
-    {
-        public EventDispatcherType Type;
-        public string Name;
-        public EventDispatcherState State;
-        public int EventCount;
-    }
-
-    public abstract class EventDispatcher
-    {
-        protected string mName;
-
-        protected EventDispatcher(string name)
-        {
-            mName = name;
-        }
-
-        public abstract void Submit(Event ev, EventArgsBase args);
-        public abstract void Start();
-        public abstract void Stop();
-        public abstract void Clear();
-        public abstract void Enable();
-        public abstract void Disable();
-        public abstract void Hold();
-        public abstract void Skip();
-        public abstract EventDispatcherStatus Status();
-    }
-
     /**
      * Simple event dispatcher, executing events immediately after their arrival
      * and on the same thread.
@@ -70,10 +27,10 @@ namespace LukeBot.Communication.Impl
         {
         }
 
-        public override void Submit(Event ev, EventArgsBase args)
+        public override void Submit(IEvent ev, EventArgsBase args)
         {
             // immediately execute an event upon submission
-            ev.Raise(args);
+            (ev as Event).Raise(args);
         }
 
         public override void Start()
@@ -248,9 +205,9 @@ namespace LukeBot.Communication.Impl
             mState = EventDispatcherState.Stopped;
         }
 
-        public override void Submit(Event ev, EventArgsBase args)
+        public override void Submit(IEvent ev, EventArgsBase args)
         {
-            EnqueueItem(new EventQueueItem(ev, args));
+            EnqueueItem(new EventQueueItem(ev as Event, args));
             mQueueAvailableEvent.Set();
         }
 

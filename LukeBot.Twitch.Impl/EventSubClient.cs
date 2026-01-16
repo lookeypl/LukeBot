@@ -9,10 +9,11 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using LukeBot.API;
-using LukeBot.Communication.Impl;
+using LukeBot.Communication;
 using LukeBot.Common;
 using LukeBot.Twitch;
 using LukeBot.Logging;
+using LukeBot.Services;
 
 
 [assembly: InternalsVisibleTo("LukeBot.Tests")]
@@ -290,7 +291,7 @@ namespace LukeBot.Twitch.Impl
         {
             mLBUser = lbUser;
 
-            List<EventCallback> events = Comms.Event.User(mLBUser).RegisterPublisher(this);
+            List<EventCallback> events = ServiceUtils.GetEventService().User(mLBUser).RegisterPublisher(this);
 
             foreach (EventCallback e in events)
             {
@@ -783,7 +784,7 @@ namespace LukeBot.Twitch.Impl
                 mReceiveThread.Join();
 
             mSocket = null;
-            Comms.Event.User(mLBUser).UnregisterPublisher(this);
+            ServiceUtils.GetEventService().User(mLBUser).UnregisterPublisher(this);
         }
     }
 }

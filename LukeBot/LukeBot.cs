@@ -45,13 +45,6 @@ namespace LukeBot
         {
         }
 
-        public void OpenBrowserURLCallback(object o, EventArgsBase args)
-        {
-            // hooks up to AuthManager's OpenBrowserURL
-            API.OpenBrowserURLArgs a = args as API.OpenBrowserURLArgs;
-            UserInterface.CLI.OpenBrowserURL(a.LukeBotUser, a.URL);
-        }
-
         private void AddCLICommands()
         {
             foreach (ICLIProcessor cp in mCommandProcessors)
@@ -72,7 +65,6 @@ namespace LukeBot
 
             Logger.Log().Info("Core systems teardown...");
             Service.Teardown();
-            Comms.Teardown();
             Conf.Teardown();
         }
 
@@ -86,28 +78,24 @@ namespace LukeBot
                 Conf.Initialize(opts.StoreDir);
 
                 Logger.Log().Info("Initializing Core Comms...");
-                Comms.Initialize();
-
-                // TODO hacky??? maybe it could be done better
-                API.AuthManager i = API.AuthManager.Instance; // triggers constructor and initializes below event's endpoint
-                Comms.Event.Global().Event(API.Events.AUTHMGR_OPEN_BROWSER).Endpoint += OpenBrowserURLCallback;
 
                 Logger.Log().Info("Starting web endpoint...");
                 mEndpoint.Start();
 
                 Logger.Log().Info("Initializing Services...");
+                Service.Register(EventService.Create());
                 Service.Register(IntermediaryService.Create());
                 Service.Register(UserService.Create());
                 Service.Register(TwitchService.Create());
                 Service.Register(SpotifyService.Create());
                 Service.Register(WidgetService.Create());
 
+                Logger.Log().Info("Running Services...");
+                Service.Run();
+
                 InterfaceType uiType = opts.CLI;
                 Logger.Log().Info("Initializing UI {0}...", uiType.ToString());
                 UserInterface.Initialize(uiType);
-
-                Logger.Log().Info("Running Services...");
-                Service.Run();
 
                 Logger.Log().Info("Giving control to UI");
                 AddCLICommands();

@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Logging;
-using LukeBot.Communication.Impl;
-using LukeBot.Twitch;
+using LukeBot.Communication;
+using LukeBot.Services;
 using LukeBot.Twitch.Command;
 using LukeBot.API;
 
@@ -113,7 +113,7 @@ namespace LukeBot.Twitch.Impl
 
         public void Dispose()
         {
-            Comms.Event.User(mLBUser).UnregisterPublisher(this);
+            ServiceUtils.GetEventService().User(mLBUser).UnregisterPublisher(this);
         }
 
 
@@ -131,7 +131,7 @@ namespace LukeBot.Twitch.Impl
             mExternalEmotes.AddEmoteSource(new BTTVEmoteSource(userData.id));
             mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(userData.id));
 
-            List<EventCallback> events = Comms.Event.User(mLBUser).RegisterPublisher(this);
+            List<EventCallback> events = ServiceUtils.GetEventService().User(mLBUser).RegisterPublisher(this);
 
             foreach (EventCallback e in events)
             {

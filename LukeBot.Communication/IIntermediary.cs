@@ -1,5 +1,8 @@
 namespace LukeBot.Communication
 {
+    /**
+     * Intermediary object used to both form a Promise and either fulfill or reject it.
+     */
     public interface IIntermediary
     {
         /**

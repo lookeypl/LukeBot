@@ -1,8 +1,4 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using LukeBot.Config;
-using LukeBot.Communication.Impl;
-using LukeBot.Twitch;
-using LukeBot.Twitch.Impl;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Net.Sockets;
@@ -12,6 +8,12 @@ using System.Net.WebSockets;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
+using LukeBot.Config;
+using LukeBot.Communication;
+using LukeBot.Communication.Impl;
+using LukeBot.Services;
+using LukeBot.Twitch;
+using LukeBot.Twitch.Impl;
 
 
 namespace LukeBot.Tests.Twitch.Impl
@@ -140,6 +142,8 @@ namespace LukeBot.Tests.Twitch.Impl
         private static readonly string EVENT_SUB_TEST_REDEMPTION_NAME = "Test reward";
         private static readonly int EVENT_SUB_TEST_REDEMPTION_COST = 420;
 
+        private static IEventService eventService = null;
+
         private EventSubClient es = null;
 
         private TestContext testContext;
@@ -236,9 +240,12 @@ namespace LukeBot.Tests.Twitch.Impl
             // This is to access mock Twitch API set up by Twitch CLI
             // and test subscriptions
             Conf.Initialize(Constants.TEST_PROPS_DATA_FILE);
-            Comms.Initialize();
-            Comms.Event.AddUser(EVENT_SUB_TEST_USER);
-            Comms.Event.User(EVENT_SUB_TEST_USER).AddEventDispatcher(
+
+            eventService = EventService.Create();
+            Service.Register(eventService);
+
+            eventService.AddUser(EVENT_SUB_TEST_USER);
+            eventService.User(EVENT_SUB_TEST_USER).AddEventDispatcher(
                 global::LukeBot.Twitch.Impl.Constants.QueuedDispatcherForUser(EVENT_SUB_TEST_USER), EventDispatcherType.Queued
             );
         }
@@ -292,13 +299,13 @@ namespace LukeBot.Tests.Twitch.Impl
         {
             AutoResetEvent notificationReceivedEvent = new(false);
             bool castedSuccessfully = false;
-            Comms.Event.User(EVENT_SUB_TEST_USER).Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Endpoint += (e, a) =>
+            eventService.User(EVENT_SUB_TEST_USER).Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Subscribe((e, a) =>
             {
                 TwitchChannelPointsRedemptionArgs args = a as TwitchChannelPointsRedemptionArgs;
                 castedSuccessfully = (args != null);
                 Console.Error.WriteLine(String.Format("user: {0} name: {1} title: {2}", args.User, args.DisplayName, args.Title));
                 notificationReceivedEvent.Set();
-            };
+            });
 
             AutoResetEvent reconnectedEvent = new(false);
             es.Reconnected += (e, args) =>
@@ -353,7 +360,7 @@ namespace LukeBot.Tests.Twitch.Impl
             bool correctCost = false;
             bool correctTitle = false;
 
-            Comms.Event.User(EVENT_SUB_TEST_USER).Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Endpoint += (e, a) =>
+            eventService.User(EVENT_SUB_TEST_USER).Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Subscribe((e, a) =>
             {
                 TwitchChannelPointsRedemptionArgs args = a as TwitchChannelPointsRedemptionArgs;
 
@@ -365,7 +372,7 @@ namespace LukeBot.Tests.Twitch.Impl
                 correctTitle = (EVENT_SUB_TEST_REDEMPTION_NAME == args.Title);
 
                 notificationReceivedEvent.Set();
-            };
+            });
 
             await ConnectEventSub();
 
@@ -404,7 +411,7 @@ namespace LukeBot.Tests.Twitch.Impl
                 mTwitchWSProcess.Kill();
             }
 
-            Comms.Teardown();
+            Service.Unregister(eventService);
         }
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using LukeBot.Communication.Impl;
 using LukeBot.Common;
+using LukeBot.Communication;
+using LukeBot.Communication.Impl;
 
 
 namespace LukeBot.Tests.Communication.Impl
@@ -43,12 +44,12 @@ namespace LukeBot.Tests.Communication.Impl
             });
 
             bool eventRaised = false;
-            ev.Endpoint += (object o, EventArgsBase args) =>
+            ev.Subscribe((object o, EventArgsBase args) =>
             {
                 Assert.IsInstanceOfType(o, typeof(Event));
                 Assert.IsInstanceOfType(args, typeof(TestArgs));
                 eventRaised = true;
-            };
+            });
 
             ev.Raise(new TestArgs());
             Assert.IsTrue(eventRaised);

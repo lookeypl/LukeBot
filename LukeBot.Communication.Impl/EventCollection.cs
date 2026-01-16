@@ -1,45 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+using System;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Threading;
+using System.Collections.Generic;
 using LukeBot.Common;
-using LukeBot.Communication;
 using LukeBot.Logging;
 
 
 namespace LukeBot.Communication.Impl
 {
-    /**
-     * Interface that event publishers should inherit from. Provides us
-     * with necessary information regarding who publishes events.
-     */
-    public interface IEventPublisher
-    {
-        public string GetEventPublisherName();
-        public List<EventDescriptor> GetEvents();
-    }
-
-    /**
-     * A collection of events.
-     *
-     * This class stores all registered publishers, their events and
-     * all dispatchers that were added.
-     *
-     * By default, an Immediate dispatcher is created, which can
-     * be referred to by either not providing any target dispatcher
-     * name (null or empty), or specifying "DEFAULT" dispatcher.
-     *
-     * One Publisher can only register once to one specific collection.
-     * Events cannot have duplicate names within one collection, even
-     * if they are provided by separate publishers. By design, the "evented"
-     * end is not aware who is publishing events. However, this restriction
-     * only applies within one collection - separate collections can have
-     * same-named events provided by same publishers.
-     */
-    public class EventCollection
+    public class EventCollection: IEventCollection
     {
         private string mLBUser;
         private Dictionary<string, IEventPublisher> mPublishers = new();
@@ -69,7 +37,7 @@ namespace LukeBot.Communication.Impl
          *
          * To subscribe to events use this function and add your delegate to .Endpoint member.
          */
-        public Event Event(string name)
+        public IEvent Event(string name)
         {
             if (!mEvents.ContainsKey(name))
                 throw new EventNotFoundException(name);
@@ -89,7 +57,7 @@ namespace LukeBot.Communication.Impl
 
         private EventCallback CreateEventCallback(string eventName, string dispatcherName)
         {
-            Event ev = Event(eventName);
+            Event ev = Event(eventName) as Event;
             EventDispatcher disp = Dispatcher(dispatcherName);
             return new EventCallback(eventName, (EventArgsBase args) => disp.Submit(ev, args));
         }
@@ -129,15 +97,7 @@ namespace LukeBot.Communication.Impl
             return CreateEventCallback(ed.Name, disp);
         }
 
-        /**
-         * Register a new Publisher in the collection.
-         *
-         * This call will query the Publisher for its name and events which are meant
-         * to be published. See EventDescriptor class for requested information.
-         *
-         * Publishers MUST have their own unique name, and provided event names must NOT collide
-         * with events already registered by other Publishers.
-         */
+
         public List<EventCallback> RegisterPublisher(IEventPublisher p)
         {
             string pubName = p.GetEventPublisherName();
@@ -163,14 +123,7 @@ namespace LukeBot.Communication.Impl
             return retCallback;
         }
 
-        /**
-         * Unregister a publisher.
-         *
-         * This will clear any Events associated with a Publisher.
-         *
-         * If Publisher's name is not found, returns quietly assuming it was already removed
-         * or was not registered in the first place.
-         */
+
         public void UnregisterPublisher(IEventPublisher p)
         {
             string pubName = p.GetEventPublisherName();
@@ -194,14 +147,6 @@ namespace LukeBot.Communication.Impl
             mPublishers.Remove(pubName);
         }
 
-        /**
-         * Add a new Event Dispatcher.
-         *
-         * This will add an Event Dispatcher of specified name and type. For more information
-         * on Dispatcher types, see EventDispatcher abstract class and implementations.
-         *
-         * Added Event Dispatcher MUST have an unique name, even if it's of different type.
-         */
         public void AddEventDispatcher(string dispName, EventDispatcherType type)
         {
             EventDispatcher dispatcher = null;
@@ -223,15 +168,6 @@ namespace LukeBot.Communication.Impl
             mDispatchers.Add(dispName, dispatcher);
         }
 
-        /**
-         * Remove an Event Dispatcher.
-         *
-         * This call will stop an existing dispatcher and remove it from collection.
-         *
-         * Note that there might be events still using this dispatcher. In such situation
-         * there will be an EventStillInUseException thrown. It is best to clean Dispatchers only
-         * after the Publisher has been unregistered.
-         */
         public void RemoveEventDispatcher(string dispName)
         {
             if (!mDispatchers.ContainsKey(dispName))
@@ -249,12 +185,10 @@ namespace LukeBot.Communication.Impl
             mDispatchers.Remove(dispName);
         }
 
-        /**
-         * Get information about a specific event
-         */
+
         public EventInfo GetEventInfo(string eventName)
         {
-            return Event(eventName).GetEventInfo();
+            return (Event(eventName) as Event).GetEventInfo();
         }
 
         public IEnumerable<EventInfo> ListEvents()
@@ -318,52 +252,6 @@ namespace LukeBot.Communication.Impl
 
             ValidateEventTestArgs(ev, args);
             mDispatchers[dispatcher].Submit(ev, ev.TestGenerator(args));
-        }
-    }
-
-    /**
-     * Event System entry point.
-     *
-     * This class allows for more sophisticated control over events. The underlying mechanism
-     * uses the standard Event Handlers, but allows for some organization in how they're used.
-     *
-     * EventSystem collects Event Collections. By design, one Event Collection should be assigned
-     * to one LukeBot user. In addition to that, there's a special "global" event collection which
-     * should contain and manage all LukeBot-wide events.
-     */
-    public class EventSystem
-    {
-        private Dictionary<string, EventCollection> mUserToCollection = new();
-
-        public EventSystem()
-        {
-            // for Global events
-            mUserToCollection.Add(Constants.LUKEBOT_USER_ID, new(Constants.LUKEBOT_USER_ID));
-        }
-
-        ~EventSystem()
-        {
-            mUserToCollection.Clear();
-        }
-
-        public void AddUser(string lbUser)
-        {
-            mUserToCollection.Add(lbUser, new EventCollection(lbUser));
-        }
-
-        public void RemoveUser(string lbUser)
-        {
-            mUserToCollection.Remove(lbUser);
-        }
-
-        public EventCollection User(string lbUser)
-        {
-            return mUserToCollection[lbUser];
-        }
-
-        public EventCollection Global()
-        {
-            return mUserToCollection[Constants.LUKEBOT_USER_ID];
         }
     }
 }

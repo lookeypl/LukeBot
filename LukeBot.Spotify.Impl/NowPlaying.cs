@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using LukeBot.Logging;
 using LukeBot.API;
 using LukeBot.Spotify;
-using LukeBot.Communication.Impl;
+using LukeBot.Communication;
 using LukeBot.Common;
+using LukeBot.Services;
 
 
 namespace LukeBot.Spotify.Impl
@@ -66,7 +67,8 @@ namespace LukeBot.Spotify.Impl
             mCurrentPlaybackState = null;
             mCurrentStateUpdate = new SpotifyStateUpdateArgs();
 
-            List<EventCallback> events = Comms.Event.User(mLBUser).RegisterPublisher(this);
+            IEventService evs = Service.Get(Common.Constants.EVENT_SERVICE_NAME) as IEventService;
+            List<EventCallback> events = evs.User(mLBUser).RegisterPublisher(this);
 
             foreach (EventCallback e in events)
             {

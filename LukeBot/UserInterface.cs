@@ -1,3 +1,7 @@
+using LukeBot.Common;
+using LukeBot.Communication;
+using LukeBot.Services;
+
 namespace LukeBot
 {
     /**
@@ -12,6 +16,13 @@ namespace LukeBot
         private static readonly object mLock = new();
 
         public delegate bool AuthorizeUserDelegate(string user, byte[] passwordHash, out string reason);
+
+        public static void OpenBrowserURLCallback(object o, EventArgsBase args)
+        {
+            // hooks up to AuthManager's OpenBrowserURL
+            API.OpenBrowserURLArgs a = args as API.OpenBrowserURLArgs;
+            CLI.OpenBrowserURL(a.LukeBotUser, a.URL);
+        }
 
         /**
          * Returns a User Interface instance.
@@ -46,6 +57,10 @@ namespace LukeBot
         public static void Initialize(InterfaceType type)
         {
             mType = type;
+
+            API.AuthManager i = API.AuthManager.Instance; // triggers constructor and initializes below event's endpoint
+            IEventService evs = Service.Get(Constants.EVENT_SERVICE_NAME) as IEventService;
+            evs.Global().Event(API.Events.AUTHMGR_OPEN_BROWSER).Subscribe(OpenBrowserURLCallback);
 
             switch (mType)
             {

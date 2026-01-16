@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-//using System.Linq;
 using LukeBot.Common;
 using LukeBot.Communication;
-using LukeBot.Communication.Impl;
 using LukeBot.Logging;
 using LukeBot.Twitch;
 using Newtonsoft.Json;
@@ -308,20 +306,20 @@ namespace LukeBot.Widget.Impl
 
         protected override void OnLoad()
         {
-            EventCollection collection = Comms.Event.User(mLBUser);
+            IEventCollection collection = ServiceUtils.GetEventService().User(mLBUser);
 
-            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Endpoint += OnChannelPoints;
-            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).InterruptEndpoint += OnEventInterrupt;
+            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Subscribe(OnChannelPoints);
+            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).InterruptSubscribe(OnEventInterrupt);
         }
 
         protected override void OnUnload()
         {
             // TODO should pause any played music probably
 
-            EventCollection collection = Comms.Event.User(mLBUser);
+            IEventCollection collection = ServiceUtils.GetEventService().User(mLBUser);
 
-            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Endpoint -= OnChannelPoints;
-            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).InterruptEndpoint -= OnEventInterrupt;
+            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Unsubscribe(OnChannelPoints);
+            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).InterruptUnsubscribe(OnEventInterrupt);
         }
 
         protected override ConfigurationBase CreateDefaultConfiguration()

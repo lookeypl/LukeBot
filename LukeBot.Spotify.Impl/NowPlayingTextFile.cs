@@ -1,8 +1,9 @@
 ﻿using System.IO;
 using LukeBot.Logging;
-using LukeBot.Spotify;
-using LukeBot.Communication.Impl;
+using LukeBot.Communication;
 using LukeBot.Common;
+using LukeBot.Services;
+using LukeBot.Spotify;
 
 
 namespace LukeBot.Spotify.Impl
@@ -22,8 +23,9 @@ namespace LukeBot.Spotify.Impl
             mTitleFilePath = titlePath;
             mNeedsUpdate = false;
 
-            Comms.Event.User(mLBUser).Event(Events.SPOTIFY_STATE_UPDATE).Endpoint += OnStateUpdate;
-            Comms.Event.User(mLBUser).Event(Events.SPOTIFY_TRACK_CHANGED).Endpoint += OnTrackChanged;
+            IEventService evs = Service.Get(Common.Constants.EVENT_SERVICE_NAME) as IEventService;
+            evs.User(mLBUser).Event(Events.SPOTIFY_STATE_UPDATE).Subscribe(OnStateUpdate);
+            evs.User(mLBUser).Event(Events.SPOTIFY_TRACK_CHANGED).Subscribe(OnTrackChanged);
         }
 
         ~NowPlayingTextFile()

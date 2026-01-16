@@ -1,7 +1,6 @@
 using System;
 using LukeBot.Common;
 using LukeBot.Logging;
-using LukeBot.Communication.Impl;
 using LukeBot.Services;
 using LukeBot.Twitch.Command;
 using LukeBot.User;

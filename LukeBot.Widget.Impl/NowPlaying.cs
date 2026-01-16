@@ -1,5 +1,6 @@
 using LukeBot.Common;
-using LukeBot.Communication.Impl;
+using LukeBot.Communication;
+using LukeBot.Services;
 using LukeBot.Spotify;
 
 
@@ -43,14 +44,14 @@ namespace LukeBot.Widget.Impl
 
         protected override void OnLoad()
         {
-            Comms.Event.User(mLBUser).Event(Events.SPOTIFY_STATE_UPDATE).Endpoint += OnStateUpdate;
-            Comms.Event.User(mLBUser).Event(Events.SPOTIFY_TRACK_CHANGED).Endpoint += OnTrackChanged;
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.SPOTIFY_STATE_UPDATE).Subscribe(OnStateUpdate);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.SPOTIFY_TRACK_CHANGED).Subscribe(OnTrackChanged);
         }
 
         protected override void OnUnload()
         {
-            Comms.Event.User(mLBUser).Event(Events.SPOTIFY_STATE_UPDATE).Endpoint -= OnStateUpdate;
-            Comms.Event.User(mLBUser).Event(Events.SPOTIFY_TRACK_CHANGED).Endpoint -= OnTrackChanged;
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.SPOTIFY_STATE_UPDATE).Unsubscribe(OnStateUpdate);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.SPOTIFY_TRACK_CHANGED).Unsubscribe(OnTrackChanged);
         }
 
         protected override ConfigurationBase CreateDefaultConfiguration()

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Net;
 using LukeBot.API;
 using LukeBot.Common;
-using LukeBot.Communication.Impl;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
@@ -12,6 +11,7 @@ using LukeBot.Twitch.Command;
 using Widget = LukeBot.Widget;
 
 using CommonConstants = LukeBot.Common.Constants;
+using LukeBot.Communication;
 
 namespace LukeBot.Twitch.Impl
 {
@@ -141,7 +141,7 @@ namespace LukeBot.Twitch.Impl
             }
 
             // Each user has its own queued dispatcher to independently handle some events
-            Comms.Event.User(mLBUser).AddEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser), EventDispatcherType.Queued);
+            ServiceUtils.GetEventService().User(mLBUser).AddEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser), EventDispatcherType.Queued);
 
             mIRC = IRC;
             mIRCChannel = mIRC.JoinChannel(mLBUser, mUserData, mUserToken);
@@ -308,7 +308,7 @@ namespace LukeBot.Twitch.Impl
                 mEventSub = null;
             }
 
-            Comms.Event.User(mLBUser).RemoveEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser));
+            ServiceUtils.GetEventService().User(mLBUser).RemoveEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser));
 
             if (mIRCChannel != null)
             {

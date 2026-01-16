@@ -1,9 +1,6 @@
 ﻿using LukeBot.Common;
-using LukeBot.Communication.Impl;
 using LukeBot.Twitch;
 using LukeBot.Services;
-using LukeBot.User;
-using System.Runtime.CompilerServices;
 
 
 namespace LukeBot.Widget.Impl
@@ -35,26 +32,21 @@ namespace LukeBot.Widget.Impl
 
         protected override void OnConnected()
         {
-            IUserService userService = Service.Get(LukeBot.Common.Constants.USER_SERVICE_NAME) as IUserService;
-            IUserContext userContext = userService.GetUser(mLBUser);
-
-            ITwitchService service = Service.Get(LukeBot.Common.Constants.TWITCH_SERVICE_NAME) as ITwitchService;
-            ITwitchUserModule userModule = service.GetModule(userContext) as ITwitchUserModule;
-            userModule.RefreshEmotes();
+            ServiceUtils.GetTwitchUserModule(mLBUser).RefreshEmotes();
         }
 
         protected override void OnLoad()
         {
-            Comms.Event.User(mLBUser).Event(Events.TWITCH_CHAT_MESSAGE).Endpoint += OnMessage;
-            Comms.Event.User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_USER).Endpoint += OnClearChat;
-            Comms.Event.User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_MESSAGE).Endpoint += OnClearMsg;
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_MESSAGE).Subscribe(OnMessage);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_USER).Subscribe(OnClearChat);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_MESSAGE).Subscribe(OnClearMsg);
         }
 
         protected override void OnUnload()
         {
-            Comms.Event.User(mLBUser).Event(Events.TWITCH_CHAT_MESSAGE).Endpoint -= OnMessage;
-            Comms.Event.User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_USER).Endpoint -= OnClearChat;
-            Comms.Event.User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_MESSAGE).Endpoint -= OnClearMsg;
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_MESSAGE).Unsubscribe(OnMessage);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_USER).Unsubscribe(OnClearChat);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_MESSAGE).Unsubscribe(OnClearMsg);
         }
 
         protected override ConfigurationBase CreateDefaultConfiguration()

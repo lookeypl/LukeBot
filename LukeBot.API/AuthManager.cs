@@ -3,9 +3,9 @@ using System.Threading;
 using System.Collections.Generic;
 using LukeBot.Common;
 using LukeBot.Communication;
-using LukeBot.Communication.Impl;
 using LukeBot.Config;
 using LukeBot.Logging;
+using LukeBot.Services;
 
 
 namespace LukeBot.API
@@ -60,7 +60,9 @@ namespace LukeBot.API
 
         private AuthManager()
         {
-            List<EventCallback> callbacks = Comms.Event.Global().RegisterPublisher(this);
+            IEventService evService = Service.Get(Common.Constants.EVENT_SERVICE_NAME) as IEventService;
+
+            List<EventCallback> callbacks = evService.Global().RegisterPublisher(this);
             mOpenBrowserURLDelegate = callbacks[0];
         }
 

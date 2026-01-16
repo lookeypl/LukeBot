@@ -30,8 +30,7 @@ namespace LukeBot.Widget.Impl
             {
                 try
                 {
-                    IUserService userService = Service.Get(CommonConstants.USER_SERVICE_NAME) as IUserService;
-                    CreateModule(userService.GetUser(u));
+                    CreateModule(ServiceUtils.GetUserService().GetUser(u));
                 }
                 catch (System.Exception e)
                 {

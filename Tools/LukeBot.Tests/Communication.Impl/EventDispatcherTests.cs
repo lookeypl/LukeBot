@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading;
 using LukeBot.Common;
+using LukeBot.Communication;
 using LukeBot.Communication.Impl;
 
 
@@ -35,13 +36,13 @@ namespace LukeBot.Tests.Communication.Impl
             });
 
             bool eventSet = false;
-            ev.Endpoint += (object o, EventArgsBase a) =>
+            ev.Subscribe((object o, EventArgsBase a) =>
             {
                 TestArgs args = a as TestArgs;
                 Assert.AreEqual(TEST_VALUE, args.testValue);
                 eventSet = true;
                 args.testDoneEvent.Set();
-            };
+            });
 
             TestArgs args = new TestArgs() { testValue = TEST_VALUE };
             ed.Submit(ev, args);
@@ -70,13 +71,13 @@ namespace LukeBot.Tests.Communication.Impl
                     Dispatcher = TEST_EVENT_DISPATCHER_NAME
                 });
 
-                events[i].Endpoint += (object o, EventArgsBase a) =>
+                events[i].Subscribe((object o, EventArgsBase a) =>
                 {
                     TestArgs args = a as TestArgs;
                     Assert.AreEqual(TEST_VALUE, args.testValue);
                     Thread.Sleep(100); // imitate some "work" to be done
                     args.testDoneEvent.Set();
-                };
+                });
 
                 eventArgs[i] = new() { testValue = TEST_VALUE };
             }

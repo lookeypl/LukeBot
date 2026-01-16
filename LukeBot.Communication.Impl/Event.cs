@@ -6,46 +6,9 @@ using LukeBot.Common;
 
 [assembly: InternalsVisibleTo("LukeBot.Tests")]
 
-namespace LukeBot.Communication.Impl
+namespace LukeBot.Communication
 {
-    public enum EventTestParamType
-    {
-        String,
-        Integer
-    }
-
-    public class EventTestParam
-    {
-        public string Name;
-        public string Description;
-        public EventTestParamType Type;
-    }
-
-    /**
-     * A descriptor of a single event on queue
-     */
-    public class EventDescriptor
-    {
-        public string Name;
-        public string Dispatcher;
-        public string Description;
-        public TestGeneratorDelegate TestGenerator;
-        public IEnumerable<EventTestParam> TestParams;
-    }
-
-    /**
-     * An Info struct for UI and such to get more information about the Event
-     */
-    public class EventInfo
-    {
-        public string Name;
-        public string Dispatcher;
-        public string Description;
-        public bool Testable;
-        public IEnumerable<EventTestParam> TestParams;
-    }
-
-    public class Event
+    public class Event: IEvent
     {
         /**
          * Event's name
@@ -68,7 +31,7 @@ namespace LukeBot.Communication.Impl
          * Subscribe to this event handler to be notified when given
          * Event's Publisher raises it.
          */
-        public event EventHandler<EventArgsBase> Endpoint;
+        private event EventHandler<EventArgsBase> Endpoint;
 
         /**
          * Event's interrupt endpoint.
@@ -80,7 +43,7 @@ namespace LukeBot.Communication.Impl
          * Note that so far only Queued Dispatcher provides the functionality
          * to emit Interrupt events.
          */
-        public event EventHandler<EventArgsBase> InterruptEndpoint;
+        private event EventHandler<EventArgsBase> InterruptEndpoint;
 
         /**
          * Generator for test events provided by the publisher.
@@ -106,17 +69,6 @@ namespace LukeBot.Communication.Impl
          * here will fail the validation.
          */
         internal IEnumerable<EventTestParam> TestParams;
-
-
-
-        public Event(EventDescriptor ed)
-        {
-            Name = ed.Name;
-            Dispatcher = ed.Dispatcher;
-            Description = ed.Description;
-            TestGenerator = ed.TestGenerator;
-            TestParams = ed.TestParams;
-        }
 
         internal void Raise(EventArgsBase args)
         {
@@ -145,20 +97,35 @@ namespace LukeBot.Communication.Impl
                 TestParams = this.TestParams
             };
         }
-    }
 
-    public delegate void PublishEventDelegate(EventArgsBase args);
-    public delegate EventArgsBase TestGeneratorDelegate(IEnumerable<(string, string)> args);
 
-    public struct EventCallback
-    {
-        public string eventName;
-        public PublishEventDelegate PublishEvent;
-
-        public EventCallback(string name, PublishEventDelegate pe)
+        public Event(EventDescriptor ed)
         {
-            eventName = name;
-            PublishEvent = pe;
+            Name = ed.Name;
+            Dispatcher = ed.Dispatcher;
+            Description = ed.Description;
+            TestGenerator = ed.TestGenerator;
+            TestParams = ed.TestParams;
+        }
+
+        public void Subscribe(EventHandler<EventArgsBase> callback)
+        {
+            Endpoint += callback;
+        }
+
+        public void Unsubscribe(EventHandler<EventArgsBase> callback)
+        {
+            Endpoint -= callback;
+        }
+
+        public void InterruptSubscribe(EventHandler<EventArgsBase> callback)
+        {
+            InterruptEndpoint += callback;
+        }
+
+        public void InterruptUnsubscribe(EventHandler<EventArgsBase> callback)
+        {
+            InterruptEndpoint -= callback;
         }
     }
 }

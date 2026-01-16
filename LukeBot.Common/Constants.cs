@@ -38,6 +38,7 @@ namespace LukeBot.Common
 
         public const int SERVERCLI_DEFAULT_PORT = 55268; // in T9: LKBOT
 
+        public const string INTERMEDIARY_SERVICE_NAME = "intermediary";
         public const string SPOTIFY_SERVICE_NAME = "spotify";
         public const string TWITCH_SERVICE_NAME = "twitch";
         public const string USER_SERVICE_NAME = "user";

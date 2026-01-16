@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using LukeBot.API;
 using LukeBot.Common;
-using LukeBot.Communication.Impl;
+using LukeBot.Communication;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
@@ -33,6 +33,12 @@ namespace LukeBot.Endpoint
         private IWidgetService GetWidgetService()
         {
             return Service.Get(Constants.WIDGET_SERVICE_NAME) as IWidgetService;
+        }
+
+        private IIntermediary GetIntermediaryForService(string service)
+        {
+            IIntermediaryService intService = Service.Get(Constants.INTERMEDIARY_SERVICE_NAME) as IIntermediaryService;
+            return intService.GetIntermediary(service);
         }
 
         async Task LoadPage(string page, HttpContext context)
@@ -98,7 +104,7 @@ namespace LukeBot.Endpoint
                 }
             }
 
-            Intermediary srv = Comms.Intermediary.GetIntermediary(service);
+            IIntermediary srv = GetIntermediaryForService(service);
 
             if (!context.Request.Query.ContainsKey("state"))
             {

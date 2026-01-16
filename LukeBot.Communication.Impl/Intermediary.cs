@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using LukeBot.Common;
+using LukeBot.Communication;
 
 
 namespace LukeBot.Communication.Impl
 {
-    public sealed class Intermediary
+    public sealed class Intermediary: IIntermediary
     {
         private Dictionary<string, IntermediaryPromise> mPromises = new Dictionary<string, IntermediaryPromise>();
 
@@ -20,7 +21,7 @@ namespace LukeBot.Communication.Impl
         }
 
         // Warn Intermediary about upcoming communication
-        public IntermediaryPromise Expect(string reference, ref PromiseData data)
+        public IIntermediaryPromise Expect(string reference, ref PromiseData data)
         {
             IntermediaryPromise promise = new IntermediaryPromise(reference, ref data);
 

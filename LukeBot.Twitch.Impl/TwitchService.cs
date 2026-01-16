@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using LukeBot.API;
-using LukeBot.Communication.Impl;
+using LukeBot.Communication;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
@@ -21,6 +21,14 @@ namespace LukeBot.Twitch.Impl
         private TwitchIRC mIRC;
         private API.Twitch.GetUserResponse mBotData;
         private Dictionary<string, TwitchUserModule> mUserModules = new();
+
+
+        // Other Services interactions //
+
+        private IIntermediaryService GetIntermediaryService()
+        {
+            return Service.Get(CommonConstants.INTERMEDIARY_SERVICE_NAME) as IIntermediaryService;
+        }
 
 
         // Config interactions //
@@ -143,7 +151,7 @@ namespace LukeBot.Twitch.Impl
 
         private TwitchService()
         {
-            Comms.Intermediary.Register(CommonConstants.TWITCH_SERVICE_NAME);
+            GetIntermediaryService().Register(CommonConstants.TWITCH_SERVICE_NAME);
 
             mBotLogin = Conf.Get<string>(Path.Start()
                 .Push(CommonConstants.TWITCH_SERVICE_NAME)
@@ -171,6 +179,7 @@ namespace LukeBot.Twitch.Impl
         public IEnumerable<string> GetServiceDependencies()
         {
             return new List<String> {
+                CommonConstants.INTERMEDIARY_SERVICE_NAME,
                 CommonConstants.USER_SERVICE_NAME
             };
         }

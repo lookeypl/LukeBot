@@ -1,4 +1,4 @@
-namespace LukeBot.Common
+namespace LukeBot.Communication
 {
     public abstract class PromiseData
     {

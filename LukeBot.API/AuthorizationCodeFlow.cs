@@ -5,8 +5,9 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Text.Json;
 using LukeBot.Common;
-using LukeBot.Communication.Impl;
+using LukeBot.Communication;
 using LukeBot.Logging;
+using LukeBot.Services;
 
 
 namespace LukeBot.API
@@ -15,6 +16,12 @@ namespace LukeBot.API
     {
         private readonly HttpClient mClient = new HttpClient();
         private string mCallbackURL = null;
+
+        IIntermediary GetIntermediary()
+        {
+            IIntermediaryService service = Service.Get(Constants.INTERMEDIARY_SERVICE_NAME) as IIntermediaryService;
+            return service.GetIntermediary(mService);
+        }
 
         public override AuthToken Request(string lbUser, string scope)
         {
@@ -48,7 +55,7 @@ namespace LukeBot.API
 
             Logger.Log().Debug("Notifying comms manager");
             PromiseData userResponseBase = new UserToken();
-            IntermediaryPromise userPromise = Comms.Intermediary.GetIntermediary(mService).Expect(state, ref userResponseBase);
+            IIntermediaryPromise userPromise = GetIntermediary().Expect(state, ref userResponseBase);
 
             // This is emitted to whoever is willing to listen. If there is noone (ex. running in
             // server mode with no GUI) we hope it will be handled properly regardless.

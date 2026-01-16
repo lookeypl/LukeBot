@@ -5,7 +5,7 @@ using LukeBot.Common;
 
 namespace LukeBot.Communication.Impl
 {
-    public class IntermediaryPromise
+    public sealed class IntermediaryPromise: IIntermediaryPromise
     {
         private AutoResetEvent mEvent = null;
         private string mReference = null;
@@ -34,7 +34,7 @@ namespace LukeBot.Communication.Impl
             return mFulfilled;
         }
 
-        public void Fulfill(PromiseData data)
+        internal void Fulfill(PromiseData data)
         {
             Data.Fill(data);
             mFulfilled = true;
@@ -42,7 +42,7 @@ namespace LukeBot.Communication.Impl
             mEvent.Set();
         }
 
-        public void Reject()
+        internal void Reject()
         {
             mFulfilled = false;
 

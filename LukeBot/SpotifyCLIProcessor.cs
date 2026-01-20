@@ -48,7 +48,7 @@ namespace LukeBot
 
             if (!Conf.TryGet<string>(path, out string login))
             {
-                login = CLI.Query(false, "Spotify login for user " + CLI.GetCurrentUser());
+                login = CLI.Query(false, "Spotify login for user " + CLI.GetCurrentUser().GetUsername());
                 if (login.Length == 0)
                 {
                     throw new ArgumentException("No login provided");

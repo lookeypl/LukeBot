@@ -1,5 +1,4 @@
 using LukeBot.Common;
-using LukeBot.Config;
 
 
 namespace LukeBot.API
@@ -14,7 +13,7 @@ namespace LukeBot.API
                 "https://id.twitch.tv/oauth2/authorize",
                 "https://id.twitch.tv/oauth2/token",
                 "https://id.twitch.tv/oauth2/revoke",
-                "https://" + Conf.Get<string>(Common.Constants.PROP_STORE_HTTPS_DOMAIN_PROP) + "/callback/twitch"
+                "https://" + Utils.GetCallbackDomainAndPort() + "/callback/twitch"
             )
         {
         }

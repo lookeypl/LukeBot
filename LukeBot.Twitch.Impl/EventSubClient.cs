@@ -510,7 +510,7 @@ namespace LukeBot.Twitch.Impl
 
                     if (mSubscriptions.ContainsKey(sub))
                     {
-                        Logger.Log().Warning("{0}: Already subscribed to {1}, skipping", mLBUser, sub);
+                        Logger.Log().Warning("EventSubClient {0}: Already subscribed to {1}, skipping", mLBUser, sub);
                         continue;
                     }
 
@@ -524,11 +524,13 @@ namespace LukeBot.Twitch.Impl
 
                     if (!resp.IsSuccess)
                     {
-                        throw new EventSubSubscriptionFailedException(sub, resp.code, resp.responseData.message);
+                        Logger.Log().Error("EventSubClient {0}: Failed to subscribe to {1}: {2} ({3}).", mLBUser, sub, resp.code, resp.responseData.message);
+                        Logger.Log().Error("EventSubClient {0}: Subscription will be skipped until next EventSubClient reconnect", mLBUser);
+                        continue;
                     }
 
                     mSubscriptions.Add(resp.data[0].id, resp.data[0]);
-                    Logger.Log().Debug("EventSubClient {0}: Subscribed to {1}", mLBUser, sub);
+                    Logger.Log().Info("EventSubClient {0}: Subscribed to {1}", mLBUser, sub);
                 }
             }
         }

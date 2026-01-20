@@ -218,7 +218,6 @@ namespace LukeBot
                 mCLI.Message("Permission level set to " + args.PermissionLevel.ToString());
 
                 msg = "Changes to user " + user.GetUsername() + " applied.";
-                msg = "TODO";
             }
             catch (System.Exception e)
             {

@@ -308,8 +308,6 @@ namespace LukeBot.Twitch.Impl
                 mEventSub = null;
             }
 
-            ServiceUtils.GetEventService().User(mLBUser).RemoveEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser));
-
             if (mIRCChannel != null)
             {
                 mIRC.PartChannel(mIRCChannel);
@@ -317,6 +315,8 @@ namespace LukeBot.Twitch.Impl
                 mIRCChannel = null;
                 mIRC = null;
             }
+
+            ServiceUtils.GetEventService().User(mLBUser).RemoveEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser));
         }
 
         public string GetModuleType()

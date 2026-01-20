@@ -21,6 +21,7 @@ namespace LukeBot.Twitch.Impl
         private TwitchIRC mIRC;
         private API.Twitch.GetUserResponse mBotData;
         private Dictionary<string, TwitchUserModule> mUserModules = new();
+        private List<string> mJoinedTwitchChannels = new();
 
 
         // Config interactions //
@@ -56,7 +57,8 @@ namespace LukeBot.Twitch.Impl
                 .Push(CommonConstants.PROP_STORE_LOGIN_PROP)
             );
 
-            if (mUserModules.ContainsKey(lbUser))
+            if (mUserModules.ContainsKey(lbUser) ||
+                mJoinedTwitchChannels.Exists((ch) => ch == channel))
             {
                 throw new ChannelAlreadyJoinedException(lbUser);
             }
@@ -82,6 +84,7 @@ namespace LukeBot.Twitch.Impl
                 throw;
             }
 
+            mJoinedTwitchChannels.Add(channel);
             Logger.Log().Secure("Joined channel twitch ID: {0}", module.GetUserData().id);
             return module;
         }
@@ -91,6 +94,8 @@ namespace LukeBot.Twitch.Impl
             if (mUserModules.TryGetValue(lbUser, out TwitchUserModule module))
             {
                 Logger.Log().Debug("Parting channel {0} for user {1}", module.GetChannelName(), lbUser);
+
+                mJoinedTwitchChannels.Remove(module.GetChannelName());
 
                 try
                 {

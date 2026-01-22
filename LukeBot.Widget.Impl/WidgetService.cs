@@ -6,6 +6,8 @@ using System.Threading;
 using LukeBot.Config;
 using LukeBot.Logging;
 using LukeBot.Services;
+using LukeBot.Spotify;
+using LukeBot.Twitch;
 using LukeBot.User;
 
 using CommonConstants = LukeBot.Common.Constants;
@@ -111,7 +113,7 @@ namespace LukeBot.Widget.Impl
             return new WidgetService();
         }
 
-        public string GetServiceName()
+        public string GetServiceDebugName()
         {
             return CommonConstants.WIDGET_SERVICE_NAME;
         }
@@ -119,9 +121,9 @@ namespace LukeBot.Widget.Impl
         public IEnumerable<string> GetServiceDependencies()
         {
             return new List<String> {
-                CommonConstants.TWITCH_SERVICE_NAME,
-                CommonConstants.SPOTIFY_SERVICE_NAME,
-                CommonConstants.USER_SERVICE_NAME
+                Service.NameOf<ITwitchService>(),
+                Service.NameOf<ISpotifyService>(),
+                Service.NameOf<IUserService>()
             };
         }
 

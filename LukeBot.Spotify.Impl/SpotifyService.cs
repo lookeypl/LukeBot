@@ -28,7 +28,7 @@ namespace LukeBot.Spotify.Impl
             {
                 try
                 {
-                    IUserService userService = Service.Get(CommonConstants.USER_SERVICE_NAME) as IUserService;
+                    IUserService userService = Service.Get<IUserService>();
                     CreateModule(userService.GetUser(u));
                 }
                 catch (System.Exception e)
@@ -83,14 +83,14 @@ namespace LukeBot.Spotify.Impl
             return new SpotifyService();
         }
 
-        public string GetServiceName()
+        public string GetServiceDebugName()
         {
             return CommonConstants.SPOTIFY_SERVICE_NAME;
         }
 
         public IEnumerable<string> GetServiceDependencies()
         {
-            return new List<String>{ CommonConstants.USER_SERVICE_NAME };
+            return new List<String>{ Service.NameOf<IUserService>() };
         }
 
         public void Run()

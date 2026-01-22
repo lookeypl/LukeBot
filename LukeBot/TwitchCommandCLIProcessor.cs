@@ -113,7 +113,7 @@ namespace LukeBot
 
         private ITwitchService GetTwitchService()
         {
-            return Service.Get(Common.Constants.TWITCH_SERVICE_NAME) as ITwitchService;
+            return Service.Get<ITwitchService>();
         }
 
         private ITwitchUserModule GetTwitchUserModule(IUserContext user)

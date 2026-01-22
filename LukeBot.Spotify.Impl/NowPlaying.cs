@@ -67,8 +67,7 @@ namespace LukeBot.Spotify.Impl
             mCurrentPlaybackState = null;
             mCurrentStateUpdate = new SpotifyStateUpdateArgs();
 
-            IEventService evs = Service.Get(Common.Constants.EVENT_SERVICE_NAME) as IEventService;
-            List<EventCallback> events = evs.User(mLBUser).RegisterPublisher(this);
+            List<EventCallback> events = Service.Get<IEventService>().User(mLBUser).RegisterPublisher(this);
 
             foreach (EventCallback e in events)
             {

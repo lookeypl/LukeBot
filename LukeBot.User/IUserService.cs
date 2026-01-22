@@ -4,7 +4,7 @@ using LukeBot.Services;
 
 namespace LukeBot.User
 {
-    public interface IUserService: IService
+    public interface IUserService: IService<IUserService>
     {
         public void LoadUsers();
         public void UnloadUsers();

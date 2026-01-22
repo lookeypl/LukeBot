@@ -60,7 +60,7 @@ namespace LukeBot
 
         private ISpotifyService GetService()
         {
-            return Service.Get(Constants.SPOTIFY_SERVICE_NAME) as ISpotifyService;
+            return Service.Get<ISpotifyService>();
         }
 
         private ISpotifyUserModule GetUserModule(IUserContext user)

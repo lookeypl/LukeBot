@@ -3,7 +3,7 @@ using LukeBot.User;
 
 namespace LukeBot.Spotify
 {
-    public interface ISpotifyService: IService, IUserModuleFactory
+    public interface ISpotifyService: IService<ISpotifyService>, IUserModuleFactory
     {
     }
 }

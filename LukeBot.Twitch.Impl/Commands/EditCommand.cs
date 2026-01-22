@@ -14,8 +14,8 @@ namespace LukeBot.Twitch.Impl.Command
 
         private ITwitchUserModule GetUserModule()
         {
-            IUserContext userContext = (Service.Get(Common.Constants.USER_SERVICE_NAME) as IUserService).GetUser(mLBUser);
-            return (Service.Get(Common.Constants.TWITCH_SERVICE_NAME) as ITwitchService).GetModule(userContext) as ITwitchUserModule;
+            IUserContext userContext = Service.Get<IUserService>().GetUser(mLBUser);
+            return Service.Get<ITwitchService>().GetModule(userContext) as ITwitchUserModule;
         }
 
         public EditCommand(Descriptor d, string lbUser)

@@ -16,8 +16,8 @@ namespace LukeBot.Twitch.Impl.Command
 
         private ISpotifyUserModule GetSpotifyUserModule()
         {
-            IUserContext userContext = (Service.Get(Common.Constants.USER_SERVICE_NAME) as IUserService).GetUser(mLBUser);
-            return (Service.Get(Common.Constants.SPOTIFY_SERVICE_NAME) as ISpotifyService).GetModule(userContext) as ISpotifyUserModule;
+            IUserContext userContext = Service.Get<IUserService>().GetUser(mLBUser);
+            return Service.Get<ISpotifyService>().GetModule(userContext) as ISpotifyUserModule;
         }
 
         public SongRequest(Descriptor d, string lbUser)

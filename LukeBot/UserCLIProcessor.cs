@@ -86,7 +86,7 @@ namespace LukeBot
 
         private IUserService GetUserService()
         {
-            return Service.Get(Common.Constants.USER_SERVICE_NAME) as IUserService;
+            return Service.Get<IUserService>();
         }
 
         private void HandleCreateUserCommand(UserCreateCommand args, out string msg)

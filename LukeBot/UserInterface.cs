@@ -59,8 +59,7 @@ namespace LukeBot
             mType = type;
 
             API.AuthManager i = API.AuthManager.Instance; // triggers constructor and initializes below event's endpoint
-            IEventService evs = Service.Get(Constants.EVENT_SERVICE_NAME) as IEventService;
-            evs.Global().Event(API.Events.AUTHMGR_OPEN_BROWSER).Subscribe(OpenBrowserURLCallback);
+            Service.Get<IEventService>().Global().Event(API.Events.AUTHMGR_OPEN_BROWSER).Subscribe(OpenBrowserURLCallback);
 
             switch (mType)
             {

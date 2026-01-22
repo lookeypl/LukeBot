@@ -12,17 +12,17 @@ namespace LukeBot.Twitch.Impl
     {
         public static IEventService GetEventService()
         {
-            return Service.Get(Common.Constants.EVENT_SERVICE_NAME) as IEventService;
+            return Service.Get<IEventService>();
         }
 
         public static IIntermediaryService GetIntermediaryService()
         {
-            return Service.Get(Common.Constants.INTERMEDIARY_SERVICE_NAME) as IIntermediaryService;
+            return Service.Get<IIntermediaryService>();
         }
 
         public static IUserService GetUserService()
         {
-            return Service.Get(Common.Constants.USER_SERVICE_NAME) as IUserService;
+            return Service.Get<IUserService>();
         }
     }
 }

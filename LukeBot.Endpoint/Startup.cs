@@ -32,12 +32,12 @@ namespace LukeBot.Endpoint
 
         private IWidgetService GetWidgetService()
         {
-            return Service.Get(Constants.WIDGET_SERVICE_NAME) as IWidgetService;
+            return Service.Get<IWidgetService>();
         }
 
         private IIntermediary GetIntermediaryForService(string service)
         {
-            IIntermediaryService intService = Service.Get(Constants.INTERMEDIARY_SERVICE_NAME) as IIntermediaryService;
+            IIntermediaryService intService = Service.Get<IIntermediaryService>();
             return intService.GetIntermediary(service);
         }
 

@@ -23,7 +23,7 @@ namespace LukeBot.Spotify.Impl
             mTitleFilePath = titlePath;
             mNeedsUpdate = false;
 
-            IEventService evs = Service.Get(Common.Constants.EVENT_SERVICE_NAME) as IEventService;
+            IEventService evs = Service.Get<IEventService>();
             evs.User(mLBUser).Event(Events.SPOTIFY_STATE_UPDATE).Subscribe(OnStateUpdate);
             evs.User(mLBUser).Event(Events.SPOTIFY_TRACK_CHANGED).Subscribe(OnTrackChanged);
         }

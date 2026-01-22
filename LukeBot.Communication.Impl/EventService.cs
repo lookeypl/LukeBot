@@ -56,14 +56,14 @@ namespace LukeBot.Communication.Impl
             return mUserToCollection[Constants.LUKEBOT_USER_ID];
         }
 
-        public string GetServiceName()
+        public string GetServiceDebugName()
         {
             return Common.Constants.EVENT_SERVICE_NAME;
         }
 
         public IEnumerable<string> GetServiceDependencies()
         {
-            return new List<string>();
+            return null;
         }
 
         public void Run()

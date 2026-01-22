@@ -19,13 +19,51 @@ namespace LukeBot.Tests.Services
         private static readonly string REQUEST_SHUTDOWN_EXCEPTION_TEST_SERVICE_NAME = "RequestShutdownExceptionTestService";
         private static readonly string WAIT_FOR_SHUTDOWN_EXCEPTION_TEST_SERVICE_NAME = "WaitForShutdownExceptionTestService";
 
-        private abstract class TestService: IService
+        private interface ITestInterfaceService: IService<ITestInterfaceService>
+        {
+            void TestInterfaceServiceMethod(); // specific test interface
+        }
+
+        private class TestInterfaceService: ITestInterfaceService
+        {
+            public void TestInterfaceServiceMethod()
+            {
+                // noop for testing
+            }
+
+            public IEnumerable<string> GetServiceDependencies()
+            {
+                return new List<string>();
+            }
+
+            public string GetServiceDebugName()
+            {
+                return "testinterface";
+            }
+
+            public void RequestShutdown()
+            {
+                // noop
+            }
+
+            public void Run()
+            {
+                // noop
+            }
+
+            public void WaitForShutdown()
+            {
+                // noop
+            }
+        }
+
+        private abstract class TestService<T>: IService<T> where T: TestService<T>
         {
             public bool Running { get; private set; } = false;
             public bool Shutdown { get; private set; } = false;
 
             public abstract IEnumerable<string> GetServiceDependencies();
-            public abstract string GetServiceName();
+            public abstract string GetServiceDebugName();
 
             public virtual void Run()
             {
@@ -43,51 +81,51 @@ namespace LukeBot.Tests.Services
             }
         }
 
-        private class SimpleTestService: TestService
+        private class SimpleTestService: TestService<SimpleTestService>
         {
             public override IEnumerable<string> GetServiceDependencies()
             {
                 return null;
             }
 
-            public override string GetServiceName()
+            public override string GetServiceDebugName()
             {
                 return ServiceTests.SIMPLE_TEST_SERVICE_NAME;
             }
         }
 
-        private class DependentTestService: TestService
+        private class DependentTestService: TestService<DependentTestService>
         {
             public override IEnumerable<string> GetServiceDependencies()
             {
                 return new List<string> {
-                    ServiceTests.SIMPLE_TEST_SERVICE_NAME
+                    Service.NameOf<SimpleTestService>()
                 };
             }
 
-            public override string GetServiceName()
+            public override string GetServiceDebugName()
             {
                 return ServiceTests.DEPENDENT_TEST_SERVICE_NAME;
             }
         }
 
-        private class DoubleDependentTestService: TestService
+        private class DoubleDependentTestService: TestService<DoubleDependentTestService>
         {
             public override IEnumerable<string> GetServiceDependencies()
             {
                 return new List<string> {
-                    ServiceTests.SIMPLE_TEST_SERVICE_NAME,
-                    ServiceTests.DEPENDENT_TEST_SERVICE_NAME
+                    Service.NameOf<SimpleTestService>(),
+                    Service.NameOf<DependentTestService>()
                 };
             }
 
-            public override string GetServiceName()
+            public override string GetServiceDebugName()
             {
                 return ServiceTests.DOUBLE_DEPENDENT_TEST_SERVICE_NAME;
             }
         }
 
-        private class RunExceptionTestService: TestService
+        private class RunExceptionTestService: TestService<RunExceptionTestService>
         {
             public class RunException: System.Exception
             {
@@ -98,10 +136,10 @@ namespace LukeBot.Tests.Services
 
             public override IEnumerable<string> GetServiceDependencies()
             {
-                return new List<string> { ServiceTests.SIMPLE_TEST_SERVICE_NAME };
+                return new List<string> { Service.NameOf<SimpleTestService>() };
             }
 
-            public override string GetServiceName()
+            public override string GetServiceDebugName()
             {
                 return ServiceTests.RUN_EXCEPTION_TEST_SERVICE_NAME;
             }
@@ -112,7 +150,7 @@ namespace LukeBot.Tests.Services
             }
         }
 
-        private class RequestShutdownExceptionTestService: TestService
+        private class RequestShutdownExceptionTestService: TestService<RequestShutdownExceptionTestService>
         {
             public class RequestShutdownException: System.Exception
             {
@@ -123,10 +161,10 @@ namespace LukeBot.Tests.Services
 
             public override IEnumerable<string> GetServiceDependencies()
             {
-                return new List<string> { ServiceTests.SIMPLE_TEST_SERVICE_NAME };
+                return new List<string> { Service.NameOf<SimpleTestService>() };
             }
 
-            public override string GetServiceName()
+            public override string GetServiceDebugName()
             {
                 return ServiceTests.REQUEST_SHUTDOWN_EXCEPTION_TEST_SERVICE_NAME;
             }
@@ -137,7 +175,7 @@ namespace LukeBot.Tests.Services
             }
         }
 
-        private class WaitForShutdownExceptionTestService: TestService
+        private class WaitForShutdownExceptionTestService: TestService<WaitForShutdownExceptionTestService>
         {
             public class WaitForShutdownException: System.Exception
             {
@@ -148,10 +186,10 @@ namespace LukeBot.Tests.Services
 
             public override IEnumerable<string> GetServiceDependencies()
             {
-                return new List<string> { ServiceTests.SIMPLE_TEST_SERVICE_NAME };
+                return new List<string> { Service.NameOf<SimpleTestService>() };
             }
 
-            public override string GetServiceName()
+            public override string GetServiceDebugName()
             {
                 return ServiceTests.WAIT_FOR_SHUTDOWN_EXCEPTION_TEST_SERVICE_NAME;
             }
@@ -162,73 +200,73 @@ namespace LukeBot.Tests.Services
             }
         }
 
-        private class CircularDependentATestService: TestService
+        private class CircularDependentATestService: TestService<CircularDependentATestService>
         {
             public override IEnumerable<string> GetServiceDependencies()
             {
                 return new List<string> {
-                    ServiceTests.SIMPLE_TEST_SERVICE_NAME,
-                    ServiceTests.CIRCULAR_DEPENDENT_B_TEST_SERVICE_NAME
+                    Service.NameOf<SimpleTestService>(),
+                    Service.NameOf<CircularDependentBTestService>()
                 };
             }
 
-            public override string GetServiceName()
+            public override string GetServiceDebugName()
             {
                 return ServiceTests.CIRCULAR_DEPENDENT_A_TEST_SERVICE_NAME;
             }
         }
 
-        private class CircularDependentBTestService: TestService
+        private class CircularDependentBTestService: TestService<CircularDependentBTestService>
         {
             public override IEnumerable<string> GetServiceDependencies()
             {
                 return new List<string> {
-                    ServiceTests.SIMPLE_TEST_SERVICE_NAME,
-                    ServiceTests.CIRCULAR_DEPENDENT_C_TEST_SERVICE_NAME
+                    Service.NameOf<SimpleTestService>(),
+                    Service.NameOf<CircularDependentCTestService>()
                 };
             }
 
-            public override string GetServiceName()
+            public override string GetServiceDebugName()
             {
                 return ServiceTests.CIRCULAR_DEPENDENT_B_TEST_SERVICE_NAME;
             }
         }
 
-        private class CircularDependentCTestService: TestService
+        private class CircularDependentCTestService: TestService<CircularDependentCTestService>
         {
             public override IEnumerable<string> GetServiceDependencies()
             {
                 return new List<string> {
-                    ServiceTests.SIMPLE_TEST_SERVICE_NAME,
-                    ServiceTests.CIRCULAR_DEPENDENT_A_TEST_SERVICE_NAME
+                    Service.NameOf<SimpleTestService>(),
+                    Service.NameOf<CircularDependentATestService>()
                 };
             }
 
-            public override string GetServiceName()
+            public override string GetServiceDebugName()
             {
                 return ServiceTests.CIRCULAR_DEPENDENT_C_TEST_SERVICE_NAME;
             }
         }
 
 
-        private void AssertServiceRegistered<T>(T s) where T: TestService
+        private void AssertServiceRegistered<T>(T s) where T: TestService<T>
         {
-            Assert.IsNotNull(Service.Get(s.GetServiceName()));
-            Assert.AreEqual(Service.Status.SHUTDOWN, Service.GetStatus(s.GetServiceName()));
+            Assert.IsNotNull(Service.Get<T>());
+            Assert.AreEqual(Service.Status.SHUTDOWN, Service.GetStatus<T>());
             Assert.IsFalse(s.Running);
             Assert.IsFalse(s.Shutdown);
         }
 
-        private void AssertServiceRunning<T>(T s) where T: TestService
+        private void AssertServiceRunning<T>(T s) where T: TestService<T>
         {
-            Assert.AreEqual(Service.Status.RUNNING, Service.GetStatus(s.GetServiceName()));
+            Assert.AreEqual(Service.Status.RUNNING, Service.GetStatus<T>());
             Assert.IsTrue(s.Running);
             Assert.IsFalse(s.Shutdown);
         }
 
-        private void AssertServiceShutdown<T>(T s) where T: TestService
+        private void AssertServiceShutdown<T>(T s) where T: TestService<T>
         {
-            Assert.AreEqual(Service.Status.SHUTDOWN, Service.GetStatus(s.GetServiceName()));
+            Assert.AreEqual(Service.Status.SHUTDOWN, Service.GetStatus<T>());
             Assert.IsFalse(s.Running);
             Assert.IsTrue(s.Shutdown);
         }
@@ -246,8 +284,8 @@ namespace LukeBot.Tests.Services
         {
             Service.Register(new SimpleTestService());
 
-            Assert.IsNotNull(Service.Get(ServiceTests.SIMPLE_TEST_SERVICE_NAME));
-            Assert.AreEqual(Service.Status.SHUTDOWN, Service.GetStatus(ServiceTests.SIMPLE_TEST_SERVICE_NAME));
+            Assert.IsNotNull(Service.Get<SimpleTestService>());
+            Assert.AreEqual(Service.Status.SHUTDOWN, Service.GetStatus<SimpleTestService>());
         }
 
         [TestMethod]
@@ -275,8 +313,8 @@ namespace LukeBot.Tests.Services
             AssertServiceRegistered(service);
 
             Service.Unregister(service);
-            Assert.ThrowsException<UnknownServiceException>(() => Service.Get(ServiceTests.SIMPLE_TEST_SERVICE_NAME));
-            Assert.ThrowsException<UnknownServiceException>(() => Service.GetStatus(ServiceTests.SIMPLE_TEST_SERVICE_NAME));
+            Assert.ThrowsException<UnknownServiceException>(() => Service.Get<SimpleTestService>());
+            Assert.ThrowsException<UnknownServiceException>(() => Service.GetStatus<SimpleTestService>());
         }
 
         [TestMethod]
@@ -445,7 +483,7 @@ namespace LukeBot.Tests.Services
 
             Service.Teardown();
             AssertServiceShutdown(service);
-            Assert.AreEqual(Service.Status.SHUTDOWN_FAILED, Service.GetStatus(REQUEST_SHUTDOWN_EXCEPTION_TEST_SERVICE_NAME));
+            Assert.AreEqual(Service.Status.SHUTDOWN_FAILED, Service.GetStatus<RequestShutdownExceptionTestService>());
         }
 
         [TestMethod]
@@ -466,7 +504,17 @@ namespace LukeBot.Tests.Services
 
             Service.Teardown();
             AssertServiceShutdown(service);
-            Assert.AreEqual(Service.Status.SHUTDOWN_FAILED, Service.GetStatus(WAIT_FOR_SHUTDOWN_EXCEPTION_TEST_SERVICE_NAME));
+            Assert.AreEqual(Service.Status.SHUTDOWN_FAILED, Service.GetStatus<WaitForShutdownExceptionTestService>());
+        }
+
+        [TestMethod]
+        public void Service_Get()
+        {
+            Service.Register(new SimpleTestService());
+            Service.Register(new TestInterfaceService());
+
+            Assert.IsNotNull(Service.Get<SimpleTestService>());
+            Assert.IsNotNull(Service.Get<ITestInterfaceService>());
         }
     }
 }

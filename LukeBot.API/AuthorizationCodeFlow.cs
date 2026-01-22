@@ -19,8 +19,7 @@ namespace LukeBot.API
 
         IIntermediary GetIntermediary()
         {
-            IIntermediaryService service = Service.Get(Constants.INTERMEDIARY_SERVICE_NAME) as IIntermediaryService;
-            return service.GetIntermediary(mService);
+            return Service.Get<IIntermediaryService>().GetIntermediary(mService);
         }
 
         public override AuthToken Request(string lbUser, string scope)

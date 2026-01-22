@@ -108,7 +108,7 @@ namespace LukeBot
 
         private IWidgetService GetWidgetService()
         {
-            return Service.Get(Common.Constants.WIDGET_SERVICE_NAME) as IWidgetService;
+            return Service.Get<IWidgetService>();
         }
 
         private IWidgetUserModule GetWidgetUserModule(IUserContext user)

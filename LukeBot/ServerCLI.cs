@@ -27,7 +27,7 @@ namespace LukeBot
     {
         static internal IUserService GetUserService()
         {
-            return Service.Get(Constants.USER_SERVICE_NAME) as IUserService;
+            return Service.Get<IUserService>();
         }
 
         private class ClientContext: CLIMessageProxy

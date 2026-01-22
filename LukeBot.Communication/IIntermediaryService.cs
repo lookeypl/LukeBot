@@ -14,7 +14,7 @@ namespace LukeBot.Communication
      * by the Endpoint. Endpoint fulfills the Promise providing API with Token information
      * for the future.
      */
-    public interface IIntermediaryService: IService
+    public interface IIntermediaryService: IService<IIntermediaryService>
     {
         /**
          * Register a new Service that will be expecting some data from other

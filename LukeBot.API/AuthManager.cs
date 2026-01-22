@@ -60,9 +60,7 @@ namespace LukeBot.API
 
         private AuthManager()
         {
-            IEventService evService = Service.Get(Common.Constants.EVENT_SERVICE_NAME) as IEventService;
-
-            List<EventCallback> callbacks = evService.Global().RegisterPublisher(this);
+            List<EventCallback> callbacks = Service.Get<IEventService>().Global().RegisterPublisher(this);
             mOpenBrowserURLDelegate = callbacks[0];
         }
 

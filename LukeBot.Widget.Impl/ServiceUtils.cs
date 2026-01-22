@@ -12,17 +12,17 @@ namespace LukeBot.Widget.Impl
     {
         public static IEventService GetEventService()
         {
-            return Service.Get(Common.Constants.EVENT_SERVICE_NAME) as IEventService;
+            return Service.Get<IEventService>();
         }
 
         public static ITwitchService GetTwitchService()
         {
-            return Service.Get(Common.Constants.TWITCH_SERVICE_NAME) as ITwitchService;
+            return Service.Get<ITwitchService>();
         }
 
         public static IUserService GetUserService()
         {
-            return Service.Get(Common.Constants.USER_SERVICE_NAME) as IUserService;
+            return Service.Get<IUserService>();
         }
 
 

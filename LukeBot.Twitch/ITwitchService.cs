@@ -4,7 +4,7 @@ using LukeBot.User;
 
 namespace LukeBot.Twitch
 {
-    public interface ITwitchService: IService, IUserModuleFactory
+    public interface ITwitchService: IService<ITwitchService>, IUserModuleFactory
     {
         public void AwaitIRCLoggedIn(int timeoutMs);
     }

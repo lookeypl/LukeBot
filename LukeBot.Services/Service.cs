@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -20,20 +21,24 @@ namespace LukeBot.Services
         private class ServiceDesc
         {
             public uint serviceId = 0;
-            public IService service = null;
+            public IServiceBase service = null;
             public List<string> dependencyNames = new();
             public List<ServiceDesc> dependencies = new();
             public Status status = Status.SHUTDOWN;
             public bool checkVisited = false;
             public bool visited = false;
 
-            public ServiceDesc(uint id, IService s)
+            public ServiceDesc(uint id, IServiceBase s)
             {
                 serviceId = id;
                 service = s;
             }
         }
 
+        // we assume there can only be one Service of one type
+        // as such, the name will be based on Service's Interface
+        // For that reference we fetch the Service's name based on the type name
+        // that directly inherited IService. See GetServiceTypeBasedName().
         static private Dictionary<string, ServiceDesc> mServices = new();
         static private LinkedList<ServiceDesc> mServiceStartOrder = new();
         static private uint mServiceCounter = 0;
@@ -78,7 +83,7 @@ namespace LukeBot.Services
             }
             catch (CircularServiceDependencyChain chain)
             {
-                chain.Add(sd.service.GetServiceName());
+                chain.Add(sd.service.GetServiceDebugName());
                 #pragma warning disable CA2200
                 throw chain;
                 #pragma warning restore CA2200
@@ -94,7 +99,7 @@ namespace LukeBot.Services
                 foreach (string dep in sd.dependencyNames)
                 {
                     if (!mServices.ContainsKey(dep))
-                        throw new UnresolvedServiceDependencyException(sd.service.GetServiceName(), dep);
+                        throw new UnresolvedServiceDependencyException(sd.service.GetServiceDebugName(), dep);
 
                     sd.dependencies.Add(mServices[dep]);
                 }
@@ -109,7 +114,7 @@ namespace LukeBot.Services
                 }
                 catch (CircularServiceDependencyChain chain)
                 {
-                    throw new CircularServiceDependencyException(sd.service.GetServiceName(), chain);
+                    throw new CircularServiceDependencyException(sd.service.GetServiceDebugName(), chain);
                 }
             }
         }
@@ -126,64 +131,73 @@ namespace LukeBot.Services
                 }
                 catch (System.Exception e)
                 {
-                    Logger.Log().Error("Failed to run service {0}: {1} - {2}", sd.service.GetServiceName(), e.GetType().ToString(), e.Message);
+                    Logger.Log().Error("Failed to run service {0}: {1} - {2}", sd.service.GetServiceDebugName(), e.GetType().ToString(), e.Message);
                     Logger.Log().Error("Tearing down all running services");
                     Teardown();
 
-                    throw new ServiceRunFailedException(sd.service.GetServiceName(), e);;
+                    throw new ServiceRunFailedException(sd.service.GetServiceDebugName(), e);;
                 }
             }
         }
 
-        static public void Register(IService service)
+        static public void Register<T>(IService<T> service) where T: IService<T>
         {
-            string name = service.GetServiceName();
+            string name = service.RecognizableType.Name;
             if (mServices.ContainsKey(name))
             {
                 throw new ServiceAlreadyRegisteredException(name);
             }
 
-            IEnumerable<string> dependencies = service.GetServiceDependencies();
-
             ServiceDesc sd = new(mServiceCounter, service);
+
+            IEnumerable<string> dependencies = sd.service.GetServiceDependencies();
             if (dependencies != null)
             {
                 sd.dependencyNames = Enumerable.ToList<string>(dependencies);
             }
 
             mServices.Add(name, sd);
-
             mServiceCounter++;
         }
 
-        static public void Unregister(IService service)
+        static public void Unregister<T>(IService<T> service) where T: IService<T>
         {
-            if (mServices.TryGetValue(service.GetServiceName(), out ServiceDesc sd))
+            if (mServices.TryGetValue(service.GetServiceDebugName(), out ServiceDesc sd))
             {
                 if (sd.service == service)
                 {
                     sd.service.RequestShutdown();
                     sd.service.WaitForShutdown();
 
-                    mServices.Remove(service.GetServiceName());
+                    mServices.Remove(service.GetServiceDebugName());
                 }
             }
         }
 
-        static public IService Get(string name)
+        static public T Get<T>()
+            where T: IService<T>
         {
+            string name = NameOf<T>();
             if (!mServices.ContainsKey(name))
                 throw new UnknownServiceException(name);
 
-            return mServices[name].service;
+            return (T)mServices[name].service;
         }
 
-        static public Status GetStatus(string name)
+        static public Status GetStatus<T>()
+            where T: IService<T>
         {
+            string name = NameOf<T>();
             if (!mServices.ContainsKey(name))
                 throw new UnknownServiceException(name);
 
             return mServices[name].status;
+        }
+
+        static public string NameOf<T>()
+            where T: IService<T>
+        {
+            return typeof(T).Name;
         }
 
         static public void Teardown()

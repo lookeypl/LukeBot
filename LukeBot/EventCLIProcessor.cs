@@ -77,7 +77,7 @@ namespace LukeBot
 
         private IEventService GetEventService()
         {
-            return Service.Get(Common.Constants.EVENT_SERVICE_NAME) as IEventService;
+            return Service.Get<IEventService>();
         }
 
         void HandleTestCommand(EventTestCommand args, CLIMessageProxy CLI, out string msg)

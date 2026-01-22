@@ -36,7 +36,7 @@ namespace LukeBot
 
         private IUserService GetUserService()
         {
-            return Service.Get(Constants.USER_SERVICE_NAME) as IUserService;
+            return Service.Get<IUserService>();
         }
 
         private void PreLogMessageEvent(object sender, LogMessageArgs args)

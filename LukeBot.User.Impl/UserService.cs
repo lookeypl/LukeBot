@@ -44,8 +44,7 @@ namespace LukeBot.User.Impl
             if (mUsers.ContainsKey(username) || username == Constants.LUKEBOT_USER_ID)
                 throw new UsernameNotAvailableException(username);
 
-            IEventService evs = Service.Get(Common.Constants.EVENT_SERVICE_NAME) as IEventService;
-            evs.AddUser(username);
+            Service.Get<IEventService>().AddUser(username);
             mUsers.Add(username, new UserContext(username));
         }
 
@@ -60,7 +59,7 @@ namespace LukeBot.User.Impl
         }
 
 
-        public string GetServiceName()
+        public string GetServiceDebugName()
         {
             return Constants.USER_SERVICE_NAME;
         }
@@ -197,8 +196,7 @@ namespace LukeBot.User.Impl
                 RemoveUserFromConfig(lbUsername);
                 mUsers.Remove(lbUsername);
 
-                IEventService evs = Service.Get(Common.Constants.EVENT_SERVICE_NAME) as IEventService;
-                evs.RemoveUser(lbUsername);
+                Service.Get<IEventService>().RemoveUser(lbUsername);
             }
         }
 

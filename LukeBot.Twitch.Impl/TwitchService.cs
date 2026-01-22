@@ -167,7 +167,7 @@ namespace LukeBot.Twitch.Impl
             return new TwitchService();
         }
 
-        public string GetServiceName()
+        public string GetServiceDebugName()
         {
             return CommonConstants.TWITCH_SERVICE_NAME;
         }
@@ -175,8 +175,8 @@ namespace LukeBot.Twitch.Impl
         public IEnumerable<string> GetServiceDependencies()
         {
             return new List<String> {
-                CommonConstants.INTERMEDIARY_SERVICE_NAME,
-                CommonConstants.USER_SERVICE_NAME
+                Service.NameOf<IIntermediaryService>(),
+                Service.NameOf<IUserService>()
             };
         }
 

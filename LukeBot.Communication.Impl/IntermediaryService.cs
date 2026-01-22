@@ -29,14 +29,14 @@ namespace LukeBot.Communication.Impl
             return mIntermediaries[service];
         }
 
-        public string GetServiceName()
+        public string GetServiceDebugName()
         {
             return Constants.INTERMEDIARY_SERVICE_NAME;
         }
 
         public IEnumerable<string> GetServiceDependencies()
         {
-            return new List<string>();
+            return null;
         }
 
         public void Run()

@@ -59,16 +59,34 @@
         margin-right: 0.1em;
         height: 1em;
     }
+
+    .notice-line {
+        line-height: 2rem;
+        background-color: rgba(170, 170, 170, 0.3);
+        border-left: 5px solid rgba(170, 170, 170, 0.8);
+    }
+
+    .notice-headline {
+        padding-left: 6px;
+    }
+
+    .notice-headline-user {
+        font-weight: 900;
+    }
+
+    .notice-headline-message {
+        color: rgba(230, 230, 230, 0.9);
+    }
+
+    .notice-message {
+        padding-left: 12px;
+    }
 </style>
 
 <div id="chat">
 </div>
 
 <script>
-    const chat = document.getElementById('chat');
-
-    // TODO this should be changed, those URLs should be delivered in the event message
-    // This is not too future-proof when done this way...
     const TWITCH_EMOTE_URL_SCHEME = ["//static-cdn.jtvnw.net/emoticons/v2/", "/default/dark/1.0", "/default/dark/2.0", "/default/dark/3.0"];
     const TWITCH_BADGE_URL_SCHEME = ["//static-cdn.jtvnw.net/badges/v1/", "/1", "/2", "/3"];
     const FFZ_EMOTE_URL_SCHEME = ["//cdn.frankerfacez.com/emoticon/", "/1", "/2", "/4"];
@@ -78,61 +96,114 @@
 
     class Emote {
         constructor(source, id, width, height, from, to, animated) {
-            this.mSource = source;
-            this.mID = id;
-            this.mWidth = width;
-            this.mHeight = height;
-            this.mFrom = from;
-            this.mTo = to;
-            this.mAnimated = animated;
+            this.Source = source;
+            this.EmoteID = id;
+            this.Width = width;
+            this.Height = height;
+            this.From = from;
+            this.To = to;
+            this.Animated = animated;
         }
     }
 
     class Badge {
         constructor(name, resource) {
-            this.mName = name;
-            this.mResource = resource;
+            this.Name = name;
+            this.Resource = resource;
         }
     }
 
-    class Message {
-        constructor() {
-            this.mID = "";
-            this.mUserID = "";
-            this.mColor = "";
-            this.mNick = "";
-            this.mDisplayName = "";
-            this.mMessage = "";
-            this.mEmotes = [];
-            this.mBadges = [];
-            this.mIsSystem = false;
+    const ChatNodeType = Object.freeze({
+        Unknown: 0,
+        Message: 1,
+        System: 2,
+        Notice: 3,
+    });
+
+    const EventType = Object.freeze({
+        ChatMessage: "TwitchChatMessage",
+        ChatClearMessage: "TwitchChatClearMessage",
+        ChatClearUser: "TwitchChatClearUser",
+        WatchStreak: "TwitchWatchStreak",
+    })
+
+    class ChatListEntry {
+        Type = ChatNodeType.Unknown;
+        EntryID = "";
+
+        constructor(id) {
+            this.EntryID = id;
         }
 
-        static fromEvent(msgObj) {
-            if (msgObj.EventName != "TwitchChatMessage")
+        form(msgObj) {
+            throw new Error("form(msgObj) not implemented");
+        }
+
+        generateNode() {
+            throw new Error("generateNode() not implemented");
+        }
+
+        static event(msgObj) {
+            let ret = null;
+
+            switch (msgObj.EventName) {
+            case EventType.ChatMessage: {
+                ret = new MessageEntry(msgObj.MessageID);
+                break;
+            }
+            case EventType.WatchStreak: {
+                ret = new NoticeEntry(msgObj.NoticeID);
+                break;
+            }
+            default:
+                throw new TypeError(`Invalid/Unknown message object event name ${msgObj.EventName}`)
+            }
+
+            ret.form(msgObj);
+            return ret;
+        }
+
+        static system(msgString) {
+            return new SystemMessageEntry(msgString);
+        }
+    }
+
+    class MessageEntry extends ChatListEntry {
+        UserID = "";
+        Color = "";
+        User = "";
+        DisplayName = "";
+        Message = "";
+        Emotes = [];
+        Badges = [];
+
+        constructor(id) {
+            super(id)
+            this.Type = ChatNodeType.Message;
+        }
+
+        form(msgObj) {
+            if (msgObj.EventName != EventType.ChatMessage)
                 throw new TypeError("Invalid message type");
 
-            let ret = new Message();
-
-            ret.mID = msgObj.MessageID;
-            ret.mUserID = msgObj.UserID;
-            ret.mColor = msgObj.Color;
-            ret.mNick = msgObj.Nick;
-            ret.mDisplayName = msgObj.DisplayName;
-            ret.mMessage = msgObj.Message;
+            this.UserID = msgObj.UserID;
+            this.Color = msgObj.Color;
+            this.User = msgObj.User;
+            this.DisplayName = msgObj.DisplayName;
+            this.Message = msgObj.Message;
             if (msgObj.Emotes != undefined) {
                 msgObj.Emotes.forEach(function (e) {
                     e.Ranges.forEach(function (r) {
-                        ret.mEmotes.push(new Emote(e.Source, e.ID, e.Width, e.Height, r.From, r.To, e.Animated));
-                    }, ret);
-                }, ret);
+                        this.Emotes.push(new Emote(e.Source, e.ID, e.Width, e.Height, r.From, r.To, e.Animated));
+                    }, this);
+                }, this);
 
                 // reverse-sort the emotes, mostly because it's easier to go through
                 // the message in reverse afterwards (less indexing/shifting magic)
-                ret.mEmotes.sort(function(a, b) {
-                    if (a.mFrom < b.mFrom)
+                this.Emotes.sort(function(a, b) {
+                    if (a.From < b.From)
                         return 1;
-                    else if (a.mFrom > b.mFrom)
+                    else if (a.From > b.From)
                         return -1;
                     else
                         return 0;
@@ -140,170 +211,240 @@
             }
             if (msgObj.Badges) {
                 msgObj.Badges.forEach((b) => {
-                    ret.mBadges.push(new Badge(b.Name, b.Resource));
-                }, ret);
-            }
-
-            return ret;
-        }
-
-        static fromSystem(msgString) {
-            let ret = new Message();
-
-            ret.mIsSystem = true;
-            ret.mMessage = msgString;
-
-            return ret;
-        }
-    }
-
-    class MessageList {
-        constructor() {
-        }
-
-        appendToChat(msgNode) {
-            chat.appendChild(msgNode);
-            // TODO remove messages which exceed window height + backup height
-            if (chat.childNodes.length > 30) {
-                chat.removeChild(chat.firstChild);
+                    this.Badges.push(new Badge(b.Name, b.Resource));
+                }, this);
             }
         }
 
-        add(lastMsg) {
-            if (lastMsg.mIsSystem) {
-                let textNode = document.createElement("span");
-                textNode.classList.add("chat-text-fragment");
-                textNode.classList.add("chat-system-text-fragment");
-                let textDataNode = document.createTextNode(`${lastMsg.mMessage}`);
-                textNode.appendChild(textDataNode);
+        #loadImageWithScheme(emoteID, source, scheme) {
+            let url = scheme[0] + emoteID;
+            let img = document.createElement("img");
+            img.src = url + scheme[1];
+            img.srcset =
+                url + scheme[1] + " 1x, " +
+                url + scheme[2] + " 2x, " +
+                url + scheme[3];
+            if (source == "BTTV")
+                img.srcset = img.srcset + " 3x";
+            else
+                img.srcset = img.srcset + " 4x";
 
-                let newMsgNode = document.createElement("span");
-                newMsgNode.classList.add("chat-line");
-                newMsgNode.appendChild(textNode);
-                newMsgNode.appendChild(document.createElement("br"));
-                this.appendToChat(newMsgNode);
-                return;
+            let imgLoadTries = 0;
+            img.onerror = function() {
+                // Sometimes it just happens that CDNs don't want to
+                // provide us with the image. If that happens, try and
+                // trigger redownloading the image by resetting its src
+                // and srcset. Only do that 5 times max though.
+                if (!imgLoadTries) {
+                    imgLoadTries = 0;
+                }
+                imgLoadTries += 1;
+
+                if (imgLoadTries > 5) {
+                    this.style.display = 'none';
+                } else {
+                    // Retry the load by providing the same src/srcset.
+                    // Also do this after 100ms to not spam Twitch's CDN
+                    // with requests.
+                    setTimeout(() => {
+                        img.src = url + scheme[1];
+                        img.srcset =
+                            url + scheme[1] + " 1x, " +
+                            url + scheme[2] + " 2x, " +
+                            url + scheme[3] + " 4x";
+                    }, 100);
+                }
             }
 
-            let nick = lastMsg.mDisplayName;
-            if (nick == "")
-                nick = lastMsg.mNick;
+            return img;
+        }
 
-            let nickTextNode = document.createTextNode(nick);
+        generateNode() {
+            let user = this.DisplayName;
+            if (user == "")
+                user = this.User;
+
+            let userTextNode = document.createTextNode(user);
 
             let badgeNode = document.createElement("span");
             badgeNode.classList.add("chat-badges-span");
 
-            let nickNode = document.createElement("span");
-            nickNode.style.color = lastMsg.mColor;
-            nickNode.appendChild(nickTextNode);
+            let userNode = document.createElement("span");
+            userNode.style.color = this.Color;
+            userNode.appendChild(userTextNode);
 
             let colonNode = document.createElement("span");
             colonNode.appendChild(document.createTextNode(": "));
 
             let textNode = document.createElement("span");
             textNode.classList.add("chat-text-fragment");
-            let textDataNode = document.createTextNode(`${lastMsg.mMessage}`);
+            let textDataNode = document.createTextNode(`${this.Message}`);
             textNode.appendChild(textDataNode);
 
             // replace emote texts based on ranges with links to emotes
-            printDebug(lastMsg.mEmotes);
-            if (lastMsg.mEmotes != undefined) {
-                lastMsg.mEmotes.forEach(function (e) {
+            if (this.Emotes != undefined) {
+                this.Emotes.forEach(function (e) {
                     let scheme = undefined;
-                    if (e.mSource == "Twitch") {
+                    if (e.Source == "Twitch") {
                         scheme = TWITCH_EMOTE_URL_SCHEME;
-                    } else if (e.mSource == "FFZ") {
-                        if (e.mAnimated) {
+                    } else if (e.Source == "FFZ") {
+                        if (e.Animated) {
                             scheme = FFZ_ANIMATED_EMOTE_URL_SCHEME;
                         } else {
                             scheme = FFZ_EMOTE_URL_SCHEME;
                         }
-                    } else if (e.mSource == "BTTV") {
+                    } else if (e.Source == "BTTV") {
                         scheme = BTTV_EMOTE_URL_SCHEME;
-                    } else if (e.mSource == "SevenTV") {
+                    } else if (e.Source == "SevenTV") {
                         scheme = SEVENTV_EMOTE_URL_SCHEME;
                     } else {
                         printDebug("Invalid emote source - skipping");
                         return;
                     }
-                    let url = scheme[0] + e.mID;
-                    let img = document.createElement("img");
-                    img.src = url + scheme[1];
-                    img.srcset =
-                        url + scheme[1] + " 1x, " +
-                        url + scheme[2] + " 2x, " +
-                        url + scheme[3];
-                    if (e.mSource == "BTTV")
-                        img.srcset = img.srcset + " 3x";
-                    else
-                        img.srcset = img.srcset + " 4x";
 
+                    let img = this.#loadImageWithScheme(e.EmoteID, e.Source, scheme);
                     img.classList.add("chat-emote");
 
                     let imgDiv = document.createElement("div");
                     imgDiv.classList.add("chat-inline");
-                    imgDiv.appendChild(img.cloneNode());
+                    imgDiv.appendChild(img);
 
-                    let textRemainder = textDataNode.splitText(e.mFrom);
-                    textRemainder.deleteData(0, e.mTo - e.mFrom + 1);
+                    let textRemainder = textDataNode.splitText(e.From);
+                    textRemainder.deleteData(0, e.To - e.From + 1);
                     textNode.insertBefore(imgDiv, textRemainder);
-                });
+                }, this);
             }
 
-            if (lastMsg.mBadges) {
-                lastMsg.mBadges.forEach((b) => {
-                    let scheme = TWITCH_BADGE_URL_SCHEME;
-
-                    let url = scheme[0] + b.mResource;
-                    let img = document.createElement("img");
-                    img.src = url + scheme[1];
-                    img.srcset =
-                        url + scheme[1] + " 1x, " +
-                        url + scheme[2] + " 2x, " +
-                        url + scheme[3] + " 4x";
-
+            if (this.Badges) {
+                this.Badges.forEach((b) => {
+                    let img = this.#loadImageWithScheme(b.Resource, "TTVBadge", TWITCH_BADGE_URL_SCHEME);
                     img.classList.add("chat-badge");
-                    img.onerror = function() {
-                        // Sometimes it just happens that twitch's CDN doesn't
-                        // want to provide us with the image. If that happens,
-                        // try and trigger redownloading the image by resetting
-                        // its src and srcset. Only do that 5 times max though.
-                        if (!this.mBadgeLoadTries) {
-                            this.mBadgeLoadTries = 0;
-                        }
-                        this.mBadgeLoadTries += 1;
-
-                        if (this.mBadgeLoadTries > 5) {
-                            this.style.display = 'none';
-                        } else {
-                            // Retry the load by providing the same src/srcset.
-                            // Also do this after 100ms to not spam Twitch's CDN
-                            // with requests.
-                            setTimeout(() => {
-                                img.src = url + scheme[1];
-                                img.srcset =
-                                    url + scheme[1] + " 1x, " +
-                                    url + scheme[2] + " 2x, " +
-                                    url + scheme[3] + " 4x";
-                            }, 100);
-                        }
-                    }
-
                     badgeNode.appendChild(img);
-                });
+                }, this);
             }
 
-            let newMsgNode = document.createElement("span");
-            newMsgNode.setAttribute("msgid", lastMsg.mID);
-            newMsgNode.setAttribute("msguser", lastMsg.mNick);
+            let newMsgNode = document.createElement("div");
+            newMsgNode.setAttribute("msgid", this.EntryID);
+            newMsgNode.setAttribute("msguser", this.User);
             newMsgNode.classList.add("chat-line");
             newMsgNode.appendChild(badgeNode);
-            newMsgNode.appendChild(nickNode);
+            newMsgNode.appendChild(userNode);
             newMsgNode.appendChild(colonNode);
             newMsgNode.appendChild(textNode);
             newMsgNode.appendChild(document.createElement("br"));
-            this.appendToChat(newMsgNode);
+            return newMsgNode;
+        }
+    }
+
+    class NoticeEntry extends ChatListEntry {
+        UserID = "";
+        User = "";
+        DisplayName = "";
+        Headline = "";
+        Message = null;
+
+        constructor(id) {
+            super(id);
+            this.Type = ChatNodeType.Notice;
+        }
+
+        form(msgObj) {
+            if (msgObj.EventName != EventType.WatchStreak)
+                throw new TypeError(`Invalid message type ${msgObj.EventName}`);
+
+            if (msgObj.Message) {
+                this.Message = new MessageEntry(msgObj.MessageID);
+                this.Message.form(msgObj.Message);
+            }
+
+            this.User = msgObj.User;
+            this.DisplayName = msgObj.DisplayName;
+
+            // user is added bolded to the headline in generateNode()
+            this.Headline = ` reached a ${msgObj.Streak}-stream streak!`;
+        }
+
+        generateNode() {
+            let username = this.DisplayName;
+            if (!username) {
+                username = this.User;
+            }
+
+            let noticeUserNode = document.createElement("span");
+            noticeUserNode.appendChild(document.createTextNode(`${username}`));
+            noticeUserNode.classList.add("notice-headline-user");
+
+            let noticeHeadlineMsgNode = document.createElement("span");
+            noticeHeadlineMsgNode.appendChild(document.createTextNode(`${this.Headline}`));
+            noticeHeadlineMsgNode.classList.add("notice-headline-message");
+
+            let noticeHeadlineNode = document.createElement("div");
+            noticeHeadlineNode.appendChild(noticeUserNode);
+            noticeHeadlineNode.appendChild(noticeHeadlineMsgNode);
+            noticeHeadlineNode.classList.add("notice-headline");
+
+            let newNode = document.createElement("div");
+            newNode.classList.add("notice-line");
+            newNode.appendChild(noticeHeadlineNode);
+            if (this.Message) {
+                let noticeMessageNode = this.Message.generateNode();
+                noticeMessageNode.classList.add("notice-message");
+                newNode.appendChild(noticeMessageNode);
+            }
+            return newNode;
+        }
+    }
+
+    class SystemMessageEntry extends ChatListEntry {
+        static #counter = 0;
+        static #getID() {
+            SystemMessageEntry.#counter += 1;
+            return `system-${SystemMessageEntry.#counter}`;
+        }
+
+        Message = "";
+
+        constructor(msg) {
+            super(SystemMessageEntry.#getID());
+            this.Type = ChatNodeType.System;
+            this.Message = msg;
+        }
+
+        form(msgObj) {
+            throw new Error("form(msgObj) not implemented");
+        }
+
+        generateNode() {
+            let textNode = document.createElement("span");
+            textNode.classList.add("chat-text-fragment");
+            textNode.classList.add("chat-system-text-fragment");
+            let textDataNode = document.createTextNode(`${this.Message}`);
+            textNode.appendChild(textDataNode);
+
+            let newMsgNode = document.createElement("span");
+            newMsgNode.setAttribute("msgid", this.EntryID);
+            newMsgNode.classList.add("chat-line");
+            newMsgNode.appendChild(textNode);
+            newMsgNode.appendChild(document.createElement("br"));
+            return newMsgNode;
+        }
+    }
+
+    class Chat {
+        #chat = document.getElementById('chat');
+
+        constructor() {
+        }
+
+        #appendToChatNode(msgNode) {
+            this.#chat.appendChild(msgNode);
+            if (this.#chat.childNodes.length > 30) {
+                this.#chat.removeChild(this.#chat.firstChild);
+            }
+        }
+
+        add(chatListNode) {
+            this.#appendToChatNode(chatListNode.generateNode());
         }
 
         remove(msgObj) {
@@ -328,29 +469,33 @@
         }
     }
 
-    let msgList = new MessageList();
+    let chatMgr = new Chat();
 
     let chatWidget = new LukeBotWidget();
     chatWidget.registerMessage("TwitchChatMessage", (obj) => {
-        msgList.add(Message.fromEvent(obj));
+        chatMgr.add(ChatListEntry.event(obj));
+    });
+    chatWidget.registerMessage("TwitchWatchStreak", (obj) => {
+        chatMgr.add(ChatListEntry.event(obj));
     });
     chatWidget.registerMessage("TwitchChatClearUser", (obj) => {
-        msgList.removeUser(obj);
+        chatMgr.removeUser(obj);
     });
     chatWidget.registerMessage("TwitchChatClearMessage", (obj) => {
-        msgList.remove(obj);
+        chatMgr.remove(obj);
     });
     chatWidget.registerMessageError((error) => {
-        msgList.add(Message.fromSystem(`Error while processing new message: ${error}`));
+        chatMgr.add(MessageEntry.system(`Error while processing new message: ${error}`));
+        console.log(`Stack trace:\n${error.stack}`);
     });
     chatWidget.registerConnectionError((error) => {
-        msgList.add(Message.fromSystem(`Connection error: ${error}`));
+        chatMgr.add(MessageEntry.system(`Connection error: ${error}`));
     });
     chatWidget.registerClose((e) => {
         if (e.wasClean) {
-            msgList.add(Message.fromSystem(`Disconnected from LukeBot`));
+            chatMgr.add(MessageEntry.system(`Disconnected from LukeBot`));
         } else {
-            msgList.add(Message.fromSystem(`Connection lost: ${e}`));
+            chatMgr.add(MessageEntry.system(`Connection lost: ${e}`));
         }
     });
 </script>

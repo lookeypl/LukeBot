@@ -6,12 +6,30 @@ using LukeBot.Communication;
 using LukeBot.Services;
 using LukeBot.Twitch.Command;
 using LukeBot.API;
+using Microsoft.VisualBasic;
 
 
 namespace LukeBot.Twitch.Impl
 {
     internal class IRCChannel: IEventPublisher, IDisposable
     {
+        private const string TAG_MOD = "mod";
+        private const string TAG_VIP = "vip";
+        private const string TAG_SUBSCRIBER = "subscriber";
+        private const string TAG_ID = "id";
+        private const string TAG_USER_ID = "user-id";
+        private const string TAG_DISPLAY_NAME = "display-name";
+        private const string TAG_COLOR = "color";
+        private const string TAG_BADGES = "badges";
+        private const string TAG_EMOTES = "emotes";
+        private const string TAG_MSG_ID = "msg-id";
+        private const string TAG_MSG_PARAM_ID = "msg-param-id";
+        private const string TAG_MSG_PARAM_CATEGORY = "msg-param-category";
+        private const string TAG_MSG_VALUE = "msg-param-value";
+
+        private const string MSG_ID_VIEWER_MILESTONE = "viewermilestone";
+        private const string MSG_CATEGORY_WATCH_STREAK = "watch-streak";
+
         private string mLBUser;
         private string mChannelName;
         private API.Twitch.GetUserData mUserData;
@@ -22,6 +40,20 @@ namespace LukeBot.Twitch.Impl
         private EventCallback mMessageEventCallback;
         private EventCallback mMessageClearEventCallback;
         private EventCallback mUserClearEventCallback;
+        private EventCallback mWatchStreakEventCallback;
+
+        private int messageCounter = 0;
+        private int noticeCounter = 0;
+
+        private string GetBackupMessageID()
+        {
+            return String.Format("notice-{0}", messageCounter++);
+        }
+
+        private string GetBackupNoticeID()
+        {
+            return String.Format("notice-{0}", noticeCounter++);
+        }
 
         private ChatUser EstablishUserIdentity(IRCMessage m, bool tagsEnabled)
         {
@@ -33,15 +65,15 @@ namespace LukeBot.Twitch.Impl
             if (tagsEnabled)
             {
                 string isMod;
-                if (m.GetTag("mod", out isMod) && Int32.Parse(isMod) == 1)
+                if (m.GetTag(TAG_MOD, out isMod) && Int32.Parse(isMod) == 1)
                     identity |= ChatUser.Moderator;
 
                 string isVIP;
-                if (m.GetTag("vip", out isVIP) && Int32.Parse(isVIP) == 1)
+                if (m.GetTag(TAG_VIP, out isVIP) && Int32.Parse(isVIP) == 1)
                     identity |= ChatUser.VIP;
 
                 string isSub;
-                if (m.GetTag("subscriber", out isSub) && Int32.Parse(isSub) == 1)
+                if (m.GetTag(TAG_SUBSCRIBER, out isSub) && Int32.Parse(isSub) == 1)
                     identity |= ChatUser.Subscriber;
             }
 
@@ -77,6 +109,47 @@ namespace LukeBot.Twitch.Impl
 
         // IEventPublisher implementations
 
+        private EventArgsBase GenerateTestWatchStreakEvent(IEnumerable<(string attrib, string value)> args)
+        {
+            string user = "test_user";
+            string displayName = "Test_User";
+            int streak = 10;
+            string message = "";
+
+            foreach ((string a, string v) a in args)
+            {
+                switch (a.a)
+                {
+                case "User": user = a.v; break;
+                case "DisplayName": displayName = a.v; break;
+                case "Streak": streak = Int32.Parse(a.v); break;
+                case "Message": message = a.v; break;
+                default:
+                    Logger.Log().Warning("Unknown test event arg: {0}", a.a);
+                    break;
+                }
+            }
+
+            TwitchWatchStreakArgs ret = new("notice-test", user, displayName, streak);
+
+            if (message.Length > 0)
+            {
+                // NOTE: This does NOT support Twitch subscriber emotes, only external ones
+                // but I figured it's just a test message, so we don't need those anyway
+                TwitchChatMessageArgs msg = new(Guid.NewGuid().ToString());
+                msg.User = user;
+                msg.DisplayName = displayName;
+                msg.Color = "#5060dd";
+                msg.Message = message;
+                msg.AddBadges(mChannelBadges.GetBadges("broadcaster/1,vip/1"));
+                AddExternalEmotesToMessage(msg);
+
+                ret.AddMessage(msg);
+            }
+
+            return ret;
+        }
+
         public string GetEventPublisherName()
         {
             return "TwitchIRC";
@@ -103,6 +176,20 @@ namespace LukeBot.Twitch.Impl
                 Name = Events.TWITCH_CHAT_CLEAR_USER,
                 Description = "Twitch Chat Clear User event. Emitted when user's messages are removed from chat window (ie. because user is timed out).",
                 Dispatcher = null
+            });
+            events.Add(new EventDescriptor()
+            {
+                Name = Events.TWITCH_WATCH_STREAK,
+                Description = "Twitch Watch Streak event. Emitted when user shares a Watch Streak celebration message",
+                Dispatcher = null,
+                TestGenerator = GenerateTestWatchStreakEvent,
+                TestParams = new List<EventTestParam>()
+                {
+                    new() { Name = "User", Description = "Username of watch streak sharer", Type = EventTestParamType.String },
+                    new() { Name = "DisplayName", Description = "Display name of watch streak sharer", Type = EventTestParamType.String },
+                    new() { Name = "Streak", Description = "Watch streak count", Type = EventTestParamType.Integer },
+                    new() { Name = "Message", Description = "Message added to watch streak share", Type = EventTestParamType.String }
+                }
             });
 
             return events;
@@ -146,6 +233,9 @@ namespace LukeBot.Twitch.Impl
                 case Events.TWITCH_CHAT_CLEAR_USER:
                     mUserClearEventCallback = e;
                     break;
+                case Events.TWITCH_WATCH_STREAK:
+                    mWatchStreakEventCallback = e;
+                    break;
                 default:
                     Logger.Log().Warning("Received unknown event type from Event system");
                     break;
@@ -153,41 +243,41 @@ namespace LukeBot.Twitch.Impl
             }
         }
 
-        public string ProcessMSG(IRCMessage m, bool tagsEnabled)
+        private TwitchChatMessageArgs FormChatMessageEvent(IRCMessage m, bool tagsEnabled)
         {
             string chatMsg = m.GetTrailingParam();
 
             // Message related tags pulled from metadata (if available)
             string msgID;
-            if (!tagsEnabled || !m.GetTag("id", out msgID))
+            if (!tagsEnabled || !m.GetTag(TAG_ID, out msgID))
                 msgID = String.Format("{0}", mMsgIDCounter++);
 
             TwitchChatMessageArgs message = new TwitchChatMessageArgs(msgID);
-            message.Nick = m.User;
+            message.User = m.User;
             message.Message = chatMsg;
 
             if (tagsEnabled)
             {
                 string userID;
-                if (m.GetTag("user-id", out userID))
+                if (m.GetTag(TAG_USER_ID, out userID))
                     message.UserID = userID;
 
                 string color;
-                if (m.GetTag("color", out color))
+                if (m.GetTag(TAG_COLOR, out color))
                     message.Color = color;
 
                 string displayName;
-                if (m.GetTag("display-name", out displayName))
+                if (m.GetTag(TAG_DISPLAY_NAME, out displayName))
                     message.DisplayName = displayName;
 
                 // Twitch global/sub emotes - taken from IRC tags
                 string emotes;
-                if (m.GetTag("emotes", out emotes))
+                if (m.GetTag(TAG_EMOTES, out emotes))
                 {
                     message.ParseEmotesString(chatMsg, emotes);
                 }
 
-                if (m.GetTag("badges", out string badges) && badges != null && badges.Length > 0)
+                if (m.GetTag(TAG_BADGES, out string badges) && badges != null && badges.Length > 0)
                 {
                     message.AddBadges(mChannelBadges.GetBadges(badges));
                 }
@@ -200,15 +290,24 @@ namespace LukeBot.Twitch.Impl
 
             AddExternalEmotesToMessage(message);
 
+            return message;
+        }
+
+        public string ProcessMSG(IRCMessage m, bool tagsEnabled)
+        {
+            TwitchChatMessageArgs message = FormChatMessageEvent(m, tagsEnabled);
+
             mMessageEventCallback.PublishEvent(message);
 
+            // Command processing
+            string chatMsg = m.GetTrailingParam();
             string[] chatMsgTokens = chatMsg.Split(' ');
             string cmd = chatMsgTokens[0];
             ChatUser userIdentity = EstablishUserIdentity(m, tagsEnabled);
 
             string response = ProcessMessageCommand(cmd, userIdentity, chatMsgTokens);
 
-            // TODO post LukeBot's response if desired
+            // TODO post LukeBot's response as an Event if desired
             //  - Has to re-do this path - the smartest would be to re-call this method
             //  - Also check the config if this is a wanted behavior
             //if (response.Length > 0)
@@ -228,6 +327,55 @@ namespace LukeBot.Twitch.Impl
             TwitchChatMessageClearArgs message = new TwitchChatMessageClearArgs(msg);
             message.MessageID = msgID;
             mMessageClearEventCallback.PublishEvent(message);
+        }
+
+        private void ProcessWatchStreak(IRCMessage m, int streak)
+        {
+            // Assumes tags are enabled up to this point
+            // otherwise ProcessUSERNOTICE won't get to this point
+            string noticeID;
+            if (m.GetTag(TAG_ID, out string noticeIDFetched))
+                noticeID = noticeIDFetched;
+            else
+                noticeID = GetBackupNoticeID();
+
+            string displayName = m.User;
+            if (m.GetTag(TAG_DISPLAY_NAME, out string displayNameFetched))
+                displayName = displayNameFetched;
+
+            TwitchWatchStreakArgs wsArgs = new(noticeID, m.User, displayName, streak);
+
+            string chatMsg = m.GetTrailingParam();
+            if (chatMsg.Length > 0)
+            {
+                // form and add TwitchChatMessage to the Watch Streak notice
+                wsArgs.AddMessage(FormChatMessageEvent(m, true));
+            }
+
+            mWatchStreakEventCallback.PublishEvent(wsArgs);
+        }
+
+        public void ProcessUSERNOTICE(IRCMessage m, bool tagsEnabled)
+        {
+            if (!tagsEnabled)
+                return; // can't process anything without tags
+
+            if (m.GetTag(TAG_MSG_ID, out string msgID) &&
+                m.GetTag(TAG_MSG_PARAM_CATEGORY, out string msgCategory))
+            {
+                if (msgID != MSG_ID_VIEWER_MILESTONE)
+                    return; // only processing viewer milestones for now
+
+                switch (msgCategory)
+                {
+                case MSG_CATEGORY_WATCH_STREAK:
+                {
+                    m.GetTag(TAG_MSG_VALUE, out string msgValue);
+                    ProcessWatchStreak(m, Int32.Parse(msgValue));
+                    break;
+                }
+                }
+            }
         }
 
         public void AddCommand(string name, ICommand command)

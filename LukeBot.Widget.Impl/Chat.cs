@@ -15,19 +15,10 @@ namespace LukeBot.Widget.Impl
      */
     public class Chat: IWidget
     {
-        private void OnMessage(object o, EventArgsBase args)
+        private void OnEvent<T>(object o, EventArgsBase args)
+            where T: EventArgsBase
         {
-            SendToWS((TwitchChatMessageArgs)args);
-        }
-
-        private void OnClearChat(object o, EventArgsBase args)
-        {
-            SendToWS((TwitchChatUserClearArgs)args);
-        }
-
-        private void OnClearMsg(object o, EventArgsBase args)
-        {
-            SendToWS((TwitchChatMessageClearArgs)args);
+            SendToWS((T)args);
         }
 
         protected override void OnConnected()
@@ -37,16 +28,18 @@ namespace LukeBot.Widget.Impl
 
         protected override void OnLoad()
         {
-            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_MESSAGE).Subscribe(OnMessage);
-            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_USER).Subscribe(OnClearChat);
-            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_MESSAGE).Subscribe(OnClearMsg);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_MESSAGE).Subscribe(OnEvent<TwitchChatMessageArgs>);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_USER).Subscribe(OnEvent<TwitchChatUserClearArgs>);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_MESSAGE).Subscribe(OnEvent<TwitchChatMessageClearArgs>);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_WATCH_STREAK).Subscribe(OnEvent<TwitchWatchStreakArgs>);
         }
 
         protected override void OnUnload()
         {
-            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_MESSAGE).Unsubscribe(OnMessage);
-            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_USER).Unsubscribe(OnClearChat);
-            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_MESSAGE).Unsubscribe(OnClearMsg);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_MESSAGE).Unsubscribe(OnEvent<TwitchChatMessageArgs>);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_USER).Unsubscribe(OnEvent<TwitchChatUserClearArgs>);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_MESSAGE).Unsubscribe(OnEvent<TwitchChatMessageClearArgs>);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_WATCH_STREAK).Unsubscribe(OnEvent<TwitchWatchStreakArgs>);
         }
 
         protected override ConfigurationBase CreateDefaultConfiguration()

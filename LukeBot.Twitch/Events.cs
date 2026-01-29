@@ -12,6 +12,8 @@ namespace LukeBot.Twitch
         public const string TWITCH_CHAT_CLEAR_MESSAGE = "TwitchChatClearMessage";
         public const string TWITCH_CHAT_CLEAR_USER = "TwitchChatClearUser";
 
+        public const string TWITCH_WATCH_STREAK = "TwitchWatchStreak";
+
         public const string TWITCH_SUBSCRIPTION = "TwitchSubscription";
 
         public const string TWITCH_CHANNEL_POINTS_REDEMPTION = "TwitchChannelPointsRedemption";
@@ -29,7 +31,7 @@ namespace LukeBot.Twitch
         public string Color { get; set; }
         public List<MessageEmote> Emotes { get; private set; }
         public List<MessageBadge> Badges { get; private set; }
-        public string Nick { get; set; }
+        public string User { get; set; }
         public string DisplayName { get; set; }
         public string Message { get; set; }
 
@@ -41,7 +43,7 @@ namespace LukeBot.Twitch
             Color = "#dddddd";
             Emotes = new();
             Badges = new();
-            Nick = "";
+            User = "";
             DisplayName = "";
             Message = "";
         }
@@ -311,6 +313,42 @@ namespace LukeBot.Twitch
             DisplayName = displayName;
             Amount = amount;
             Message = message;
+        }
+    }
+
+
+    // Notices in chat
+
+    public class TwitchNoticeArgs: EventArgsBase
+    {
+        public string NoticeID { get; protected set; }
+        public string User { get; protected set; }
+        public string DisplayName { get; protected set; }
+
+        protected TwitchNoticeArgs(string eventName, string noticeID, string user, string displayName)
+            : base(eventName)
+        {
+            NoticeID = noticeID;
+            User = user;
+            DisplayName = displayName;
+        }
+    }
+
+    public class TwitchWatchStreakArgs: TwitchNoticeArgs
+    {
+        public int Streak { get; private set; }
+        public TwitchChatMessageArgs Message { get; private set; }
+
+        public TwitchWatchStreakArgs(string noticeID, string user, string displayName, int streak)
+            : base(Events.TWITCH_WATCH_STREAK, noticeID, user, displayName)
+        {
+            Streak = streak;
+            Message = null;
+        }
+
+        public void AddMessage(TwitchChatMessageArgs m)
+        {
+            Message = m;
         }
     }
 }

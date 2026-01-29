@@ -139,6 +139,8 @@ namespace LukeBot.Twitch.Impl
             Logger.Log().Info("Received a User Notice from server");
             Logger.Log().Info("USERNOTICE message details:");
             m.Print(LogLevel.Info);
+
+            mChannels[m.Channel].ProcessUSERNOTICE(m, mTagsEnabled);
         }
 
         void ProcessMessage(IRCMessage m)

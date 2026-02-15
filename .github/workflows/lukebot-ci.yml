@@ -21,8 +21,10 @@ jobs:
       run: dotnet build --no-restore -c Release
     - name: Build Debug
       run: dotnet build --no-restore -c Debug
-    - name: Test
-      run: dotnet test LukeBot.sln
+    - name: Test Release
+      run: dotnet test -c Release --logger "console;verbosity=detailed" LukeBot.sln
+    - name: Test Debug
+      run: dotnet test -c Debug --logger "console;verbosity=detailed" LukeBot.sln
 
   windows-build:
     name: Windows Build
@@ -39,5 +41,7 @@ jobs:
       run: dotnet build --no-restore -c Release
     - name: Build Debug
       run: dotnet build --no-restore -c Debug
-    - name: Test
-      run: dotnet test LukeBot.sln
+    - name: Test Release
+      run: dotnet test -c Release --logger "console;verbosity=detailed" LukeBot.sln
+    - name: Test Debug
+      run: dotnet test -c Debug --logger "console;verbosity=detailed" LukeBot.sln

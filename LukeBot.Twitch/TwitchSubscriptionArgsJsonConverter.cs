@@ -1,3 +1,4 @@
+using LukeBot.Common;
 using LukeBot.Twitch;
 using System;
 using System.Text.Json;
@@ -20,6 +21,8 @@ public class TwitchSubscriptionArgsJsonConverter: JsonConverter<TwitchSubscripti
         writer.WriteStartObject();
 
         writer.WriteString(nameof(value.EventName), value.EventName);
+        writer.WriteString(nameof(value.EventID), value.EventID);
+
         writer.WriteString(nameof(value.User), value.User);
         writer.WriteString(nameof(value.DisplayName), value.DisplayName);
 

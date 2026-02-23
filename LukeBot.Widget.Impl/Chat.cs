@@ -1,6 +1,7 @@
 ﻿using LukeBot.Common;
 using LukeBot.Twitch;
 using LukeBot.Services;
+using System.Security.Cryptography;
 
 
 namespace LukeBot.Widget.Impl
@@ -16,30 +17,35 @@ namespace LukeBot.Widget.Impl
     public class Chat: IWidget
     {
         private void OnEvent<T>(object o, EventArgsBase args)
-            where T: EventArgsBase
+            where T: SerializableEventArgsBase
         {
             SendToWS((T)args);
         }
 
         protected override void OnConnected()
         {
-            ServiceUtils.GetTwitchUserModule(mLBUser).RefreshEmotes();
-        }
-
-        protected override void OnLoad()
-        {
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_MESSAGE).Subscribe(OnEvent<TwitchChatMessageArgs>);
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_USER).Subscribe(OnEvent<TwitchChatUserClearArgs>);
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_MESSAGE).Subscribe(OnEvent<TwitchChatMessageClearArgs>);
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_WATCH_STREAK).Subscribe(OnEvent<TwitchWatchStreakArgs>);
+
+            ServiceUtils.GetTwitchUserModule(mLBUser).RefreshEmotes();
         }
 
-        protected override void OnUnload()
+        protected override void OnDisconnected()
         {
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_MESSAGE).Unsubscribe(OnEvent<TwitchChatMessageArgs>);
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_USER).Unsubscribe(OnEvent<TwitchChatUserClearArgs>);
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_MESSAGE).Unsubscribe(OnEvent<TwitchChatMessageClearArgs>);
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_WATCH_STREAK).Unsubscribe(OnEvent<TwitchWatchStreakArgs>);
+        }
+
+        protected override void OnLoad()
+        {
+        }
+
+        protected override void OnUnload()
+        {
         }
 
         protected override ConfigurationBase CreateDefaultConfiguration()

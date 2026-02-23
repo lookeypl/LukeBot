@@ -51,7 +51,7 @@ namespace LukeBot.Twitch.Impl
         public IRCMessage Receive()
         {
             string msg = mConnection.Read();
-            if (msg == null)
+            if (msg == null || msg.Length == 0)
             {
                 // connection was dropped, leave
                 Logger.Log().Warning("Connection dropped");

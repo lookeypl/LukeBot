@@ -246,7 +246,7 @@ namespace LukeBot.Tests.Twitch.Impl
 
             eventService.AddUser(EVENT_SUB_TEST_USER);
             eventService.User(EVENT_SUB_TEST_USER).AddEventDispatcher(
-                global::LukeBot.Twitch.Impl.Constants.QueuedDispatcherForUser(EVENT_SUB_TEST_USER), EventDispatcherType.Queued
+                global::LukeBot.Twitch.Utils.DispatcherNameForUser(EVENT_SUB_TEST_USER), EventDispatcherType.SubscriberQueued
             );
         }
 

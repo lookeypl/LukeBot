@@ -1,8 +1,9 @@
 using System;
 using System.Linq;
+using System.Text.Json;
+using System.Threading;
 using LukeBot.Common;
 using LukeBot.Logging;
-using Newtonsoft.Json;
 
 
 namespace LukeBot.Widget.Impl
@@ -16,7 +17,7 @@ namespace LukeBot.Widget.Impl
      */
     public class Echo: IWidget
     {
-        private class EchoMessage: EventArgsBase
+        private class EchoMessage: SerializableEventArgsBase
         {
             public string Message { get; set; }
 
@@ -25,11 +26,20 @@ namespace LukeBot.Widget.Impl
             {
                 Message = message;
             }
+
+            public override string Serialize()
+            {
+                return JsonSerializer.Serialize<EchoMessage>(this);
+            }
         }
 
-        private class EchoResponse
+        private WidgetResponse mReceivedResponse = null;
+        private AutoResetEvent mReceiveEvent = new(false);
+
+        protected override void OnReceivedResponse(WidgetResponse response)
         {
-            public string Message { get; set; }
+            mReceivedResponse = response;
+            mReceiveEvent.Set();
         }
 
         protected override void OnConnected()
@@ -47,22 +57,31 @@ namespace LukeBot.Widget.Impl
             EchoMessage msg = new EchoMessage(secretEchoMessage);
             SendToWS(msg);
 
-            EchoResponse resp = RecvFromWS<EchoResponse>();
-            if (resp == null)
+            mReceiveEvent.WaitOne();
+            if (mReceivedResponse == null)
             {
                 Logger.Log().Error("Echo failed - received null response");
                 return;
             }
 
-            if (resp.Message == msg.Message)
+            if (mReceivedResponse.ErrorCount != 1)
+            {
+                Logger.Log().Error("Echo failed - received response has invalid error count ({0}, expected 1)", mReceivedResponse.ErrorCount);
+            }
+
+            if (mReceivedResponse.Reason[0] == msg.Message)
             {
                 Logger.Log().Info("Echo successful");
             }
             else
             {
                 Logger.Log().Error("Echo did not return the same message: expected {0}; received {1}",
-                    msg.Message, resp.Message);
+                    msg.Message, mReceivedResponse.Reason[0]);
             }
+        }
+
+        protected override void OnDisconnected()
+        {
         }
 
         protected override void OnLoad()

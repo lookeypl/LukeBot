@@ -1,10 +1,13 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
+using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
+using System.Threading;
 using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Logging;
 using LukeBot.Twitch;
-using Newtonsoft.Json;
 
 
 namespace LukeBot.Widget.Impl
@@ -12,20 +15,21 @@ namespace LukeBot.Widget.Impl
     /**
      * Widget responsible for everything that could be considered an "Alert".
      *
-     * Currently supported events
-     *  - TwitchSubscription
-     *
-     * Widget assumes events come from a Queued Dispatcher and are processed
-     * one at a time. Once an event arrives, Widget will block execution until
-     * the JS side responds back with a WidgetEventCompletionResponse object.
+     * Widget assumes events are processed one at a time. Once an event arrives,
+     * Widget will internally queue them and execute one-after-another.
      */
-    public class Alerts: IWidget
+    public class Alerts: QueueableEventWidget
     {
-        private class AlertInterrupt: EventArgsBase
+        private class AlertInterrupt: SerializableEventArgsBase
         {
             public AlertInterrupt()
                 : base("AlertInterrupt")
             {
+            }
+
+            public override string Serialize()
+            {
+                return JsonSerializer.Serialize<AlertInterrupt>(this);
             }
         }
 
@@ -49,51 +53,11 @@ namespace LukeBot.Widget.Impl
             public AlertsConfig() {}
         }
 
-        private void AwaitEventCompletion()
-        {
-            try
-            {
-                if (!Connected)
-                    return;
-
-                WidgetEventCompletionResponse resp = RecvFromWS<WidgetEventCompletionResponse>();
-                if (resp == null)
-                {
-                    Logger.Log().Warning("Widget's response was null - possibly connection was broken or is not connected");
-                    return;
-                }
-
-                if (resp.ErrorCount == 0)
-                {
-                    Logger.Log().Debug("Widget completed event successfully");
-                }
-                else if (resp.ErrorCount == 1)
-                {
-                    Logger.Log().Warning("Widget failed to complete the event: {0}", resp.Reason[0]);
-                }
-                else
-                {
-                    Logger.Log().Warning("{0} errors occured during Widget's event completion attempt:", resp.ErrorCount);
-                    for (int i = 0; i < resp.Reason.Length; ++i)
-                    {
-                        Logger.Log().Warning("  - {0}", resp.Reason[i]);
-                    }
-                }
-            }
-            catch (System.Exception e)
-            {
-                Logger.Log().Error("{0}: Caught {1} on Widget's receive loop: {2}",
-                    Name, e.GetType().Name, e.Message
-                );
-            }
-        }
-
         private void OnSimpleEvent<T>(object o, EventArgsBase args)
-            where T : EventArgsBase
+            where T : SerializableEventArgsBase
         {
             T a = args as T;
-            SendToWS(a);
-            AwaitEventCompletion();
+            SendEvent(a);
         }
 
         private void OnSubscriptionEvent(object o, EventArgsBase args)
@@ -117,50 +81,55 @@ namespace LukeBot.Widget.Impl
                 break;
             }
 
-            SendToWS(a, new TwitchSubscriptionArgsJsonConverter());
-
-            AwaitEventCompletion();
+            SendEvent(a);
         }
 
         private void OnEventInterrupt(object o, EventArgsBase args)
         {
-            SendToWS(new AlertInterrupt());
+            SendEvent(new AlertInterrupt());
+        }
+
+        private void SendConfiguration()
+        {
+            WidgetResponse response = SendEventAndWait(GetConfig());
+            if (response == null) return; // quietly ignore, Widget not connected yet
+
+            if (response.ErrorCount == 0)
+            {
+                Logger.Log().Info("Widget {0}: Configuration applied.", GetPrintableWidgetID());
+            }
+            else
+            {
+                LogResponseStatus(response);
+            }
         }
 
         protected override void OnConnected()
         {
-            // must use internal serialization routine to use the proper Converter
-            SendToWS(GetConfig().Serialize());
-            AwaitEventCompletion();
+            EventSubscribe(Events.TWITCH_CHEER, OnSimpleEvent<TwitchCheerArgs>, OnEventInterrupt);
+            EventSubscribe(Events.TWITCH_SUBSCRIPTION, OnSubscriptionEvent, OnEventInterrupt);
+
+            SendConfiguration();
+        }
+
+        protected override void OnDisconnected()
+        {
+            EventUnsubscribe(Events.TWITCH_CHEER, OnSimpleEvent<TwitchCheerArgs>, OnEventInterrupt);
+            EventUnsubscribe(Events.TWITCH_SUBSCRIPTION, OnSubscriptionEvent, OnEventInterrupt);
         }
 
         protected override void OnConfigurationUpdate()
         {
-            // must use internal serialization routine to use the proper Converter
-            SendToWS(GetConfig().Serialize());
-            AwaitEventCompletion();
+            SendConfiguration();
         }
 
         protected override void OnLoad()
         {
-            IEventCollection collection = ServiceUtils.GetEventService().User(mLBUser);
-
-            collection.Event(Events.TWITCH_CHEER).Subscribe(OnSimpleEvent<TwitchCheerArgs>);
-            collection.Event(Events.TWITCH_CHEER).InterruptSubscribe(OnEventInterrupt);
-
-            collection.Event(Events.TWITCH_SUBSCRIPTION).Subscribe(OnSubscriptionEvent);
-            collection.Event(Events.TWITCH_SUBSCRIPTION).InterruptSubscribe(OnEventInterrupt);
         }
 
         protected override void OnUnload()
         {
-            IEventCollection collection = ServiceUtils.GetEventService().User(mLBUser);
 
-            collection.Event(Events.TWITCH_CHEER).Unsubscribe(OnSimpleEvent<TwitchCheerArgs>);
-            collection.Event(Events.TWITCH_CHEER).InterruptUnsubscribe(OnEventInterrupt);
-
-            collection.Event(Events.TWITCH_SUBSCRIPTION).Unsubscribe(OnSubscriptionEvent);
-            collection.Event(Events.TWITCH_SUBSCRIPTION).InterruptUnsubscribe(OnEventInterrupt);
         }
 
         protected override ConfigurationBase CreateDefaultConfiguration()

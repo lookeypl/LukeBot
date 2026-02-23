@@ -157,6 +157,7 @@
     }
 
     let Settings = null;
+    const alertExecutionQueue = new ExecutionQueue();
 
     class InfoPanel {
         constructor() {
@@ -328,13 +329,15 @@
         Gift: 2
     }
 
-    class AlertChain {
+    class AlertChain extends Executable {
         constructor(receivedObject) {
+            super();
             this.mChain = new Array();
             this.mCurrent = 0;
             this.mType = receivedObject.EventName;
             this.mUsername = receivedObject.User;
             this.mDisplayName = receivedObject.DisplayName;
+            this.mChainStatus = new WidgetResponse(receivedObject.EventID);
         }
 
         add(alertEvent) {
@@ -345,22 +348,31 @@
         }
 
         next() {
+            if (this.mInterrupted) return;
+
             this.mCurrent += 1;
             if (this.mCurrent < this.mChain.length) {
                 this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
             }
         }
 
-        play() {
+        execute() {
+            this.mInterrupted = false;
             this.mCurrent = 0;
-            this.mChainStatus = new WidgetEventCompletionStatus();
             this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
         }
 
-        interrupt() {
-            this.mChain.forEach((value, idx) => {
-                value.interrupt();
-            });
+        nextInterrupt(isCurrent) {
+            this.mInterruptCurrent += 1;
+            if (this.mInterruptCurrent < this.mChain.length) {
+                this.mChain[this.mInterruptCurrent].interrupt(this.nextInterrupt.bind(this, isCurrent), isCurrent);
+            }
+        }
+
+        interrupt(isCurrent) {
+            this.mInterrupted = true;
+            this.mInterruptCurrent = 0;
+            this.mChain[this.mInterruptCurrent].interrupt(this.nextInterrupt.bind(this, isCurrent), isCurrent);
         }
     }
 
@@ -375,7 +387,7 @@
             throw new Error("execute() has not been implemented");
         }
 
-        interrupt() {
+        interrupt(next, isCurrent) {
             throw new Error("interrupt() has not been implemented");
         }
     }
@@ -420,7 +432,7 @@
                             }
                         );
                     });
-                    this.mAudio.addEventListener("ended", (value) => {
+                    this.mEndedListener = this.mAudio.addEventListener("ended", (value) => {
                         if (this.mEnsureLongEnough && this.mAudio.duration < 5.0) {
                             // Wait to make the alert last at least 5 seconds
                             setTimeout(() => {
@@ -446,9 +458,15 @@
             // noop
         }
 
-        interrupt() {
-            if (this.mAudio)
-                this.mAudio.pause();
+        interrupt(next, isCurrent) {
+            if (isCurrent) {
+                if (this.mAudio) {
+                    this.mAudio.removeEventListener("ended", this.mEndedListener);
+                    this.mAudio.pause();
+                    this.mEndedListener = null;
+                }
+            }
+            next();
         }
     }
 
@@ -484,8 +502,9 @@
             next();
         }
 
-        interrupt() {
+        interrupt(next, isCurrent) {
             // noop
+            next();
         }
     }
 
@@ -498,8 +517,12 @@
             infoPanel.hide(next);
         }
 
-        interrupt() {
-            infoPanel.hide(null);
+        interrupt(next, isCurrent) {
+            if (isCurrent) {
+                infoPanel.hide(() => next());
+            } else {
+                next();
+            }
         }
     }
 
@@ -517,42 +540,47 @@
             }, this.mTimeoutMs);
         }
 
-        interrupt() {
-            if (this.mTimer) {
+        interrupt(next, isCurrent) {
+            if (isCurrent && this.mTimer) {
                 clearTimeout(this.mTimer);
                 this.mTimer = null;
             }
+
+            next();
         }
     }
 
     class AlertChainComplete extends AlertBase {
-        constructor() {
+        #origMessage = null;
+
+        constructor(msgObj) {
             super();
+            if (!msgObj) {
+                throw new Error("Invalid msgObj");
+            }
+
+            this.#origMessage = msgObj;
         }
 
         execute(next, status) {
-            alertsWidget.send(status);
+            alertsWidget.send(WidgetResponse.fromMessage(this.#origMessage));
+            alertExecutionQueue.processNext();
         }
 
-        interrupt() {
+        interrupt(next, isCurrent) {
+            alertsWidget.send(WidgetResponse.fromMessage(this.#origMessage).fail("Alert interrupted"));
+            if (isCurrent) {
+                alertExecutionQueue.processNext();
+            }
         }
     }
 
     const alert = document.getElementById('alert');
-    let alertChain = null;
 
     let alertsWidget = new LukeBotWidget();
-    alertsWidget.registerMessageError((error) => {
-        alertsWidget.send(new WidgetEventCompletionStatus().fail(`ERROR exception while preparing/playing alert: ${error}`));
-    });
     alertsWidget.registerMessage("AlertInterrupt", (obj) => {
-        // interrupt has been triggerred, let's pause the chain and clear it
-        if (alertChain != null) {
-            alertChain.interrupt();
-            alertChain = null;
-
-            alertsWidget.send(new WidgetEventCompletionStatus().fail("Alert interrupted"));
-        }
+        alertExecutionQueue.interrupt(0);
+        alertsWidget.send(WidgetResponse.fromMessage(obj));
     });
     alertsWidget.registerMessage("AlertsConfig", (obj) => {
         Settings = new AlertsConfig(obj);
@@ -564,7 +592,7 @@
             infoPanel.alignRight();
         }
 
-        alertsWidget.send(new WidgetEventCompletionStatus());
+        alertsWidget.send(WidgetResponse.fromMessage(obj));
     });
     alertsWidget.registerMessage("TwitchCheer", (obj) => {
         alertChain = new AlertChain(obj);
@@ -583,8 +611,8 @@
         }
 
         alertChain.add(new HideInfoAlert());
-        alertChain.add(new AlertChainComplete());
-        alertChain.play();
+        alertChain.add(new AlertChainComplete(obj));
+        alertExecutionQueue.push(alertChain);
     });
     alertsWidget.registerMessage("TwitchSubscription", (obj) => {
         alertChain = new AlertChain(obj);
@@ -608,9 +636,9 @@
         }
 
         alertChain.add(new HideInfoAlert());
-        alertChain.add(new AlertChainComplete());
-        alertChain.play();
+        alertChain.add(new AlertChainComplete(obj));
+        alertExecutionQueue.push(alertChain);
     });
 
-
+    alertExecutionQueue.processNext();
 </script>

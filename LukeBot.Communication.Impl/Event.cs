@@ -25,6 +25,8 @@ namespace LukeBot.Communication
          */
         public string Description;
 
+        private object mEventAccessLock = new();
+
         /**
          * Event's endpoint.
          *
@@ -40,10 +42,41 @@ namespace LukeBot.Communication
          * previously raised (most probably still ongoing) Event is
          * supposed to be interrupted.
          *
-         * Note that so far only Queued Dispatcher provides the functionality
+         * Note that Immediate Event Dispatcher does NOT provide the functionality
          * to emit Interrupt events.
          */
         private event EventHandler<EventArgsBase> InterruptEndpoint;
+
+        private HashSet<EventHandler<EventArgsBase>> mCompletableEndpoints = new();
+
+        /**
+         * Returns how many subscribers will send back the confirmation that the Event
+         * was successfully completed.
+         */
+        internal int CompletableSubscriberCount
+        {
+            get
+            {
+                lock (mEventAccessLock)
+                {
+                    return mCompletableEndpoints.Count;
+                }
+            }
+        }
+
+        /**
+         * Returns how many places will receive the interrupt event emitted via Endpoint.
+         */
+        internal int InterruptSubscriberCount
+        {
+            get
+            {
+                lock (mEventAccessLock)
+                {
+                    return InterruptEndpoint.GetInvocationList().Length;
+                }
+            }
+        }
 
         /**
          * Generator for test events provided by the publisher.
@@ -88,14 +121,17 @@ namespace LukeBot.Communication
 
         internal EventInfo GetEventInfo()
         {
-            return new()
+            lock (mEventAccessLock)
             {
-                Name = this.Name,
-                Dispatcher = (this.Dispatcher != null && this.Dispatcher.Length > 0) ? this.Dispatcher : "DEFAULT",
-                Description = this.Description,
-                Testable = this.TestGenerator != null,
-                TestParams = this.TestParams
-            };
+                return new()
+                {
+                    Name = this.Name,
+                    Dispatcher = (this.Dispatcher != null && this.Dispatcher.Length > 0) ? this.Dispatcher : "DEFAULT",
+                    Description = this.Description,
+                    Testable = this.TestGenerator != null,
+                    TestParams = this.TestParams
+                };
+            }
         }
 
 
@@ -108,24 +144,42 @@ namespace LukeBot.Communication
             TestParams = ed.TestParams;
         }
 
-        public void Subscribe(EventHandler<EventArgsBase> callback)
+        public void Subscribe(EventHandler<EventArgsBase> callback, bool completable = false)
         {
-            Endpoint += callback;
+            lock (mEventAccessLock)
+            {
+                Endpoint += callback;
+
+                if (completable)
+                {
+                    mCompletableEndpoints.Add(callback);
+                }
+            }
         }
 
         public void Unsubscribe(EventHandler<EventArgsBase> callback)
         {
-            Endpoint -= callback;
+            lock (mEventAccessLock)
+            {
+                Endpoint -= callback;
+                mCompletableEndpoints.Remove(callback);
+            }
         }
 
         public void InterruptSubscribe(EventHandler<EventArgsBase> callback)
         {
-            InterruptEndpoint += callback;
+            lock (mEventAccessLock)
+            {
+                InterruptEndpoint += callback;
+            }
         }
 
         public void InterruptUnsubscribe(EventHandler<EventArgsBase> callback)
         {
-            InterruptEndpoint -= callback;
+            lock (mEventAccessLock)
+            {
+                InterruptEndpoint -= callback;
+            }
         }
     }
 }

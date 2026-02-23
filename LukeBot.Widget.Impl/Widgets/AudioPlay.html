@@ -5,8 +5,22 @@
 
 <script>
     // TODO copied from Alerts.html. Should be probably common-ized
-    class AlertChain {
+    class AudioPlayConfig {
+        constructor(receivedConfig) {
+            if (receivedConfig.EventName != "AudioPlayWidgetInternalConfig") {
+                throw new Error("Invalid config object received");
+            }
+
+            this.QueuePlayback = receivedConfig.QueuePlayback;
+        }
+    }
+
+    let Settings = null;
+    const executionQueue = new ExecutionQueue();
+
+    class AlertChain extends Executable {
         constructor(receivedObject) {
+            super();
             this.mChain = new Array();
             this.mCurrent = 0;
             this.mType = receivedObject.EventName;
@@ -28,9 +42,9 @@
             }
         }
 
-        play() {
+        execute() {
             this.mCurrent = 0;
-            this.mChainStatus = new WidgetEventCompletionStatus();
+            this.mChainStatus = new WidgetResponse();
             this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
         }
 
@@ -108,8 +122,9 @@
         }
 
         interrupt() {
-            if (this.mAudio)
+            if (this.mAudio) {
                 this.mAudio.pause();
+            }
         }
     }
 
@@ -187,8 +202,9 @@
         }
 
         interrupt() {
-            if (this.mAudio)
+            if (this.mAudio) {
                 this.mAudio.pause();
+            }
         }
     }
 
@@ -217,32 +233,25 @@
         }
 
         execute(next, status) {
-            audioPlayWidget.send(status);
+            if (Settings.QueuePlayback) {
+                this.executionQueue.processNext();
+            }
         }
 
         interrupt() {
         }
     }
 
-    let audioPlayChain = null;
     let audioPlayWidget = new LukeBotWidget();
     audioPlayWidget.registerMessage("AlertInterrupt", (obj) => {
-        // interrupt has been triggerred, let's pause the chain and clear it
-        if (audioTrack != null) {
-            audioTrack.stop();
-            audioTrack = null;
-        }
+        executionQueue.interruptCurrent();
     });
     audioPlayWidget.registerMessage("AudioPlayStartFilePlayback", (obj) => {
         if (!obj.File) {
-            audioPlayWidget.send(new WidgetEventCompletionStatus().fail(`ERROR undefined file to play`));
+            audioPlayWidget.send(new WidgetResponse().fail(`ERROR undefined file to play`));
         }
 
-        console.log(`LKDEBUG start playback of ${obj.File}, repeat ${obj.RandomRepeat}`);
-        if (obj.RandomRepeat == true)
-            console.log(`LKDEBUG repeat for ${obj.TotalLength} between ${obj.MinInterval} and ${obj.MaxInterval} seconds`);
-
-        audioPlayChain = new AlertChain(obj);
+        let audioPlayChain = new AlertChain(obj);
         if (obj.RandomRepeat == true) {
             audioPlayChain.add(new RandomAudioAlert(obj.File, obj.TotalLength, obj.MinInterval, obj.MaxInterval));
         } else {
@@ -250,17 +259,25 @@
         }
 
         audioPlayChain.add(new AlertChainComplete());
-        audioPlayChain.play();
+        if (Settings.QueuePlayback) {
+            executionQueue.push(audioPlayChain);
+        } else {
+            audioPlayChain.execute();
+        }
     });
     audioPlayWidget.registerMessage("AudioPlayStartTTSPlayback", (obj) => {
-        console.log(`LKDEBUG start TTS playback voice ${obj.Voice} message ${obj.Message}`);
-
-        audioPlayChain = new AlertChain(obj);
+        let audioPlayChain = new AlertChain(obj);
         audioPlayChain.add(new TTSAlert(obj.Voice, obj.Message));
         audioPlayChain.add(new AlertChainComplete());
-        audioPlayChain.play();
+        if (Settings.QueuePlayback) {
+            executionQueue.push(audioPlayChain);
+        } else {
+            audioPlayChain.execute();
+        }
     });
     audioPlayWidget.registerMessageError((error) => {
-        audioPlayWidget.send(new WidgetEventCompletionStatus().fail(`ERROR exception while preparing/playing audio file: ${error}`));
+        audioPlayWidget.send(new WidgetResponse().fail(`ERROR exception while preparing/playing audio file: ${error}`));
     });
+
+    executionQueue.processNext();
 </script>

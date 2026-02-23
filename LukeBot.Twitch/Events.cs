@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using LukeBot.Logging;
 using LukeBot.Common;
+using System.Text.Json.Serialization;
 
 
 namespace LukeBot.Twitch
@@ -24,7 +26,7 @@ namespace LukeBot.Twitch
 
     // Chat
 
-    public class TwitchChatMessageArgs: EventArgsBase
+    public class TwitchChatMessageArgs: SerializableEventArgsBase
     {
         public string MessageID { get; private set; }
         public string UserID { get; set; }
@@ -100,9 +102,14 @@ namespace LukeBot.Twitch
 
             Emotes.AddRange(filteredEmotes);
         }
+
+        public override string Serialize()
+        {
+            return JsonSerializer.Serialize<TwitchChatMessageArgs>(this);
+        }
     }
 
-    public class TwitchChatMessageClearArgs: EventArgsBase
+    public class TwitchChatMessageClearArgs: SerializableEventArgsBase
     {
         public string Message { get; private set; }
         public string MessageID { get; set; }
@@ -113,9 +120,14 @@ namespace LukeBot.Twitch
             Message = message;
             MessageID = "";
         }
+
+        public override string Serialize()
+        {
+            return JsonSerializer.Serialize<TwitchChatMessageClearArgs>(this);
+        }
     }
 
-    public class TwitchChatUserClearArgs: EventArgsBase
+    public class TwitchChatUserClearArgs: SerializableEventArgsBase
     {
         public string Nick { get; private set; }
 
@@ -123,6 +135,11 @@ namespace LukeBot.Twitch
             : base(Events.TWITCH_CHAT_CLEAR_USER)
         {
             Nick = nick;
+        }
+
+        public override string Serialize()
+        {
+            return JsonSerializer.Serialize<TwitchChatUserClearArgs>(this);
         }
     }
 
@@ -254,7 +271,7 @@ namespace LukeBot.Twitch
         }
     }
 
-    public class TwitchSubscriptionArgs: EventArgsBase
+    public class TwitchSubscriptionArgs: SerializableEventArgsBase
     {
         public string User { get; private set; }
         public string DisplayName { get; private set; }
@@ -267,12 +284,19 @@ namespace LukeBot.Twitch
             DisplayName = displayName;
             Details = details;
         }
+
+        public override string Serialize()
+        {
+            JsonSerializerOptions opts = new();
+            opts.Converters.Add(new TwitchSubscriptionArgsJsonConverter());
+            return JsonSerializer.Serialize<TwitchSubscriptionArgs>(this, opts);
+        }
     }
 
 
     // Channel Points
 
-    public class TwitchChannelPointsRedemptionArgs: EventArgsBase
+    public class TwitchChannelPointsRedemptionArgs: SerializableEventArgsBase
     {
         public string User { get; private set; }
         public string DisplayName { get; private set; }
@@ -294,12 +318,17 @@ namespace LukeBot.Twitch
             Prompt = prompt;
             Message = message;
         }
+
+        public override string Serialize()
+        {
+            return JsonSerializer.Serialize<TwitchChannelPointsRedemptionArgs>(this);
+        }
     }
 
 
     // Cheers
 
-    public class TwitchCheerArgs: EventArgsBase
+    public class TwitchCheerArgs: SerializableEventArgsBase
     {
         public string User { get; private set; }
         public string DisplayName { get; private set; }
@@ -314,12 +343,17 @@ namespace LukeBot.Twitch
             Amount = amount;
             Message = message;
         }
+
+        public override string Serialize()
+        {
+            return JsonSerializer.Serialize<TwitchCheerArgs>(this);
+        }
     }
 
 
     // Notices in chat
 
-    public class TwitchNoticeArgs: EventArgsBase
+    public abstract class TwitchNoticeArgs: SerializableEventArgsBase
     {
         public string NoticeID { get; protected set; }
         public string User { get; protected set; }
@@ -349,6 +383,11 @@ namespace LukeBot.Twitch
         public void AddMessage(TwitchChatMessageArgs m)
         {
             Message = m;
+        }
+
+        public override string Serialize()
+        {
+            return JsonSerializer.Serialize<TwitchWatchStreakArgs>(this);
         }
     }
 }

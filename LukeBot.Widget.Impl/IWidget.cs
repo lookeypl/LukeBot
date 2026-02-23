@@ -14,12 +14,6 @@ using System.Text.Json.Serialization;
 
 namespace LukeBot.Widget.Impl
 {
-    internal class WidgetEventCompletionResponse
-    {
-        public int ErrorCount { get; set; }
-        public string[] Reason { get; set; }
-    }
-
     public abstract class IWidget
     {
         private struct WebSocketRecv
@@ -35,6 +29,13 @@ namespace LukeBot.Widget.Impl
             }
         };
 
+        protected class WidgetResponse
+        {
+            public Guid EventID { get; set; }
+            public int ErrorCount { get; set; }
+            public string[] Reason { get; set; }
+        }
+
         public string ID { get; private set; }
         public string Name { get; private set; }
         public bool Loaded { get; private set; }
@@ -44,20 +45,70 @@ namespace LukeBot.Widget.Impl
         protected WebSocket mWS;
         private ConfigurationBase mConfiguration;
         private ManualResetEvent mWSLifetimeEndEvent;
-        private AutoResetEvent mWSRecvAvailableEvent;
         private Task mWSLifetimeTask;
         private Thread mWSMessagingThread;
         private bool mWSThreadDone;
-        private Queue<string> mWSRecvQueue;
         private Config.Path mConfigurationPath;
         private Config.Path mBackupConfigurationPath;
 
+        /**
+         * Check if Widget is Connected to the JS-side. Returns true if WebSocket is established and is in Open state.
+         */
         protected bool Connected { get { return mWS != null && mWS.State == WebSocketState.Open; } }
-        protected abstract void OnLoad(); // called when widget is loaded. Can throw, which will leave widget in unloaded state.
-        protected abstract void OnUnload(); // called when widget is loaded. Can throw, which will leave widget in unloaded state.
-        protected abstract void OnConnected();
+
+        /**
+         * Called when Widget is loaded by the service. This does not mean Widget is connected, rather that
+         * it has been spawned on the server-side.
+         *
+         * An Exception can be thrown from this method which will leave the Widget in unloaded state.
+         *
+         * To detect when client-side of the Widget is connected, override OnConnected().
+         */
+        protected virtual void OnLoad() { }
+
+        /**
+         * Called when Widget is unloaded by the service.
+         */
+        protected virtual void OnUnload() { }
+
+        /**
+         * Called when client-side connects to the Widget.
+         *
+         * At this point WebSocket connection is established, so using functions like @p SendToWS()
+         * is possible. Receive Thread will also emit @p OnReceivedResponse() callbacks when it
+         * picks up a client-side message.
+         */
+        protected virtual void OnConnected() { }
+
+        /**
+         * Called when client-side disconnects. Assume that by this point WebSocket is already
+         * disconnected and no communication can be made with client-side.
+         */
+        protected virtual void OnDisconnected() { }
+
+        /**
+         * Creates Widget's default configuration when loading and initializing it.
+         *
+         * This will be called if there is no configuration present in LukeBot's properties.
+         */
         protected abstract ConfigurationBase CreateDefaultConfiguration();
+
+        /**
+         * Called when Configuration is updated ex. by CLI.
+         *
+         * Use this override to apply the Configuration update to client-side.
+         */
         protected virtual void OnConfigurationUpdate() { }
+
+        /**
+         * Called when Receive Thread picks up a message from client-side. Override this method
+         * to process the response.
+         *
+         * NOTE: This is called by the Receive Thread. As such, any blocking communication
+         * (ex. expecting another Response) must be handled manually (or better, not handled at
+         * all).
+         */
+        protected virtual void OnReceivedResponse(WidgetResponse response) { }
 
         private string GetWidgetCode()
         {
@@ -138,14 +189,12 @@ namespace LukeBot.Widget.Impl
                     {
                         Logger.Log().Debug("Received close message");
                         mWSThreadDone = true;
-                        mWSRecvAvailableEvent.Set();
                         continue;
                     }
 
-                    Logger.Log().Debug("{0}: Enqueueing message", GetPrintableWidgetID());
+                    Logger.Log().Debug("{0}: Received message", GetPrintableWidgetID());
                     Logger.Log().Secure("{0}:  -> msg = {1}", GetPrintableWidgetID(), recv.data);
-                    mWSRecvQueue.Enqueue(recv.data);
-                    mWSRecvAvailableEvent.Set();
+                    OnReceivedResponse(JsonSerializer.Deserialize<WidgetResponse>(recv.data));
                 }
 
                 CloseWS(WebSocketCloseStatus.NormalClosure);
@@ -157,6 +206,30 @@ namespace LukeBot.Widget.Impl
 
                 CloseWS(WebSocketCloseStatus.InternalServerError);
             }
+
+            OnDisconnected();
+        }
+
+        private async Task<bool> SendToWSAsync(string msg)
+        {
+            if (mWS == null || mWS.State != WebSocketState.Open)
+                return false; // WebSocket not connected, ignore
+
+            await mWS.SendAsync(
+                Encoding.UTF8.GetBytes(msg).AsMemory<byte>(),
+                WebSocketMessageType.Text,
+                true,
+                CancellationToken.None
+            );
+
+            return true;
+        }
+
+        private bool SendToWS(string msg)
+        {
+            Task<bool> t = SendToWSAsync(msg);
+            t.Wait();
+            return t.Result;
         }
 
 
@@ -174,70 +247,19 @@ namespace LukeBot.Widget.Impl
             mWSLifetimeEndEvent.Set(); // trigger Kestrel thread to finish the connection
         }
 
-        protected string RecvFromWS()
+        protected async Task<bool> SendToWSAsync<T>(T obj)
+            where T: SerializableEventArgsBase
         {
-            if (mWS == null || mWS.State != WebSocketState.Open)
-                return null;
-
-            while (mWSRecvQueue.Count == 0 && mWSThreadDone == false)
-                mWSRecvAvailableEvent.WaitOne();
-
-            if (mWSThreadDone)
-                return "";
-
-            return mWSRecvQueue.Dequeue();
+            return await SendToWSAsync(obj.Serialize());
         }
 
-        protected T RecvFromWS<T>()
+        protected bool SendToWS<T>(T obj)
+            where T: SerializableEventArgsBase
         {
-            return JsonSerializer.Deserialize<T>(RecvFromWS());
-        }
-
-        protected async Task SendToWSAsync(string msg)
-        {
-            if (mWS == null)
-                return; // WebSocket not connected, ignore
-
-            if (mWS.State == WebSocketState.Open)
-            {
-                await mWS.SendAsync(
-                    Encoding.UTF8.GetBytes(msg).AsMemory<byte>(),
-                    WebSocketMessageType.Text,
-                    true,
-                    CancellationToken.None
-                );
-            }
-        }
-
-        protected void SendToWS(string msg)
-        {
-            Task t = SendToWSAsync(msg);
+            Task<bool> t = SendToWSAsync(obj);
             t.Wait();
+            return t.Result;
         }
-
-        protected async Task SendToWSAsync<T>(T obj, JsonConverter<T> converter)
-        {
-            JsonSerializerOptions options = new();
-            if (converter != null) options.Converters.Add(converter);
-            await SendToWSAsync(JsonSerializer.Serialize(obj, options));
-        }
-
-        protected async Task SendToWSAsync<T>(T obj)
-        {
-            await SendToWSAsync(obj, null);
-        }
-
-        protected void SendToWS<T>(T obj, JsonConverter<T> converter)
-        {
-            Task t = SendToWSAsync<T>(obj, converter);
-            t.Wait();
-        }
-
-        protected void SendToWS<T>(T obj)
-        {
-            SendToWS(obj, null);
-        }
-
 
         protected void LoadConfiguration()
         {
@@ -254,6 +276,7 @@ namespace LukeBot.Widget.Impl
             mConfiguration.UpdateNotifier = OnConfigurationUpdate;
             OnConfigurationUpdate();
         }
+
 
         public void SaveConfiguration()
         {
@@ -303,7 +326,8 @@ namespace LukeBot.Widget.Impl
             mWSLifetimeEndEvent.Reset();
             mWSLifetimeTask = Task.Run(() => mWSLifetimeEndEvent.WaitOne());
 
-            mWSMessagingThread = new Thread(WSRecvThreadMain);
+            mWSMessagingThread = new(WSRecvThreadMain);
+            mWSMessagingThread.Name = "Widget WS Thread (" + mLBUser + ")";
             mWSMessagingThread.Start();
 
             OnConnected();
@@ -322,9 +346,7 @@ namespace LukeBot.Widget.Impl
             mHead = new List<string>();
             mWS = null;
             mWSLifetimeEndEvent = new ManualResetEvent(false);
-            mWSRecvAvailableEvent = new AutoResetEvent(false);
             mWSThreadDone = false;
-            mWSRecvQueue = new Queue<string>();
             mWSLifetimeTask = null;
             mConfigurationPath = Config.Path.Start()
                 .Push(Constants.PROP_STORE_WIDGET_DOMAIN)

@@ -63,7 +63,7 @@ namespace LukeBot.Communication.Impl
             Logger.Log().Warning("Advanced operations not available on Immediate Dispatcher.");
         }
 
-        public override void Skip()
+        public override void Skip(int idx)
         {
             Logger.Log().Warning("Advanced operations not available on Immediate Dispatcher.");
         }
@@ -113,10 +113,10 @@ namespace LukeBot.Communication.Impl
 
         private Thread mThread = null;
         private EventDispatcherState mState = EventDispatcherState.Stopped;
-        private Queue<EventQueueItem> mEvents = new();
+        private List<EventQueueItem> mEvents = new();
         private ManualResetEvent mThreadStartedEvent = new(false);
         private ManualResetEvent mQueueAvailableEvent = new(false);
-        private Mutex mEventQueueMutex = new();
+        private object mEventQueueLock = new();
         private EventQueueItem mCurrentEvent = null;
 
         public QueuedEventDispatcher(string name)
@@ -132,12 +132,11 @@ namespace LukeBot.Communication.Impl
                 mState != EventDispatcherState.OnHold)
                 return;
 
-            mEventQueueMutex.WaitOne();
-
-            if (mEvents != null)
-                mEvents.Enqueue(item);
-
-            mEventQueueMutex.ReleaseMutex();
+            lock (mEventQueueLock)
+            {
+                if (mEvents != null)
+                    mEvents.Add(item);
+            }
         }
 
         private EventQueueItem DequeueItem()
@@ -145,11 +144,16 @@ namespace LukeBot.Communication.Impl
             if (mState != EventDispatcherState.Running)
                 return null;
 
-            mEventQueueMutex.WaitOne();
             EventQueueItem item = null;
-            if (mEvents.Count > 0)
-                item = mEvents.Dequeue();
-            mEventQueueMutex.ReleaseMutex();
+
+            lock (mEventQueueLock)
+            {
+                if (mEvents.Count > 0)
+                {
+                    item = mEvents[0];
+                    mEvents.RemoveAt(0);
+                }
+            }
 
             return item;
         }
@@ -229,10 +233,11 @@ namespace LukeBot.Communication.Impl
                 mThread.Join();
 
                 // wrapped in mutexes in case an event is submitted at the same time somehow
-                mEventQueueMutex.WaitOne();
-                mEvents.Clear();
-                mEvents = null;
-                mEventQueueMutex.ReleaseMutex();
+                lock (mEventQueueLock)
+                {
+                    mEvents.Clear();
+                    mEvents = null;
+                }
 
                 mThreadStartedEvent.Reset();
             }
@@ -240,9 +245,10 @@ namespace LukeBot.Communication.Impl
 
         public override void Clear()
         {
-            mEventQueueMutex.WaitOne();
-            mEvents.Clear();
-            mEventQueueMutex.ReleaseMutex();
+            lock (mEventQueueLock)
+            {
+                mEvents.Clear();
+            }
         }
 
         public override void Enable()
@@ -281,7 +287,7 @@ namespace LukeBot.Communication.Impl
             mState = EventDispatcherState.OnHold;
         }
 
-        public override void Skip()
+        public override void Skip(int idx)
         {
             if (mState != EventDispatcherState.Running)
             {
@@ -289,24 +295,203 @@ namespace LukeBot.Communication.Impl
                 return;
             }
 
-            InterruptCurrentEvent();
+            if (idx == 0)
+            {
+                InterruptCurrentEvent();
+            }
+            else
+            {
+                // assumes the event was not yet executed (we execute one at a time)
+                // so we can safely remove it from the list
+                lock (mEventQueueLock)
+                {
+                    mEvents.RemoveAt(idx);
+                }
+            }
         }
 
         public override EventDispatcherStatus Status()
         {
-            mEventQueueMutex.WaitOne();
-
-            EventDispatcherStatus status = new EventDispatcherStatus()
+            lock (mEventQueueLock)
             {
-                Name = mName,
-                Type = EventDispatcherType.Queued,
-                EventCount = mEvents.Count,
-                State = mState
-            };
+                return new EventDispatcherStatus()
+                {
+                    Name = mName,
+                    Type = EventDispatcherType.Queued,
+                    EventCount = mEvents.Count,
+                    State = mState
+                };
+            }
+        }
+    }
 
-            mEventQueueMutex.ReleaseMutex();
+    /**
+     * Event Dispatcher implementing similar routines to QueuedEventDispatcher, however
+     * also NOT spawning a separate Thread to enqueue the Events. Instead, this Dispatcher
+     * relies on an assumption that the Event's Subscriber will manage its own queue of
+     * events.
+     *
+     * Events are dispatched immediately akin to ImmediateEventDispatcher, however
+     * it also will hold the list of dispatched Events and expect the Subscribers
+     * to eventually report back the Event was completed. This is done to accomodate
+     * situations where we need to send long-lasting Events (see Twitch Subscriptions
+     * or Cheers which play alerts) to multiple Subscribers at once, yet we still need
+     * a possibility to Interrupt those Events or to query them for details.
+     *
+     * This Dispatcher is thread-safe.
+     */
+    internal class SubscriberQueuedEventDispatcher : EventDispatcher
+    {
+        private class SentEventData
+        {
+            private Event mEvent;
+            private EventArgsBase mArgs;
+            private int mExpectedCompletions;
+            private int mCurrentCompletions;
 
-            return status;
+            public Guid EventID
+            {
+                get
+                {
+                    return mArgs.EventID;
+                }
+            }
+
+            public SentEventData(Event ev, EventArgsBase args)
+            {
+                mEvent = ev;
+                mArgs = args;
+                mExpectedCompletions = ev.CompletableSubscriberCount;
+                mCurrentCompletions = 0;
+            }
+
+            // Increase completion counter.
+            // Returns true if all subscribers report back completion.
+            // Can throw EventSystemException if too many completions are received
+            public bool MarkCompleted()
+            {
+                mCurrentCompletions++;
+
+                if (mCurrentCompletions > mExpectedCompletions)
+                {
+                    throw new EventSystemException("Received too many completions for event {0}. This should not have happened.", mEvent.Name);
+                }
+
+                return (mCurrentCompletions == mExpectedCompletions);
+            }
+
+            public void Interrupt()
+            {
+                mEvent.Interrupt();
+            }
+        }
+
+        private List<SentEventData> mSentEvents = new();
+        private object mEventListLock = new();
+
+        private void EventCompletionHandler(SentEventData evData)
+        {
+            lock (mEventListLock)
+            {
+                if (evData.MarkCompleted())
+                {
+                    // all handlers completed, clear this event from the list
+                    mSentEvents.Remove(evData);
+                }
+            }
+        }
+
+        public SubscriberQueuedEventDispatcher(string name)
+            : base(name)
+        {
+        }
+
+        public override void Clear()
+        {
+            lock (mEventListLock)
+            {
+                // notify each currently processed event that there is an interruption
+                foreach (SentEventData ev in mSentEvents)
+                {
+                    ev.Interrupt();
+                }
+
+                // clear current events
+                mSentEvents.Clear();
+            }
+        }
+
+        public override void Enable()
+        {
+            // noop/TODO?
+        }
+
+        public override void Disable()
+        {
+            // noop/TODO?
+        }
+
+        public override void Hold()
+        {
+            // noop
+            Logger.Log().Warning("TODO: Holding events not implemented in SubscriberQueuedEventDispatcher");
+        }
+
+        public override void Skip(int idx)
+        {
+            lock (mEventListLock)
+            {
+                if (idx < 0 || idx >= mSentEvents.Count)
+                {
+                    Logger.Log().Warning("{0}: Invalid event idx {1}", mName, idx);
+                    return;
+                }
+
+                mSentEvents[idx].Interrupt();
+                mSentEvents.RemoveAt(idx);
+            }
+        }
+
+        public override void Start()
+        {
+            // noop, nothing to start
+        }
+
+        public override void Stop()
+        {
+            // noop, nothing to end
+        }
+
+        public override void Submit(IEvent ev, EventArgsBase args)
+        {
+            Event e = ev as Event;
+
+            if (e.CompletableSubscriberCount > 0)
+            {
+                SentEventData data = new(e, args);
+                args.SetCompletionCallback(() => EventCompletionHandler(data));
+
+                lock (mEventListLock)
+                {
+                    mSentEvents.Add(data);
+                }
+            }
+
+            e.Raise(args);
+        }
+
+        public override EventDispatcherStatus Status()
+        {
+            lock (mEventListLock)
+            {
+                return new EventDispatcherStatus()
+                {
+                    Name = mName,
+                    Type = EventDispatcherType.SubscriberQueued,
+                    EventCount = mSentEvents.Count,
+                    State = EventDispatcherState.Running
+                };
+            }
         }
     }
 }

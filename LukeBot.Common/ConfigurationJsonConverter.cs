@@ -80,8 +80,9 @@ namespace LukeBot.Common
                 }
             }
 
-            // remember to also add EventName field
+            // remember to also add other important fields
             writer.WriteString(nameof(configuration.EventName), configuration.EventName);
+            writer.WriteString(nameof(configuration.EventID), configuration.EventID);
             writer.WriteString(nameof(configuration.FullConfigurableTypeName), configuration.FullConfigurableTypeName);
 
             writer.WriteEndObject();

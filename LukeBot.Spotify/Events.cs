@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json;
 using LukeBot.Common;
 
 
@@ -10,7 +11,7 @@ namespace LukeBot.Spotify
         public const string SPOTIFY_TRACK_CHANGED = "SpotifyTrackChanged";
     }
 
-    public class SpotifyStateUpdateArgs: EventArgsBase
+    public class SpotifyStateUpdateArgs: SerializableEventArgsBase
     {
         public PlayerState State { get; private set; }
         public float Progress { get; private set; }
@@ -48,9 +49,14 @@ namespace LukeBot.Spotify
         {
             return State.GetHashCode() ^ Progress.GetHashCode();
         }
+
+        public override string Serialize()
+        {
+            return JsonSerializer.Serialize<SpotifyStateUpdateArgs>(this);
+        }
     }
 
-    public class SpotifyTrackChangedArgs: EventArgsBase
+    public class SpotifyTrackChangedArgs: SerializableEventArgsBase
     {
         public string Artists { get; private set; }
         public string Title { get; private set; }
@@ -71,6 +77,11 @@ namespace LukeBot.Spotify
         public override string ToString()
         {
             return String.Format("{0} - {1} ({2})", Artists, Title, Duration);
+        }
+
+        public override string Serialize()
+        {
+            return JsonSerializer.Serialize<SpotifyTrackChangedArgs>(this);
         }
     };
 }

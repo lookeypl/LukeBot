@@ -1,14 +1,8 @@
 <script src="/js/lukebot-widget-common.js"></script>
 
 <script>
-    class EchoResponse {
-        constructor(msg) {
-            this.Message = msg;
-        }
-    }
-
     let echoWidget = new LukeBotWidget();
     echoWidget.registerMessage("EchoMessage", (obj) => {
-        echoWidget.send(new EchoResponse(obj.Message));
+        echoWidget.send(new WidgetResponse(obj.EventID).fail(obj.Message));
     });
 </script>

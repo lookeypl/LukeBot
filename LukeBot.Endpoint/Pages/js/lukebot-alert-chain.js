@@ -1,0 +1,225 @@
+
+
+class AlertChain extends Executable {
+    constructor(receivedObject) {
+        super();
+        this.mChain = new Array();
+        this.mCurrent = 0;
+        this.mType = receivedObject.EventName;
+        this.mUsername = receivedObject.User;
+        this.mDisplayName = receivedObject.DisplayName;
+    }
+
+    add(alertEvent) {
+        if (!(alertEvent instanceof AlertBase)) {
+            throw new Error("Cannot add objects not extending AlertBase()");
+        }
+        this.mChain.push(alertEvent);
+    }
+
+    next() {
+        this.mCurrent += 1;
+        if (this.mCurrent < this.mChain.length) {
+            this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
+        }
+    }
+
+    execute() {
+        this.mCurrent = 0;
+        this.mChainStatus = new WidgetResponse();
+        this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
+    }
+
+    interrupt() {
+        this.mChain.forEach((value, idx) => {
+            value.interrupt();
+        });
+    }
+}
+
+class AlertBase {
+    constructor() {
+        if (this.constructor == AlertBase) {
+            throw new Error("Cannot instantiate base class");
+        }
+    }
+
+    execute(next, status) {
+        throw new Error("execute() has not been implemented");
+    }
+
+    interrupt() {
+        throw new Error("interrupt() has not been implemented");
+    }
+}
+
+class AudioAlert extends AlertBase {
+    constructor(audioPath) {
+        super();
+        if (audioPath)
+            this.setPath(audioPath);
+    }
+
+    setPath(path) {
+        this.mAudioPath = path;
+    }
+
+    execute(next, status) {
+        fetch(this.mAudioPath)
+            .catch((error) => {
+                status.fail(`ERROR fetching audio file: ${error}`);
+                next();
+            })
+            .then((response) => {
+                if (response.ok) {
+                    return response.blob();
+                } else {
+                    throw new Error(`Bad response from fetching audio file: ${response.status}`);
+                }
+            })
+            .catch((error) => {
+                status.fail(`ERROR getting response blob: ${error}`);
+                next();
+            })
+            .then((blob) => {
+                try {
+                    var audioURL = window.URL.createObjectURL(blob);
+                    this.mAudio = new Audio(audioURL);
+                    this.mAudio.addEventListener("canplaythrough", (event) => {
+                        this.mAudio.play()
+                            .then(() => next())
+                            .catch((reason) => {
+                                status.fail(`ERROR playing audio: ${reason}`);
+                                next();
+                            })
+                    });
+                } catch (e) {
+                    status.fail(`ERROR caught while trying to play audio: ${e}`);
+                    next();
+                }
+            }).catch((error) => {
+                status.fail(`ERROR playing audio: ${error}`);
+                next();
+            });
+    }
+
+    interrupt() {
+        if (this.mAudio) {
+            this.mAudio.pause();
+        }
+    }
+}
+
+class RandomAudioAlert extends AlertBase {
+    constructor(audioPath, totalLength, minInterval, maxInterval) {
+        super();
+        if (audioPath) {
+            this.setPath(audioPath);
+            this.mTotalLength = totalLength;
+            this.mMinInterval = minInterval;
+            this.mMaxInterval = maxInterval;
+            this.mIntervalLength = maxInterval - minInterval;
+            this.mTotalTime = 0;
+        }
+    }
+
+    setPath(path) {
+        this.mAudioPath = path;
+    }
+
+    execute(next, status) {
+        fetch(this.mAudioPath)
+            .catch((error) => {
+                status.fail(`ERROR fetching audio file: ${error}`);
+                next();
+            })
+            .then((response) => {
+                if (response.ok) {
+                    return response.blob();
+                } else {
+                    throw new Error(`Bad response from fetching audio file: ${response.status}`);
+                }
+            })
+            .catch((error) => {
+                status.fail(`ERROR getting response blob: ${error}`);
+                next();
+            })
+            .then((blob) => {
+                try {
+                    var audioURL = window.URL.createObjectURL(blob);
+                    this.mAudio = new Audio(audioURL);
+                    this.mAudio.addEventListener("ended", (event) => {
+                        // note that this happens after we send back the response that we're done
+                        // since this is supposed to stack and run in parallel
+                        // as such, there can be NO status modifications here
+                        console.log(`ended, time ${this.mTotalTime} length ${this.mTotalLength}`);
+                        if (this.mTotalTime > this.mTotalLength)
+                            return;
+
+                        var time = Math.random() * this.mIntervalLength;
+                        this.mTotalTime += this.mMinInterval + time;
+                        setTimeout(() => {
+                            console.log("replay");
+                            this.mAudio.currentTime = 0;
+                            this.mAudio.play();
+                        }, (this.mMinInterval + time) * 1000);
+                    });
+                    this.mAudio.addEventListener("canplaythrough", (event) => {
+                        this.mAudio.play()
+                            .catch((reason) => {
+                                status.fail(`ERROR playing audio: ${reason}`);
+                                next();
+                            })
+                            .then(() => next());
+                    });
+                } catch (e) {
+                    status.fail(`ERROR caught while trying to play audio: ${e}`);
+                    next();
+                }
+            })
+            .catch((error) => {
+                status.fail(`ERROR playing audio: ${error}`);
+                next();
+            });
+    }
+
+    interrupt() {
+        if (this.mAudio) {
+            this.mAudio.pause();
+        }
+    }
+}
+
+class TTSAlert extends AudioAlert {
+    constructor(voice, message) {
+        super();
+        var urlParams = new URLSearchParams();
+        urlParams.append("voice", voice);
+        urlParams.append("text", message);
+        this.setPath("/widget/tts?" + urlParams.toString());
+        this.mEnsureLongEnough = true;
+    }
+
+    setupScroll() {
+        this.mAudio.addEventListener("loadedmetadata", (event) => {
+            infoPanel.launchScroll(event.target.duration);
+        })
+    }
+}
+
+class AlertChainComplete extends AlertBase {
+    constructor() {
+        super();
+        this.mStatus = 0;
+        this.mReason = "OK";
+    }
+
+    execute(next, status) {
+        if (Settings.QueuePlayback) {
+            this.executionQueue.processNext();
+        }
+    }
+
+    interrupt() {
+    }
+}

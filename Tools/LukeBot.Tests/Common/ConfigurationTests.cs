@@ -49,6 +49,8 @@ namespace LukeBot.Tests.Common
             [JsonInclude]
             public string EventName = nameof(TestConfiguration);
             [JsonInclude]
+            public Guid EventID;  // Guid is generated every new instance of EventArgsBase; this will be assigned before testing serialization
+            [JsonInclude]
             public string FullConfigurableTypeName = typeof(TestConfiguration).FullName;
 
             // non-JsonInclude-d for purpose, hidden fields should be omitted from JSON drop
@@ -414,6 +416,9 @@ namespace LukeBot.Tests.Common
             TestConfiguration conf = new();
             conf.CheckFields();
 
+            // EventID is taken from just allocated conf. This is because allocation forms a new Guid.
+            // We only test serialization here, so if EventID is incorrect it should be reflected somewhere else.
+            DEFAULT_TEST_CONFIGURATION.EventID = conf.EventID;
             // default serialization should skip hidden fields
             string expected = JsonSerializer.Serialize<DefaultTestConfiguration>(DEFAULT_TEST_CONFIGURATION);
             Assert.AreEqual(expected, conf.Serialize());

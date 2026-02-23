@@ -159,6 +159,9 @@ namespace LukeBot.Communication.Impl
             case EventDispatcherType.Queued:
                 dispatcher = new QueuedEventDispatcher(dispName);
                 break;
+            case EventDispatcherType.SubscriberQueued:
+                dispatcher = new SubscriberQueuedEventDispatcher(dispName);
+                break;
             default:
                 throw new ArgumentException("Invalid event dispatcher type");
             }

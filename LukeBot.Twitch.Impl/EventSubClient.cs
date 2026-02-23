@@ -236,7 +236,7 @@ namespace LukeBot.Twitch.Impl
             {
                 Name = Events.TWITCH_CHANNEL_POINTS_REDEMPTION,
                 Description = "Twitch Channel Points reward redemption. Generated when Twitch user redeems a specified Channel Points reward.",
-                Dispatcher = Constants.QueuedDispatcherForUser(mLBUser),
+                Dispatcher = Twitch.Utils.DispatcherNameForUser(mLBUser),
                 TestGenerator = GenerateTestChannelPointEvent,
                 TestParams = new List<EventTestParam>()
                 {
@@ -253,7 +253,7 @@ namespace LukeBot.Twitch.Impl
             {
                 Name = Events.TWITCH_CHEER,
                 Description = "Twitch bits Cheer. Generated when Twitch user cheers some bits on a channel.",
-                Dispatcher = Constants.QueuedDispatcherForUser(mLBUser),
+                Dispatcher = Twitch.Utils.DispatcherNameForUser(mLBUser),
                 TestGenerator = GenerateTestCheerEvent,
                 TestParams = new List<EventTestParam>()
                 {
@@ -267,7 +267,7 @@ namespace LukeBot.Twitch.Impl
             {
                 Name = Events.TWITCH_SUBSCRIPTION,
                 Description = "Twitch channel subscription. Generated when Twitch user subscribes, resubscribes or gifts a subscription in the channel.",
-                Dispatcher = Constants.QueuedDispatcherForUser(mLBUser),
+                Dispatcher = Twitch.Utils.DispatcherNameForUser(mLBUser),
                 TestGenerator = GenerateTestSubscriptionEvent,
                 TestParams = new List<EventTestParam>()
                 {
@@ -313,7 +313,7 @@ namespace LukeBot.Twitch.Impl
             }
 
             mReceiveThread = new(ReceiveThreadMain);
-            mReceiveThread.Name = "EventSub Receive Thread " + mLBUser;
+            mReceiveThread.Name = "EventSub Receive Thread (" + mLBUser + ")";
         }
 
         public async Task<EventSub.Message> ReceiveAsync()
@@ -557,12 +557,12 @@ namespace LukeBot.Twitch.Impl
                 try
                 {
                     // attempt to gracefully close the socket
-                    if (mSocket.State == WebSocketState.Open || mSocket.State == WebSocketState.CloseSent || mSocket.State == WebSocketState.CloseReceived)
+                    if (mOldSocket.State == WebSocketState.Open || mOldSocket.State == WebSocketState.CloseSent || mOldSocket.State == WebSocketState.CloseReceived)
                     {
                         Logger.Log().Info("EventSubClient {0}: Closing old socket...", mThreadLogPreamble.Value);
                         await mOldSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
                     }
-                    else
+                    else if (mOldSocket.State != WebSocketState.Aborted)
                     {
                         Logger.Log().Info("EventSubClient {0}: Old socket in an invalid state, aborting its connection...", mThreadLogPreamble.Value);
                         mOldSocket.Abort();
@@ -582,7 +582,7 @@ namespace LukeBot.Twitch.Impl
                 mCanSubscribe = true;
             }
 
-            // immediately check if we have any in queue and subscribe if we do
+            // immediately check if we have any subscriptions in queue and subscribe if we do
             ProcessSubscriptionQueue();
 
             if (mOldSocket != null)

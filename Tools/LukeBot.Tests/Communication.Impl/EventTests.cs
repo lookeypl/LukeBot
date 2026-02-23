@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Text.Json;
 using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Communication.Impl;

@@ -339,12 +339,13 @@ namespace LukeBot.Twitch.Impl
         {
             if (mConnectionState == ConnectionState.CONNECTED)
             {
+                mConnectionState = ConnectionState.QUIT;
+
                 foreach (var c in mChannels)
                 {
                     mIRCClient.Send(IRCMessage.PART(c.Key));
                 }
 
-                mConnectionState = ConnectionState.QUIT;
                 mIRCClient.Send(IRCMessage.QUIT());
             }
         }
@@ -353,7 +354,7 @@ namespace LukeBot.Twitch.Impl
         {
             mName = username;
             mWorker = new Thread(this.WorkerMain);
-            mWorker.Name = "TwitchIRC Worker";
+            mWorker.Name = "TwitchIRC Worker (" + username + ")";
             mChannelsMutex = new Mutex();
             mLoggedInEvent = new AutoResetEvent(false);
             mChannels = new Dictionary<string, IRCChannel>();

@@ -92,7 +92,7 @@ namespace LukeBot.Common
     /**
      * Base for Configuration generic
      */
-    public abstract class ConfigurationBase: EventArgsBase
+    public abstract class ConfigurationBase: SerializableEventArgsBase
     {
         public delegate void OnUpdateDelegate();
         public abstract OnUpdateDelegate UpdateNotifier { set; }
@@ -442,12 +442,17 @@ namespace LukeBot.Common
             CollectConfigurationVisibilityAttributes(this);
         }
 
-        public override string Serialize(bool includeHidden = false)
+        public override string Serialize(bool includeHidden)
         {
             JsonSerializerOptions opts = new();
             opts.Converters.Add(new ConfigurationJsonConverter<Configurable>(includeHidden));
 
             return JsonSerializer.Serialize(this, opts);
+        }
+
+        public override string Serialize()
+        {
+            return Serialize(false);
         }
 
         public override Dictionary<string, ConfigurationField> GetFields()

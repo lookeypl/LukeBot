@@ -63,6 +63,11 @@ namespace LukeBot
     [Verb("skip", HelpText = "Skip currently handled event from the Queue.")]
     internal class EventSkipCommand: EventCommandBase
     {
+        [Value(
+            1, MetaName = "eventOrdinal", Default = 0, Required = false,
+            HelpText = "Event to skip from the list. Check \"event status\" for list of currently executed events or omit to skip the event on top of the list"
+        )]
+        public int eventIdx { get; set; }
     }
 
     internal class EventCLIProcessor: ICLIProcessor
@@ -70,9 +75,9 @@ namespace LukeBot
         private const string COMMAND_NAME = "event";
         private LukeBot mLukeBot;
 
-        private string GetDefaultQueuedDispatcher(CLIMessageProxy CLI)
+        private string GetDefaultDispatcher(CLIMessageProxy CLI)
         {
-            return "Twitch_QueuedDispatcher_" + CLI.GetCurrentUser().GetUsername();
+            return Twitch.Utils.DispatcherNameForUser(CLI.GetCurrentUser().GetUsername());
         }
 
         private IEventService GetEventService()
@@ -135,7 +140,7 @@ namespace LukeBot
                 {
                     msg += "  " + s.Name + " - " + s.Type.ToString();
 
-                    if (s.Type == EventDispatcherType.Queued)
+                    if (s.Type != EventDispatcherType.Immediate)
                     {
                         msg += ":\n";
                         msg += "    State: " + s.State + "\n";
@@ -177,11 +182,11 @@ namespace LukeBot
             try
             {
                 if (dispatcher == null || dispatcher.Length == 0)
-                    dispatcher = GetDefaultQueuedDispatcher(CLI);
+                    dispatcher = GetDefaultDispatcher(CLI);
 
                 EventDispatcher dispatcherObject = GetEventService().User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher);
                 dispatcherObject.Clear();
-                dispatcherObject.Skip();
+                dispatcherObject.Skip(0);
                 msg = "Events on dispatcher " + dispatcher + " cleared.";
             }
             catch (System.Exception e)
@@ -197,7 +202,7 @@ namespace LukeBot
             try
             {
                 if (dispatcher == null || dispatcher.Length == 0)
-                    dispatcher = GetDefaultQueuedDispatcher(CLI);
+                    dispatcher = GetDefaultDispatcher(CLI);
 
                 GetEventService().User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher).Enable();
                 msg = "Dispatcher " + dispatcher + " enabled.";
@@ -215,7 +220,7 @@ namespace LukeBot
             try
             {
                 if (dispatcher == null || dispatcher.Length == 0)
-                    dispatcher = GetDefaultQueuedDispatcher(CLI);
+                    dispatcher = GetDefaultDispatcher(CLI);
 
                 GetEventService().User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher).Disable();
                 msg = "Dispatcher " + dispatcher + " disabled.";
@@ -233,7 +238,7 @@ namespace LukeBot
             try
             {
                 if (dispatcher == null || dispatcher.Length == 0)
-                    dispatcher = GetDefaultQueuedDispatcher(CLI);
+                    dispatcher = GetDefaultDispatcher(CLI);
 
                 GetEventService().User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher).Hold();
                 msg = "Dispatcher " + dispatcher + " put on hold.";
@@ -251,10 +256,25 @@ namespace LukeBot
             try
             {
                 if (dispatcher == null || dispatcher.Length == 0)
-                    dispatcher = GetDefaultQueuedDispatcher(CLI);
+                {
+                    dispatcher = GetDefaultDispatcher(CLI);
+                }
 
-                GetEventService().User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher).Skip();
-                msg = "Dispatcher " + dispatcher + " event skipped.";
+                if (args.eventIdx < 0)
+                {
+                    msg = "Invalid Event ordinal";
+                    return;
+                }
+
+                EventDispatcherStatus status = GetEventService().User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher).Status();
+                if (args.eventIdx >= 0 && args.eventIdx >= status.EventCount)
+                {
+                    msg = String.Format("Event ordinal provided is too big (maximum {0})", status.EventCount);
+                    return;
+                }
+
+                GetEventService().User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher).Skip(args.eventIdx);
+                msg = String.Format("Dispatcher {0} event #{1} skipped.", dispatcher, args.eventIdx);
             }
             catch (System.Exception e)
             {

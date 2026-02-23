@@ -6,7 +6,8 @@ namespace LukeBot.Communication
     public enum EventDispatcherType
     {
         Immediate = 0,
-        Queued
+        Queued,
+        SubscriberQueued
     }
 
     public enum EventDispatcherState
@@ -42,7 +43,7 @@ namespace LukeBot.Communication
         public abstract void Enable();
         public abstract void Disable();
         public abstract void Hold();
-        public abstract void Skip();
+        public abstract void Skip(int idx);
         public abstract EventDispatcherStatus Status();
     }
 }

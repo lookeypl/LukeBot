@@ -42,6 +42,10 @@ namespace LukeBot.Widget.Impl
             }
         }
 
+        protected override void OnDisconnected()
+        {
+        }
+
         protected override void OnLoad()
         {
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.SPOTIFY_STATE_UPDATE).Subscribe(OnStateUpdate);

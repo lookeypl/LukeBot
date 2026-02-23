@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.IO;
 using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Logging;
 using LukeBot.Twitch;
-using Newtonsoft.Json;
+using System.Security.Cryptography.X509Certificates;
 
 
 namespace LukeBot.Widget.Impl
@@ -15,20 +17,25 @@ namespace LukeBot.Widget.Impl
      *
      * TODO consider adding some sort of "stop playing" event or whatever
      */
-    public class AudioPlay: IWidget
+    public class AudioPlay: QueueableEventWidget
     {
         private const string FILE_REDEMPTION = "file";
         private const string TTS_REDEMPTION = "tts";
 
-        public class AudioPlayInterrupt: EventArgsBase
+        public class AudioPlayInterrupt: SerializableEventArgsBase
         {
             public AudioPlayInterrupt()
                 : base("AudioPlayInterrupt")
             {
             }
+
+            public override string Serialize()
+            {
+                return JsonSerializer.Serialize<AudioPlayInterrupt>(this);
+            }
         }
 
-        public class AudioPlayStartPlayback: EventArgsBase
+        public class AudioPlayStartPlayback: SerializableEventArgsBase
         {
             public string Type { get; set; }
 
@@ -36,6 +43,11 @@ namespace LukeBot.Widget.Impl
                 : base(eventName)
             {
                 Type = type;
+            }
+
+            public override string Serialize()
+            {
+                return JsonSerializer.Serialize<AudioPlayStartPlayback>(this);
             }
         }
 
@@ -173,39 +185,25 @@ namespace LukeBot.Widget.Impl
         {
             [ConfigurationField]
             public List<AudioTrigger> Triggers = new();
+            [ConfigurationField]
+            public bool QueuePlayback = false;
 
             public Config()
             {
             }
         }
 
-        private void AwaitEventCompletion()
+        private class AudioPlayWidgetInternalConfig: SerializableEventArgsBase
         {
-            if (!Connected)
-                return;
+            public bool QueuePlayback = false;
 
-            WidgetEventCompletionResponse resp = RecvFromWS<WidgetEventCompletionResponse>();
-            if (resp == null)
-            {
-                Logger.Log().Warning("Widget's response was null - possibly connection was broken or is not connected");
-                return;
-            }
+            public AudioPlayWidgetInternalConfig()
+                : base(nameof(AudioPlayWidgetInternalConfig))
+            {}
 
-            if (resp.ErrorCount == 0)
+            public override string Serialize()
             {
-                Logger.Log().Debug("Widget completed event successfully");
-            }
-            else if (resp.ErrorCount == 1)
-            {
-                Logger.Log().Warning("Widget failed to complete the event: {0}", resp.Reason[0]);
-            }
-            else
-            {
-                Logger.Log().Warning("{0} errors occured during Widget's event completion attempt:", resp.ErrorCount);
-                for (int i = 0; i < resp.Reason.Length; ++i)
-                {
-                    Logger.Log().Warning("  - {0}", resp.Reason[i]);
-                }
+                return JsonSerializer.Serialize<AudioPlayWidgetInternalConfig>(this);
             }
         }
 
@@ -263,25 +261,49 @@ namespace LukeBot.Widget.Impl
                     playback.MaxInterval = trigger.MaxRepeatInterval;
                 }
 
-                SendToWS(playback);
+                SendEvent(playback);
             }
             else if (trigger.RedemptionType == TTS_REDEMPTION)
             {
                 AudioPlayStartTTSPlayback playback = new(trigger.Voice, a.Message);
-                SendToWS(playback);
+                SendEvent(playback);
             }
-
-            AwaitEventCompletion();
         }
 
         private void OnEventInterrupt(object o, EventArgsBase args)
         {
             SendToWS(new AudioPlayInterrupt());
-            AwaitEventCompletion();
+        }
+
+        private void SendConfiguration(AudioPlayWidgetInternalConfig config)
+        {
+            WidgetResponse response = SendEventAndWait(config);
+            if (response == null) return; // quietly ignore, Widget is not connected yet
+
+            if (response.ErrorCount == 0)
+            {
+                Logger.Log().Info("Widget {0}: Configuration applied.", GetPrintableWidgetID());
+            }
+            else
+            {
+                LogResponseStatus(response);
+            }
         }
 
         protected override void OnConnected()
         {
+            EventSubscribe(Events.TWITCH_CHANNEL_POINTS_REDEMPTION, OnChannelPoints, OnEventInterrupt);
+
+            // notify internal config to not queue the alerts
+            AudioPlayWidgetInternalConfig internalConfig = new();
+            internalConfig.QueuePlayback = false;
+            SendConfiguration(internalConfig);
+        }
+
+        protected override void OnDisconnected()
+        {
+            // TODO should pause any played music probably
+            EventUnsubscribe(Events.TWITCH_CHANNEL_POINTS_REDEMPTION, OnChannelPoints, OnEventInterrupt);
         }
 
         protected override void OnConfigurationUpdate()
@@ -302,24 +324,19 @@ namespace LukeBot.Widget.Impl
 
                 mTriggers.Add(t.RedemptionName, t);
             }
+
+            // send separate internal config to queue the alerts (or not)
+            AudioPlayWidgetInternalConfig internalConfig = new();
+            internalConfig.QueuePlayback = c.QueuePlayback;
+            SendConfiguration(internalConfig);
         }
 
         protected override void OnLoad()
         {
-            IEventCollection collection = ServiceUtils.GetEventService().User(mLBUser);
-
-            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Subscribe(OnChannelPoints);
-            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).InterruptSubscribe(OnEventInterrupt);
         }
 
         protected override void OnUnload()
         {
-            // TODO should pause any played music probably
-
-            IEventCollection collection = ServiceUtils.GetEventService().User(mLBUser);
-
-            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Unsubscribe(OnChannelPoints);
-            collection.Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).InterruptUnsubscribe(OnEventInterrupt);
         }
 
         protected override ConfigurationBase CreateDefaultConfiguration()

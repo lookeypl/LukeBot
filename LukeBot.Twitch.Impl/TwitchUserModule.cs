@@ -140,8 +140,8 @@ namespace LukeBot.Twitch.Impl
                 throw new InvalidOperationException("Failed to login to Twitch");
             }
 
-            // Each user has its own queued dispatcher to independently handle some events
-            ServiceUtils.GetEventService().User(mLBUser).AddEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser), EventDispatcherType.Queued);
+            // Each user has its own subscriber-queued dispatcher to independently handle some events
+            ServiceUtils.GetEventService().User(mLBUser).AddEventDispatcher(Twitch.Utils.DispatcherNameForUser(mLBUser), EventDispatcherType.SubscriberQueued);
 
             mIRC = IRC;
             mIRCChannel = mIRC.JoinChannel(mLBUser, mUserData, mUserToken);
@@ -316,7 +316,7 @@ namespace LukeBot.Twitch.Impl
                 mIRC = null;
             }
 
-            ServiceUtils.GetEventService().User(mLBUser).RemoveEventDispatcher(Constants.QueuedDispatcherForUser(mLBUser));
+            ServiceUtils.GetEventService().User(mLBUser).RemoveEventDispatcher(Twitch.Utils.DispatcherNameForUser(mLBUser));
         }
 
         public string GetModuleType()

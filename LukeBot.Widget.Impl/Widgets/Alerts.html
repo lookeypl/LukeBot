@@ -329,165 +329,7 @@
         Gift: 2
     }
 
-    class AlertChain extends Executable {
-        constructor(receivedObject) {
-            super();
-            this.mChain = new Array();
-            this.mCurrent = 0;
-            this.mType = receivedObject.EventName;
-            this.mUsername = receivedObject.User;
-            this.mDisplayName = receivedObject.DisplayName;
-            this.mChainStatus = new WidgetResponse(receivedObject.EventID);
-        }
-
-        add(alertEvent) {
-            if (!(alertEvent instanceof AlertBase)) {
-                throw new Error("Cannot add objects not extending AlertBase()");
-            }
-            this.mChain.push(alertEvent);
-        }
-
-        next() {
-            if (this.mInterrupted) return;
-
-            this.mCurrent += 1;
-            if (this.mCurrent < this.mChain.length) {
-                this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
-            }
-        }
-
-        execute() {
-            this.mInterrupted = false;
-            this.mCurrent = 0;
-            this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
-        }
-
-        nextInterrupt(isCurrent) {
-            this.mInterruptCurrent += 1;
-            if (this.mInterruptCurrent < this.mChain.length) {
-                this.mChain[this.mInterruptCurrent].interrupt(this.nextInterrupt.bind(this, isCurrent), isCurrent);
-            }
-        }
-
-        interrupt(isCurrent) {
-            this.mInterrupted = true;
-            this.mInterruptCurrent = 0;
-            this.mChain[this.mInterruptCurrent].interrupt(this.nextInterrupt.bind(this, isCurrent), isCurrent);
-        }
-    }
-
-    class AlertBase {
-        constructor() {
-            if (this.constructor == AlertBase) {
-                throw new Error("Cannot instantiate base class");
-            }
-        }
-
-        execute(next, status) {
-            throw new Error("execute() has not been implemented");
-        }
-
-        interrupt(next, isCurrent) {
-            throw new Error("interrupt() has not been implemented");
-        }
-    }
-
-    class AudioAlert extends AlertBase {
-        constructor(audioPath) {
-            super();
-            this.mEnsureLongEnough = false;
-            if (audioPath)
-                this.setPath(audioPath);
-        }
-
-        setPath(path) {
-            this.mAudioPath = path;
-        }
-
-        execute(next, status) {
-            fetch(this.mAudioPath)
-                .catch((error) => {
-                    status.fail(`ERROR fetching audio file: ${error}`);
-                    setTimeout(() => { next() }, 5000);
-                })
-                .then((response) => {
-                    if (response.ok) {
-                        return response.blob();
-                    } else {
-                        throw new Error(`Bad response from fetching audio file: ${response.status}`);
-                    }
-                })
-                .catch((error) => {
-                    status.fail(`ERROR getting response blob: ${error}`);
-                    setTimeout(() => { next() }, 5000);
-                })
-                .then((blob) => {
-                    var audioURL = window.URL.createObjectURL(blob);
-                    this.mAudio = new Audio(audioURL);
-                    this.mAudio.addEventListener("canplaythrough", (event) => {
-                        this.mAudio.play().catch(
-                            (reason) => {
-                                status.fail(`ERROR play failed: ${reason}`);
-                                setTimeout(() => { next() }, 5000);
-                            }
-                        );
-                    });
-                    this.mEndedListener = this.mAudio.addEventListener("ended", (value) => {
-                        if (this.mEnsureLongEnough && this.mAudio.duration < 5.0) {
-                            // Wait to make the alert last at least 5 seconds
-                            setTimeout(() => {
-                                next();
-                            }, (5.0 - this.mAudio.duration) * 1000);
-                        } else {
-                            // Audio was longer than non-message alert, continue
-                            next();
-                        }
-                    });
-                    this.mAudio.addEventListener("error", (event) => {
-                        status.fail(`ERROR playing audio alert: ${this.mAudio.error.message}`);
-                        setTimeout(() => { next() }, 5000);
-                    });
-                    this.setupScroll();
-                }).catch((error) => {
-                    status.fail(`ERROR fetching audio file: ${error}`);
-                    setTimeout(() => { next() }, 5000);
-                });
-        }
-
-        setupScroll() {
-            // noop
-        }
-
-        interrupt(next, isCurrent) {
-            if (isCurrent) {
-                if (this.mAudio) {
-                    this.mAudio.removeEventListener("ended", this.mEndedListener);
-                    this.mAudio.pause();
-                    this.mEndedListener = null;
-                }
-            }
-            next();
-        }
-    }
-
-    class TTSAlert extends AudioAlert {
-        constructor(voice, message) {
-            super();
-            var urlParams = new URLSearchParams();
-            urlParams.append("voice", voice);
-            urlParams.append("text", message);
-            this.setPath("/widget/tts?" + urlParams.toString());
-            this.mEnsureLongEnough = true;
-        }
-
-        setupScroll() {
-            this.mAudio.addEventListener("loadedmetadata", (event) => {
-                infoPanel.launchScroll(event.target.duration);
-            })
-        }
-    }
-
-    class ShowInfoAlert extends AlertBase {
+    class ShowInfoAlert extends AlertStep {
         constructor(title, details) {
             super();
 
@@ -508,7 +350,7 @@
         }
     }
 
-    class HideInfoAlert extends AlertBase {
+    class HideInfoAlert extends AlertStep {
         constructor() {
             super();
         }
@@ -522,55 +364,6 @@
                 infoPanel.hide(() => next());
             } else {
                 next();
-            }
-        }
-    }
-
-    class TimeoutAlert extends AlertBase {
-        constructor(timeMs) {
-            super();
-            this.mTimeoutMs = timeMs;
-            this.mTimer = null;
-        }
-
-        execute(next, status) {
-            this.mTimer = setTimeout((wait) => {
-                next();
-                this.mTimer = null;
-            }, this.mTimeoutMs);
-        }
-
-        interrupt(next, isCurrent) {
-            if (isCurrent && this.mTimer) {
-                clearTimeout(this.mTimer);
-                this.mTimer = null;
-            }
-
-            next();
-        }
-    }
-
-    class AlertChainComplete extends AlertBase {
-        #origMessage = null;
-
-        constructor(msgObj) {
-            super();
-            if (!msgObj) {
-                throw new Error("Invalid msgObj");
-            }
-
-            this.#origMessage = msgObj;
-        }
-
-        execute(next, status) {
-            alertsWidget.send(WidgetResponse.fromMessage(this.#origMessage));
-            alertExecutionQueue.processNext();
-        }
-
-        interrupt(next, isCurrent) {
-            alertsWidget.send(WidgetResponse.fromMessage(this.#origMessage).fail("Alert interrupted"));
-            if (isCurrent) {
-                alertExecutionQueue.processNext();
             }
         }
     }
@@ -600,10 +393,16 @@
         if (obj.Message) {
             alertChain.add(new ShowInfoAlert(obj.DisplayName + "<br>cheered " + obj.Amount, obj.Message));
             alertChain.add(new AudioAlert("/content/success-48018.ogg"));
-            if (obj.Amount == 5)
-                alertChain.add(new TTSAlert("Jacek", obj.Message));
-            else
-                alertChain.add(new TTSAlert("Brian", obj.Message));
+            let voice = "Brian";
+            if (obj.Amount == 5) {
+                voice = "Jacek"
+            }
+
+            let tts = new TTSAlert(voice, obj.Message);
+            tts.onLoadedMetadata((event) => {
+                infoPanel.launchScroll(event.target.duration);
+            });
+            alertChain.add(tts);
         } else {
             alertChain.add(new ShowInfoAlert(obj.DisplayName + "<br>cheered " + obj.Amount, null));
             alertChain.add(new AudioAlert("/content/success-48018.ogg"));
@@ -611,12 +410,13 @@
         }
 
         alertChain.add(new HideInfoAlert());
-        alertChain.add(new AlertChainComplete(obj));
+        alertChain.add(new AlertChainComplete(obj, alertsWidget, alertExecutionQueue));
         alertExecutionQueue.push(alertChain);
     });
     alertsWidget.registerMessage("TwitchSubscription", (obj) => {
         alertChain = new AlertChain(obj);
 
+        // TODO: Server-side should generate messages that are passed here to ShowInfoAlert
         var showInfoAlert = null;
         if (obj.Details.Type == TwitchSubscriptionType.Resub) {
             showInfoAlert = new ShowInfoAlert(obj.DisplayName + "<br>subscribed for " + obj.Details.Cumulative + " months!", obj.Details.Message);
@@ -630,13 +430,17 @@
         alertChain.add(new AudioAlert("/content/news-ting-6832.ogg"));
 
         if (obj.Details.Type == TwitchSubscriptionType.Resub) {
-            alertChain.add(new TTSAlert("Brian", obj.Details.Message));
+            let tts = new TTSAlert("Brian", obj.Details.Message)
+            tts.onLoadedMetadata((event) => {
+                infoPanel.launchScroll(event.target.duration);
+            });
+            alertChain.add(tts);
         } else {
             alertChain.add(new TimeoutAlert(5000));
         }
 
         alertChain.add(new HideInfoAlert());
-        alertChain.add(new AlertChainComplete(obj));
+        alertChain.add(new AlertChainComplete(obj, alertsWidget, alertExecutionQueue));
         alertExecutionQueue.push(alertChain);
     });
 

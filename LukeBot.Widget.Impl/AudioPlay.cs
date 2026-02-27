@@ -65,6 +65,11 @@ namespace LukeBot.Widget.Impl
                 File = file;
                 RandomRepeat = false;
             }
+
+            public override string Serialize()
+            {
+                return JsonSerializer.Serialize<AudioPlayStartFilePlayback>(this);
+            }
         }
 
         public class AudioPlayStartTTSPlayback: AudioPlayStartPlayback
@@ -77,6 +82,11 @@ namespace LukeBot.Widget.Impl
             {
                 Voice = voice;
                 Message = message;
+            }
+
+            public override string Serialize()
+            {
+                return JsonSerializer.Serialize<AudioPlayStartTTSPlayback>(this);
             }
         }
 
@@ -216,6 +226,7 @@ namespace LukeBot.Widget.Impl
             if (!mTriggers.ContainsKey(a.Title))
             {
                 Logger.Log().Debug("Audio trigger {0} does not exist", a.Title);
+                a.Completed();
                 return;
             }
 
@@ -230,6 +241,7 @@ namespace LukeBot.Widget.Impl
                     if (trigger.Files.Count == 0)
                     {
                         Logger.Log().Warning("Audio trigger {0} has no files added", a.Title);
+                        a.Completed();
                         return;
                     }
 
@@ -272,7 +284,7 @@ namespace LukeBot.Widget.Impl
 
         private void OnEventInterrupt(object o, EventArgsBase args)
         {
-            SendToWS(new AudioPlayInterrupt());
+            SendEvent(new AudioPlayInterrupt());
         }
 
         private void SendConfiguration(AudioPlayWidgetInternalConfig config)

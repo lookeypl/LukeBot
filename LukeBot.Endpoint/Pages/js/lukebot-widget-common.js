@@ -237,3 +237,234 @@ class LukeBotWidget {
         delete this.#messages[object.EventID];
     }
 }
+
+
+// alert chains
+
+class AlertStep {
+    constructor() {
+        if (this.constructor == AlertStep) {
+            throw new Error("Cannot instantiate base class");
+        }
+    }
+
+    execute(next, status) {
+        throw new Error("execute() has not been implemented");
+    }
+
+    interrupt(next, isCurrent) {
+        throw new Error("interrupt() has not been implemented");
+    }
+}
+
+// TODO I Think this needs some reworking to be more error proof
+// Would be good to use exceptions all over the place and find a way
+// to send back failure message if something messes up.
+class AlertChain extends Executable {
+    constructor(receivedObject) {
+        super();
+        this.mChain = [];
+        this.mCurrent = 0;
+        this.mType = receivedObject.EventName;
+        this.mUsername = receivedObject.User;
+        this.mDisplayName = receivedObject.DisplayName;
+        this.mChainStatus = new WidgetResponse(receivedObject.EventID);
+    }
+
+    add(alertEvent) {
+        if (!(alertEvent instanceof AlertStep)) {
+            throw new Error("Cannot add objects not extending AlertStep()");
+        }
+        this.mChain.push(alertEvent);
+    }
+
+    next() {
+        if (this.mInterrupted) return;
+
+        this.mCurrent += 1;
+        if (this.mCurrent < this.mChain.length) {
+            this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
+        }
+    }
+
+    execute() {
+        this.mInterrupted = false;
+        this.mCurrent = 0;
+        this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
+    }
+
+    nextInterrupt(isCurrent) {
+        this.mInterruptCurrent += 1;
+        if (this.mInterruptCurrent < this.mChain.length) {
+            this.mChain[this.mInterruptCurrent].interrupt(this.nextInterrupt.bind(this, isCurrent), isCurrent);
+        }
+    }
+
+    interrupt(isCurrent) {
+        this.mInterrupted = true;
+        this.mInterruptCurrent = 0;
+        this.mChain[this.mInterruptCurrent].interrupt(this.nextInterrupt.bind(this, isCurrent), isCurrent);
+    }
+}
+
+class AudioAlert extends AlertStep {
+    #mOnLoadedMetadataCallback = null;
+    #mEndedListener = null;
+    #mAudio = null;
+    #mAudioPath = "";
+    #mEnsureLongEnough = false;
+
+    constructor(audioPath) {
+        super();
+        this.#mEnsureLongEnough = false;
+        if (audioPath)
+            this.setPath(audioPath);
+    }
+
+    setPath(path) {
+        this.#mAudioPath = path;
+    }
+
+    execute(next, status) {
+        fetch(this.#mAudioPath)
+            .catch((error) => {
+                status.fail(`ERROR fetching audio file: ${error}`);
+                setTimeout(() => { next() }, 5000);
+            })
+            .then((response) => {
+                if (response.ok) {
+                    return response.blob();
+                } else {
+                    throw new Error(`Bad response from fetching audio file: ${response.status}`);
+                }
+            })
+            .catch((error) => {
+                status.fail(`ERROR getting response blob: ${error}`);
+                setTimeout(() => { next() }, 5000);
+            })
+            .then((blob) => {
+                var audioURL = window.URL.createObjectURL(blob);
+                this.#mAudio = new Audio(audioURL);
+                if (this.#mOnLoadedMetadataCallback) {
+                    this.#mAudio.addEventListener("loadedmetadata", this.#mOnLoadedMetadataCallback);
+                }
+                this.#mAudio.addEventListener("canplaythrough", (event) => {
+                    this.#mAudio.play().catch(
+                        (reason) => {
+                            status.fail(`ERROR play failed: ${reason}`);
+                            setTimeout(() => { next() }, 5000);
+                        }
+                    );
+                });
+                this.#mAudio.addEventListener("loadedmetadata", (event) => {
+                    this.#mEndedListener = this.#mAudio.addEventListener("ended", () => {
+                        if (this.mEnsureLongEnough && this.#mAudio.duration < 5.0) {
+                            // Wait to make the alert last at least 5 seconds
+                            setTimeout(() => {
+                                next();
+                            }, (5.0 - this.#mAudio.duration) * 1000);
+                        } else {
+                            // Audio was longer than non-message alert, continue
+                            next();
+                        }
+                    });
+                });
+                this.#mAudio.addEventListener("error", (event) => {
+                    status.fail(`ERROR playing audio alert: ${this.#mAudio.error.message}`);
+                    setTimeout(() => { next() }, 5000);
+                });
+            }).catch((error) => {
+                status.fail(`ERROR fetching audio file: ${error}`);
+                setTimeout(() => { next() }, 5000);
+            });
+    }
+
+    onLoadedMetadata(callback) {
+        // store this callback for later; we will add it during execute if it is real
+        this.#mOnLoadedMetadataCallback = callback;
+    }
+
+    interrupt(next, isCurrent) {
+        if (isCurrent) {
+            if (this.#mAudio) {
+                if (this.#mEndedListener) {
+                    this.mAudio.removeEventListener("ended", this.#mEndedListener);
+                    this.#mEndedListener = null;
+                }
+                this.#mAudio.pause();
+            }
+        }
+        next();
+    }
+}
+
+class TTSAlert extends AudioAlert {
+    constructor(voice, message) {
+        super();
+        var urlParams = new URLSearchParams();
+        urlParams.append("voice", voice);
+        urlParams.append("text", message);
+        this.setPath("/widget/tts?" + urlParams.toString());
+        this.mEnsureLongEnough = true;
+    }
+}
+
+class TimeoutAlert extends AlertStep {
+    constructor(timeMs) {
+        super();
+        this.mTimeoutMs = timeMs;
+        this.mTimer = null;
+    }
+
+    execute(next, status) {
+        this.mTimer = setTimeout((wait) => {
+            next();
+            this.mTimer = null;
+        }, this.mTimeoutMs);
+    }
+
+    interrupt(next, isCurrent) {
+        if (isCurrent && this.mTimer) {
+            clearTimeout(this.mTimer);
+            this.mTimer = null;
+        }
+
+        next();
+    }
+}
+
+class AlertChainComplete extends AlertStep {
+    #origMessage = null;
+    #widgetReference = null
+    #executionQueue = null
+
+    constructor(msgObj, widget, queue) {
+        super();
+        if (!msgObj) {
+            throw new Error("Invalid msgObj");
+        }
+
+        if (widget.constructor != LukeBotWidget) {
+            throw new Error("Invalid LukeBotWidget reference provided");
+        }
+        if (queue.constructor != ExecutionQueue) {
+            throw new Error("Invalid ExecutionQueue reference provided");
+        }
+
+        this.#origMessage = msgObj;
+        this.#widgetReference = widget;
+        this.#executionQueue = queue;
+    }
+
+    execute(next, status) {
+        this.#widgetReference.send(WidgetResponse.fromMessage(this.#origMessage));
+        this.#executionQueue.processNext();
+    }
+
+    interrupt(next, isCurrent) {
+        this.#widgetReference.send(WidgetResponse.fromMessage(this.#origMessage).fail("Alert interrupted"));
+        if (isCurrent) {
+            this.#executionQueue.processNext();
+        }
+    }
+}

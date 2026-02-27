@@ -4,7 +4,6 @@
 <script src="/js/lukebot-widget-common.js"></script>
 
 <script>
-    // TODO copied from Alerts.html. Should be probably common-ized
     class AudioPlayConfig {
         constructor(receivedConfig) {
             if (receivedConfig.EventName != "AudioPlayWidgetInternalConfig") {
@@ -18,117 +17,7 @@
     let Settings = null;
     const executionQueue = new ExecutionQueue();
 
-    class AlertChain extends Executable {
-        constructor(receivedObject) {
-            super();
-            this.mChain = new Array();
-            this.mCurrent = 0;
-            this.mType = receivedObject.EventName;
-            this.mUsername = receivedObject.User;
-            this.mDisplayName = receivedObject.DisplayName;
-        }
-
-        add(alertEvent) {
-            if (!(alertEvent instanceof AlertBase)) {
-                throw new Error("Cannot add objects not extending AlertBase()");
-            }
-            this.mChain.push(alertEvent);
-        }
-
-        next() {
-            this.mCurrent += 1;
-            if (this.mCurrent < this.mChain.length) {
-                this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
-            }
-        }
-
-        execute() {
-            this.mCurrent = 0;
-            this.mChainStatus = new WidgetResponse();
-            this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
-        }
-
-        interrupt() {
-            this.mChain.forEach((value, idx) => {
-                value.interrupt();
-            });
-        }
-    }
-
-    class AlertBase {
-        constructor() {
-            if (this.constructor == AlertBase) {
-                throw new Error("Cannot instantiate base class");
-            }
-        }
-
-        execute(next, status) {
-            throw new Error("execute() has not been implemented");
-        }
-
-        interrupt() {
-            throw new Error("interrupt() has not been implemented");
-        }
-    }
-
-    class AudioAlert extends AlertBase {
-        constructor(audioPath) {
-            super();
-            if (audioPath)
-                this.setPath(audioPath);
-        }
-
-        setPath(path) {
-            this.mAudioPath = path;
-        }
-
-        execute(next, status) {
-            fetch(this.mAudioPath)
-                .catch((error) => {
-                    status.fail(`ERROR fetching audio file: ${error}`);
-                    next();
-                })
-                .then((response) => {
-                    if (response.ok) {
-                        return response.blob();
-                    } else {
-                        throw new Error(`Bad response from fetching audio file: ${response.status}`);
-                    }
-                })
-                .catch((error) => {
-                    status.fail(`ERROR getting response blob: ${error}`);
-                    next();
-                })
-                .then((blob) => {
-                    try {
-                        var audioURL = window.URL.createObjectURL(blob);
-                        this.mAudio = new Audio(audioURL);
-                        this.mAudio.addEventListener("canplaythrough", (event) => {
-                            this.mAudio.play()
-                                .then(() => next())
-                                .catch((reason) => {
-                                    status.fail(`ERROR playing audio: ${reason}`);
-                                    next();
-                                })
-                        });
-                    } catch (e) {
-                        status.fail(`ERROR caught while trying to play audio: ${e}`);
-                        next();
-                    }
-                }).catch((error) => {
-                    status.fail(`ERROR playing audio: ${error}`);
-                    next();
-                });
-        }
-
-        interrupt() {
-            if (this.mAudio) {
-                this.mAudio.pause();
-            }
-        }
-    }
-
-    class RandomAudioAlert extends AlertBase {
+    class RandomAudioAlert extends AlertStep {
         constructor(audioPath, totalLength, minInterval, maxInterval) {
             super();
             if (audioPath) {
@@ -208,47 +97,18 @@
         }
     }
 
-    class TTSAlert extends AudioAlert {
-        constructor(voice, message) {
-            super();
-            var urlParams = new URLSearchParams();
-            urlParams.append("voice", voice);
-            urlParams.append("text", message);
-            this.setPath("/widget/tts?" + urlParams.toString());
-            this.mEnsureLongEnough = true;
-        }
-
-        setupScroll() {
-            this.mAudio.addEventListener("loadedmetadata", (event) => {
-                infoPanel.launchScroll(event.target.duration);
-            })
-        }
-    }
-
-    class AlertChainComplete extends AlertBase {
-        constructor() {
-            super();
-            this.mStatus = 0;
-            this.mReason = "OK";
-        }
-
-        execute(next, status) {
-            if (Settings.QueuePlayback) {
-                this.executionQueue.processNext();
-            }
-        }
-
-        interrupt() {
-        }
-    }
-
     let audioPlayWidget = new LukeBotWidget();
     audioPlayWidget.registerMessage("AlertInterrupt", (obj) => {
-        executionQueue.interruptCurrent();
+        executionQueue.interrupt(0);
+        audioPlayWidget.send(WidgetResponse.fromMessage(obj));
+    });
+    audioPlayWidget.registerMessage("AudioPlayWidgetInternalConfig", (obj) => {
+        Settings = new AudioPlayConfig(obj);
+        audioPlayWidget.send(WidgetResponse.fromMessage(obj));
     });
     audioPlayWidget.registerMessage("AudioPlayStartFilePlayback", (obj) => {
         if (!obj.File) {
-            audioPlayWidget.send(new WidgetResponse().fail(`ERROR undefined file to play`));
+            audioPlayWidget.send(WidgetResponse.fromError(obj.EventID, `ERROR undefined file to play`));
         }
 
         let audioPlayChain = new AlertChain(obj);
@@ -258,7 +118,7 @@
             audioPlayChain.add(new AudioAlert(obj.File));
         }
 
-        audioPlayChain.add(new AlertChainComplete());
+        audioPlayChain.add(new AlertChainComplete(obj, audioPlayWidget, executionQueue));
         if (Settings.QueuePlayback) {
             executionQueue.push(audioPlayChain);
         } else {
@@ -268,15 +128,12 @@
     audioPlayWidget.registerMessage("AudioPlayStartTTSPlayback", (obj) => {
         let audioPlayChain = new AlertChain(obj);
         audioPlayChain.add(new TTSAlert(obj.Voice, obj.Message));
-        audioPlayChain.add(new AlertChainComplete());
+        audioPlayChain.add(new AlertChainComplete(obj, audioPlayWidget, executionQueue));
         if (Settings.QueuePlayback) {
             executionQueue.push(audioPlayChain);
         } else {
             audioPlayChain.execute();
         }
-    });
-    audioPlayWidget.registerMessageError((error) => {
-        audioPlayWidget.send(new WidgetResponse().fail(`ERROR exception while preparing/playing audio file: ${error}`));
     });
 
     executionQueue.processNext();

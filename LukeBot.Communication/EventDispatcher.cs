@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using LukeBot.Common;
 
 
@@ -24,7 +25,7 @@ namespace LukeBot.Communication
         public EventDispatcherType Type;
         public string Name;
         public EventDispatcherState State;
-        public int EventCount;
+        public List<string> EventInfo;
     }
 
     public abstract class EventDispatcher

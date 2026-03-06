@@ -84,11 +84,6 @@ namespace LukeBot.Widget.Impl
             SendEvent(a);
         }
 
-        private void OnEventInterrupt(object o, EventArgsBase args)
-        {
-            SendEvent(new AlertInterrupt());
-        }
-
         private void SendConfiguration()
         {
             WidgetResponse response = SendEventAndWait(GetConfig());
@@ -106,16 +101,16 @@ namespace LukeBot.Widget.Impl
 
         protected override void OnConnected()
         {
-            EventSubscribe(Events.TWITCH_CHEER, OnSimpleEvent<TwitchCheerArgs>, OnEventInterrupt);
-            EventSubscribe(Events.TWITCH_SUBSCRIPTION, OnSubscriptionEvent, OnEventInterrupt);
+            EventSubscribe(Events.TWITCH_CHEER, OnSimpleEvent<TwitchCheerArgs>, true);
+            EventSubscribe(Events.TWITCH_SUBSCRIPTION, OnSubscriptionEvent, true);
 
             SendConfiguration();
         }
 
         protected override void OnDisconnected()
         {
-            EventUnsubscribe(Events.TWITCH_CHEER, OnSimpleEvent<TwitchCheerArgs>, OnEventInterrupt);
-            EventUnsubscribe(Events.TWITCH_SUBSCRIPTION, OnSubscriptionEvent, OnEventInterrupt);
+            EventUnsubscribe(Events.TWITCH_CHEER, OnSimpleEvent<TwitchCheerArgs>);
+            EventUnsubscribe(Events.TWITCH_SUBSCRIPTION, OnSubscriptionEvent);
         }
 
         protected override void OnConfigurationUpdate()

@@ -23,11 +23,11 @@ namespace LukeBot.Communication
         /**
          * Subscribe to Interrupt Events.
          */
-        public void InterruptSubscribe(EventHandler<EventArgsBase> callback);
+        public void InterruptSubscribe(EventHandler<InterruptEvent> callback);
 
         /**
          * Unsubscribe from Interrupt Events
          */
-        public void InterruptUnsubscribe(EventHandler<EventArgsBase> callback);
+        public void InterruptUnsubscribe(EventHandler<InterruptEvent> callback);
     }
 }

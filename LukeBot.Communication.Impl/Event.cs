@@ -45,7 +45,7 @@ namespace LukeBot.Communication
          * Note that Immediate Event Dispatcher does NOT provide the functionality
          * to emit Interrupt events.
          */
-        private event EventHandler<EventArgsBase> InterruptEndpoint;
+        private event EventHandler<InterruptEvent> InterruptEndpoint;
 
         private HashSet<EventHandler<EventArgsBase>> mCompletableEndpoints = new();
 
@@ -111,11 +111,11 @@ namespace LukeBot.Communication
             }
         }
 
-        internal void Interrupt()
+        internal void Interrupt(Guid eventToInterrupt)
         {
             if (InterruptEndpoint != null)
             {
-                InterruptEndpoint(this, null);
+                InterruptEndpoint(this, new InterruptEvent(eventToInterrupt));
             }
         }
 
@@ -166,7 +166,7 @@ namespace LukeBot.Communication
             }
         }
 
-        public void InterruptSubscribe(EventHandler<EventArgsBase> callback)
+        public void InterruptSubscribe(EventHandler<InterruptEvent> callback)
         {
             lock (mEventAccessLock)
             {
@@ -174,7 +174,7 @@ namespace LukeBot.Communication
             }
         }
 
-        public void InterruptUnsubscribe(EventHandler<EventArgsBase> callback)
+        public void InterruptUnsubscribe(EventHandler<InterruptEvent> callback)
         {
             lock (mEventAccessLock)
             {

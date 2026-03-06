@@ -22,19 +22,6 @@ namespace LukeBot.Widget.Impl
         private const string FILE_REDEMPTION = "file";
         private const string TTS_REDEMPTION = "tts";
 
-        public class AudioPlayInterrupt: SerializableEventArgsBase
-        {
-            public AudioPlayInterrupt()
-                : base("AudioPlayInterrupt")
-            {
-            }
-
-            public override string Serialize()
-            {
-                return JsonSerializer.Serialize<AudioPlayInterrupt>(this);
-            }
-        }
-
         public class AudioPlayStartPlayback: SerializableEventArgsBase
         {
             public string Type { get; set; }
@@ -70,6 +57,14 @@ namespace LukeBot.Widget.Impl
             {
                 return JsonSerializer.Serialize<AudioPlayStartFilePlayback>(this);
             }
+
+            public override string ToString()
+            {
+                if (RandomRepeat)
+                    return base.ToString() + String.Format(" ({0})", File);
+                else
+                    return base.ToString() + String.Format(" ({0}, random for {1}, {2}-{3} intervals)", File, TotalLength, MinInterval, MaxInterval);
+            }
         }
 
         public class AudioPlayStartTTSPlayback: AudioPlayStartPlayback
@@ -87,6 +82,11 @@ namespace LukeBot.Widget.Impl
             public override string Serialize()
             {
                 return JsonSerializer.Serialize<AudioPlayStartTTSPlayback>(this);
+            }
+
+            public override string ToString()
+            {
+                return base.ToString() + String.Format(" ({0} - {1})", Voice, Common.Utils.Shorten(Message, 20));
             }
         }
 
@@ -282,11 +282,6 @@ namespace LukeBot.Widget.Impl
             }
         }
 
-        private void OnEventInterrupt(object o, EventArgsBase args)
-        {
-            SendEvent(new AudioPlayInterrupt());
-        }
-
         private void SendConfiguration(AudioPlayWidgetInternalConfig config)
         {
             WidgetResponse response = SendEventAndWait(config);
@@ -304,7 +299,7 @@ namespace LukeBot.Widget.Impl
 
         protected override void OnConnected()
         {
-            EventSubscribe(Events.TWITCH_CHANNEL_POINTS_REDEMPTION, OnChannelPoints, OnEventInterrupt);
+            EventSubscribe(Events.TWITCH_CHANNEL_POINTS_REDEMPTION, OnChannelPoints, true);
 
             // notify internal config to not queue the alerts
             AudioPlayWidgetInternalConfig internalConfig = new();
@@ -315,7 +310,7 @@ namespace LukeBot.Widget.Impl
         protected override void OnDisconnected()
         {
             // TODO should pause any played music probably
-            EventUnsubscribe(Events.TWITCH_CHANNEL_POINTS_REDEMPTION, OnChannelPoints, OnEventInterrupt);
+            EventUnsubscribe(Events.TWITCH_CHANNEL_POINTS_REDEMPTION, OnChannelPoints);
         }
 
         protected override void OnConfigurationUpdate()

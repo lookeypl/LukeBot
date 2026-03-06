@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace LukeBot.Common
@@ -34,6 +35,11 @@ namespace LukeBot.Common
                 Completion();
             }
         }
+
+        public override string ToString()
+        {
+            return EventName;
+        }
     }
 
     public abstract class SerializableEventArgsBase: EventArgsBase
@@ -43,5 +49,21 @@ namespace LukeBot.Common
         {}
 
         public abstract string Serialize();
+    }
+
+    public sealed class InterruptEvent: SerializableEventArgsBase
+    {
+        public Guid EventToInterrupt { get; private set; }
+
+        public InterruptEvent(Guid toInterrupt)
+            : base(nameof(InterruptEvent))
+        {
+            EventToInterrupt = toInterrupt;
+        }
+
+        public override string Serialize()
+        {
+            return JsonSerializer.Serialize<InterruptEvent>(this);
+        }
     }
 }

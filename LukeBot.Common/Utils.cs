@@ -260,6 +260,31 @@ namespace LukeBot.Common
             PrintAllExceptionsInner(e);
         }
 
+        /**
+         * Shortens string @p str to have at most @p max max characters.
+         * If the string is too long, it will be shortened to the last space
+         * character (if exists) and ellipsis will be added at the end.
+         * The @p max limit does NOT include the ellipsis, which will take 3 chars.
+         */
+        public static string Shorten(string str, int max)
+        {
+            if (str.Length <= max)
+            {
+                return str;
+            }
+
+            string ret = str.Substring(0, max);
+
+            int lastSpaceIdx = ret.LastIndexOf(' ');
+            if (lastSpaceIdx > 0)
+            {
+                ret = ret.Substring(0, lastSpaceIdx);
+            }
+
+            ret += "...";
+            return ret;
+        }
+
         // Common Config interactions //
 
         private static Path GetUserModulesPath(string service)

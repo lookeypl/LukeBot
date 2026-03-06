@@ -186,6 +186,11 @@ namespace LukeBot.Twitch
                 }
             }
         }
+
+        public override string ToString()
+        {
+            return String.Format("{0}, tier {1}", Type, Tier);
+        }
     }
 
     public class TwitchResubscriptionDetails: TwitchSubscriptionDetails
@@ -235,6 +240,11 @@ namespace LukeBot.Twitch
             Duration = duration;
             Message = message;
         }
+
+        public override string ToString()
+        {
+            return base.ToString() + String.Format(", {0} month, {1} streak, {2}", Cumulative, Streak, Common.Utils.Shorten(Message, 20));
+        }
     }
 
     public class TwitchGiftSubscriptionDetails: TwitchSubscriptionDetails
@@ -269,6 +279,11 @@ namespace LukeBot.Twitch
             Tier = tier;
             RecipentCount = recipents;
         }
+
+        public override string ToString()
+        {
+            return base.ToString() + String.Format(", {0} gifts", RecipentCount);
+        }
     }
 
     public class TwitchSubscriptionArgs: SerializableEventArgsBase
@@ -290,6 +305,11 @@ namespace LukeBot.Twitch
             JsonSerializerOptions opts = new();
             opts.Converters.Add(new TwitchSubscriptionArgsJsonConverter());
             return JsonSerializer.Serialize<TwitchSubscriptionArgs>(this, opts);
+        }
+
+        public override string ToString()
+        {
+            return base.ToString() + String.Format(" ({0}, {1})", DisplayName, Details);
         }
     }
 

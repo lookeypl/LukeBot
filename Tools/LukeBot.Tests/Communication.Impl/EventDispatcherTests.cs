@@ -64,7 +64,7 @@ namespace LukeBot.Tests.Communication.Impl
             ed.Submit(ev, args);
             args.testDoneEvent.WaitOne();
             Assert.AreEqual(true, eventSet);
-            Assert.AreEqual(0, ed.Status().EventCount);
+            Assert.AreEqual(0, ed.Status().EventInfo.Count);
 
             ed.Stop();
         }
@@ -110,7 +110,7 @@ namespace LukeBot.Tests.Communication.Impl
                 eventArgs[i].testDoneEvent.WaitOne();
             }
 
-            Assert.AreEqual(0, ed.Status().EventCount);
+            Assert.AreEqual(0, ed.Status().EventInfo.Count);
             ed.Stop();
         }
 

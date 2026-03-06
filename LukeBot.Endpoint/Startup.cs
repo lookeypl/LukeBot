@@ -166,7 +166,11 @@ namespace LukeBot.Endpoint
             }
             catch (System.Exception e)
             {
-                await context.Response.WriteAsync("Couldn't load widget: " + e.Message);
+                string errMessage = "Couldn't load widget: " + e.Message;
+                Logger.Log().Error(errMessage);
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                await context.Response.WriteAsync(errMessage);
             }
         }
 
@@ -209,7 +213,7 @@ namespace LukeBot.Endpoint
             // TODO this endpoint MUST validate the request came from an active widget
             if (mTTSEndpoint == "")
             {
-                context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
                 await context.Response.WriteAsync("TTS Endpoint not available");
                 return;
             }
@@ -217,7 +221,7 @@ namespace LukeBot.Endpoint
             if (!context.Request.Query.ContainsKey("voice") ||
                 !context.Request.Query.ContainsKey("text"))
             {
-                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 await context.Response.WriteAsync("Cannot generate TTS, arguments invalid");
                 return;
             }
@@ -238,7 +242,7 @@ namespace LukeBot.Endpoint
 
             if (!ttsFetchResponse.IsSuccessStatusCode)
             {
-                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 await context.Response.WriteAsync(String.Format("Failed to fetch TTS: {0} ({1})", ttsFetchResponse.StatusCode, ttsFetchResponse.ReasonPhrase));
                 return;
             }

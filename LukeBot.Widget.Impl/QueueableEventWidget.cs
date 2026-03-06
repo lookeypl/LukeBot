@@ -54,12 +54,23 @@ namespace LukeBot.Widget.Impl
                 }
 
                 resp = mResponseCS.Task.Result;
+                LogResponseStatus(resp);
+
                 mResponseCS = null;
             }
 
             return resp;
         }
 
+        private void SendInterruptEvent(object o, InterruptEvent interruptEvent)
+        {
+            SendEventAndWait(interruptEvent);
+        }
+
+        /**
+         * Common function to log the response from the Widget. Use this to print out what happened
+         * with the event that was sent (assuming you use SendEventAndWait)
+         */
         protected void LogResponseStatus(WidgetResponse response)
         {
             if (response.ErrorCount == 0)
@@ -158,20 +169,24 @@ namespace LukeBot.Widget.Impl
             return t.Result;
         }
 
-        protected void EventSubscribe(string eventName, EventHandler<EventArgsBase> handler, EventHandler<EventArgsBase> interruptHandler)
+        protected void EventSubscribe(string eventName, EventHandler<EventArgsBase> handler, bool interruptable)
         {
             IEvent ev = ServiceUtils.GetEventService().User(mLBUser).Event(eventName);
 
             ev.Subscribe(handler, true);
-            ev.InterruptSubscribe(interruptHandler);
+
+            if (interruptable)
+            {
+                ev.InterruptSubscribe(SendInterruptEvent);
+            }
         }
 
-        protected void EventUnsubscribe(string eventName, EventHandler<EventArgsBase> handler, EventHandler<EventArgsBase> interruptHandler)
+        protected void EventUnsubscribe(string eventName, EventHandler<EventArgsBase> handler)
         {
             IEvent ev = ServiceUtils.GetEventService().User(mLBUser).Event(eventName);
 
             ev.Unsubscribe(handler);
-            ev.InterruptUnsubscribe(interruptHandler);
+            ev.InterruptUnsubscribe(SendInterruptEvent);
         }
 
         // accessed by receive thread in IWidget

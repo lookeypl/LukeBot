@@ -73,5 +73,28 @@ namespace LukeBot.Tests.Common
             Assert.AreEqual(testJSON1, result[0]);
             Assert.AreEqual(testJSON2, result[1]);
         }
+
+        [TestMethod]
+        public void Utils_Shorten_Short()
+        {
+            string msg = "This is short";
+
+            Assert.AreEqual(msg, Utils.Shorten(msg, 30));
+            Assert.AreEqual(msg, Utils.Shorten(msg, msg.Length));
+        }
+
+        [TestMethod]
+        public void Utils_Shorten_Long()
+        {
+            string msg = "This is a very long message which is meant to check long messages";
+            string expected1 = "This is a...";
+            string expected2 = "This is a very long message which is meant to check long...";
+
+            Assert.AreEqual(msg, Utils.Shorten(msg, msg.Length));
+            Assert.AreEqual(expected2, Utils.Shorten(msg, msg.Length - 1));
+
+            Assert.AreEqual(expected1, Utils.Shorten(msg, 12));
+            Assert.AreEqual(expected1, Utils.Shorten(msg, 10));
+        }
     }
 }

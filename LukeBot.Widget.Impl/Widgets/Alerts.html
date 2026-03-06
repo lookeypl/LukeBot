@@ -371,9 +371,8 @@
     const alert = document.getElementById('alert');
 
     let alertsWidget = new LukeBotWidget();
-    alertsWidget.registerMessage("AlertInterrupt", (obj) => {
-        alertExecutionQueue.interrupt(0);
-        alertsWidget.send(WidgetResponse.fromMessage(obj));
+    alertsWidget.onInterruptEvent((guid) => {
+        alertExecutionQueue.interrupt(guid);
     });
     alertsWidget.registerMessage("AlertsConfig", (obj) => {
         Settings = new AlertsConfig(obj);

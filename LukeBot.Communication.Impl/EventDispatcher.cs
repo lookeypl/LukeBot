@@ -74,7 +74,7 @@ namespace LukeBot.Communication.Impl
             {
                 Name = mName,
                 Type = EventDispatcherType.Immediate,
-                EventCount = 0,
+                EventInfo = new List<string>(),
                 State = EventDispatcherState.Running
             };
         }
@@ -117,6 +117,8 @@ namespace LukeBot.Communication.Impl
         private ManualResetEvent mThreadStartedEvent = new(false);
         private ManualResetEvent mQueueAvailableEvent = new(false);
         private object mEventQueueLock = new();
+
+        // accessed only by worker
         private EventQueueItem mCurrentEvent = null;
 
         public QueuedEventDispatcher(string name)
@@ -166,7 +168,7 @@ namespace LukeBot.Communication.Impl
                 return;
             }
 
-            mCurrentEvent.ev.Interrupt();
+            mCurrentEvent.ev.Interrupt(mCurrentEvent.args.EventID);
         }
 
         private void WorkerMain()
@@ -314,11 +316,17 @@ namespace LukeBot.Communication.Impl
         {
             lock (mEventQueueLock)
             {
+                List<string> eventInfo = new();
+                foreach (EventQueueItem ev in mEvents)
+                {
+                    eventInfo.Add(ev.args.ToString());
+                }
+
                 return new EventDispatcherStatus()
                 {
                     Name = mName,
                     Type = EventDispatcherType.Queued,
-                    EventCount = mEvents.Count,
+                    EventInfo = eventInfo,
                     State = mState
                 };
             }
@@ -382,7 +390,12 @@ namespace LukeBot.Communication.Impl
 
             public void Interrupt()
             {
-                mEvent.Interrupt();
+                mEvent.Interrupt(mArgs.EventID);
+            }
+
+            public override string ToString()
+            {
+                return String.Format("({0}/{1}) {2}", mCurrentCompletions, mExpectedCompletions, mArgs.ToString());
             }
         }
 
@@ -439,6 +452,8 @@ namespace LukeBot.Communication.Impl
 
         public override void Skip(int idx)
         {
+            SentEventData eventToInterrupt = null;
+
             lock (mEventListLock)
             {
                 if (idx < 0 || idx >= mSentEvents.Count)
@@ -447,9 +462,14 @@ namespace LukeBot.Communication.Impl
                     return;
                 }
 
-                mSentEvents[idx].Interrupt();
-                mSentEvents.RemoveAt(idx);
+                // there is a chance interrupted event will arrive first to execute the
+                // Completion Handler. If that is the case, we don't want to be holding the lock.
+                // Hold the reference to the interrupted event locally to free the lock.
+                eventToInterrupt = mSentEvents[idx];
             }
+
+            // Completion handlers will handle removing the interrupted event from our collection
+            eventToInterrupt.Interrupt();
         }
 
         public override void Start()
@@ -484,12 +504,19 @@ namespace LukeBot.Communication.Impl
         {
             lock (mEventListLock)
             {
+                List<string> eventInfo = new();
+
+                foreach (SentEventData sentEvent in mSentEvents)
+                {
+                    eventInfo.Add(sentEvent.ToString());
+                }
+
                 return new EventDispatcherStatus()
                 {
                     Name = mName,
                     Type = EventDispatcherType.SubscriberQueued,
-                    EventCount = mSentEvents.Count,
-                    State = EventDispatcherState.Running
+                    State = EventDispatcherState.Running,
+                    EventInfo = eventInfo,
                 };
             }
         }

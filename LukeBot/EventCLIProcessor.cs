@@ -35,7 +35,7 @@ namespace LukeBot
 
     internal class EventCommandBase
     {
-        [Value(0, MetaName = "dispatcher", Default = "", Required = false, HelpText = "Event dispatcher")]
+        [Option('d', "dispatcher", Default = "", Required = false, HelpText = "Event dispatcher")]
         public string Dispatcher { get; set; }
     }
 
@@ -99,6 +99,7 @@ namespace LukeBot
             catch (System.Exception e)
             {
                 msg = "Failed to emit a test event: " + e.Message;
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
             }
         }
 
@@ -125,6 +126,7 @@ namespace LukeBot
             catch (System.Exception e)
             {
                 msg = "Failed to list information about event: " + e.Message;
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
             }
         }
 
@@ -144,7 +146,11 @@ namespace LukeBot
                     {
                         msg += ":\n";
                         msg += "    State: " + s.State + "\n";
-                        msg += "    Events: " + s.EventCount + "\n";
+                        msg += "    Events: " + s.EventInfo.Count + "\n";
+                        for (int i = 0; i < s.EventInfo.Count; ++i)
+                        {
+                            msg += String.Format("      - {0}. {1}\n", i, s.EventInfo[i]);
+                        }
                         msg += "\n";
                     }
                     else
@@ -172,6 +178,7 @@ namespace LukeBot
             catch (System.Exception e)
             {
                 msg = "Failed to query event system status: " + e.Message;
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
             }
         }
 
@@ -192,6 +199,7 @@ namespace LukeBot
             catch (System.Exception e)
             {
                 msg = "Failed to clear " + dispatcher + " dispatcher: " + e.Message;
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
             }
         }
 
@@ -210,6 +218,7 @@ namespace LukeBot
             catch (System.Exception e)
             {
                 msg = "Failed to enable " + dispatcher + " dispatcher: " + e.Message;
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
             }
         }
 
@@ -228,6 +237,7 @@ namespace LukeBot
             catch (System.Exception e)
             {
                 msg = "Failed to disable " + dispatcher + " dispatcher: " + e.Message;
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
             }
         }
 
@@ -246,6 +256,7 @@ namespace LukeBot
             catch (System.Exception e)
             {
                 msg = "Failed to hold " + dispatcher + " dispatcher: " + e.Message;
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
             }
         }
 
@@ -267,9 +278,9 @@ namespace LukeBot
                 }
 
                 EventDispatcherStatus status = GetEventService().User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher).Status();
-                if (args.eventIdx >= 0 && args.eventIdx >= status.EventCount)
+                if (args.eventIdx >= 0 && args.eventIdx >= status.EventInfo.Count)
                 {
-                    msg = String.Format("Event ordinal provided is too big (maximum {0})", status.EventCount);
+                    msg = String.Format("Event ordinal provided is too big (maximum {0})", status.EventInfo.Count);
                     return;
                 }
 
@@ -279,6 +290,7 @@ namespace LukeBot
             catch (System.Exception e)
             {
                 msg = "Failed to skip event on " + dispatcher + " dispatcher: " + e.Message;
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
             }
         }
 

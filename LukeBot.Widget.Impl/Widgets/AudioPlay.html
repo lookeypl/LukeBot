@@ -98,9 +98,8 @@
     }
 
     let audioPlayWidget = new LukeBotWidget();
-    audioPlayWidget.registerMessage("AlertInterrupt", (obj) => {
-        executionQueue.interrupt(0);
-        audioPlayWidget.send(WidgetResponse.fromMessage(obj));
+    audioPlayWidget.onInterruptEvent((guid) => {
+        executionQueue.interrupt(guid);
     });
     audioPlayWidget.registerMessage("AudioPlayWidgetInternalConfig", (obj) => {
         Settings = new AudioPlayConfig(obj);

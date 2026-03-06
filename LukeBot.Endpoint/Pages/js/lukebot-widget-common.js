@@ -40,6 +40,16 @@ class WidgetResponse {
 
 // base class for an object that can execute things at the ExecutionQueue
 class Executable {
+    #guid = null;
+
+    constructor(guid) {
+        this.#guid = guid;
+    }
+
+    matchesGuid(guid) {
+        return this.#guid === guid;
+    }
+
     execute() {
         throw new TypeError("Executable object must inherit this class and override this method");
     }
@@ -119,7 +129,20 @@ class ExecutionQueue extends EventTarget {
         this.#current.execute();
     }
 
-    interrupt(idx) {
+    interrupt(guid) {
+        var idx = -1;
+        for (var i = 0; i < this.#queue.length; ++i)
+        {
+            if (this.#queue[i].matchesGuid(guid)) {
+                idx = i;
+                break;
+            }
+        }
+
+        if (idx == -1) {
+            throw new Error(`Message ${guid} not found`);
+        }
+
         if (idx == 0) {
             if (this.#current) {
                 this.#current.interrupt(true);
@@ -138,6 +161,7 @@ class ExecutionQueue extends EventTarget {
 class LukeBotWidget {
     #callbacks = {};
     #messages = {};
+    #onInterrupt = null;
     #close = null;
     #messageError = null;
     #connectionError = null;
@@ -165,7 +189,6 @@ class LukeBotWidget {
             }
         }
         this.socket.onmessage = (e) => {
-            let objEventID = null;
             try {
                 let obj = JSON.parse(e.data);
 
@@ -175,12 +198,29 @@ class LukeBotWidget {
                     return;
                 }
 
-                objEventID = obj.EventID;
+                // save this message to currently processed messages
+                this.#messages[obj.EventID] = obj;
+
+                if (obj.EventName == "InterruptEvent") {
+                    if (!obj.EventToInterrupt) {
+                        throw new Error("Invalid interrupt message received");
+                    }
+
+                    if (!this.#messages[obj.EventToInterrupt]) {
+                        throw new Error(`Requesting interrupt of non-existent message ${obj.EventToInterrupt}`);
+                    }
+
+                    if (this.#onInterrupt) {
+                        // if registered, notify the widget about the interruption
+                        this.#onInterrupt(obj.EventToInterrupt);
+                    }
+
+                    // finally, send back the positive response
+                    this.send(WidgetResponse.fromMessage(obj));
+                    return;
+                }
 
                 if (this.#callbacks[obj.EventName]) {
-                    // save this message to currently processed messages
-                    this.#messages[obj.EventID] = obj;
-
                     // execute the Widget-specific callback
                     this.#callbacks[obj.EventName](obj);
                 } else {
@@ -192,7 +232,7 @@ class LukeBotWidget {
                     this.#messageError(error);
                 }
 
-                alertsWidget.send(new WidgetResponse(objEventID).fail(`ERROR exception while processing message: ${error}`));
+                this.send(WidgetResponse.fromError(obj.EventID, `ERROR exception while processing message: ${error}`));
             }
         }
 
@@ -203,6 +243,10 @@ class LukeBotWidget {
 
     registerMessage(message, callback) {
         this.#callbacks[message] = callback;
+    }
+
+    onInterruptEvent(callback) {
+        this.#onInterrupt = callback;
     }
 
     registerMessageError(callback) {
@@ -262,7 +306,7 @@ class AlertStep {
 // to send back failure message if something messes up.
 class AlertChain extends Executable {
     constructor(receivedObject) {
-        super();
+        super(receivedObject.EventID);
         this.mChain = [];
         this.mCurrent = 0;
         this.mType = receivedObject.EventName;
@@ -288,7 +332,8 @@ class AlertChain extends Executable {
     }
 
     execute() {
-        this.mInterrupted = false;
+        if (this.mInterrupted) return;
+
         this.mCurrent = 0;
         this.mChain[this.mCurrent].execute(this.next.bind(this), this.mChainStatus);
     }

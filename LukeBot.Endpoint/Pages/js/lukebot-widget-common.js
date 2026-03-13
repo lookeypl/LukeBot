@@ -130,8 +130,15 @@ class ExecutionQueue extends EventTarget {
     }
 
     interrupt(guid) {
+        // first cross check currently processed Executable
+        if (this.#current && this.#current.matchesGuid(guid)) {
+            this.#current.interrupt(true);
+            return;
+        }
+
+        // guid doesn't match currently processed Executable - find in queue and interrupt it if found
         var idx = -1;
-        for (var i = 0; i < this.#queue.length; ++i)
+        for (var i = 0; i < this.#queue.length; i++)
         {
             if (this.#queue[i].matchesGuid(guid)) {
                 idx = i;
@@ -143,18 +150,12 @@ class ExecutionQueue extends EventTarget {
             throw new Error(`Message ${guid} not found`);
         }
 
-        if (idx == 0) {
-            if (this.#current) {
-                this.#current.interrupt(true);
-                return;
-            }
-        } else if (idx < this.#queue.length ) {
-            // this event in queue is not playing yet, interrupt it separately
-            // the Executable should handle this properly and send back the Alert is interrupted.
-            // Afterwards, remove the entry from the Queue.
-            this.#queue[idx].interrupt(false);
-            this.#queue.splice(idx, 1);
-        }
+        // this Executable in queue is not processed yet, interrupt it separately
+        // the Executable should handle this properly on its own without interrupting currently
+        // executed Executable (including notifying the Server it was interrupted).
+        // Afterwards, remove the entry from the Queue.
+        this.#queue[idx].interrupt(false);
+        this.#queue.splice(idx, 1);
     }
 }
 

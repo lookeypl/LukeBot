@@ -251,6 +251,8 @@ namespace LukeBot.Communication.Impl
             {
                 mEvents.Clear();
             }
+
+            InterruptCurrentEvent();
         }
 
         public override void Enable()
@@ -356,6 +358,7 @@ namespace LukeBot.Communication.Impl
             private EventArgsBase mArgs;
             private int mExpectedCompletions;
             private int mCurrentCompletions;
+            private object mCompletionCountersLock = new();
 
             public Guid EventID
             {
@@ -378,24 +381,38 @@ namespace LukeBot.Communication.Impl
             // Can throw EventSystemException if too many completions are received
             public bool MarkCompleted()
             {
-                mCurrentCompletions++;
-
-                if (mCurrentCompletions > mExpectedCompletions)
+                lock (mCompletionCountersLock)
                 {
-                    throw new EventSystemException("Received too many completions for event {0}. This should not have happened.", mEvent.Name);
-                }
+                    mCurrentCompletions++;
 
-                return (mCurrentCompletions == mExpectedCompletions);
+                    if (mCurrentCompletions > mExpectedCompletions)
+                    {
+                        throw new EventSystemException("Received too many completions for event {0}. This should not have happened.", mEvent.Name);
+                    }
+
+                    return (mCurrentCompletions == mExpectedCompletions);
+                }
             }
 
             public void Interrupt()
             {
+                lock (mCompletionCountersLock)
+                {
+                    if (mCurrentCompletions >= mExpectedCompletions)
+                    {
+                        return;
+                    }
+                }
+
                 mEvent.Interrupt(mArgs.EventID);
             }
 
             public override string ToString()
             {
-                return String.Format("({0}/{1}) {2}", mCurrentCompletions, mExpectedCompletions, mArgs.ToString());
+                lock (mCompletionCountersLock)
+                {
+                    return String.Format("({0}/{1}) {2}", mCurrentCompletions, mExpectedCompletions, mArgs.ToString());
+                }
             }
         }
 
@@ -421,16 +438,28 @@ namespace LukeBot.Communication.Impl
 
         public override void Clear()
         {
-            lock (mEventListLock)
+            // copy the list of events to be interrupted
+            // this is to prevent deadlocks and free mEventListLock
+            // plus ensure we go through all events that need the interruption at this time
+            List<SentEventData> toInterrupt = new();
+            lock(mEventListLock)
             {
-                // notify each currently processed event that there is an interruption
                 foreach (SentEventData ev in mSentEvents)
                 {
-                    ev.Interrupt();
+                    toInterrupt.Add(ev);
                 }
 
-                // clear current events
-                mSentEvents.Clear();
+                // reverse the list to start from the newest event
+                // that way we might prevent some mishaps
+                toInterrupt.Reverse();
+            }
+
+            // interrupt all events on the list one by one
+            // we have to do this this way because Dispatcher can have Events queued from
+            // different Event sources.
+            foreach (SentEventData ev in toInterrupt)
+            {
+                ev.Interrupt();
             }
         }
 

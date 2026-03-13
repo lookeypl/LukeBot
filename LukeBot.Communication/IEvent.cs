@@ -21,12 +21,12 @@ namespace LukeBot.Communication
         public void Unsubscribe(EventHandler<EventArgsBase> callback);
 
         /**
-         * Subscribe to Interrupt Events.
+         * Subscribe to Interrupt Events. This includes both interrupting a single event and clearing the entire queue.
          */
         public void InterruptSubscribe(EventHandler<InterruptEvent> callback);
 
         /**
-         * Unsubscribe from Interrupt Events
+         * Unsubscribe from Interrupt Events. This includes both interrupting a single event and clearing the entire queue.
          */
         public void InterruptUnsubscribe(EventHandler<InterruptEvent> callback);
     }

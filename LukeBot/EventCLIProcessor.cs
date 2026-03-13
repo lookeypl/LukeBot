@@ -193,7 +193,6 @@ namespace LukeBot
 
                 EventDispatcher dispatcherObject = GetEventService().User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher);
                 dispatcherObject.Clear();
-                dispatcherObject.Skip(0);
                 msg = "Events on dispatcher " + dispatcher + " cleared.";
             }
             catch (System.Exception e)
@@ -278,7 +277,7 @@ namespace LukeBot
                 }
 
                 EventDispatcherStatus status = GetEventService().User(CLI.GetCurrentUser().GetUsername()).Dispatcher(dispatcher).Status();
-                if (args.eventIdx >= 0 && args.eventIdx >= status.EventInfo.Count)
+                if (args.eventIdx >= status.EventInfo.Count)
                 {
                     msg = String.Format("Event ordinal provided is too big (maximum {0})", status.EventInfo.Count);
                     return;

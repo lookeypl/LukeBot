@@ -181,7 +181,7 @@ namespace LukeBot.Twitch.Impl
             {
                 Name = Events.TWITCH_WATCH_STREAK,
                 Description = "Twitch Watch Streak event. Emitted when user shares a Watch Streak celebration message",
-                Dispatcher = null,
+                Dispatcher = Twitch.Utils.DispatcherNameForUser(mLBUser),
                 TestGenerator = GenerateTestWatchStreakEvent,
                 TestParams = new List<EventTestParam>()
                 {

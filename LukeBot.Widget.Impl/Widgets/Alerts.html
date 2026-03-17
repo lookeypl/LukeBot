@@ -389,8 +389,9 @@
     alertsWidget.registerMessage("TwitchCheer", (obj) => {
         alertChain = new AlertChain(obj);
 
+        let headline = obj.DisplayName + "<br>cheered " + obj.Amount;
         if (obj.Message) {
-            alertChain.add(new ShowInfoAlert(obj.DisplayName + "<br>cheered " + obj.Amount, obj.Message));
+            alertChain.add(new ShowInfoAlert(headline, obj.Message));
             alertChain.add(new AudioAlert("/content/success-48018.ogg"));
             let voice = "Brian";
             if (obj.Amount == 5) {
@@ -403,7 +404,32 @@
             });
             alertChain.add(tts);
         } else {
-            alertChain.add(new ShowInfoAlert(obj.DisplayName + "<br>cheered " + obj.Amount, null));
+            alertChain.add(new ShowInfoAlert(headline, null));
+            alertChain.add(new AudioAlert("/content/success-48018.ogg"));
+            alertChain.add(new TimeoutAlert(5000));
+        }
+
+        alertChain.add(new HideInfoAlert());
+        alertChain.add(new AlertChainComplete(obj, alertsWidget, alertExecutionQueue));
+        alertExecutionQueue.push(alertChain);
+    });
+    alertsWidget.registerMessage("TwitchWatchStreak", (obj) => {
+        alertChain = new AlertChain(obj);
+
+        let headline = obj.DisplayName + " reached<br>a " + obj.Streak + "-stream streak!";
+        if (obj.Message) {
+            let shareMsg = obj.Message.Message;
+            alertChain.add(new ShowInfoAlert(headline, shareMsg));
+            alertChain.add(new AudioAlert("/content/success-48018.ogg"));
+            if (shareMsg) {
+                let tts = new TTSAlert("Jacek", shareMsg);
+                tts.onLoadedMetadata((event) => {
+                    infoPanel.launchScroll(event.target.duration);
+                });
+                alertChain.add(tts);
+            }
+        } else {
+            alertChain.add(new ShowInfoAlert(headline, null));
             alertChain.add(new AudioAlert("/content/success-48018.ogg"));
             alertChain.add(new TimeoutAlert(5000));
         }

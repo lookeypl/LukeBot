@@ -8,7 +8,8 @@ namespace LukeBot.Communication
         /**
          * Subscribe to this Event.
          *
-         * @param completable Set to true if received event has to be completed by the receiving end.
+         * @param completable Set to true if received event has to be completed by the receiving end
+         *                    and confirmation has to be sent back to the System.
          *                    After receiving the event subscriber will have to call
          *                    EventArgsBase.Complete() confirming the event has been completed
          *                    successfully. See EventArgsBase for details.

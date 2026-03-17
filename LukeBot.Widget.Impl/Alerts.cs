@@ -102,6 +102,7 @@ namespace LukeBot.Widget.Impl
         protected override void OnConnected()
         {
             EventSubscribe(Events.TWITCH_CHEER, OnSimpleEvent<TwitchCheerArgs>, true);
+            EventSubscribe(Events.TWITCH_WATCH_STREAK, OnSimpleEvent<TwitchWatchStreakArgs>, true);
             EventSubscribe(Events.TWITCH_SUBSCRIPTION, OnSubscriptionEvent, true);
 
             SendConfiguration();
@@ -110,6 +111,7 @@ namespace LukeBot.Widget.Impl
         protected override void OnDisconnected()
         {
             EventUnsubscribe(Events.TWITCH_CHEER, OnSimpleEvent<TwitchCheerArgs>);
+            EventUnsubscribe(Events.TWITCH_WATCH_STREAK, OnSimpleEvent<TwitchWatchStreakArgs>);
             EventUnsubscribe(Events.TWITCH_SUBSCRIPTION, OnSubscriptionEvent);
         }
 

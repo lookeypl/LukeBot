@@ -367,7 +367,7 @@ namespace LukeBot.Tests.Twitch.Impl
                 Console.Error.WriteLine(String.Format("user: {0} name: {1} title: {2}", args.User, args.DisplayName, args.Title));
 
                 castedSuccessfully = (args != null);
-                correctID = (EVENT_SUB_TEST_REDEMPTION_ID == args.ID);
+                correctID = (EVENT_SUB_TEST_REDEMPTION_ID == args.NoticeID);
                 correctCost = (EVENT_SUB_TEST_REDEMPTION_COST == args.Cost);
                 correctTitle = (EVENT_SUB_TEST_REDEMPTION_NAME == args.Title);
 

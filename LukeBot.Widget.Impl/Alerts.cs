@@ -72,7 +72,7 @@ namespace LukeBot.Widget.Impl
             case TwitchSubscriptionType.Resub:
                 TwitchResubscriptionDetails resub = a.Details as TwitchResubscriptionDetails;
                 Logger.Log().Debug("Resub from: {0} ({1}), tier {2}, cumulative {3}, streak {4}, duration {5} msg {6}",
-                    a.User, a.DisplayName, resub.Tier, resub.Cumulative, resub.Streak, resub.Duration, resub.Message);
+                    a.User, a.DisplayName, resub.Tier, resub.Cumulative, resub.Streak, resub.Duration, (a.Message != null ? a.Message.Message : "EMPTY"));
                 break;
             case TwitchSubscriptionType.Gift:
                 TwitchGiftSubscriptionDetails gift = a.Details as TwitchGiftSubscriptionDetails;

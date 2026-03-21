@@ -323,12 +323,6 @@
     }
     let infoPanel = new InfoPanel();
 
-    const TwitchSubscriptionType = {
-        New: 0,
-        Resub: 1,
-        Gift: 2
-    }
-
     class ShowInfoAlert extends AlertStep {
         constructor(title, details) {
             super();
@@ -391,14 +385,11 @@
 
         let headline = obj.DisplayName + "<br>cheered " + obj.Amount;
         if (obj.Message) {
-            alertChain.add(new ShowInfoAlert(headline, obj.Message));
+            alertChain.add(new ShowInfoAlert(headline, obj.Message.Message));
             alertChain.add(new AudioAlert("/content/success-48018.ogg"));
             let voice = "Brian";
-            if (obj.Amount == 5) {
-                voice = "Jacek"
-            }
 
-            let tts = new TTSAlert(voice, obj.Message);
+            let tts = new TTSAlert(voice, obj.Message.Message);
             tts.onLoadedMetadata((event) => {
                 infoPanel.launchScroll(event.target.duration);
             });
@@ -444,9 +435,13 @@
         // TODO: Server-side should generate messages that are passed here to ShowInfoAlert
         var showInfoAlert = null;
         if (obj.Details.Type == TwitchSubscriptionType.Resub) {
-            showInfoAlert = new ShowInfoAlert(obj.DisplayName + "<br>subscribed for " + obj.Details.Cumulative + " months!", obj.Details.Message);
+            let shareMsg = null;
+            if (obj.Message) {
+                shareMsg = obj.Message.Message;
+            }
+            showInfoAlert = new ShowInfoAlert(obj.DisplayName + `<br>subscribed for ${obj.Details.Cumulative} months!`, shareMsg);
         } else if (obj.Details.Type == TwitchSubscriptionType.Gift) {
-            showInfoAlert = new ShowInfoAlert(obj.DisplayName + "<br>gifted " + obj.Details.RecipentCount + " subs!", null);
+            showInfoAlert = new ShowInfoAlert(obj.DisplayName + `<br>gifted ${obj.Details.RecipentCount} Tier ${obj.Details.Tier} subs!`, null);
         } else {
             showInfoAlert = new ShowInfoAlert(obj.DisplayName + " subscribed!", null);
         }
@@ -454,8 +449,8 @@
 
         alertChain.add(new AudioAlert("/content/news-ting-6832.ogg"));
 
-        if (obj.Details.Type == TwitchSubscriptionType.Resub) {
-            let tts = new TTSAlert("Brian", obj.Details.Message)
+        if (obj.Details.Type == TwitchSubscriptionType.Resub && obj.Message) {
+            let tts = new TTSAlert("Brian", obj.Message.Message)
             tts.onLoadedMetadata((event) => {
                 infoPanel.launchScroll(event.target.duration);
             });

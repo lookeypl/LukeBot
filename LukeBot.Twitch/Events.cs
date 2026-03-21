@@ -37,17 +37,17 @@ namespace LukeBot.Twitch
         public string DisplayName { get; set; }
         public string Message { get; set; }
 
-        public TwitchChatMessageArgs(string msgID)
+        public TwitchChatMessageArgs(string msgID, string user, string displayName, string message)
             : base(Events.TWITCH_CHAT_MESSAGE)
         {
             MessageID = msgID;
+            Message = message;
+            User = user;
+            DisplayName = displayName;
             UserID = "";
-            Color = "#dddddd";
+            Color = "#aaaaaa";
             Emotes = new();
             Badges = new();
-            User = "";
-            DisplayName = "";
-            Message = "";
         }
 
         private string GetEmoteName(string msg, string range)
@@ -144,6 +144,35 @@ namespace LukeBot.Twitch
     }
 
 
+    // Base for notices used by Chat
+
+    public abstract class TwitchNoticeArgs: SerializableEventArgsBase
+    {
+        public string NoticeID { get; protected set; }
+        public string User { get; protected set; }
+        public string DisplayName { get; protected set; }
+        public TwitchChatMessageArgs Message { get; protected set; } // optional, can be null
+
+        protected TwitchNoticeArgs(string eventName, string noticeID, string user, string displayName)
+            : base(eventName)
+        {
+            NoticeID = noticeID;
+            User = user;
+            DisplayName = displayName;
+        }
+
+        public void AddMessage(TwitchChatMessageArgs m)
+        {
+            Message = m;
+        }
+
+        public void AddMessage(string msg)
+        {
+            Message = new TwitchChatMessageArgs(Guid.NewGuid().ToString(), User, DisplayName, msg);
+        }
+    }
+
+
     // Subscriptions
 
     public enum TwitchSubscriptionType
@@ -198,20 +227,18 @@ namespace LukeBot.Twitch
         public int Cumulative { get; private set; } // total subscription month
         public int Streak { get; private set; } // 0 if not shared
         public int Duration { get; private set; } // length of resub (1, 2, 3 months etc.)
-        public string Message { get; private set; } // resub message
 
         public TwitchResubscriptionDetails()
-            : this(1, 1, 1, 1, "")
+            : this(1, 1, 1, 1)
         {
         }
 
-        public TwitchResubscriptionDetails(int tier, int cumulative, int streak, int duration, string message)
+        public TwitchResubscriptionDetails(int tier, int cumulative, int streak, int duration)
             : base(TwitchSubscriptionType.Resub, tier)
         {
             Cumulative = cumulative;
             Streak = streak;
             Duration = duration;
-            Message = message;
         }
 
         public override void FillStringArgs(IEnumerable<(string a, string v)> args)
@@ -220,7 +247,6 @@ namespace LukeBot.Twitch
             int cumulative = 3;
             int streak = 3;
             int duration = 1;
-            string message = "This is a test";
 
             foreach ((string a, string v) a in args)
             {
@@ -230,7 +256,6 @@ namespace LukeBot.Twitch
                 case "Cumulative": cumulative = Int32.Parse(a.v); break;
                 case "Streak": streak = Int32.Parse(a.v); break;
                 case "Duration": duration = Int32.Parse(a.v); break;
-                case "Message": message = a.v; break;
                 }
             }
 
@@ -238,12 +263,11 @@ namespace LukeBot.Twitch
             Cumulative = cumulative;
             Streak = streak;
             Duration = duration;
-            Message = message;
         }
 
         public override string ToString()
         {
-            return base.ToString() + String.Format(", {0} month, {1} streak, {2}", Cumulative, Streak, Common.Utils.Shorten(Message, 20));
+            return base.ToString() + String.Format(", {0} month, {1} streak", Cumulative, Streak);
         }
     }
 
@@ -286,18 +310,19 @@ namespace LukeBot.Twitch
         }
     }
 
-    public class TwitchSubscriptionArgs: SerializableEventArgsBase
+    public class TwitchSubscriptionArgs: TwitchNoticeArgs
     {
-        public string User { get; private set; }
-        public string DisplayName { get; private set; }
         public TwitchSubscriptionDetails Details { get; private set; }
 
-        public TwitchSubscriptionArgs(string user, string displayName, TwitchSubscriptionDetails details)
-            : base(Events.TWITCH_SUBSCRIPTION)
+        public TwitchSubscriptionArgs(string noticeID, string user, string displayName, string message, TwitchSubscriptionDetails details)
+            : base(Events.TWITCH_SUBSCRIPTION, noticeID, user, displayName)
         {
-            User = user;
-            DisplayName = displayName;
             Details = details;
+            Message = null;
+            if (message != null && message.Length > 0)
+            {
+                AddMessage(message);
+            }
         }
 
         public override string Serialize()
@@ -316,27 +341,25 @@ namespace LukeBot.Twitch
 
     // Channel Points
 
-    public class TwitchChannelPointsRedemptionArgs: SerializableEventArgsBase
+    public class TwitchChannelPointsRedemptionArgs: TwitchNoticeArgs
     {
-        public string User { get; private set; }
-        public string DisplayName { get; private set; }
-        public string ID { get; private set; }
         public string Title { get; private set; }
         public int Cost { get; private set; }
         public string Prompt { get; private set; }
-        public string Message { get; private set; }
 
         public TwitchChannelPointsRedemptionArgs(string user, string displayName,
                 string id, string title, int cost, string prompt, string message)
-            : base(Events.TWITCH_CHANNEL_POINTS_REDEMPTION)
+            : base(Events.TWITCH_CHANNEL_POINTS_REDEMPTION, id, user, displayName)
         {
-            User = user;
-            DisplayName = displayName;
-            ID = id;
             Title = title;
             Cost = cost;
             Prompt = prompt;
-            Message = message;
+            Message = null;
+
+            if (message != null && message.Length > 0)
+            {
+                AddMessage(message);
+            }
         }
 
         public override string Serialize()
@@ -348,20 +371,19 @@ namespace LukeBot.Twitch
 
     // Cheers
 
-    public class TwitchCheerArgs: SerializableEventArgsBase
+    public class TwitchCheerArgs: TwitchNoticeArgs
     {
-        public string User { get; private set; }
-        public string DisplayName { get; private set; }
         public int Amount { get; private set; }
-        public string Message { get; private set; }
 
-        public TwitchCheerArgs(string user, string displayName, int amount, string message)
-            : base(Events.TWITCH_CHEER)
+        public TwitchCheerArgs(string noticeID, string user, string displayName, int amount, string message)
+            : base(Events.TWITCH_CHEER, noticeID, user, displayName)
         {
-            User = user;
-            DisplayName = displayName;
             Amount = amount;
-            Message = message;
+            Message = null;
+            if (message != null && message.Length > 0)
+            {
+                AddMessage(message);
+            }
         }
 
         public override string Serialize()
@@ -371,38 +393,17 @@ namespace LukeBot.Twitch
     }
 
 
-    // Notices in chat
-
-    public abstract class TwitchNoticeArgs: SerializableEventArgsBase
-    {
-        public string NoticeID { get; protected set; }
-        public string User { get; protected set; }
-        public string DisplayName { get; protected set; }
-
-        protected TwitchNoticeArgs(string eventName, string noticeID, string user, string displayName)
-            : base(eventName)
-        {
-            NoticeID = noticeID;
-            User = user;
-            DisplayName = displayName;
-        }
-    }
+    // Watch Streaks
 
     public class TwitchWatchStreakArgs: TwitchNoticeArgs
     {
         public int Streak { get; private set; }
-        public TwitchChatMessageArgs Message { get; private set; }
 
         public TwitchWatchStreakArgs(string noticeID, string user, string displayName, int streak)
             : base(Events.TWITCH_WATCH_STREAK, noticeID, user, displayName)
         {
             Streak = streak;
             Message = null;
-        }
-
-        public void AddMessage(TwitchChatMessageArgs m)
-        {
-            Message = m;
         }
 
         public override string Serialize()

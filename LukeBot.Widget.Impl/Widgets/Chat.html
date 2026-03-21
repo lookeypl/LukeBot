@@ -125,6 +125,8 @@
         ChatClearMessage: "TwitchChatClearMessage",
         ChatClearUser: "TwitchChatClearUser",
         WatchStreak: "TwitchWatchStreak",
+        Cheer: "TwitchCheer",
+        Subscription: "TwitchSubscription"
     })
 
     class ChatListEntry {
@@ -151,7 +153,9 @@
                 ret = new MessageEntry(msgObj.MessageID);
                 break;
             }
-            case EventType.WatchStreak: {
+            case EventType.WatchStreak:
+            case EventType.Cheer:
+            case EventType.Subscription: {
                 ret = new NoticeEntry(msgObj.NoticeID);
                 break;
             }
@@ -348,10 +352,7 @@
             this.Type = ChatNodeType.Notice;
         }
 
-        form(msgObj) {
-            if (msgObj.EventName != EventType.WatchStreak)
-                throw new TypeError(`Invalid message type ${msgObj.EventName}`);
-
+        #formCommon(msgObj) {
             if (msgObj.Message) {
                 this.Message = new MessageEntry(msgObj.MessageID);
                 this.Message.form(msgObj.Message);
@@ -359,9 +360,67 @@
 
             this.User = msgObj.User;
             this.DisplayName = msgObj.DisplayName;
+        }
 
-            // user is added bolded to the headline in generateNode()
+        #formWatchStreak(msgObj) {
+            this.#formCommon(msgObj);
             this.Headline = ` reached a ${msgObj.Streak}-stream streak!`;
+        }
+
+        #formCheer(msgObj) {
+            this.#formCommon(msgObj);
+            this.Headline = ` cheered ${msgObj.Amount} bits!`;
+        }
+
+        #formChannelPointsRedemption(msgObj) {
+            this.#formCommon(msgObj);
+            this.Headline = ` redeemed ${msgObj.Title} for ${msgObj.Cost}`;
+        }
+
+        #formSubscription(msgObj) {
+            this.#formCommon(msgObj);
+
+            switch (msgObj.Details.Type)
+            {
+            case TwitchSubscriptionType.New:
+                this.Headline = ` subscribed at Tier ${msgObj.Details.Tier}!`;
+                break;
+            case TwitchSubscriptionType.Gift:
+                this.Headline = ` gifted ${msgObj.Details.RecipentCount} Tier ${msgObj.Details.Tier} subscriptions!`;
+                break;
+            case TwitchSubscriptionType.Resub:
+                if (msgObj.Details.Streak != 0) {
+                    this.Headline = ` subscribed at Tier ${msgObj.Details.Tier} for ${msgObj.Details.Cumulative} months, being on a ${msgObj.Details.Streak}-month sub streak!`;
+                } else {
+                    this.Headline = ` subscribed at Tier ${msgObj.Details.Tier} for ${msgObj.Details.Cumulative} months!`;
+                }
+                break;
+            default:
+                throw new TypeError(`Unrecognized subscription type ${msgObj.Details.Type}`);
+            }
+        }
+
+        form(msgObj) {
+            switch (msgObj.EventName) {
+            case EventType.WatchStreak: {
+                this.#formWatchStreak(msgObj);
+                break;
+            }
+            case EventType.Cheer: {
+                this.#formCheer(msgObj);
+                break;
+            }
+            case EventType.Subscription: {
+                this.#formSubscription(msgObj);
+                break;
+            }
+            case EventType.ChannelPointsRedemption: {
+                this.#formChannelPointsRedemption(msgObj);
+                break;
+            }
+            default:
+                throw new TypeError(`Invalid message type ${msgObj.EventName}`);
+            }
         }
 
         generateNode() {
@@ -472,16 +531,22 @@
     let chatMgr = new Chat();
 
     let chatWidget = new LukeBotWidget();
-    chatWidget.registerMessage("TwitchChatMessage", (obj) => {
+    chatWidget.registerMessage(EventType.ChatMessage, (obj) => {
         chatMgr.add(ChatListEntry.event(obj));
     });
-    chatWidget.registerMessage("TwitchWatchStreak", (obj) => {
+    chatWidget.registerMessage(EventType.WatchStreak, (obj) => {
         chatMgr.add(ChatListEntry.event(obj));
     });
-    chatWidget.registerMessage("TwitchChatClearUser", (obj) => {
+    chatWidget.registerMessage(EventType.Cheer, (obj) => {
+        chatMgr.add(ChatListEntry.event(obj));
+    });
+    chatWidget.registerMessage(EventType.Subscription, (obj) => {
+        chatMgr.add(ChatListEntry.event(obj));
+    });
+    chatWidget.registerMessage(EventType.ChatClearUser, (obj) => {
         chatMgr.removeUser(obj);
     });
-    chatWidget.registerMessage("TwitchChatClearMessage", (obj) => {
+    chatWidget.registerMessage(EventType.ChatClearMessage, (obj) => {
         chatMgr.remove(obj);
     });
     chatWidget.registerMessageError((error) => {

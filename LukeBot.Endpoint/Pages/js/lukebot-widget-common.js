@@ -16,6 +16,12 @@ function getMeta(name) {
     return '';
 }
 
+const TwitchSubscriptionType = {
+    New: 0,
+    Resub: 1,
+    Gift: 2
+}
+
 class WidgetResponse {
     constructor(evID) {
         this.EventID = evID;

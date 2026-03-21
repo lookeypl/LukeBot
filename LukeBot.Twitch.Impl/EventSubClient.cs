@@ -183,7 +183,7 @@ namespace LukeBot.Twitch.Impl
                 }
             }
 
-            return new TwitchCheerArgs(user, displayName, amount, message);
+            return new TwitchCheerArgs(Guid.NewGuid().ToString(), user, displayName, amount, message);
         }
 
         private EventArgsBase GenerateTestSubscriptionEvent(IEnumerable<(string attrib, string value)> args)
@@ -191,6 +191,7 @@ namespace LukeBot.Twitch.Impl
             TwitchSubscriptionType type = TwitchSubscriptionType.New;
             string user = "test_user";
             string displayName = "Test_User";
+            string message = "This is a test";
             int tier = 1;
 
             foreach ((string a, string v) a in args)
@@ -201,6 +202,7 @@ namespace LukeBot.Twitch.Impl
                 case "User": user = a.v; break;
                 case "DisplayName": displayName = a.v; break;
                 case "Tier": tier = Int32.Parse(a.v); break;
+                case "Message": message = a.v; break;
                 default:
                     //Logger.Log().Warning("Unknown test event arg: {0}", a.a);
                     break;
@@ -220,7 +222,7 @@ namespace LukeBot.Twitch.Impl
 
             details.FillStringArgs(args);
 
-            return new TwitchSubscriptionArgs(user, displayName, details);
+            return new TwitchSubscriptionArgs(Guid.NewGuid().ToString(), user, displayName, message, details);
         }
 
         public string GetEventPublisherName()
@@ -450,13 +452,14 @@ namespace LukeBot.Twitch.Impl
                 displayName = data.user_name;
             }
 
-            TwitchCheerArgs args = new(login, displayName, data.bits, data.message);
+            TwitchCheerArgs args = new(Guid.NewGuid().ToString(), login, displayName, data.bits, data.message);
             mCheerCallback.PublishEvent(args);
         }
 
         private void EmitSubscriptionEvent(TwitchSubscriptionType type, EventSub.PayloadEvent eventData)
         {
             TwitchSubscriptionDetails details;
+            string resubMessage = null;
 
             switch (type)
             {
@@ -473,9 +476,9 @@ namespace LukeBot.Twitch.Impl
                     Int32.Parse(data.tier),
                     data.cumulative_months,
                     (data.streak_months != null) ? (int)data.streak_months : 0,
-                    data.duration_months,
-                    data.message.text
+                    data.duration_months
                 );
+                resubMessage = data.message.text;
                 break;
             }
             case TwitchSubscriptionType.Gift:
@@ -490,7 +493,9 @@ namespace LukeBot.Twitch.Impl
                 throw new ArgumentException();
             }
 
-            TwitchSubscriptionArgs subArgs = new(eventData.user_login, eventData.user_name, details);
+            TwitchSubscriptionArgs subArgs = new(Guid.NewGuid().ToString(),
+                eventData.user_login, eventData.user_name, resubMessage, details
+            );
 
             mSubscriptionCallback.PublishEvent(subArgs);
         }

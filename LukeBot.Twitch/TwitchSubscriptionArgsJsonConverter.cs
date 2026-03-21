@@ -23,8 +23,12 @@ public class TwitchSubscriptionArgsJsonConverter: JsonConverter<TwitchSubscripti
         writer.WriteString(nameof(value.EventName), value.EventName);
         writer.WriteString(nameof(value.EventID), value.EventID);
 
+        writer.WriteString(nameof(value.NoticeID), value.NoticeID);
         writer.WriteString(nameof(value.User), value.User);
         writer.WriteString(nameof(value.DisplayName), value.DisplayName);
+
+        writer.WritePropertyName(nameof(value.Message));
+        JsonSerializer.Serialize(writer, value.Message, options);
 
         writer.WritePropertyName(nameof(value.Details));
 

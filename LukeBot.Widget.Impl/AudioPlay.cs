@@ -277,8 +277,11 @@ namespace LukeBot.Widget.Impl
             }
             else if (trigger.RedemptionType == TTS_REDEMPTION)
             {
-                AudioPlayStartTTSPlayback playback = new(trigger.Voice, a.Message);
-                SendEvent(playback);
+                if (a.Message != null)
+                {
+                    AudioPlayStartTTSPlayback playback = new(trigger.Voice, a.Message.Message);
+                    SendEvent(playback);
+                }
             }
         }
 

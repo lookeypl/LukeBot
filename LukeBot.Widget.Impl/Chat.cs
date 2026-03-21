@@ -28,6 +28,9 @@ namespace LukeBot.Widget.Impl
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_USER).Subscribe(OnEvent<TwitchChatUserClearArgs>);
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_MESSAGE).Subscribe(OnEvent<TwitchChatMessageClearArgs>);
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_WATCH_STREAK).Subscribe(OnEvent<TwitchWatchStreakArgs>);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHEER).Subscribe(OnEvent<TwitchCheerArgs>);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_SUBSCRIPTION).Subscribe(OnEvent<TwitchSubscriptionArgs>);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Subscribe(OnEvent<TwitchChannelPointsRedemptionArgs>);
 
             ServiceUtils.GetTwitchUserModule(mLBUser).RefreshEmotes();
         }
@@ -38,6 +41,9 @@ namespace LukeBot.Widget.Impl
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_USER).Unsubscribe(OnEvent<TwitchChatUserClearArgs>);
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHAT_CLEAR_MESSAGE).Unsubscribe(OnEvent<TwitchChatMessageClearArgs>);
             ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_WATCH_STREAK).Unsubscribe(OnEvent<TwitchWatchStreakArgs>);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHEER).Unsubscribe(OnEvent<TwitchCheerArgs>);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_SUBSCRIPTION).Unsubscribe(OnEvent<TwitchSubscriptionArgs>);
+            ServiceUtils.GetEventService().User(mLBUser).Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Unsubscribe(OnEvent<TwitchChannelPointsRedemptionArgs>);
         }
 
         protected override void OnLoad()

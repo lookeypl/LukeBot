@@ -136,11 +136,8 @@ namespace LukeBot.Twitch.Impl
             {
                 // NOTE: This does NOT support Twitch subscriber emotes, only external ones
                 // but I figured it's just a test message, so we don't need those anyway
-                TwitchChatMessageArgs msg = new(Guid.NewGuid().ToString());
-                msg.User = user;
-                msg.DisplayName = displayName;
+                TwitchChatMessageArgs msg = new(Guid.NewGuid().ToString(), user, displayName, message);
                 msg.Color = "#5060dd";
-                msg.Message = message;
                 msg.AddBadges(mChannelBadges.GetBadges("broadcaster/1,vip/1"));
                 AddExternalEmotesToMessage(msg);
 
@@ -252,9 +249,11 @@ namespace LukeBot.Twitch.Impl
             if (!tagsEnabled || !m.GetTag(TAG_ID, out msgID))
                 msgID = String.Format("{0}", mMsgIDCounter++);
 
-            TwitchChatMessageArgs message = new TwitchChatMessageArgs(msgID);
-            message.User = m.User;
-            message.Message = chatMsg;
+            string displayName;
+            if (!tagsEnabled || !m.GetTag(TAG_DISPLAY_NAME, out displayName))
+                displayName = m.User;
+
+            TwitchChatMessageArgs message = new TwitchChatMessageArgs(msgID, m.User, displayName, chatMsg);
 
             if (tagsEnabled)
             {
@@ -265,10 +264,6 @@ namespace LukeBot.Twitch.Impl
                 string color;
                 if (m.GetTag(TAG_COLOR, out color))
                     message.Color = color;
-
-                string displayName;
-                if (m.GetTag(TAG_DISPLAY_NAME, out displayName))
-                    message.DisplayName = displayName;
 
                 // Twitch global/sub emotes - taken from IRC tags
                 string emotes;

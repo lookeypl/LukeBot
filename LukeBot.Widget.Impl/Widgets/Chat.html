@@ -126,7 +126,8 @@
         ChatClearUser: "TwitchChatClearUser",
         WatchStreak: "TwitchWatchStreak",
         Cheer: "TwitchCheer",
-        Subscription: "TwitchSubscription"
+        Subscription: "TwitchSubscription",
+        ChannelPointsRedemption: "TwitchChannelPointsRedemption"
     })
 
     class ChatListEntry {
@@ -155,7 +156,8 @@
             }
             case EventType.WatchStreak:
             case EventType.Cheer:
-            case EventType.Subscription: {
+            case EventType.Subscription:
+            case EventType.ChannelPointsRedemption: {
                 ret = new NoticeEntry(msgObj.NoticeID);
                 break;
             }
@@ -541,6 +543,9 @@
         chatMgr.add(ChatListEntry.event(obj));
     });
     chatWidget.registerMessage(EventType.Subscription, (obj) => {
+        chatMgr.add(ChatListEntry.event(obj));
+    });
+    chatWidget.registerMessage(EventType.ChannelPointsRedemption, (obj) => {
         chatMgr.add(ChatListEntry.event(obj));
     });
     chatWidget.registerMessage(EventType.ChatClearUser, (obj) => {

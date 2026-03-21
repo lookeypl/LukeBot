@@ -398,7 +398,8 @@ namespace LukeBot.Widget.Impl
                 page += h;
             }
 
-            page += string.Format("<meta name=\"serveraddress\" content=\"{0}\">", GetWidgetWSAddress());
+            page += String.Format("<meta name=\"serveraddress\" content=\"{0}\">", GetWidgetWSAddress());
+            page += String.Format("<title>{0} LukeBot Widget - {1}</title>", Utils.Capitalize(GetWidgetType().ToString()), mLBUser);
 
             page += "</head><body>";
             page += GetWidgetCode();

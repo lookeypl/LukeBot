@@ -140,7 +140,7 @@ namespace LukeBot.Twitch.Impl
             string title = "Test redemption";
             int cost = 420;
             string prompt = "This is a test channel points redemption";
-            string message = "Hi I tested this redemption!";
+            string message = String.Empty;
 
             foreach ((string a, string v) a in args)
             {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -283,6 +284,22 @@ namespace LukeBot.Common
 
             ret += "...";
             return ret;
+        }
+
+        /**
+         * Capitalizes string @p str so that it always starts with a capital
+         * letter (if it starts with a letter).
+         *
+         * If @p str is null or empty, returns an empty string.
+         */
+        public static string Capitalize(string str)
+        {
+            if (String.IsNullOrEmpty(str))
+                return String.Empty;
+
+            char[] arr = str.ToCharArray();
+            arr[0] = char.ToUpper(arr[0]);
+            return new string(arr);
         }
 
         // Common Config interactions //

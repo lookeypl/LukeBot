@@ -168,7 +168,10 @@ namespace LukeBot.Twitch
 
         public void AddMessage(string msg)
         {
-            Message = new TwitchChatMessageArgs(Guid.NewGuid().ToString(), User, DisplayName, msg);
+            if (!String.IsNullOrEmpty(msg))
+            {
+                Message = new TwitchChatMessageArgs(Guid.NewGuid().ToString(), User, DisplayName, msg);
+            }
         }
     }
 
@@ -318,11 +321,7 @@ namespace LukeBot.Twitch
             : base(Events.TWITCH_SUBSCRIPTION, noticeID, user, displayName)
         {
             Details = details;
-            Message = null;
-            if (message != null && message.Length > 0)
-            {
-                AddMessage(message);
-            }
+            AddMessage(message);
         }
 
         public override string Serialize()
@@ -354,12 +353,7 @@ namespace LukeBot.Twitch
             Title = title;
             Cost = cost;
             Prompt = prompt;
-            Message = null;
-
-            if (message != null && message.Length > 0)
-            {
-                AddMessage(message);
-            }
+            AddMessage(message);
         }
 
         public override string Serialize()
@@ -379,11 +373,7 @@ namespace LukeBot.Twitch
             : base(Events.TWITCH_CHEER, noticeID, user, displayName)
         {
             Amount = amount;
-            Message = null;
-            if (message != null && message.Length > 0)
-            {
-                AddMessage(message);
-            }
+            AddMessage(message);
         }
 
         public override string Serialize()

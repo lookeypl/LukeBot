@@ -11,16 +11,15 @@ namespace LukeBot.Twitch.Impl.Command
 {
     public class SongRequest: ICommand
     {
-        private string mLBUser;
+        private IUserContext mLBUser;
         private string mHelpMessage;
 
         private ISpotifyUserModule GetSpotifyUserModule()
         {
-            IUserContext userContext = Service.Get<IUserService>().GetUser(mLBUser);
-            return Service.Get<ISpotifyService>().GetModule(userContext) as ISpotifyUserModule;
+            return Service.Get<ISpotifyService>().GetModule(mLBUser) as ISpotifyUserModule;
         }
 
-        public SongRequest(Descriptor d, string lbUser)
+        public SongRequest(Descriptor d, IUserContext lbUser)
             : base(d)
         {
             mLBUser = lbUser;
@@ -46,7 +45,7 @@ namespace LukeBot.Twitch.Impl.Command
             }
             catch (System.Exception e)
             {
-                Logger.Log().Warning("Failed to add song URL {0} to Spotify queue for user {1}: {2}", url, mLBUser, e.Message);
+                Logger.Log().Warning("Failed to add song URL {0} to Spotify queue for user {1}: {2}", url, mLBUser.GetUsername(), e.Message);
                 Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
                 return String.Format("{0}", e.Message);
             }

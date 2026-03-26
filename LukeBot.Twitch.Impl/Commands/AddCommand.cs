@@ -10,15 +10,14 @@ namespace LukeBot.Twitch.Impl.Command
 {
     public class AddCommand: ICommand
     {
-        private string mLBUser;
+        private IUserContext mLBUser;
 
         private ITwitchUserModule GetUserModule()
         {
-            IUserContext userContext = Service.Get<IUserService>().GetUser(mLBUser);
-            return Service.Get<ITwitchService>().GetModule(userContext) as ITwitchUserModule;
+            return Service.Get<ITwitchService>().GetModule(mLBUser) as ITwitchUserModule;
         }
 
-        public AddCommand(Descriptor d, string lbUser)
+        public AddCommand(Descriptor d, IUserContext lbUser)
             : base(d)
         {
             mLBUser = lbUser;
@@ -48,7 +47,7 @@ namespace LukeBot.Twitch.Impl.Command
             }
             catch (System.Exception e)
             {
-                Logger.Log().Warning("Failed to add command {0} for user {1} via chat: {2}", newCmdDesc.Name, mLBUser, e.Message);
+                Logger.Log().Warning("Failed to add command {0} for user {1} via chat: {2}", newCmdDesc.Name, mLBUser.GetUsername(), e.Message);
                 return String.Format("Failed to add command {0}", newCmdDesc.Name);
             }
 

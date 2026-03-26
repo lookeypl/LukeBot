@@ -14,6 +14,8 @@ using LukeBot.Communication.Impl;
 using LukeBot.Services;
 using LukeBot.Twitch;
 using LukeBot.Twitch.Impl;
+using LukeBot.User;
+using LukeBot.User.Impl;
 
 
 namespace LukeBot.Tests.Twitch.Impl
@@ -143,6 +145,8 @@ namespace LukeBot.Tests.Twitch.Impl
         private static readonly int EVENT_SUB_TEST_REDEMPTION_COST = 420;
 
         private static IEventService eventService = null;
+        private static IUserService userService = null;
+        private static IUserContext testUserContext = null;
 
         private EventSubClient es = null;
 
@@ -244,9 +248,12 @@ namespace LukeBot.Tests.Twitch.Impl
             eventService = EventService.Create();
             Service.Register(eventService);
 
-            eventService.AddUser(EVENT_SUB_TEST_USER);
+            userService = UserService.Create();
+            userService.CreateNewUser(EVENT_SUB_TEST_USER); // creates EventService user-specific part
+            testUserContext = userService.GetUser(EVENT_SUB_TEST_USER);
+
             eventService.User(EVENT_SUB_TEST_USER).AddEventDispatcher(
-                global::LukeBot.Twitch.Utils.DispatcherNameForUser(EVENT_SUB_TEST_USER), EventDispatcherType.SubscriberQueued
+                global::LukeBot.Twitch.Utils.DispatcherNameForUser(testUserContext), EventDispatcherType.SubscriberQueued
             );
         }
 
@@ -260,7 +267,7 @@ namespace LukeBot.Tests.Twitch.Impl
 
             await EnsureTwitchCLIStarted();
 
-            es = new (EVENT_SUB_TEST_USER);
+            es = new (testUserContext);
         }
 
         [TestCleanup]

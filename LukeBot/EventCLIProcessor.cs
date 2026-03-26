@@ -77,7 +77,7 @@ namespace LukeBot
 
         private string GetDefaultDispatcher(CLIMessageProxy CLI)
         {
-            return Twitch.Utils.DispatcherNameForUser(CLI.GetCurrentUser().GetUsername());
+            return Twitch.Utils.DispatcherNameForUser(CLI.GetCurrentUser());
         }
 
         private IEventService GetEventService()

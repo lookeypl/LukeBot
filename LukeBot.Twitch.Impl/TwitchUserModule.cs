@@ -8,6 +8,7 @@ using LukeBot.Logging;
 using LukeBot.Services;
 using LukeBot.Twitch;
 using LukeBot.Twitch.Command;
+using LukeBot.User;
 using Widget = LukeBot.Widget;
 
 using CommonConstants = LukeBot.Common.Constants;
@@ -17,13 +18,15 @@ namespace LukeBot.Twitch.Impl
 {
     public class TwitchUserModule: ITwitchUserModule
     {
-        private string mLBUser;
+        private IUserContext mLBUser;
         private TwitchIRC mIRC;
         private IRCChannel mIRCChannel;
         private Token mUserToken;
         private API.Twitch.GetUserData mUserData;
         private object mImplLock = new();
         private EventSubClient mEventSub;
+        private EmoteProvider mExternalEmotes;
+        private BadgeCollection mChannelBadges;
         private readonly List<string> mEventSubEvents = new List<string>
         {
             EventSubClient.SUB_CHANNEL_POINTS_REDEMPTION_ADD,
@@ -36,7 +39,7 @@ namespace LukeBot.Twitch.Impl
         {
             return Path.Start()
                 .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
-                .Push(mLBUser)
+                .Push(mLBUser.GetUsername())
                 .Push(CommonConstants.TWITCH_SERVICE_NAME)
                 .Push(Constants.PROP_TWITCH_COMMANDS);
         }
@@ -45,7 +48,7 @@ namespace LukeBot.Twitch.Impl
         {
             return Conf.Get<string>(Path.Start()
                 .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
-                .Push(mLBUser)
+                .Push(mLBUser.GetUsername())
                 .Push(CommonConstants.TWITCH_SERVICE_NAME)
                 .Push(CommonConstants.PROP_STORE_LOGIN_PROP)
             );
@@ -112,7 +115,7 @@ namespace LukeBot.Twitch.Impl
         }
 
 
-        internal TwitchUserModule(string lbUser, Token botToken, TwitchIRC IRC)
+        internal TwitchUserModule(IUserContext lbUser, Token botToken, TwitchIRC IRC, BadgeCollection globalBadges)
         {
             mLBUser = lbUser;
             string channelName = GetTwitchChannel();
@@ -141,11 +144,18 @@ namespace LukeBot.Twitch.Impl
             }
 
             // Each user has its own subscriber-queued dispatcher to independently handle some events
-            ServiceUtils.GetEventService().User(mLBUser).AddEventDispatcher(Twitch.Utils.DispatcherNameForUser(mLBUser), EventDispatcherType.SubscriberQueued);
+            ServiceUtils.GetEventService().User(mLBUser.GetUsername()).AddEventDispatcher(Twitch.Utils.DispatcherNameForUser(mLBUser), EventDispatcherType.SubscriberQueued);
 
             mIRC = IRC;
             mIRCChannel = mIRC.JoinChannel(mLBUser, mUserData, mUserToken);
             mEventSub = new(mLBUser);
+
+            mChannelBadges = new(globalBadges);
+            mChannelBadges.AddBadges(Utils.FetchBadges(mUserToken, mUserData.id));
+            mExternalEmotes = new();
+            mExternalEmotes.AddEmoteSource(new FFZEmoteSource(mUserData.id));
+            mExternalEmotes.AddEmoteSource(new BTTVEmoteSource(mUserData.id));
+            mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(mUserData.id));
         }
 
         internal API.Twitch.GetUserData GetUserData()
@@ -158,7 +168,7 @@ namespace LukeBot.Twitch.Impl
             return mUserToken;
         }
 
-        internal string GetLBUser()
+        internal IUserContext GetLBUser()
         {
             return mLBUser;
         }
@@ -166,6 +176,16 @@ namespace LukeBot.Twitch.Impl
         internal string GetChannelName()
         {
             return mIRCChannel.GetChannelName();
+        }
+
+        internal List<MessageBadge> GetBadges(string badgeTag)
+        {
+            return mChannelBadges.GetBadges(badgeTag);
+        }
+
+        internal List<MessageEmote> ParseEmotes(string message)
+        {
+            return mExternalEmotes.ParseEmotes(message);
         }
 
         // ITwitchUserModule overrides //
@@ -250,7 +270,7 @@ namespace LukeBot.Twitch.Impl
         {
             lock (mImplLock)
             {
-                mIRCChannel.RefreshEmotes();
+                mExternalEmotes.Refresh();
             }
         }
 
@@ -316,7 +336,7 @@ namespace LukeBot.Twitch.Impl
                 mIRC = null;
             }
 
-            ServiceUtils.GetEventService().User(mLBUser).RemoveEventDispatcher(Twitch.Utils.DispatcherNameForUser(mLBUser));
+            ServiceUtils.GetEventService().User(mLBUser.GetUsername()).RemoveEventDispatcher(Twitch.Utils.DispatcherNameForUser(mLBUser));
         }
 
         public string GetModuleType()

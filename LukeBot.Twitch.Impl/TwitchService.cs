@@ -19,6 +19,7 @@ namespace LukeBot.Twitch.Impl
         private string mBotLogin;
         private Token mBotToken;
         private TwitchIRC mIRC;
+        private BadgeCollection mGlobalBadges;
         private API.Twitch.GetUserResponse mBotData;
         private Dictionary<string, TwitchUserModule> mUserModules = new();
         private List<string> mJoinedTwitchChannels = new();
@@ -48,28 +49,28 @@ namespace LukeBot.Twitch.Impl
 
         // Private helpers //
 
-        private TwitchUserModule JoinChannel(string lbUser)
+        private TwitchUserModule JoinChannel(IUserContext lbUser)
         {
             string channel = Conf.Get<string>(Path.Start()
                 .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
-                .Push(lbUser)
+                .Push(lbUser.GetUsername())
                 .Push(CommonConstants.TWITCH_SERVICE_NAME)
                 .Push(CommonConstants.PROP_STORE_LOGIN_PROP)
             );
 
-            if (mUserModules.ContainsKey(lbUser) ||
+            if (mUserModules.ContainsKey(lbUser.GetUsername()) ||
                 mJoinedTwitchChannels.Exists((ch) => ch == channel))
             {
-                throw new ChannelAlreadyJoinedException(lbUser);
+                throw new ChannelAlreadyJoinedException(lbUser.GetUsername());
             }
 
-            Logger.Log().Debug("Joining {0} channel for user {1}", channel, lbUser);
+            Logger.Log().Debug("Joining {0} channel for user {1}", channel, lbUser.GetUsername());
 
             TwitchUserModule module = null;
 
             try
             {
-                module = new TwitchUserModule(lbUser, mBotToken, mIRC);
+                module = new TwitchUserModule(lbUser, mBotToken, mIRC, mGlobalBadges);
             }
             catch (System.Exception)
             {
@@ -89,9 +90,9 @@ namespace LukeBot.Twitch.Impl
             return module;
         }
 
-        private void PartChannel(string lbUser)
+        private void PartChannel(IUserContext lbUser)
         {
-            if (mUserModules.TryGetValue(lbUser, out TwitchUserModule module))
+            if (mUserModules.TryGetValue(lbUser.GetUsername(), out TwitchUserModule module))
             {
                 Logger.Log().Debug("Parting channel {0} for user {1}", module.GetChannelName(), lbUser);
 
@@ -103,7 +104,7 @@ namespace LukeBot.Twitch.Impl
                 }
                 finally
                 {
-                    mUserModules.Remove(lbUser);
+                    mUserModules.Remove(lbUser.GetUsername());
                 }
 
                 Logger.Log().Secure("Parted channel twitch ID: {0} ", module.GetUserData().id);
@@ -115,7 +116,7 @@ namespace LukeBot.Twitch.Impl
 
         public IUserModule CreateModule(IUserContext user)
         {
-            TwitchUserModule module = JoinChannel(user.GetUsername());
+            TwitchUserModule module = JoinChannel(user);
             module.Run();
 
             mUserModules.Add(user.GetUsername(), module);
@@ -204,6 +205,8 @@ namespace LukeBot.Twitch.Impl
             mIRC.Run();
 
             mIRC.AwaitLoggedIn(5000);
+
+            mGlobalBadges = new(Utils.FetchBadges(mBotToken, null));
 
             LoadUserModulesFromConfig();
         }

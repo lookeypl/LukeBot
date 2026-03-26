@@ -14,6 +14,7 @@ using LukeBot.Common;
 using LukeBot.Twitch;
 using LukeBot.Logging;
 using LukeBot.Services;
+using LukeBot.User;
 
 
 [assembly: InternalsVisibleTo("LukeBot.Tests")]
@@ -46,7 +47,7 @@ namespace LukeBot.Twitch.Impl
             SUB_SUBSCRIPTION_MESSAGE
         );
 
-        private string mLBUser = null;
+        private IUserContext mLBUser = null;
         private int mConnectionCounter = 0;
         private EventCallback mChannelPointsRedemptionCallback;
         private EventCallback mCheerCallback;
@@ -289,11 +290,11 @@ namespace LukeBot.Twitch.Impl
         }
 
 
-        public EventSubClient(string lbUser)
+        public EventSubClient(IUserContext lbUser)
         {
             mLBUser = lbUser;
 
-            List<EventCallback> events = ServiceUtils.GetEventService().User(mLBUser).RegisterPublisher(this);
+            List<EventCallback> events = ServiceUtils.GetEventService().User(mLBUser.GetUsername()).RegisterPublisher(this);
 
             foreach (EventCallback e in events)
             {
@@ -315,7 +316,7 @@ namespace LukeBot.Twitch.Impl
             }
 
             mReceiveThread = new(ReceiveThreadMain);
-            mReceiveThread.Name = "EventSub Receive Thread (" + mLBUser + ")";
+            mReceiveThread.Name = "EventSub Receive Thread (" + mLBUser.GetUsername() + ")";
         }
 
         public async Task<EventSub.Message> ReceiveAsync()
@@ -357,7 +358,7 @@ namespace LukeBot.Twitch.Impl
                 result = JsonSerializer.Deserialize<EventSub.Message>(recvMsgString, opts);
                 if (result == null)
                 {
-                    Logger.Log().Error("EventSubClient {0}: Failed to deserialize EventSub message. Closing connection just in case.", mLBUser);
+                    Logger.Log().Error("EventSubClient {0}: Failed to deserialize EventSub message. Closing connection just in case.", mLBUser.GetUsername());
                     result = new();
                     result.Status = EventSub.InternalStatus.Closed;
                 }
@@ -369,13 +370,13 @@ namespace LukeBot.Twitch.Impl
             catch (OperationCanceledException)
             {
                 // Reconnect, as we did not receive a single message for more than Keepalive seconds timeout
-                Logger.Log().Warning("EventSubClient {0}: Keepalive timer expired - attempting to reconnect...", mLBUser);
+                Logger.Log().Warning("EventSubClient {0}: Keepalive timer expired - attempting to reconnect...", mLBUser.GetUsername());
                 result.Status = EventSub.InternalStatus.Reconnect;
                 return result;
             }
             catch (System.Exception e)
             {
-                Logger.Log().Warning("EventSubClient {0}: Other exception caught - attempting to reconnect...", mLBUser);
+                Logger.Log().Warning("EventSubClient {0}: Other exception caught - attempting to reconnect...", mLBUser.GetUsername());
                 Logger.Log().Trace("Caught: {0}\n{1}", e.Message, e.StackTrace);
                 result.Status = EventSub.InternalStatus.Reconnect;
                 return result;
@@ -407,12 +408,12 @@ namespace LukeBot.Twitch.Impl
                 }
             }
 
-            Logger.Log().Info("EventSubClient {0}: Reconnecting...", mLBUser);
+            Logger.Log().Info("EventSubClient {0}: Reconnecting...", mLBUser.GetUsername());
             ClientWebSocket newSocket = await ConnectInternal(mToken, mUserID, newURL);
 
             mOldSocket = mSocket;
             mSocket = newSocket;
-            Logger.Log().Info("EventSubClient {0}: Reconnect: New socket acquired", mLBUser);
+            Logger.Log().Info("EventSubClient {0}: Reconnect: New socket acquired", mLBUser.GetUsername());
         }
 
         private void EmitChannelPointsEvent(EventSub.PayloadEvent eventData)
@@ -421,13 +422,13 @@ namespace LukeBot.Twitch.Impl
 
             if (data == null)
             {
-                Logger.Log().Error("EventSubClient {0}: Got invalid Event Data payload, ignoring notification", mLBUser);
+                Logger.Log().Error("EventSubClient {0}: Got invalid Event Data payload, ignoring notification", mLBUser.GetUsername());
                 return;
             }
 
             if (data.reward == null)
             {
-                Logger.Log().Error("EventSubClient {0}: Reward data is null, ignoring notification", mLBUser);
+                Logger.Log().Error("EventSubClient {0}: Reward data is null, ignoring notification", mLBUser.GetUsername());
                 return;
             }
 
@@ -508,14 +509,14 @@ namespace LukeBot.Twitch.Impl
                 // if we are, silently exit - receive thread will handle this process for us
                 if (!mCanSubscribe || (mSubscriptionQueue.Count == 0)) return;
 
-                Logger.Log().Debug("EventSubClient {0}: Processing subscriptions", mLBUser);
+                Logger.Log().Debug("EventSubClient {0}: Processing subscriptions", mLBUser.GetUsername());
                 while (mSubscriptionQueue.Count > 0)
                 {
                     string sub = mSubscriptionQueue.Dequeue();
 
                     if (mSubscriptions.ContainsKey(sub))
                     {
-                        Logger.Log().Warning("EventSubClient {0}: Already subscribed to {1}, skipping", mLBUser, sub);
+                        Logger.Log().Warning("EventSubClient {0}: Already subscribed to {1}, skipping", mLBUser.GetUsername(), sub);
                         continue;
                     }
 
@@ -529,13 +530,13 @@ namespace LukeBot.Twitch.Impl
 
                     if (!resp.IsSuccess)
                     {
-                        Logger.Log().Error("EventSubClient {0}: Failed to subscribe to {1}: {2} ({3}).", mLBUser, sub, resp.code, resp.responseData.message);
-                        Logger.Log().Error("EventSubClient {0}: Subscription will be skipped until next EventSubClient reconnect", mLBUser);
+                        Logger.Log().Error("EventSubClient {0}: Failed to subscribe to {1}: {2} ({3}).", mLBUser.GetUsername(), sub, resp.code, resp.responseData.message);
+                        Logger.Log().Error("EventSubClient {0}: Subscription will be skipped until next EventSubClient reconnect", mLBUser.GetUsername());
                         continue;
                     }
 
                     mSubscriptions.Add(resp.data[0].id, resp.data[0]);
-                    Logger.Log().Info("EventSubClient {0}: Subscribed to {1}", mLBUser, sub);
+                    Logger.Log().Info("EventSubClient {0}: Subscribed to {1}", mLBUser.GetUsername(), sub);
                 }
             }
         }
@@ -651,7 +652,7 @@ namespace LukeBot.Twitch.Impl
 
         private async void ReceiveThreadMain()
         {
-            mThreadLogPreamble.Value = String.Format("{0} (RT#{1})", mLBUser, Thread.CurrentThread.ManagedThreadId);
+            mThreadLogPreamble.Value = String.Format("{0} (RT#{1})", mLBUser.GetUsername(), Thread.CurrentThread.ManagedThreadId);
             Logger.Log().Info("EventSubClient {0}: Receive thread started", mThreadLogPreamble.Value);
 
             while (!mReceiveThreadDone)
@@ -752,7 +753,7 @@ namespace LukeBot.Twitch.Impl
         {
             if (mSocket == null)
             {
-                Logger.Log().Warning("EventSubClient {0}: Cannot subscribe to events, EventSub was not connected.", mLBUser);
+                Logger.Log().Warning("EventSubClient {0}: Cannot subscribe to events, EventSub was not connected.", mLBUser.GetUsername());
                 return;
             }
 
@@ -780,7 +781,7 @@ namespace LukeBot.Twitch.Impl
                 }
                 catch (System.Exception e)
                 {
-                    Logger.Log().Error("EventSubClient {0}: Error during EventSub shutdown request: {1}", mLBUser, e.Message);
+                    Logger.Log().Error("EventSubClient {0}: Error during EventSub shutdown request: {1}", mLBUser.GetUsername(), e.Message);
                 }
             }
         }
@@ -791,7 +792,7 @@ namespace LukeBot.Twitch.Impl
                 mReceiveThread.Join();
 
             mSocket = null;
-            ServiceUtils.GetEventService().User(mLBUser).UnregisterPublisher(this);
+            ServiceUtils.GetEventService().User(mLBUser.GetUsername()).UnregisterPublisher(this);
         }
     }
 }

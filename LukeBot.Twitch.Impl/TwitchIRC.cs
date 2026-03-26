@@ -3,6 +3,7 @@ using LukeBot.API;
 using LukeBot.Communication;
 using LukeBot.Config;
 using LukeBot.Logging;
+using LukeBot.User;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -27,7 +28,6 @@ namespace LukeBot.Twitch.Impl
         private string mName;
         private Token mToken;
         private IRCClient mIRCClient = null;
-        private BadgeCollection mGlobalBadges = null;
         private Dictionary<string, IRCChannel> mChannels;
         private bool mTagsEnabled = false;
 
@@ -359,12 +359,11 @@ namespace LukeBot.Twitch.Impl
             mLoggedInEvent = new AutoResetEvent(false);
             mChannels = new Dictionary<string, IRCChannel>();
             mToken = token;
-            mGlobalBadges = new BadgeCollection(Utils.FetchBadges(token, null));
 
             Logger.Log().Info("Twitch IRC module initialized");
         }
 
-        public IRCChannel JoinChannel(string lbUser, API.Twitch.GetUserData user, Token token)
+        public IRCChannel JoinChannel(IUserContext lbUser, API.Twitch.GetUserData user, Token token)
         {
             mChannelsMutex.WaitOne();
 
@@ -376,7 +375,7 @@ namespace LukeBot.Twitch.Impl
 
             mIRCClient.Send(IRCMessage.JOIN(user.login));
 
-            IRCChannel channel = new(lbUser, user, token, mGlobalBadges);
+            IRCChannel channel = new(lbUser, user, token);
 
             mChannels.Add(user.login, channel);
 

@@ -10,15 +10,14 @@ namespace LukeBot.Twitch.Impl.Command
 {
     public class DeleteCommand: ICommand
     {
-        private string mLBUser;
+        private IUserContext mLBUser;
 
         private ITwitchUserModule GetUserModule()
         {
-            IUserContext userContext = Service.Get<IUserService>().GetUser(mLBUser);
-            return Service.Get<ITwitchService>().GetModule(userContext) as ITwitchUserModule;
+            return Service.Get<ITwitchService>().GetModule(mLBUser) as ITwitchUserModule;
         }
 
-        public DeleteCommand(Descriptor d, string lbUser)
+        public DeleteCommand(Descriptor d, IUserContext lbUser)
             : base(d)
         {
             mLBUser = lbUser;
@@ -46,7 +45,7 @@ namespace LukeBot.Twitch.Impl.Command
             }
             catch (System.Exception e)
             {
-                Logger.Log().Warning("Failed to delete command {0} for user {1} via chat: {2}", cmdName, mLBUser, e.Message);
+                Logger.Log().Warning("Failed to delete command {0} for user {1} via chat: {2}", cmdName, mLBUser.GetUsername(), e.Message);
                 return String.Format("Failed to delete command {0}", cmdName);
             }
 

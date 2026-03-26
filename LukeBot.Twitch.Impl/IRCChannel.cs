@@ -5,6 +5,7 @@ using LukeBot.Logging;
 using LukeBot.Communication;
 using LukeBot.Services;
 using LukeBot.Twitch.Command;
+using LukeBot.User;
 using LukeBot.API;
 using Microsoft.VisualBasic;
 
@@ -30,12 +31,10 @@ namespace LukeBot.Twitch.Impl
         private const string MSG_ID_VIEWER_MILESTONE = "viewermilestone";
         private const string MSG_CATEGORY_WATCH_STREAK = "watch-streak";
 
-        private string mLBUser;
+        private IUserContext mLBUser;
         private string mChannelName;
         private API.Twitch.GetUserData mUserData;
         private Dictionary<string, ICommand> mCommands = new();
-        private EmoteProvider mExternalEmotes = new();
-        private BadgeCollection mChannelBadges;
         private int mMsgIDCounter = 0; // backup for when we don't have metadata
         private EventCallback mMessageEventCallback;
         private EventCallback mMessageClearEventCallback;
@@ -45,9 +44,14 @@ namespace LukeBot.Twitch.Impl
         private int messageCounter = 0;
         private int noticeCounter = 0;
 
+        private TwitchUserModule GetUserModule()
+        {
+            return Service.Get<ITwitchService>().GetModule(mLBUser) as TwitchUserModule;
+        }
+
         private string GetBackupMessageID()
         {
-            return String.Format("notice-{0}", messageCounter++);
+            return String.Format("message-{0}", messageCounter++);
         }
 
         private string GetBackupNoticeID()
@@ -138,7 +142,7 @@ namespace LukeBot.Twitch.Impl
                 // but I figured it's just a test message, so we don't need those anyway
                 TwitchChatMessageArgs msg = new(Guid.NewGuid().ToString(), user, displayName, message);
                 msg.Color = "#5060dd";
-                msg.AddBadges(mChannelBadges.GetBadges("broadcaster/1,vip/1"));
+                msg.AddBadges(GetUserModule().GetBadges("broadcaster/1,vip/1"));
                 AddExternalEmotesToMessage(msg);
 
                 ret.AddMessage(msg);
@@ -197,25 +201,19 @@ namespace LukeBot.Twitch.Impl
 
         public void Dispose()
         {
-            ServiceUtils.GetEventService().User(mLBUser).UnregisterPublisher(this);
+            ServiceUtils.GetEventService().User(mLBUser.GetUsername()).UnregisterPublisher(this);
         }
 
 
         // Public methods
 
-        public IRCChannel(string lbUser, API.Twitch.GetUserData userData, Token userToken, BadgeCollection globalBadges)
+        public IRCChannel(IUserContext lbUser, API.Twitch.GetUserData userData, Token userToken)
         {
             mLBUser = lbUser;
             mChannelName = userData.login;
             mUserData = userData;
-            mChannelBadges = new(globalBadges);
-            mChannelBadges.AddBadges(Utils.FetchBadges(userToken, userData.id));
 
-            mExternalEmotes.AddEmoteSource(new FFZEmoteSource(userData.id));
-            mExternalEmotes.AddEmoteSource(new BTTVEmoteSource(userData.id));
-            mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(userData.id));
-
-            List<EventCallback> events = ServiceUtils.GetEventService().User(mLBUser).RegisterPublisher(this);
+            List<EventCallback> events = ServiceUtils.GetEventService().User(mLBUser.GetUsername()).RegisterPublisher(this);
 
             foreach (EventCallback e in events)
             {
@@ -274,7 +272,7 @@ namespace LukeBot.Twitch.Impl
 
                 if (m.GetTag(TAG_BADGES, out string badges) && badges != null && badges.Length > 0)
                 {
-                    message.AddBadges(mChannelBadges.GetBadges(badges));
+                    // LKTODO message.AddBadges(mChannelBadges.GetBadges(badges));
                 }
             }
             else
@@ -400,12 +398,7 @@ namespace LukeBot.Twitch.Impl
 
         public void AddExternalEmotesToMessage(TwitchChatMessageArgs message)
         {
-            message.AddExternalEmotes(mExternalEmotes.ParseEmotes(message.Message));
-        }
-
-        public void RefreshEmotes()
-        {
-            mExternalEmotes.Refresh();
+            message.AddExternalEmotes(GetUserModule().ParseEmotes(message.Message));
         }
 
         public Dictionary<string, ICommand> GetCommands()

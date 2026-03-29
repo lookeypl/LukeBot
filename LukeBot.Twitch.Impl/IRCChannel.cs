@@ -33,7 +33,7 @@ namespace LukeBot.Twitch.Impl
 
         private IUserContext mLBUser;
         private string mChannelName;
-        private API.Twitch.GetUserData mUserData;
+        private TwitchUserIdentity mChannelIdentity;
         private Dictionary<string, ICommand> mCommands = new();
         private int mMsgIDCounter = 0; // backup for when we don't have metadata
         private EventCallback mMessageEventCallback;
@@ -207,11 +207,11 @@ namespace LukeBot.Twitch.Impl
 
         // Public methods
 
-        public IRCChannel(IUserContext lbUser, API.Twitch.GetUserData userData, Token userToken)
+        public IRCChannel(IUserContext lbUser, TwitchUserIdentity channelIdentity, Token userToken)
         {
             mLBUser = lbUser;
-            mChannelName = userData.login;
-            mUserData = userData;
+            mChannelName = channelIdentity.Username;
+            mChannelIdentity = channelIdentity;
 
             List<EventCallback> events = ServiceUtils.GetEventService().User(mLBUser.GetUsername()).RegisterPublisher(this);
 

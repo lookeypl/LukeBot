@@ -43,7 +43,7 @@ namespace LukeBot.Twitch.Impl.Command
             try
             {
                 Token t = AuthManager.Instance.GetToken(ServiceType.Twitch, mBotLogin);
-                API.Twitch.GetUserResponse userDataResponse = API.Twitch.GetUser(t, args[1]);
+                API.Twitch.GetUserResponse userDataResponse = API.Twitch.GetUsersByLogin(t, args[1]);
                 if (userDataResponse.data == null || userDataResponse.data.Count == 0)
                 {
                     throw new System.IndexOutOfRangeException("User data came back empty/invalid");

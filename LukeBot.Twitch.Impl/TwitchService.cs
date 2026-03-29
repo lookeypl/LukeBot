@@ -20,7 +20,6 @@ namespace LukeBot.Twitch.Impl
         private Token mBotToken;
         private TwitchIRC mIRC;
         private BadgeCollection mGlobalBadges;
-        private API.Twitch.GetUserResponse mBotData;
         private Dictionary<string, TwitchUserModule> mUserModules = new();
         private List<string> mJoinedTwitchChannels = new();
 
@@ -86,7 +85,7 @@ namespace LukeBot.Twitch.Impl
             }
 
             mJoinedTwitchChannels.Add(channel);
-            Logger.Log().Secure("Joined channel twitch ID: {0}", module.GetUserData().id);
+            Logger.Log().Secure("Joined Twitch channel {0} ({1})", module.GetChannelIdentity().Username, module.GetChannelIdentity().ID);
             return module;
         }
 
@@ -107,7 +106,7 @@ namespace LukeBot.Twitch.Impl
                     mUserModules.Remove(lbUser.GetUsername());
                 }
 
-                Logger.Log().Secure("Parted channel twitch ID: {0} ", module.GetUserData().id);
+                Logger.Log().Secure("Parted Twitch channel {0} ({1})", module.GetChannelIdentity().Username, module.GetChannelIdentity().ID);
             }
         }
 
@@ -200,7 +199,6 @@ namespace LukeBot.Twitch.Impl
                 throw new InvalidOperationException("Failed to login to Twitch");
             }
 
-            mBotData = API.Twitch.GetUser(mBotToken);
             mIRC = new TwitchIRC(mBotLogin, mBotToken);
             mIRC.Run();
 

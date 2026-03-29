@@ -177,20 +177,44 @@ namespace LukeBot.API
         }
 
 
-        // Get data about specified user. If login field is empty, gets data about user
+        // Get data about specified user. If logins/ids are omitted gets data about user
         // based on provided Token.
-        public static GetUserResponse GetUser(Token token, string login = "")
+        private static GetUserResponse GetUsers(Token token, string[] args, bool byID)
         {
             Dictionary<string, string> uriQuery = null;
-            if (login.Length > 0)
+            if (args.Length > 0)
             {
+                if (args.Length > 100)
+                {
+                    throw new APIErrorException("Too many logins or IDs requested");
+                }
+
                 uriQuery = new Dictionary<string, string>();
-                uriQuery.Add("login", login);
+                foreach (string arg in args)
+                {
+                    uriQuery.Add(byID ? "id" : "login", arg);
+                }
             }
 
             return Request.Get<GetUserResponse>(GET_USERS_API_URI, token, uriQuery);
         }
 
+        public static GetUserResponse GetUsersByLogin(Token token, params string[] logins)
+        {
+            return GetUsers(token, logins, false);
+        }
+
+        public static GetUserResponse GetUsersByID(Token token, params string[] ids)
+        {
+            return GetUsers(token, ids, true);
+        }
+
+        public static GetUserResponse GetUserByToken(Token token)
+        {
+            return GetUsers(token, new string[] {}, true);
+        }
+
+        // Get channel information based on broadcaster id
         public static GetChannelInformationResponse GetChannelInformation(Token token, string id)
         {
             if (id.Length == 0)

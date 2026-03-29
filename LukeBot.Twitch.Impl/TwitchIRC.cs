@@ -11,6 +11,7 @@ using System.Threading;
 
 using CommonUtils = LukeBot.Common.Utils;
 using CommonConstants = LukeBot.Common.Constants;
+using System.Threading.Channels;
 
 
 namespace LukeBot.Twitch.Impl
@@ -28,14 +29,14 @@ namespace LukeBot.Twitch.Impl
         private string mName;
         private Token mToken;
         private IRCClient mIRCClient = null;
-        private Dictionary<string, IRCChannel> mChannels;
+        private Dictionary<string, IRCChannel> mChannels = new();
         private bool mTagsEnabled = false;
 
         private ConnectionState mConnectionState = ConnectionState.DISCONNECTED;
         private AutoResetEvent mLoggedInEvent;
 
         private Thread mWorker;
-        private Mutex mChannelsMutex;
+        private object mChannelsLock = new();
 
         void ProcessReply(IRCMessage m)
         {
@@ -70,22 +71,13 @@ namespace LukeBot.Twitch.Impl
             string response = "";
             Logger.Log().Info("({0} tags) #{1} {2}: {3}", m.GetTagCount(), m.Channel, m.User, m.GetTrailingParam());
 
-            mChannelsMutex.WaitOne();
-
-            try
+            lock (mChannelsLock)
             {
                 if (!mChannels.ContainsKey(m.Channel))
                     throw new UnknownChannelException(m.Channel);
 
                 response = mChannels[m.Channel].ProcessMSG(m, mTagsEnabled);
             }
-            catch (System.Exception)
-            {
-                mChannelsMutex.ReleaseMutex();
-                throw;
-            }
-
-            mChannelsMutex.ReleaseMutex();
 
             if (response.Length > 0)
                 mIRCClient.Send(IRCMessage.PRIVMSG(m.Channel, response));
@@ -281,14 +273,13 @@ namespace LukeBot.Twitch.Impl
             mIRCClient.Send(IRCMessage.CAPRequest("twitch.tv/tags"));
             mIRCClient.Send(IRCMessage.CAPRequest("twitch.tv/commands"));
 
-            mChannelsMutex.WaitOne();
-
-            foreach (string channelLogin in mChannels.Keys)
+            lock (mChannelsLock)
             {
-                mIRCClient.Send(IRCMessage.JOIN(channelLogin));
+                foreach (string channelLogin in mChannels.Keys)
+                {
+                    mIRCClient.Send(IRCMessage.JOIN(channelLogin));
+                }
             }
-
-            mChannelsMutex.ReleaseMutex();
 
             mConnectionState = ConnectionState.CONNECTED;
             Logger.Log().Info("Twitch IRC connected");
@@ -355,52 +346,47 @@ namespace LukeBot.Twitch.Impl
             mName = username;
             mWorker = new Thread(this.WorkerMain);
             mWorker.Name = "TwitchIRC Worker (" + username + ")";
-            mChannelsMutex = new Mutex();
             mLoggedInEvent = new AutoResetEvent(false);
-            mChannels = new Dictionary<string, IRCChannel>();
             mToken = token;
 
             Logger.Log().Info("Twitch IRC module initialized");
         }
 
-        public IRCChannel JoinChannel(IUserContext lbUser, API.Twitch.GetUserData user, Token token)
+        public IRCChannel JoinChannel(IUserContext lbUser, TwitchUserIdentity channelIdentity, Token token)
         {
-            mChannelsMutex.WaitOne();
+            IRCChannel channel = null;
 
-            if (mChannels.ContainsKey(user.login))
+            lock (mChannelsLock)
             {
-                mChannelsMutex.ReleaseMutex();
-                throw new ChannelAlreadyJoinedException(user.login);
+                if (mChannels.ContainsKey(channelIdentity.Username))
+                {
+                    throw new ChannelAlreadyJoinedException(channelIdentity.Username);
+                }
+
+                mIRCClient.Send(IRCMessage.JOIN(channelIdentity.Username));
+
+                channel = new(lbUser, channelIdentity, token);
+                mChannels.Add(channelIdentity.Username, channel);
             }
-
-            mIRCClient.Send(IRCMessage.JOIN(user.login));
-
-            IRCChannel channel = new(lbUser, user, token);
-
-            mChannels.Add(user.login, channel);
-
-            mChannelsMutex.ReleaseMutex();
 
             return channel;
         }
 
         public void PartChannel(IRCChannel channel)
         {
-            mChannelsMutex.WaitOne();
-
-            string channelName = channel.GetChannelName();
-            if (!mChannels.ContainsKey(channelName))
+            lock (mChannelsLock)
             {
-                mChannelsMutex.ReleaseMutex();
-                throw new UnknownChannelException(channelName);
+                string channelName = channel.GetChannelName();
+                if (!mChannels.ContainsKey(channelName))
+                {
+                    throw new UnknownChannelException(channelName);
+                }
+
+                mIRCClient.Send(IRCMessage.PART(channelName));
+
+                mChannels[channelName].Dispose();
+                mChannels.Remove(channelName);
             }
-
-            mIRCClient.Send(IRCMessage.PART(channelName));
-
-            mChannels[channelName].Dispose();
-            mChannels.Remove(channelName);
-
-            mChannelsMutex.ReleaseMutex();
         }
 
         public bool AwaitLoggedIn(int timeoutMs)

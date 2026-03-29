@@ -22,9 +22,10 @@ namespace LukeBot.Twitch.Impl
         private TwitchIRC mIRC;
         private IRCChannel mIRCChannel;
         private Token mUserToken;
-        private API.Twitch.GetUserData mUserData;
+        private TwitchUserIdentity mChannelIdentity;
         private object mImplLock = new();
         private EventSubClient mEventSub;
+        private TwitchUserCollection mTwitchUsers;
         private EmoteProvider mExternalEmotes;
         private BadgeCollection mChannelBadges;
         private readonly List<string> mEventSubEvents = new List<string>
@@ -118,15 +119,11 @@ namespace LukeBot.Twitch.Impl
         internal TwitchUserModule(IUserContext lbUser, Token botToken, TwitchIRC IRC, BadgeCollection globalBadges)
         {
             mLBUser = lbUser;
+            mTwitchUsers = new();
             string channelName = GetTwitchChannel();
 
-            API.Twitch.GetUserResponse resp = API.Twitch.GetUser(botToken, channelName);
-            if (resp.code != HttpStatusCode.OK)
-            {
-                Logger.Log().Error("Failed to fetch user data from Twitch - received error code {0}", resp.code.ToString());
-                throw new APIResponseErrorException(resp.code);
-            }
-            mUserData = resp.data[0];
+            // fetch joined channel as a Twitch identity
+            mChannelIdentity = mTwitchUsers.FetchUser(botToken, false, channelName);
 
             // TODO token's scope should be moved to Config
             string tokenScope = "user:read:email channel:read:redemptions channel:read:subscriptions";
@@ -147,20 +144,20 @@ namespace LukeBot.Twitch.Impl
             ServiceUtils.GetEventService().User(mLBUser.GetUsername()).AddEventDispatcher(Twitch.Utils.DispatcherNameForUser(mLBUser), EventDispatcherType.SubscriberQueued);
 
             mIRC = IRC;
-            mIRCChannel = mIRC.JoinChannel(mLBUser, mUserData, mUserToken);
+            mIRCChannel = mIRC.JoinChannel(mLBUser, mChannelIdentity, mUserToken);
             mEventSub = new(mLBUser);
 
             mChannelBadges = new(globalBadges);
-            mChannelBadges.AddBadges(Utils.FetchBadges(mUserToken, mUserData.id));
+            mChannelBadges.AddBadges(Utils.FetchBadges(mUserToken, mChannelIdentity.ID));
             mExternalEmotes = new();
-            mExternalEmotes.AddEmoteSource(new FFZEmoteSource(mUserData.id));
-            mExternalEmotes.AddEmoteSource(new BTTVEmoteSource(mUserData.id));
-            mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(mUserData.id));
+            mExternalEmotes.AddEmoteSource(new FFZEmoteSource(mChannelIdentity.ID));
+            mExternalEmotes.AddEmoteSource(new BTTVEmoteSource(mChannelIdentity.ID));
+            mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(mChannelIdentity.ID));
         }
 
-        internal API.Twitch.GetUserData GetUserData()
+        internal TwitchUserIdentity GetChannelIdentity()
         {
-            return mUserData;
+            return mChannelIdentity;
         }
 
         internal Token GetUserToken()
@@ -282,7 +279,7 @@ namespace LukeBot.Twitch.Impl
                 mEventSub.WaitForShutdown();
 
                 mEventSub = new(mLBUser);
-                mEventSub.Connect(mUserToken, mUserData.id);
+                mEventSub.Connect(mUserToken, mChannelIdentity.ID);
                 mEventSub.Subscribe(mEventSubEvents);
             }
         }
@@ -304,7 +301,7 @@ namespace LukeBot.Twitch.Impl
             {
                 LoadCommandsFromConfig();
 
-                mEventSub.Connect(mUserToken, mUserData.id);
+                mEventSub.Connect(mUserToken, mChannelIdentity.ID);
                 mEventSub.Subscribe(mEventSubEvents);
             }
             catch (System.Exception e)

@@ -9,7 +9,7 @@ namespace LukeBot.Twitch.Impl
     {
         public static bool IsLoginSuccessful(Token token)
         {
-            API.Twitch.GetUserResponse data = API.Twitch.GetUser(token);
+            API.Twitch.GetUserResponse data = API.Twitch.GetUserByToken(token);
             if (data.code == HttpStatusCode.OK)
             {
                 Logger.Log().Debug("Twitch login successful");

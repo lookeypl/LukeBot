@@ -138,6 +138,7 @@ namespace LukeBot.Tests.Twitch.Impl
         private static TwitchWSStatus mTwitchWSStatus = TwitchWSStatus.Unknown;
         private static readonly string EVENT_SUB_TEST_USER = "testUserEventSub";
         private static readonly string TWITCH_MOCK_USERID = "420691234";
+        private static readonly string TWITCH_MOCK_LOGIN = "verygoodstreamer";
         private static readonly string TWITCH_MOCK_URI = "ws://127.0.0.1:8080/ws";
         private static readonly string EVENT_SUB_TEST_REDEMPTION_USER = "chatter";
         private static readonly string EVENT_SUB_TEST_REDEMPTION_ID = "thisisatestid";
@@ -147,6 +148,20 @@ namespace LukeBot.Tests.Twitch.Impl
         private static IEventService eventService = null;
         private static IUserService userService = null;
         private static IUserContext testUserContext = null;
+
+        private static API.Twitch.GetUserData mockUserData = new ()
+        {
+            broadcaster_type = "partner",
+            description = "fake streamer lol",
+            id = TWITCH_MOCK_USERID,
+            login = TWITCH_MOCK_LOGIN,
+            display_name = TWITCH_MOCK_LOGIN,
+            type = "",
+            view_count = 300,
+            email = "streamer@streamers.paradise",
+            created_at = DateTime.Now
+        };
+        private static TwitchUserIdentity mockIdentity = new(mockUserData);
 
         private EventSubClient es = null;
 
@@ -226,7 +241,7 @@ namespace LukeBot.Tests.Twitch.Impl
                 connectedEvent.Set();
             };
 
-            await es.ConnectAsync(null, TWITCH_MOCK_USERID, TWITCH_MOCK_URI);
+            await es.ConnectAsync(null, TWITCH_MOCK_URI);
 
             Assert.IsTrue(connectedEvent.WaitOne(5 * 1000));
         }
@@ -267,7 +282,7 @@ namespace LukeBot.Tests.Twitch.Impl
 
             await EnsureTwitchCLIStarted();
 
-            es = new (testUserContext);
+            es = new (testUserContext, mockIdentity);
         }
 
         [TestCleanup]
@@ -281,7 +296,7 @@ namespace LukeBot.Tests.Twitch.Impl
         [TestMethodSkippedWithoutTwitchCLI]
         public void EventSub_Connect()
         {
-            es.Connect(null, TWITCH_MOCK_USERID, TWITCH_MOCK_URI);
+            es.Connect(null, TWITCH_MOCK_URI);
         }
 
         [TestMethodSkippedWithoutTwitchCLI]

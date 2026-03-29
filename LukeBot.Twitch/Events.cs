@@ -21,6 +21,9 @@ namespace LukeBot.Twitch
         public const string TWITCH_CHANNEL_POINTS_REDEMPTION = "TwitchChannelPointsRedemption";
 
         public const string TWITCH_CHEER = "TwitchCheer";
+
+        public const string TWITCH_STREAM_ONLINE = "TwitchStreamOnline";
+        public const string TWITCH_STREAM_OFFLINE = "TwitchStreamOffline";
     }
 
 
@@ -399,6 +402,47 @@ namespace LukeBot.Twitch
         public override string Serialize()
         {
             return JsonSerializer.Serialize<TwitchWatchStreakArgs>(this);
+        }
+    }
+
+
+    // Stream state (online/offline)
+
+    public class TwitchStreamOnlineArgs: SerializableEventArgsBase
+    {
+        public string ID { get; init; }
+        public string Username { get; init; }
+        public DateTime StartedAt { get; init; }
+
+        public TwitchStreamOnlineArgs(string id, string username, DateTime start)
+            : base(Events.TWITCH_STREAM_ONLINE)
+        {
+            ID = id;
+            Username = username;
+            StartedAt = start;
+        }
+
+        public override string Serialize()
+        {
+            return JsonSerializer.Serialize<TwitchStreamOnlineArgs>(this);
+        }
+    }
+
+    public class TwitchStreamOfflineArgs: SerializableEventArgsBase
+    {
+        public string ID { get; init; }
+        public string Username { get; init; }
+
+        public TwitchStreamOfflineArgs(string id, string username)
+            : base(Events.TWITCH_STREAM_OFFLINE)
+        {
+            ID = id;
+            Username = username;
+        }
+
+        public override string Serialize()
+        {
+            return JsonSerializer.Serialize<TwitchStreamOfflineArgs>(this);
         }
     }
 }

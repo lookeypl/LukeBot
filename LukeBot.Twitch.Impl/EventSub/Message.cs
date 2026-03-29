@@ -159,11 +159,32 @@ namespace LukeBot.Twitch.Impl.EventSub
         public DateTime redeemed_at { get; set; }
     }
 
+    internal class PayloadChannelPointRedemptionUpdateEvent: PayloadEvent
+    {
+        public string id { get; set; }
+        public string user_input { get; set; }
+        public string status { get; set; }
+        public PayloadRewardEvent reward { get; set; }
+        public DateTime redeemed_at { get; set; }
+    }
+
     internal class PayloadCheerEvent: PayloadEvent
     {
         public bool is_anonymous { get; set; }
         public string message { get; set; }
         public int bits { get; set; }
+    }
+
+    internal class PayloadStreamOnlineEvent: PayloadEvent
+    {
+        public string id { get; set; }
+        public string type { get; set; }
+        public DateTime started_at { get; set; }
+    }
+
+    internal class PayloadStreamOfflineEvent: PayloadEvent
+    {
+        // no extra fields, inherits broadcaster_* from PayloadEvent
     }
 
 

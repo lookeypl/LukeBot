@@ -47,6 +47,12 @@ namespace LukeBot.Twitch.Impl.EventSub
                     case EventSubClient.SUB_CHANNEL_POINTS_REDEMPTION_ADD:
                         message.Payload.Event = payloadElement.GetProperty("event").Deserialize<PayloadChannelPointRedemptionEvent>();
                         break;
+                    case EventSubClient.SUB_CHANNEL_POINTS_REDEMPTION_UPDATE:
+                        message.Payload.Event = payloadElement.GetProperty("event").Deserialize<PayloadChannelPointRedemptionUpdateEvent>();
+                        break;
+                    case EventSubClient.SUB_CHEER:
+                        message.Payload.Event = payloadElement.GetProperty("event").Deserialize<PayloadCheerEvent>();
+                        break;
                     case EventSubClient.SUB_SUBSCRIBE:
                         message.Payload.Event = payloadElement.GetProperty("event").Deserialize<PayloadSubEvent>();
                         break;
@@ -55,6 +61,12 @@ namespace LukeBot.Twitch.Impl.EventSub
                         break;
                     case EventSubClient.SUB_SUBSCRIPTION_MESSAGE:
                         message.Payload.Event = payloadElement.GetProperty("event").Deserialize<PayloadSubMessageEvent>();
+                        break;
+                    case EventSubClient.SUB_STREAM_ONLINE:
+                        message.Payload.Event = payloadElement.GetProperty("event").Deserialize<PayloadStreamOnlineEvent>();
+                        break;
+                    case EventSubClient.SUB_STREAM_OFFLINE:
+                        message.Payload.Event = payloadElement.GetProperty("event").Deserialize<PayloadStreamOfflineEvent>();
                         break;
                     default:
                         Logger.Log().Error("Unsupported subscription type: {0}", message.Payload.Subscription.type);

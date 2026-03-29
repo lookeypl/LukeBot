@@ -52,7 +52,7 @@ namespace LukeBot.API
             public string type { get; set; }
             public int view_count { get; set; }
             public string email { get; set; }
-            public string created_at { get; set; }
+            public DateTime created_at { get; set; }
         }
 
         public class GetUserResponse: Response

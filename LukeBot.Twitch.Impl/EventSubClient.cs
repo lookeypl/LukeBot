@@ -15,6 +15,7 @@ using LukeBot.Twitch;
 using LukeBot.Logging;
 using LukeBot.Services;
 using LukeBot.User;
+using System.Threading.Channels;
 
 
 [assembly: InternalsVisibleTo("LukeBot.Tests")]
@@ -38,24 +39,33 @@ namespace LukeBot.Twitch.Impl
         public const string SUB_SUBSCRIPTION_GIFT = SUB_SUBSCRIPTION + ".gift";
         public const string SUB_SUBSCRIPTION_MESSAGE = SUB_SUBSCRIPTION + ".message";
 
+
+        private const string SUB_STREAM = "stream";
+        public const string SUB_STREAM_ONLINE = SUB_STREAM + ".online";
+        public const string SUB_STREAM_OFFLINE = SUB_STREAM + ".offline";
+
         private ImmutableArray<string> mValidSubscriptions = ImmutableArray.Create(
             SUB_CHANNEL_POINTS_REDEMPTION_ADD,
             SUB_CHANNEL_POINTS_REDEMPTION_UPDATE,
             SUB_CHEER,
             SUB_SUBSCRIBE,
             SUB_SUBSCRIPTION_GIFT,
-            SUB_SUBSCRIPTION_MESSAGE
+            SUB_SUBSCRIPTION_MESSAGE,
+            SUB_STREAM_ONLINE,
+            SUB_STREAM_OFFLINE
         );
 
         private IUserContext mLBUser = null;
+        private TwitchUserIdentity mChannelIdentity = null;
         private int mConnectionCounter = 0;
         private EventCallback mChannelPointsRedemptionCallback;
         private EventCallback mCheerCallback;
         private EventCallback mSubscriptionCallback;
+        private EventCallback mStreamOnlineCallback;
+        private EventCallback mStreamOfflineCallback;
         private ClientWebSocket mSocket = null;
         private Uri mConnectURI = null;
         private Token mToken = null;
-        private string mUserID = "";
         private string mSessionID = "";
         private int mKeepaliveTimeoutSeconds = 10;
         private Thread mReceiveThread = null;
@@ -126,6 +136,8 @@ namespace LukeBot.Twitch.Impl
             case SUB_SUBSCRIBE:
             case SUB_SUBSCRIPTION_GIFT:
             case SUB_SUBSCRIPTION_MESSAGE:
+            case SUB_STREAM_ONLINE:
+            case SUB_STREAM_OFFLINE:
                 return "1";
             default:
                 return "Invalid";
@@ -226,6 +238,16 @@ namespace LukeBot.Twitch.Impl
             return new TwitchSubscriptionArgs(Guid.NewGuid().ToString(), user, displayName, message, details);
         }
 
+        private EventArgsBase GenerateTestStreamOnlineEvent(IEnumerable<(string attrib, string value)> args)
+        {
+            return new TwitchStreamOnlineArgs(mChannelIdentity.ID, mChannelIdentity.Username, DateTime.Now);
+        }
+
+        private EventArgsBase GenerateTestStreamOfflineEvent(IEnumerable<(string attrib, string value)> args)
+        {
+            return new TwitchStreamOfflineArgs(mChannelIdentity.ID, mChannelIdentity.Username);
+        }
+
         public string GetEventPublisherName()
         {
             return "EventSubClient";
@@ -285,14 +307,29 @@ namespace LukeBot.Twitch.Impl
                     new() { Name = "Recipents", Description = "(Gift-only) Gift recipent count", Type = EventTestParamType.Integer },
                 }
             });
+            events.Add(new EventDescriptor()
+            {
+                Name = Events.TWITCH_STREAM_ONLINE,
+                Description = "Twitch stream going online/live. This is (mostly) an internal event.",
+                TestGenerator = GenerateTestStreamOnlineEvent,
+                TestParams = new List<EventTestParam>()
+            });
+            events.Add(new EventDescriptor()
+            {
+                Name = Events.TWITCH_STREAM_OFFLINE,
+                Description = "Twitch stream going offline. This is (mostly) an internal event.",
+                TestGenerator = GenerateTestStreamOfflineEvent,
+                TestParams = new List<EventTestParam>()
+            });
 
             return events;
         }
 
 
-        public EventSubClient(IUserContext lbUser)
+        public EventSubClient(IUserContext lbUser, TwitchUserIdentity channelIdentity)
         {
             mLBUser = lbUser;
+            mChannelIdentity = channelIdentity;
 
             List<EventCallback> events = ServiceUtils.GetEventService().User(mLBUser.GetUsername()).RegisterPublisher(this);
 
@@ -308,6 +345,12 @@ namespace LukeBot.Twitch.Impl
                     break;
                 case Events.TWITCH_SUBSCRIPTION:
                     mSubscriptionCallback = e;
+                    break;
+                case Events.TWITCH_STREAM_ONLINE:
+                    mStreamOnlineCallback = e;
+                    break;
+                case Events.TWITCH_STREAM_OFFLINE:
+                    mStreamOfflineCallback = e;
                     break;
                 default:
                     Logger.Log().Warning("Received unknown event type from Event system");
@@ -409,7 +452,7 @@ namespace LukeBot.Twitch.Impl
             }
 
             Logger.Log().Info("EventSubClient {0}: Reconnecting...", mLBUser.GetUsername());
-            ClientWebSocket newSocket = await ConnectInternal(mToken, mUserID, newURL);
+            ClientWebSocket newSocket = await ConnectInternal(mToken, newURL);
 
             mOldSocket = mSocket;
             mSocket = newSocket;
@@ -501,6 +544,22 @@ namespace LukeBot.Twitch.Impl
             mSubscriptionCallback.PublishEvent(subArgs);
         }
 
+        private void EmitStreamOnlineEvent(EventSub.PayloadEvent eventData)
+        {
+            EventSub.PayloadStreamOnlineEvent data = eventData as EventSub.PayloadStreamOnlineEvent;
+
+            TwitchStreamOnlineArgs args = new(data.broadcaster_user_id, data.broadcaster_user_login, data.started_at);
+            mStreamOnlineCallback.PublishEvent(args);
+        }
+
+        private void EmitStreamOfflineEvent(EventSub.PayloadEvent eventData)
+        {
+            EventSub.PayloadStreamOfflineEvent data = eventData as EventSub.PayloadStreamOfflineEvent;
+
+            TwitchStreamOfflineArgs args = new(data.broadcaster_user_id, data.broadcaster_user_login);
+            mStreamOfflineCallback.PublishEvent(args);
+        }
+
         private void ProcessSubscriptionQueue()
         {
             lock (mProcessSubscriptionsLock)
@@ -524,7 +583,7 @@ namespace LukeBot.Twitch.Impl
                         mToken,
                         sub,
                         MapSubscriptionToVersion(sub),
-                        mUserID,
+                        mChannelIdentity.ID,
                         mSessionID
                     );
 
@@ -639,6 +698,12 @@ namespace LukeBot.Twitch.Impl
             case SUB_SUBSCRIPTION_MESSAGE:
                 EmitSubscriptionEvent(TwitchSubscriptionType.Resub, eventData);
                 break;
+            case SUB_STREAM_ONLINE:
+                EmitStreamOnlineEvent(eventData);
+                break;
+            case SUB_STREAM_OFFLINE:
+                EmitStreamOfflineEvent(eventData);
+                break;
             default:
                 Logger.Log().Warning("EventSubClient {0}: Unknown notification received", mThreadLogPreamble.Value);
                 break;
@@ -716,10 +781,9 @@ namespace LukeBot.Twitch.Impl
             Logger.Log().Info("EventSubClient {0}: Disconnected, receive thread done.", mThreadLogPreamble.Value);
         }
 
-        private async Task<ClientWebSocket> ConnectInternal(Token token, string userId, string url)
+        private async Task<ClientWebSocket> ConnectInternal(Token token, string url)
         {
             mToken = token;
-            mUserID = userId;
             mConnectURI = new(url);
 
             ClientWebSocket socket = new ClientWebSocket();
@@ -729,9 +793,9 @@ namespace LukeBot.Twitch.Impl
             return socket;
         }
 
-        public void Connect(Token token, string userId, string url = EVENTSUB_URI_MAIN)
+        public void Connect(Token token, string url = EVENTSUB_URI_MAIN)
         {
-            var mSocketTask = ConnectInternal(token, userId, url);
+            var mSocketTask = ConnectInternal(token, url);
             mSocketTask.Wait();
             mSocket = mSocketTask.Result;
 
@@ -740,9 +804,9 @@ namespace LukeBot.Twitch.Impl
             mReceiveThread.Start();
         }
 
-        public async Task ConnectAsync(Token token, string userId, string url = EVENTSUB_URI_MAIN)
+        public async Task ConnectAsync(Token token, string url = EVENTSUB_URI_MAIN)
         {
-            mSocket = await ConnectInternal(token, userId, url);
+            mSocket = await ConnectInternal(token, url);
 
             // fire the receive thread
             mReceiveThreadDone = false;

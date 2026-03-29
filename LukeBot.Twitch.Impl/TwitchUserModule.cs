@@ -145,7 +145,7 @@ namespace LukeBot.Twitch.Impl
 
             mIRC = IRC;
             mIRCChannel = mIRC.JoinChannel(mLBUser, mChannelIdentity, mUserToken);
-            mEventSub = new(mLBUser);
+            mEventSub = new(mLBUser, mChannelIdentity);
 
             mChannelBadges = new(globalBadges);
             mChannelBadges.AddBadges(Utils.FetchBadges(mUserToken, mChannelIdentity.ID));
@@ -278,8 +278,8 @@ namespace LukeBot.Twitch.Impl
                 mEventSub.RequestShutdown();
                 mEventSub.WaitForShutdown();
 
-                mEventSub = new(mLBUser);
-                mEventSub.Connect(mUserToken, mChannelIdentity.ID);
+                mEventSub = new(mLBUser, mChannelIdentity);
+                mEventSub.Connect(mUserToken);
                 mEventSub.Subscribe(mEventSubEvents);
             }
         }

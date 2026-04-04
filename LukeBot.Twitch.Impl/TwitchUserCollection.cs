@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using LukeBot.API;
 using LukeBot.Common;
@@ -32,6 +33,11 @@ namespace LukeBot.Twitch.Impl
             mUsernameToID.Add(identity.UserData.login, id);
         }
 
+        public IEnumerable<string> KnownUsers()
+        {
+            return mUsers.Values.Select((uid) => uid.Username);
+        }
+
         public TwitchUserIdentity FetchUser(Token apiToken, bool ignoreExisting, string username)
         {
             return FetchUsers(apiToken, ignoreExisting, new string[] { username })[0];
@@ -40,10 +46,24 @@ namespace LukeBot.Twitch.Impl
         public TwitchUserIdentity[] FetchUsers(Token apiToken, bool ignoreExisting, string[] usernames)
         {
             API.Twitch.GetUserResponse resp = API.Twitch.GetUsersByLogin(apiToken, usernames);
-            if (resp.code != HttpStatusCode.OK)
+            if (!resp.IsSuccess)
             {
                 Logger.Log().Error("Failed to fetch user data from Twitch - received error code {0}", resp.code.ToString());
                 throw new APIResponseErrorException(resp.code);
+            }
+
+            string[] ids = resp.data.Select((ud) => ud.id).ToArray();
+            List<API.Twitch.UserChatColorData> chatColors = null;
+            API.Twitch.GetUserChatColorResponse colorsResp = API.Twitch.GetUsersChatColor(apiToken, ids);
+            if (!colorsResp.IsSuccess)
+            {
+                Logger.Log().Warning("Failed to fetch users chat colors - {0} ({1}); will ignore them until fetched in a different way",
+                    (int)colorsResp.code, colorsResp.code.ToString()
+                );
+            }
+            else
+            {
+                chatColors = colorsResp.data;
             }
 
             List<TwitchUserIdentity> result = new();
@@ -59,12 +79,35 @@ namespace LukeBot.Twitch.Impl
                 else
                 {
                     TwitchUserIdentity identity = new(userData);
+                    if (chatColors != null)
+                    {
+                        API.Twitch.UserChatColorData colorData = chatColors.SingleOrDefault((color) => color.user_id == userData.id);
+                        if (colorData != null)
+                        {
+                            identity.Color = colorData.color;
+                        }
+                    }
                     AddUser(identity);
                     result.Add(identity);
                 }
             }
 
             return result.ToArray();
+        }
+
+        public void FetchChatters(Token token, string channelId)
+        {
+            List<API.Twitch.UserData> chatters = API.Twitch.GetChatters(token, channelId);
+
+            int current = 0;
+            int step = 100;
+            while (current < chatters.Count)
+            {
+                string[] ids = chatters.Skip(current).Take(step).Select((ud) => ud.user_login).ToArray();
+                current += step;
+
+                FetchUsers(token, true, ids);
+            }
         }
     };
 }

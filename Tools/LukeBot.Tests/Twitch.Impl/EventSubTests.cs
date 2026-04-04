@@ -425,6 +425,19 @@ namespace LukeBot.Tests.Twitch.Impl
             Assert.IsTrue(correctTitle);
         }
 
+        [TestMethodSkippedWithoutTwitchCLI]
+        [DataRow(Events.TWITCH_SUBSCRIPTION, EventSubClient.SUB_SUBSCRIBE)]
+        public void EventSub_Events(string expectedLBEvent, Type expectedEventArgsType, string receivedESEvent)
+        {
+            // ...
+        }
+
+        [TestMethod]
+        public void EventSub_Generators()
+        {
+            // ...
+        }
+
         [ClassCleanup]
         static public void EventSub_Teardown()
         {

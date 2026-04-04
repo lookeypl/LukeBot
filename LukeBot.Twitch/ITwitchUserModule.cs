@@ -20,5 +20,6 @@ namespace LukeBot.Twitch
         public void RefreshEmotes();
         public void RestartEventSub();
         public void UpdateLogin(string newLogin);
+        public IEnumerable<string> GetKnownChatUsers();
     }
 }

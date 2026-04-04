@@ -126,7 +126,7 @@ namespace LukeBot.Twitch.Impl
             mChannelIdentity = mTwitchUsers.FetchUser(botToken, false, channelName);
 
             // TODO token's scope should be moved to Config
-            string tokenScope = "user:read:email channel:read:redemptions channel:read:subscriptions";
+            string tokenScope = "user:read:email channel:read:redemptions channel:read:subscriptions moderator:read:chatters";
             mUserToken = AuthManager.Instance.GetToken(ServiceType.Twitch, channelName);
 
             bool tokenFromFile = mUserToken.Loaded;
@@ -143,16 +143,30 @@ namespace LukeBot.Twitch.Impl
             // Each user has its own subscriber-queued dispatcher to independently handle some events
             ServiceUtils.GetEventService().User(mLBUser.GetUsername()).AddEventDispatcher(Twitch.Utils.DispatcherNameForUser(mLBUser), EventDispatcherType.SubscriberQueued);
 
+            // initialize Twitch service clients
             mIRC = IRC;
             mIRCChannel = mIRC.JoinChannel(mLBUser, mChannelIdentity, mUserToken);
             mEventSub = new(mLBUser, mChannelIdentity);
 
+            // preload necessary information
             mChannelBadges = new(globalBadges);
             mChannelBadges.AddBadges(Utils.FetchBadges(mUserToken, mChannelIdentity.ID));
             mExternalEmotes = new();
             mExternalEmotes.AddEmoteSource(new FFZEmoteSource(mChannelIdentity.ID));
             mExternalEmotes.AddEmoteSource(new BTTVEmoteSource(mChannelIdentity.ID));
             mExternalEmotes.AddEmoteSource(new SevenTVEmoteSource(mChannelIdentity.ID));
+
+            try
+            {
+                // fetch users currently in the chat room and their information
+                mTwitchUsers.FetchChatters(mUserToken, mChannelIdentity.ID);
+            }
+            catch (System.Exception e)
+            {
+                Logger.Log().Warning("Failed to fetch chatters, caught {0} - {1}", e.GetType().ToString(), e.Message);
+                Logger.Log().Warning("Chatters list might be incomplete when requested - will be filled only based on active chatters.");
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
+            }
         }
 
         internal TwitchUserIdentity GetChannelIdentity()
@@ -292,6 +306,11 @@ namespace LukeBot.Twitch.Impl
             throw new NotImplementedException("Updating login for Twitch modules not yet implemented");
         }
 
+        public IEnumerable<string> GetKnownChatUsers()
+        {
+            return mTwitchUsers.KnownUsers();
+        }
+
 
         // IUserModule overrides //
 
@@ -301,13 +320,13 @@ namespace LukeBot.Twitch.Impl
             {
                 LoadCommandsFromConfig();
 
-                mEventSub.Connect(mUserToken, mChannelIdentity.ID);
+                mEventSub.Connect(mUserToken);
                 mEventSub.Subscribe(mEventSubEvents);
             }
             catch (System.Exception e)
             {
                 Logger.Log().Error("Failed to subscribe to EventSub for user {0}: {1}",
-                    mLBUser, e.Message);
+                    mLBUser.GetUsername(), e.Message);
                 Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
             }
         }

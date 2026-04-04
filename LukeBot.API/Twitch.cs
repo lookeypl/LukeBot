@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using LukeBot.Common;
 using LukeBot.Config;
 using LukeBot.Logging;
 using Newtonsoft.Json;
@@ -20,6 +21,8 @@ namespace LukeBot.API
         private static readonly string CHAT_BASE_URI = API_URI + "/chat";
         private static readonly string GET_BADGES_API_URI = CHAT_BASE_URI + "/badges";
         private static readonly string GET_GLOBAL_BADGES_API_URI = GET_BADGES_API_URI + "/global";
+        private static readonly string GET_USER_CHAT_COLOR_URI = CHAT_BASE_URI + "/color";
+        private static readonly string GET_CHATTERS_URI = CHAT_BASE_URI + "/chatters";
 
         private static readonly string EVENTSUB_BASE_URI = API_URI + "/eventsub";
         private static readonly string EVENTSUB_SUBSCRIPTIONS_API_URI = EVENTSUB_BASE_URI + "/subscriptions";
@@ -177,6 +180,32 @@ namespace LukeBot.API
         }
 
 
+        public class UserData
+        {
+            public string user_id { get; set; }
+            public string user_login { get; set; }
+            public string user_name { get; set; }
+        }
+
+        public class UserChatColorData: UserData
+        {
+            public string color { get; set; }
+        }
+
+        public class GetUserChatColorResponse: Response
+        {
+            public List<UserChatColorData> data { get; set; }
+        }
+
+
+        private class GetChattersResponse: Response
+        {
+            public List<UserData> data { get; set; }
+            public PaginationData pagination { get; set; }
+            public int total { get; set; }
+        }
+
+
         // Get data about specified user. If logins/ids are omitted gets data about user
         // based on provided Token.
         private static GetUserResponse GetUsers(Token token, string[] args, bool byID)
@@ -308,6 +337,61 @@ namespace LukeBot.API
             uriQuery.Add("broadcaster_id", broadcasterId);
 
             return Request.Get<GetBadgesResponse>(GET_BADGES_API_URI, token, uriQuery);
+        }
+
+        public static GetUserChatColorResponse GetUsersChatColor(Token token, string[] ids)
+        {
+            if (ids.Length == 0)
+            {
+                throw new ArgumentException("Get Users Chat Color API requires user IDs");
+            }
+
+            Dictionary<string, string> uriQuery = new();
+            foreach (string id in ids)
+            {
+                uriQuery.Add("user_id", id);
+            }
+
+            return Request.Get<GetUserChatColorResponse>(GET_USER_CHAT_COLOR_URI, token, uriQuery);
+        }
+
+        public static List<UserData> GetChatters(Token token, string channelId)
+        {
+            Dictionary<string, string> uriQuery = new();
+            uriQuery.Add("broadcaster_id", channelId);
+            uriQuery.Add("moderator_id", channelId);
+            uriQuery.Add("first", "1000");
+
+            List<UserData> chatters = new();
+            GetChattersResponse resp;
+            do
+            {
+                resp = Request.Get<GetChattersResponse>(GET_CHATTERS_URI, token, uriQuery);
+
+                if (!resp.IsSuccess)
+                {
+                    throw new APIResponseErrorException(resp.code, resp.responseData.message);
+                }
+
+                if (resp.code == HttpStatusCode.OK && resp.data != null)
+                {
+                    chatters.AddRange(resp.data);
+                }
+
+                if (resp.pagination != null)
+                {
+                    if (uriQuery.ContainsKey("after"))
+                    {
+                        uriQuery["after"] = resp.pagination.cursor;
+                    }
+                    else
+                    {
+                        uriQuery.Add("after", resp.pagination.cursor);
+                    }
+                }
+            } while (resp.pagination != null && !String.IsNullOrEmpty(resp.pagination.cursor));
+
+            return chatters;
         }
     }
 }

@@ -32,6 +32,11 @@ namespace LukeBot
     {
     }
 
+    [Verb("chatters", HelpText = "Prints out the list of known chatters. List can be limited in size.")]
+    public class TwitchChattersSubverb
+    {
+    }
+
     [Verb("enable", HelpText = "Enable Twitch module")]
     public class TwitchEnableSubverb
     {
@@ -130,6 +135,37 @@ namespace LukeBot
             }
         }
 
+        private void HandleChattersSubverb(TwitchChattersSubverb arg, CLIMessageProxy CLI, out string result)
+        {
+            result = "";
+
+            try
+            {
+                IEnumerable<string> chatters = GetTwitchUserModule(CLI.GetCurrentUser()).GetKnownChatUsers();
+
+                string chatterList = "";
+                int perLine = 5;
+                int lineCtr = 0;
+                foreach (string chatter in chatters)
+                {
+                    chatterList += chatter + ", ";
+                    lineCtr++;
+
+                    if (lineCtr >= perLine)
+                    {
+                        chatterList += '\n';
+                        lineCtr = 0;
+                    }
+                }
+
+                result = "Known chatters list:\n\n" + chatters + "\n";
+            }
+            catch (System.Exception e)
+            {
+                result = "Failed to fetch current list of chatters: " + e.Message;
+            }
+        }
+
         public void HandleEnableSubverb(CLIMessageProxy CLI, out string msg)
         {
             msg = "";
@@ -171,11 +207,12 @@ namespace LukeBot
                 string result = "";
                 string[] cmdArgs = args.Take(2).ToArray(); // filters out any additional options/commands that might confuse CommandLine
                 Parser p = new Parser(with => with.HelpWriter = new CLIUtils.CLIMessageProxyTextWriter(cliProxy));
-                p.ParseArguments<TwitchCommandSubverb, TwitchEmoteRefreshSubverb, TwitchEventSubRestartSubverb, TwitchLoginSubverb, TwitchEnableSubverb, TwitchDisableSubverb>(cmdArgs)
+                p.ParseArguments<TwitchCommandSubverb, TwitchEmoteRefreshSubverb, TwitchEventSubRestartSubverb, TwitchLoginSubverb, TwitchChattersSubverb, TwitchEnableSubverb, TwitchDisableSubverb>(cmdArgs)
                     .WithParsed<TwitchCommandSubverb>((TwitchCommandSubverb arg) => HandleCommandSubverb(arg, cliProxy, args.Skip(1).ToArray(), out result))
                     .WithParsed<TwitchEmoteRefreshSubverb>((TwitchEmoteRefreshSubverb arg) => HandleEmoteRefreshSubverb(cliProxy, out result))
                     .WithParsed<TwitchEventSubRestartSubverb>((TwitchEventSubRestartSubverb arg) => HandleEventSubRestartSubverb(cliProxy, out result))
                     .WithParsed<TwitchLoginSubverb>((TwitchLoginSubverb arg) => HandleLoginSubverb(arg, cliProxy, args.Skip(1).ToArray(), out result))
+                    .WithParsed<TwitchChattersSubverb>((TwitchChattersSubverb arg) => HandleChattersSubverb(arg, cliProxy, out result))
                     .WithParsed<TwitchEnableSubverb>((TwitchEnableSubverb arg) => HandleEnableSubverb(cliProxy, out result))
                     .WithParsed<TwitchDisableSubverb>((TwitchDisableSubverb arg) => HandleDisableSubverb(cliProxy, out result))
                     .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, Constants.TWITCH_SERVICE_NAME, out result));

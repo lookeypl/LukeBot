@@ -14,6 +14,7 @@ namespace LukeBot.Twitch.Impl
         public class IdentityEntry<T>
         {
             private T mData;
+            private T mDefault = default(T);
             private bool mValid = false;
 
             public T Data
@@ -21,13 +22,20 @@ namespace LukeBot.Twitch.Impl
                 get
                 {
                     if (mValid) return mData;
-                    else return default(T);
+                    else return mDefault;
                 }
                 set
                 {
                     mData = value;
                     mValid = true;
                 }
+            }
+
+            public IdentityEntry() {}
+
+            public IdentityEntry(T def)
+            {
+                mDefault = def;
             }
         }
 
@@ -41,13 +49,13 @@ namespace LukeBot.Twitch.Impl
 
         // below entries are purely optional and will be filled eventually
         // (ex. when EventSub or IRC get this information and fill them)
-        private IdentityEntry<List<BadgeCollection>> mBadges = new();
-        private IdentityEntry<string> mColor = new();
+        private IdentityEntry<List<BadgeCollection>> mBadges = new(new List<BadgeCollection>());
+        private IdentityEntry<string> mColor = new("#aaaaaa");
         // ...
 
         // Property-accessors for optional entries
-        public List<BadgeCollection> Badges { get => mBadges.Data; }
-        public string Color { get => mColor.Data; }
+        public List<BadgeCollection> Badges { get => mBadges.Data; set => mBadges.Data = value; }
+        public string Color { get => mColor.Data; set => mColor.Data = value; }
 
         public TwitchUserIdentity(API.Twitch.GetUserData userData)
         {

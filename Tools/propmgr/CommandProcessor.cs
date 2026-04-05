@@ -9,16 +9,16 @@ namespace propmgr;
 
 public class Command
 {
-    [Option('d', "dir",
+    [Option('p', "propstore",
         Required = false,
         Default = Constants.PROPERTY_STORE_FILE,
         HelpText = "Property Store file to use.")
     ]
-    public string StoreDir { get; set; }
+    public string PropStorePath { get; set; }
 
     public Command()
     {
-        StoreDir = "";
+        PropStorePath = "";
     }
 }
 
@@ -115,7 +115,7 @@ public class CommandProcessor
 {
     private PropertyStore OpenStore(Command cmd)
     {
-        PropertyStore store = new PropertyStore(cmd.StoreDir);
+        PropertyStore store = new PropertyStore(cmd.PropStorePath);
         return store;
     }
 
@@ -145,11 +145,11 @@ public class CommandProcessor
 
     public void CreatePropertyStore(CreateCommand cmd)
     {
-        Logger.Log().Info("Creating Property Store at {0} with template {1}", cmd.StoreDir, cmd.TemplateType);
+        Logger.Log().Info("Creating Property Store at {0} with template {1}", cmd.PropStorePath, cmd.TemplateType);
 
-        if (FileUtils.Exists(cmd.StoreDir))
+        if (FileUtils.Exists(cmd.PropStorePath))
         {
-            Logger.Log().Warning("File {0} already exists. Overwrite? (y/n)", cmd.StoreDir);
+            Logger.Log().Warning("File {0} already exists. Overwrite? (y/n)", cmd.PropStorePath);
             bool accepted = false;
 
             string? line = Console.ReadLine();
@@ -176,10 +176,10 @@ public class CommandProcessor
                 return;
             }
 
-            File.Delete(cmd.StoreDir);
+            File.Delete(cmd.PropStorePath);
         }
 
-        PropertyStore store = new PropertyStore(cmd.StoreDir);
+        PropertyStore store = new PropertyStore(cmd.PropStorePath);
         StoreTemplate template = StoreTemplate.Select(cmd.TemplateType);
         template.Fill(store);
         store.Save();
@@ -188,7 +188,7 @@ public class CommandProcessor
     public void AddProperty(AddCommand cmd)
     {
         string type = PrepareType(cmd.Type);
-        Logger.Log().Info("Adding Property {0} {1} to store {2}", type, cmd.Name, cmd.StoreDir);
+        Logger.Log().Info("Adding Property {0} {1} to store {2}", type, cmd.Name, cmd.PropStorePath);
         PropertyStore store = OpenStore(cmd);
         store.Add(LukeBot.Config.Path.Parse(cmd.Name), Property.Create(type, cmd.Value));
         store.Save();
@@ -196,7 +196,7 @@ public class CommandProcessor
 
     public void RemoveProperty(RemoveCommand cmd)
     {
-        Logger.Log().Info("Removing Property {0} from store {1}", cmd.Name, cmd.StoreDir);
+        Logger.Log().Info("Removing Property {0} from store {1}", cmd.Name, cmd.PropStorePath);
         PropertyStore store = OpenStore(cmd);
         store.Remove(LukeBot.Config.Path.Parse(cmd.Name));
         store.Save();
@@ -204,7 +204,7 @@ public class CommandProcessor
 
     public void ModifyProperty(ModifyCommand cmd)
     {
-        Logger.Log().Info("Modify Property {0} in store {1}", cmd.Name, cmd.StoreDir);
+        Logger.Log().Info("Modify Property {0} in store {1}", cmd.Name, cmd.PropStorePath);
         PropertyStore store = OpenStore(cmd);
         store.Modify(LukeBot.Config.Path.Parse(cmd.Name), cmd.Value);
         store.Save();
@@ -222,7 +222,7 @@ public class CommandProcessor
 
     public void ListProperties(ListCommand cmd)
     {
-        Logger.Log().Info("List properties in store {0}", cmd.StoreDir);
+        Logger.Log().Info("List properties in store {0}", cmd.PropStorePath);
         PropertyStore store = OpenStore(cmd);
         store.PrintDebug(LogLevel.Info, cmd.ShowAll);
     }

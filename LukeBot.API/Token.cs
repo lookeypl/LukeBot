@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using LukeBot.Config;
 using LukeBot.Logging;
@@ -112,7 +113,7 @@ namespace LukeBot.API
             return ret;
         }
 
-        public string Request(string scope)
+        public string Request(List<string> scope)
         {
             string ret;
 

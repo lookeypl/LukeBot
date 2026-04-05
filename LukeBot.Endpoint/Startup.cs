@@ -133,6 +133,12 @@ namespace LukeBot.Endpoint
                 token.code = context.Request.Query["code"];
                 token.state = state;
 
+                string scope = context.Request.Query["scope"];
+                if (!String.IsNullOrEmpty(scope))
+                {
+                    token.scope = scope.Split(' ').ToList();
+                }
+
                 srv.Fulfill(token.state, token);
 
                 await context.Response.WriteAsync(

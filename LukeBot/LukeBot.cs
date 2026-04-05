@@ -75,7 +75,7 @@ namespace LukeBot
                 Logger.Log().Info("LukeBot v0.0.1 starting");
 
                 Logger.Log().Info("Loading configuration...");
-                Conf.Initialize(opts.StoreDir);
+                Conf.Initialize(opts.PropStorePath);
 
                 Logger.Log().Info("Initializing Core Comms...");
 

@@ -126,7 +126,12 @@ namespace LukeBot.Twitch.Impl
             mChannelIdentity = mTwitchUsers.FetchUser(botToken, false, channelName);
 
             // TODO token's scope should be moved to Config
-            string tokenScope = "user:read:email channel:read:redemptions channel:read:subscriptions moderator:read:chatters";
+            List<string> tokenScope = new()
+            {
+                "user:read:email",
+                "channel:read:redemptions",
+                "channel:read:subscriptions"
+            };
             mUserToken = AuthManager.Instance.GetToken(ServiceType.Twitch, channelName);
 
             bool tokenFromFile = mUserToken.Loaded;

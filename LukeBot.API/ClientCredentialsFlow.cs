@@ -16,7 +16,7 @@ namespace LukeBot.API
     {
         private readonly HttpClient mHttpClient = new HttpClient();
 
-        public override AuthToken Request(string lbUser, string scope)
+        public override AuthToken Request(string lbUser, List<string> scope)
         {
             Logger.Log().Info("Requesting OAuth token...");
             Dictionary<string, string> query = new Dictionary<string, string>();
@@ -24,7 +24,7 @@ namespace LukeBot.API
             query.Add("client_id", mClientID);
             query.Add("client_secret", mClientSecret);
             query.Add("grant_type", "client_credentials");
-            query.Add("scope", scope);
+            query.Add("scope", String.Join(' ', scope.ToArray()));
 
             FormUrlEncodedContent content = new FormUrlEncodedContent(query);
 
@@ -54,11 +54,11 @@ namespace LukeBot.API
             Logger.Log().Secure("  Refresh token: {0}", token.refresh_token);
             Logger.Log().Debug("  Timestamp: {0}", token.acquiredTimestamp);
             Logger.Log().Debug("  Expires in: {0}", token.expires_in);
-            /*Logger.Log().Debug("  Scope: ");
-            foreach (var s in token.scope)
+            Logger.Log().Debug("  Scope: ");
+            foreach (string s in token.scope)
             {
                 Logger.Log().Debug("    -> {0}", s);
-            }*/
+            }
             Logger.Log().Debug("  Token type: {0}", token.token_type);
 
             return token;

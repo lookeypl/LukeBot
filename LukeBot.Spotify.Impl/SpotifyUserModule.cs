@@ -8,6 +8,7 @@ using LukeBot.Spotify;
 using CommonConstants = LukeBot.Common.Constants;
 using System.Net.Http;
 using System.Security;
+using System.Collections.Generic;
 
 
 namespace LukeBot.Spotify.Impl
@@ -42,7 +43,14 @@ namespace LukeBot.Spotify.Impl
 
         private void Login()
         {
-            string scope = "user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-email";
+            // TODO should also be from Config...
+            List<string> scope = new()
+            {
+                "user-read-currently-playing",
+                "user-read-playback-state",
+                "user-modify-playback-state",
+                "user-read-email",
+            };
             mToken = AuthManager.Instance.GetToken(ServiceType.Spotify, LBUser);
 
             if (!mToken.Loaded)

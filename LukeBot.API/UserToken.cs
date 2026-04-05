@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using LukeBot.Communication;
 
 
@@ -6,7 +7,7 @@ namespace LukeBot.API
     public class UserToken: PromiseData
     {
         public string code { get; set; }
-        //public List<string> scope { get; set; }
+        public List<string> scope { get; set; }
         public string state { get; set; }
 
         public override void Fill(PromiseData data)
@@ -14,7 +15,7 @@ namespace LukeBot.API
             UserToken r = data as UserToken;
 
             code = r.code;
-            //scope = r.scope;
+            scope = r.scope;
             state = r.state;
         }
     }

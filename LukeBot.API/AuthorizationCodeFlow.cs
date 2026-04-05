@@ -8,6 +8,7 @@ using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Logging;
 using LukeBot.Services;
+using System.Linq;
 
 
 namespace LukeBot.API
@@ -22,7 +23,7 @@ namespace LukeBot.API
             return Service.Get<IIntermediaryService>().GetIntermediary(mService);
         }
 
-        public override AuthToken Request(string lbUser, string scope)
+        public override AuthToken Request(string lbUser, List<string> scope)
         {
             //
             // Step 1: Acquire user token
@@ -41,7 +42,7 @@ namespace LukeBot.API
             query.Add("client_id", mClientID);
             query.Add("redirect_uri", mCallbackURL);
             query.Add("response_type", "code");
-            query.Add("scope", scope);
+            query.Add("scope", String.Join(' ', scope.ToArray()));
             query.Add("state", state);
 
             FormUrlEncodedContent content = new FormUrlEncodedContent(query);
@@ -71,15 +72,11 @@ namespace LukeBot.API
             UserToken userResponse = (UserToken)userResponseBase;
             Logger.Log().Debug("User token from service {0}:", mService);
             Logger.Log().Secure("  Code: {0}", userResponse.code);
-            // TODO commented out, since services treat "Scope" differently:
-            //  - Twitch - should be List<string>
-            //  - Spotify - should be string
-            // In the future it would be nice to cross-check if we got scopes we wanted
-            /*Logger.Log().Debug("  Scope: ");
+            Logger.Log().Debug("  Scope: ");
             foreach (var s in userResponse.scope)
             {
                 Logger.Log().Debug("    -> {0}", s);
-            }*/
+            }
             Logger.Log().Debug("  State: {0}", userResponse.state);
 
 
@@ -123,11 +120,11 @@ namespace LukeBot.API
             Logger.Log().Secure("  Refresh token: {0}", authResponse.refresh_token);
             Logger.Log().Debug("  Timestamp: {0}", authResponse.acquiredTimestamp);
             Logger.Log().Debug("  Expires in: {0}", authResponse.expires_in);
-            /*Logger.Log().Debug("  Scope: ");
-            foreach (var s in authResponse.scope)
+            Logger.Log().Debug("  Scope: ");
+            foreach (string s in authResponse.scope)
             {
                 Logger.Log().Debug("    -> {0}", s);
-            }*/
+            }
             Logger.Log().Debug("  Token type: {0}", authResponse.token_type);
 
             return authResponse;
@@ -173,11 +170,11 @@ namespace LukeBot.API
             Logger.Log().Debug("  Timestamp: {0}", refreshResponse.acquiredTimestamp);
             Logger.Log().Debug("  Expires in: {0}", refreshResponse.expires_in);
             Logger.Log().Debug("  Token type: {0}", refreshResponse.token_type);
-            /*Logger.Log().Debug("  Scope: ");
-            foreach (var s in refreshResponse.scope)
+            Logger.Log().Debug("  Scope: ");
+            foreach (string s in refreshResponse.scope)
             {
                 Logger.Log().Debug("    -> {0}", s);
-            }*/
+            }
 
             return refreshResponse;
         }

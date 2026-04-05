@@ -7,10 +7,10 @@ namespace LukeBot
 {
     public class ProgramOptions
     {
-        [Option('d', "dir",
+        [Option('p', "propstore",
             HelpText = "Use a specific Property Store instead of default one.",
             Default = Common.Constants.PROPERTY_STORE_FILE)]
-        public string StoreDir { get; set; }
+        public string PropStorePath { get; set; }
 
         [Option("cli",
             HelpText = "Specify a type of interface to use. Defaults to basic. Available options:\n" +
@@ -20,7 +20,7 @@ namespace LukeBot
 
         public ProgramOptions()
         {
-            StoreDir = "";
+            PropStorePath = "";
             CLI = InterfaceType.basic;
         }
     }

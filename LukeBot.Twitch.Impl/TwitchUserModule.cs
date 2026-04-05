@@ -316,6 +316,11 @@ namespace LukeBot.Twitch.Impl
             return mTwitchUsers.KnownUsers();
         }
 
+        public Chatter GetChatter(string username)
+        {
+            return mTwitchUsers.Username(username).ToChatter();
+        }
+
 
         // IUserModule overrides //
 

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using LukeBot.API;
 using LukeBot.Common;
 using LukeBot.Logging;
@@ -16,12 +15,12 @@ namespace LukeBot.Twitch.Impl
         {
         }
 
-        TwitchUserIdentity ID(string id)
+        public TwitchUserIdentity ID(string id)
         {
             return mUsers[id];
         }
 
-        TwitchUserIdentity Username(string username)
+        public TwitchUserIdentity Username(string username)
         {
             return ID(mUsernameToID[username]);
         }

@@ -1,6 +1,7 @@
 using LukeBot.API;
 using LukeBot.Common;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
@@ -49,17 +50,28 @@ namespace LukeBot.Twitch.Impl
 
         // below entries are purely optional and will be filled eventually
         // (ex. when EventSub or IRC get this information and fill them)
-        private IdentityEntry<List<BadgeCollection>> mBadges = new(new List<BadgeCollection>());
+        private IdentityEntry<List<BadgeSet>> mBadges = new(new List<BadgeSet>());
         private IdentityEntry<string> mColor = new("#aaaaaa");
         // ...
 
         // Property-accessors for optional entries
-        public List<BadgeCollection> Badges { get => mBadges.Data; set => mBadges.Data = value; }
+        public List<BadgeSet> Badges { get => mBadges.Data; set => mBadges.Data = value; }
         public string Color { get => mColor.Data; set => mColor.Data = value; }
 
         public TwitchUserIdentity(API.Twitch.GetUserData userData)
         {
             UserData = userData;
+        }
+
+        public Chatter ToChatter()
+        {
+            return new Chatter()
+            {
+                Username = Username,
+                DisplayName = DisplayName,
+                Color = Color,
+                Badges = Badges.Select((b) => b.Name).ToList()
+            };
         }
     };
 }

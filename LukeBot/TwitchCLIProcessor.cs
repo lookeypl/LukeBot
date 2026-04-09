@@ -200,6 +200,10 @@ namespace LukeBot
                 }
                 result += "\n";
             }
+            catch (KeyNotFoundException)
+            {
+                result = "Chatter " + arg.ChatterName + " not recognized.";
+            }
             catch (System.Exception e)
             {
                 result = "Failed to fetch chatter " + arg.ChatterName + ": " + e.Message;

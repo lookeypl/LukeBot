@@ -18,7 +18,9 @@ namespace LukeBot.API
         private Flow mFlow = null;
         private Config.Path mTokenPath = null;
         private AuthToken mToken = null;
-        private Mutex mMutex = null;
+        private bool mScopeUpdated = true;
+        private List<string> mScope = new();
+        private object mTokenLock = new();
         private string mLBUser = null;
 
         // Check if token is valid. This can be false when Token is either
@@ -61,6 +63,35 @@ namespace LukeBot.API
             Conf.Save();
         }
 
+        private bool IsScopeMatching()
+        {
+            // cross-checks currently set mScope with AuthToken's scope
+            // If they mismatch, returns false. This is used to notify that we have a new Scope
+            // requirement, which means the Token cannot just be refreshed but must be re-requested.
+            if (mToken == null || mToken.scope == null) return false;
+            if (mScope.Count != mToken.scope.Count) return false;
+
+            foreach (string newScope in mScope)
+            {
+                bool found = false;
+                foreach (string oldScope in mToken.scope)
+                {
+                    if (oldScope == newScope)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public Token(string service, string lbUser, AuthFlow flow, string authURL, string refreshURL, string revokeURL, string callbackURL)
         {
             switch (flow)
@@ -74,8 +105,6 @@ namespace LukeBot.API
             default:
                 throw new ArgumentOutOfRangeException("Invalid AuthFlow mode: {0}" + flow.ToString());
             }
-
-            mMutex = new Mutex();
 
             mTokenPath = Config.Path.Start()
                 .Push(Common.Constants.PROP_STORE_USER_DOMAIN)
@@ -99,98 +128,107 @@ namespace LukeBot.API
 
         public string Get()
         {
-            mMutex.WaitOne();
-
-            if (mToken == null)
+            lock(mTokenLock)
             {
-                mMutex.ReleaseMutex();
-                throw new InvalidTokenException("Token is not acquired");
+                if (mToken == null)
+                {
+                    throw new InvalidTokenException("Token is not acquired");
+                }
+
+                return mToken.access_token;
             }
-
-            string ret = mToken.access_token;
-            mMutex.ReleaseMutex();
-
-            return ret;
         }
 
-        public string Request(List<string> scope)
+        public string Request()
         {
-            string ret;
-
-            mMutex.WaitOne();
-
-            // re-check validity, in case other thread already requested a Token for us
-            if (IsValid)
+            lock (mTokenLock)
             {
-                ret = mToken.access_token;
-                mMutex.ReleaseMutex();
-                return ret;
+                // re-check validity, in case other thread already requested a Token for us
+                if (IsValid)
+                {
+                    return mToken.access_token;
+                }
+
+                mToken = mFlow.Request(mLBUser, mScope);
+                ExportToConfig();
+                Loaded = true;
+
+                return mToken.access_token;
             }
+        }
 
-            mToken = mFlow.Request(mLBUser, scope);
-            ExportToConfig();
-            Loaded = true;
-
-            ret = mToken.access_token;
-            mMutex.ReleaseMutex();
-
-            return ret;
+        public void SetScope(List<string> scope)
+        {
+            mScope = scope;
+            mScopeUpdated = true;
         }
 
         public void EnsureValid()
         {
+            bool needsRequest = false;
+            lock (mTokenLock)
+            {
+                if (mScopeUpdated)
+                {
+                    needsRequest = !IsScopeMatching();
+                    mScopeUpdated = false;
+                }
+            }
+
+            if (needsRequest)
+            {
+                mToken.acquiredTimestamp = 0; // invalidates current token to let Request() recreate it
+                Request();
+            }
+
             if (!IsValid)
                 Refresh();
         }
 
         public string Refresh()
         {
-            string ret;
-
-            mMutex.WaitOne();
-
-            if (mToken == null)
-                throw new InvalidTokenException("Token has not been acquired yet");
-
-            // Forces refresh by resetting the expiration timestamp
-            mToken.expires_in = 0;
-
-            // re-check validity, in case other thread already refreshed the Token for us
-            if (IsValid)
+            lock (mTokenLock)
             {
-                ret = mToken.access_token;
-                mMutex.ReleaseMutex();
-                return ret;
+                if (mToken == null)
+                {
+                    throw new InvalidTokenException("Token has not been acquired yet");
+                }
+
+                // Forces refresh by resetting the expiration timestamp
+                mToken.expires_in = 0;
+
+                // re-check validity, in case other thread already refreshed the Token for us
+                if (IsValid)
+                {
+                    return mToken.access_token;
+                }
+
+                AuthToken oldToken = mToken;
+                mToken = mFlow.Refresh(mToken);
+
+                // preserve refresh token - some services (ex. Spotify) don't provide it in refresh response
+                if (mToken.refresh_token == null || mToken.refresh_token.Length == 0)
+                {
+                    mToken.refresh_token = oldToken.refresh_token;
+                }
+
+                ExportToConfig();
+                Loaded = true;
+                return mToken.access_token;
             }
-
-            AuthToken oldToken = mToken;
-            mToken = mFlow.Refresh(mToken);
-
-            // preserve refresh token - some services (ex. Spotify) don't provide it in refresh response
-            if (mToken.refresh_token == null || mToken.refresh_token.Length == 0)
-                mToken.refresh_token = oldToken.refresh_token;
-
-            ExportToConfig();
-            Loaded = true;
-
-            ret = mToken.access_token;
-            mMutex.ReleaseMutex();
-
-            return ret;
         }
 
         public void Remove()
         {
-            mMutex.WaitOne();
-
-            if (Loaded) {
-                Conf.Remove(mTokenPath);
-                mFlow.Revoke(mToken);
-                mToken = null;
-                Loaded = false;
+            lock (mTokenLock)
+            {
+                if (Loaded) {
+                    Conf.Remove(mTokenPath);
+                    mFlow.Revoke(mToken);
+                    mToken = null;
+                    Loaded = false;
+                }
             }
-
-            mMutex.ReleaseMutex();
         }
     }
 }

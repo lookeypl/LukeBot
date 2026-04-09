@@ -44,17 +44,17 @@ namespace LukeBot.Spotify.Impl
         private void Login()
         {
             // TODO should also be from Config...
-            List<string> scope = new()
+            mToken = AuthManager.Instance.GetToken(ServiceType.Spotify, LBUser);
+            mToken.SetScope(new List<string>
             {
                 "user-read-currently-playing",
                 "user-read-playback-state",
                 "user-modify-playback-state",
-                "user-read-email",
-            };
-            mToken = AuthManager.Instance.GetToken(ServiceType.Spotify, LBUser);
+                "user-read-email"
+            });
 
             if (!mToken.Loaded)
-                mToken.Request(scope);
+                mToken.Request();
 
             if (!CheckIfLoginSuccessful())
             {

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Text.Json;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -25,6 +26,7 @@ namespace LukeBot.API
             if (!msg.IsSuccessStatusCode)
             {
                 if (msg.Content != null && msg.Content.Headers != null &&
+                    msg.Content.Headers.ContentType != null && msg.Content.Headers.ContentType.MediaType != null &&
                     msg.Content.Headers.ContentType.MediaType == "application/json")
                 {
                     Task<string> respStringTask = msg.Content.ReadAsStringAsync();

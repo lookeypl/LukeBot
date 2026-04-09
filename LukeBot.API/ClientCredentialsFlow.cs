@@ -54,10 +54,17 @@ namespace LukeBot.API
             Logger.Log().Secure("  Refresh token: {0}", token.refresh_token);
             Logger.Log().Debug("  Timestamp: {0}", token.acquiredTimestamp);
             Logger.Log().Debug("  Expires in: {0}", token.expires_in);
-            Logger.Log().Debug("  Scope: ");
-            foreach (string s in token.scope)
+            if (token.scope != null)
             {
-                Logger.Log().Debug("    -> {0}", s);
+                Logger.Log().Debug("  Scope: ");
+                foreach (string s in token.scope)
+                {
+                    Logger.Log().Debug("    -> {0}", s);
+                }
+            }
+            else
+            {
+                Logger.Log().Debug("  Scope: not provided, will inherit requested scope.");
             }
             Logger.Log().Debug("  Token type: {0}", token.token_type);
 

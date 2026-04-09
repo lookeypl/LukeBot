@@ -188,17 +188,17 @@ namespace LukeBot.Twitch.Impl
         public void Run()
         {
             // TODO should also be from Config...
-            List<string> tokenScope = new()
+            mBotToken = AuthManager.Instance.GetToken(ServiceType.Twitch, mBotLogin);
+            mBotToken.SetScope(new List<string>
             {
                 "chat:read",
                 "chat:edit",
                 "user:read:email"
-            };
-            mBotToken = AuthManager.Instance.GetToken(ServiceType.Twitch, mBotLogin);
+            });
 
             bool tokenFromFile = mBotToken.Loaded;
             if (!mBotToken.Loaded)
-                mBotToken.Request(tokenScope);
+                mBotToken.Request();
 
             if (!Utils.IsLoginSuccessful(mBotToken))
             {

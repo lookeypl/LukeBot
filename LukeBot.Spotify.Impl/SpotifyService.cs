@@ -76,6 +76,7 @@ namespace LukeBot.Spotify.Impl
 
         private SpotifyService()
         {
+            Service.Get<IIntermediaryService>().Register(CommonConstants.SPOTIFY_SERVICE_NAME);
         }
 
         public static ISpotifyService Create()

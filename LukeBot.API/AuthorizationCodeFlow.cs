@@ -72,10 +72,17 @@ namespace LukeBot.API
             UserToken userResponse = (UserToken)userResponseBase;
             Logger.Log().Debug("User token from service {0}:", mService);
             Logger.Log().Secure("  Code: {0}", userResponse.code);
-            Logger.Log().Debug("  Scope: ");
-            foreach (var s in userResponse.scope)
+            if (userResponse.scope != null)
             {
-                Logger.Log().Debug("    -> {0}", s);
+                Logger.Log().Debug("  Scope: ");
+                foreach (var s in userResponse.scope)
+                {
+                    Logger.Log().Debug("    -> {0}", s);
+                }
+            }
+            else
+            {
+                Logger.Log().Debug("  Scope: not provided, will inherit requested scope.");
             }
             Logger.Log().Debug("  State: {0}", userResponse.state);
 
@@ -120,10 +127,17 @@ namespace LukeBot.API
             Logger.Log().Secure("  Refresh token: {0}", authResponse.refresh_token);
             Logger.Log().Debug("  Timestamp: {0}", authResponse.acquiredTimestamp);
             Logger.Log().Debug("  Expires in: {0}", authResponse.expires_in);
-            Logger.Log().Debug("  Scope: ");
-            foreach (string s in authResponse.scope)
+            if (authResponse.scope != null)
             {
-                Logger.Log().Debug("    -> {0}", s);
+                Logger.Log().Debug("  Scope: ");
+                foreach (string s in authResponse.scope)
+                {
+                    Logger.Log().Debug("    -> {0}", s);
+                }
+            }
+            else
+            {
+                Logger.Log().Debug("  Scope: not provided, will inherit requested scope.");
             }
             Logger.Log().Debug("  Token type: {0}", authResponse.token_type);
 
@@ -170,10 +184,17 @@ namespace LukeBot.API
             Logger.Log().Debug("  Timestamp: {0}", refreshResponse.acquiredTimestamp);
             Logger.Log().Debug("  Expires in: {0}", refreshResponse.expires_in);
             Logger.Log().Debug("  Token type: {0}", refreshResponse.token_type);
-            Logger.Log().Debug("  Scope: ");
-            foreach (string s in refreshResponse.scope)
+            if (refreshResponse.scope != null)
             {
-                Logger.Log().Debug("    -> {0}", s);
+                Logger.Log().Debug("  Scope: ");
+                foreach (string s in refreshResponse.scope)
+                {
+                    Logger.Log().Debug("    -> {0}", s);
+                }
+            }
+            else
+            {
+                Logger.Log().Debug("  Scope: not provided, will inherit requested scope.");
             }
 
             return refreshResponse;

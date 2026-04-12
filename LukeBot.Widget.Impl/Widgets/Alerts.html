@@ -434,16 +434,17 @@
 
         // TODO: Server-side should generate messages that are passed here to ShowInfoAlert
         var showInfoAlert = null;
+        var tier = obj.Details.Tier / 1000;
         if (obj.Details.Type == TwitchSubscriptionType.Resub) {
             let shareMsg = null;
             if (obj.Message) {
                 shareMsg = obj.Message.Message;
             }
-            showInfoAlert = new ShowInfoAlert(obj.DisplayName + `<br>subscribed for ${obj.Details.Cumulative} months!`, shareMsg);
+            showInfoAlert = new ShowInfoAlert(obj.DisplayName + ` Tier-${tier}<br>subscribed for ${obj.Details.Cumulative} months!`, shareMsg);
         } else if (obj.Details.Type == TwitchSubscriptionType.Gift) {
-            showInfoAlert = new ShowInfoAlert(obj.DisplayName + `<br>gifted ${obj.Details.RecipentCount} Tier ${obj.Details.Tier} subs!`, null);
+            showInfoAlert = new ShowInfoAlert(obj.DisplayName + `<br>gifted ${obj.Details.RecipentCount} Tier ${tier} subs!`, null);
         } else {
-            showInfoAlert = new ShowInfoAlert(obj.DisplayName + " subscribed!", null);
+            showInfoAlert = new ShowInfoAlert(obj.DisplayName + ` subscribed with Tier ${tier}!`, null);
         }
         alertChain.add(showInfoAlert);
 

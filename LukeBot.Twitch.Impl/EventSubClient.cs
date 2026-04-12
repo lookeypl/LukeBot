@@ -205,7 +205,7 @@ namespace LukeBot.Twitch.Impl
             string user = "test_user";
             string displayName = "Test_User";
             string message = "This is a test";
-            int tier = 1;
+            int tier = 1000;
 
             foreach ((string a, string v) a in args)
             {
@@ -214,10 +214,24 @@ namespace LukeBot.Twitch.Impl
                 case "Type": type = Enum.Parse<TwitchSubscriptionType>(a.v); break;
                 case "User": user = a.v; break;
                 case "DisplayName": displayName = a.v; break;
-                case "Tier": tier = Int32.Parse(a.v); break;
+                case "Tier":
+                {
+                    tier = Int32.Parse(a.v);
+                    if (tier == 1 || tier == 2 || tier == 3)
+                    {
+                        // Twitch numbers tiers by 1000's, this is a shorthand so it translate correctly
+                        tier *= 1000;
+                    }
+
+                    if (tier != 1000 && tier != 2000 && tier != 3000)
+                    {
+                        Logger.Log().Warning("Tier {0} for test Subscription event is incorrect - valid values are 1(000), 2(000), 3(000). Defaulting to 1000.", tier);
+                        tier = 1000;
+                    }
+                    break;
+                }
                 case "Message": message = a.v; break;
                 default:
-                    //Logger.Log().Warning("Unknown test event arg: {0}", a.a);
                     break;
                 }
             }

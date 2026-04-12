@@ -211,15 +211,30 @@ namespace LukeBot.Twitch
 
         public virtual void FillStringArgs(IEnumerable<(string a, string v)> args)
         {
-            int tier = 1;
+            int tier = 1000;
 
             foreach ((string a, string v) a in args)
             {
                 switch (a.a)
                 {
-                case "Tier": tier = Int32.Parse(a.v); break;
+                case "Tier":
+                {
+                    int t = Int32.Parse(a.v);
+                    if (t == 1 || t == 2 || t == 3)
+                    {
+                        t *= 1000;
+                    }
+
+                    if (t == 1000 || t == 2000 || t == 3000)
+                    {
+                        tier = t;
+                    }
+                    break;
+                }
                 }
             }
+
+            Tier = tier;
         }
 
         public override string ToString()
@@ -249,7 +264,6 @@ namespace LukeBot.Twitch
 
         public override void FillStringArgs(IEnumerable<(string a, string v)> args)
         {
-            int tier = 1;
             int cumulative = 3;
             int streak = 3;
             int duration = 1;
@@ -258,17 +272,17 @@ namespace LukeBot.Twitch
             {
                 switch (a.a)
                 {
-                case "Tier": tier = Int32.Parse(a.v); break;
                 case "Cumulative": cumulative = Int32.Parse(a.v); break;
                 case "Streak": streak = Int32.Parse(a.v); break;
                 case "Duration": duration = Int32.Parse(a.v); break;
                 }
             }
 
-            Tier = tier;
             Cumulative = cumulative;
             Streak = streak;
             Duration = duration;
+
+            base.FillStringArgs(args);
         }
 
         public override string ToString()
@@ -294,20 +308,19 @@ namespace LukeBot.Twitch
 
         public override void FillStringArgs(IEnumerable<(string a, string v)> args)
         {
-            int tier = 1;
             int recipents = 10;
 
             foreach ((string a, string v) a in args)
             {
                 switch (a.a)
                 {
-                case "Tier": tier = Int32.Parse(a.v); break;
                 case "Recipents": recipents = Int32.Parse(a.v); break;
                 }
             }
 
-            Tier = tier;
             RecipentCount = recipents;
+
+            base.FillStringArgs(args);
         }
 
         public override string ToString()

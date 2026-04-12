@@ -376,25 +376,26 @@
 
         #formChannelPointsRedemption(msgObj) {
             this.#formCommon(msgObj);
-            this.Headline = ` redeemed ${msgObj.Title} for ${msgObj.Cost}`;
+            this.Headline = ` redeemed ${msgObj.Title} | ${msgObj.Cost}`;
         }
 
         #formSubscription(msgObj) {
             this.#formCommon(msgObj);
 
+            let tier = msgObj.Details.Tier / 1000;
             switch (msgObj.Details.Type)
             {
             case TwitchSubscriptionType.New:
-                this.Headline = ` subscribed at Tier ${msgObj.Details.Tier}!`;
+                this.Headline = ` subscribed at Tier ${tier}!`;
                 break;
             case TwitchSubscriptionType.Gift:
-                this.Headline = ` gifted ${msgObj.Details.RecipentCount} Tier ${msgObj.Details.Tier} subscriptions!`;
+                this.Headline = ` gifted ${msgObj.Details.RecipentCount} Tier ${tier} subscriptions!`;
                 break;
             case TwitchSubscriptionType.Resub:
                 if (msgObj.Details.Streak != 0) {
-                    this.Headline = ` subscribed at Tier ${msgObj.Details.Tier} for ${msgObj.Details.Cumulative} months, being on a ${msgObj.Details.Streak}-month sub streak!`;
+                    this.Headline = ` subscribed at Tier ${tier} for ${msgObj.Details.Cumulative} months, being on a ${msgObj.Details.Streak}-month sub streak!`;
                 } else {
-                    this.Headline = ` subscribed at Tier ${msgObj.Details.Tier} for ${msgObj.Details.Cumulative} months!`;
+                    this.Headline = ` subscribed at Tier ${tier} for ${msgObj.Details.Cumulative} months!`;
                 }
                 break;
             default:

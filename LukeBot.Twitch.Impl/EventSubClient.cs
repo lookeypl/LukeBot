@@ -485,6 +485,8 @@ namespace LukeBot.Twitch.Impl
 
         private void UpdateMessageViaIdentity(TwitchChatMessageArgs msg)
         {
+            if (msg == null) return;
+
             try
             {
                 TwitchUserCollection userCollection = GetUserModule().GetTwitchUsers();

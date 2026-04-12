@@ -32,6 +32,7 @@ namespace LukeBot.Twitch.Impl
         private const string MSG_CATEGORY_WATCH_STREAK = "watch-streak";
 
         private IUserContext mLBUser;
+        private Token mChannelToken;
         private string mChannelName;
         private TwitchUserIdentity mChannelIdentity;
         private Dictionary<string, ICommand> mCommands = new();
@@ -210,6 +211,7 @@ namespace LukeBot.Twitch.Impl
         public IRCChannel(IUserContext lbUser, TwitchUserIdentity channelIdentity, Token userToken)
         {
             mLBUser = lbUser;
+            mChannelToken = userToken;
             mChannelName = channelIdentity.Username;
             mChannelIdentity = channelIdentity;
 
@@ -272,7 +274,7 @@ namespace LukeBot.Twitch.Impl
 
                 if (m.GetTag(TAG_BADGES, out string badges) && badges != null && badges.Length > 0)
                 {
-                    // LKTODO message.AddBadges(mChannelBadges.GetBadges(badges));
+                    message.AddBadges(GetUserModule().GetBadges(badges));
                 }
             }
             else
@@ -291,6 +293,21 @@ namespace LukeBot.Twitch.Impl
             TwitchChatMessageArgs message = FormChatMessageEvent(m, tagsEnabled);
 
             mMessageEventCallback.PublishEvent(message);
+
+            // update TwitchUserCollection
+            try
+            {
+                TwitchUserCollection collection = GetUserModule().GetTwitchUsers();
+                TwitchUserIdentity identity = collection.FetchUser(mChannelToken, true, message.User);
+                identity.Badges = message.Badges;
+            }
+            catch (System.Exception e) when (e is KeyNotFoundException || e is APIErrorException)
+            {
+                // this should not happen techincally, but it either means the user was not found
+                // in the collection, or it does not exist on Twitch. Log a warning anyway in case
+                // this actually happens and continue on.
+                Logger.Log().Warning("IRCChannel #{0}: User {1} seems to not exist, cannot update Identity.", mChannelName, message.User);
+            }
 
             // Command processing
             string chatMsg = m.GetTrailingParam();

@@ -89,6 +89,11 @@ namespace LukeBot.Twitch.Impl
             }
         }
 
+        private TwitchUserModule GetUserModule()
+        {
+            return Service.Get<ITwitchService>().GetModule(mLBUser) as TwitchUserModule;
+        }
+
         private void OnConnected()
         {
             EventHandler handler = Connected;
@@ -172,7 +177,9 @@ namespace LukeBot.Twitch.Impl
                 }
             }
 
-            return new TwitchChannelPointsRedemptionArgs(user, displayName, id, title, cost, prompt, message);
+            TwitchChannelPointsRedemptionArgs ret = new (user, displayName, id, title, cost, prompt, message);
+            UpdateMessageViaIdentity(ret.Message);
+            return ret;
         }
 
         private EventArgsBase GenerateTestCheerEvent(IEnumerable<(string attrib, string value)> args)
@@ -196,7 +203,9 @@ namespace LukeBot.Twitch.Impl
                 }
             }
 
-            return new TwitchCheerArgs(Guid.NewGuid().ToString(), user, displayName, amount, message);
+            TwitchCheerArgs ret = new (Guid.NewGuid().ToString(), user, displayName, amount, message);
+            UpdateMessageViaIdentity(ret.Message);
+            return ret;
         }
 
         private EventArgsBase GenerateTestSubscriptionEvent(IEnumerable<(string attrib, string value)> args)
@@ -248,8 +257,9 @@ namespace LukeBot.Twitch.Impl
             }
 
             details.FillStringArgs(args);
-
-            return new TwitchSubscriptionArgs(Guid.NewGuid().ToString(), user, displayName, message, details);
+            TwitchSubscriptionArgs ret = new (Guid.NewGuid().ToString(), user, displayName, message, details);
+            UpdateMessageViaIdentity(ret.Message);
+            return ret;
         }
 
         private EventArgsBase GenerateTestStreamOnlineEvent(IEnumerable<(string attrib, string value)> args)
@@ -473,6 +483,27 @@ namespace LukeBot.Twitch.Impl
             Logger.Log().Info("EventSubClient {0}: Reconnect: New socket acquired", mLBUser.GetUsername());
         }
 
+        private void UpdateMessageViaIdentity(TwitchChatMessageArgs msg)
+        {
+            try
+            {
+                TwitchUserCollection userCollection = GetUserModule().GetTwitchUsers();
+                TwitchUserIdentity identity = userCollection.FetchUser(mToken, true, msg.User);
+
+                msg.Color = identity.Color;
+                if (identity.Badges.Count > 0)
+                {
+                    msg.Badges.AddRange(identity.Badges);
+                }
+            }
+            catch (System.Exception e) when (e is KeyNotFoundException || e is APIErrorException)
+            {
+                // user was not present and fetch failed - assume test generator called us, set default color and quietly leave
+                msg.Color = Constants.DEFAULT_CHAT_USER_COLOR;
+                return;
+            }
+        }
+
         private void EmitChannelPointsEvent(EventSub.PayloadEvent eventData)
         {
             EventSub.PayloadChannelPointRedemptionEvent data = eventData as EventSub.PayloadChannelPointRedemptionEvent;
@@ -491,6 +522,7 @@ namespace LukeBot.Twitch.Impl
 
             TwitchChannelPointsRedemptionArgs args = new(data.user_login, data.user_name,
                 data.reward.id, data.reward.title, data.reward.cost, data.reward.prompt, data.user_input);
+            UpdateMessageViaIdentity(args.Message);
             mChannelPointsRedemptionCallback.PublishEvent(args);
         }
 
@@ -511,6 +543,7 @@ namespace LukeBot.Twitch.Impl
             }
 
             TwitchCheerArgs args = new(Guid.NewGuid().ToString(), login, displayName, data.bits, data.message);
+            UpdateMessageViaIdentity(args.Message);
             mCheerCallback.PublishEvent(args);
         }
 
@@ -554,7 +587,7 @@ namespace LukeBot.Twitch.Impl
             TwitchSubscriptionArgs subArgs = new(Guid.NewGuid().ToString(),
                 eventData.user_login, eventData.user_name, resubMessage, details
             );
-
+            UpdateMessageViaIdentity(subArgs.Message);
             mSubscriptionCallback.PublishEvent(subArgs);
         }
 

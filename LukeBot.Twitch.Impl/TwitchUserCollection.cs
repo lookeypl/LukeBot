@@ -39,6 +39,9 @@ namespace LukeBot.Twitch.Impl
 
         public TwitchUserIdentity FetchUser(Token apiToken, bool ignoreExisting, string username)
         {
+            if (ignoreExisting && mUsernameToID.ContainsKey(username))
+                return Username(username);
+
             return FetchUsers(apiToken, ignoreExisting, new string[] { username })[0];
         }
 

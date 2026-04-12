@@ -427,7 +427,7 @@ namespace LukeBot.Tests.Twitch.Impl
 
         [TestMethodSkippedWithoutTwitchCLI]
         [DataRow(Events.TWITCH_SUBSCRIPTION, EventSubClient.SUB_SUBSCRIBE)]
-        public void EventSub_Events(string expectedLBEvent, Type expectedEventArgsType, string receivedESEvent)
+        public void EventSub_Events(string expectedLBEvent, string receivedESEvent)
         {
             // ...
         }

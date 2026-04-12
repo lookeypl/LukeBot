@@ -178,6 +178,11 @@ namespace LukeBot.Twitch.Impl
             return mChannelIdentity;
         }
 
+        internal TwitchUserCollection GetTwitchUsers()
+        {
+            return mTwitchUsers;
+        }
+
         internal Token GetUserToken()
         {
             return mUserToken;

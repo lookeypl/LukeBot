@@ -50,12 +50,12 @@ namespace LukeBot.Twitch.Impl
 
         // below entries are purely optional and will be filled eventually
         // (ex. when EventSub or IRC get this information and fill them)
-        private IdentityEntry<List<BadgeSet>> mBadges = new(new List<BadgeSet>());
-        private IdentityEntry<string> mColor = new("#aaaaaa");
+        private IdentityEntry<List<MessageBadge>> mBadges = new(new List<MessageBadge>());
+        private IdentityEntry<string> mColor = new(Constants.DEFAULT_CHAT_USER_COLOR);
         // ...
 
         // Property-accessors for optional entries
-        public List<BadgeSet> Badges { get => mBadges.Data; set => mBadges.Data = value; }
+        public List<MessageBadge> Badges { get => mBadges.Data; set => mBadges.Data = value; }
         public string Color { get => mColor.Data; set => mColor.Data = value; }
 
         public TwitchUserIdentity(API.Twitch.GetUserData userData)

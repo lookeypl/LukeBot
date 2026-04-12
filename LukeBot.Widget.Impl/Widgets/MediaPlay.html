@@ -4,9 +4,9 @@
 <script src="/js/lukebot-widget-common.js"></script>
 
 <script>
-    class AudioPlayConfig {
+    class MediaPlayConfig {
         constructor(receivedConfig) {
-            if (receivedConfig.EventName != "AudioPlayWidgetInternalConfig") {
+            if (receivedConfig.EventName != "MediaPlayWidgetInternalConfig") {
                 throw new Error("Invalid config object received");
             }
 
@@ -97,41 +97,41 @@
         }
     }
 
-    let audioPlayWidget = new LukeBotWidget();
-    audioPlayWidget.onInterruptEvent((guid) => {
+    let mediaPlayWidget = new LukeBotWidget();
+    mediaPlayWidget.onInterruptEvent((guid) => {
         executionQueue.interrupt(guid);
     });
-    audioPlayWidget.registerMessage("AudioPlayWidgetInternalConfig", (obj) => {
-        Settings = new AudioPlayConfig(obj);
-        audioPlayWidget.send(WidgetResponse.fromMessage(obj));
+    mediaPlayWidget.registerMessage("MediaPlayWidgetInternalConfig", (obj) => {
+        Settings = new MediaPlayConfig(obj);
+        mediaPlayWidget.send(WidgetResponse.fromMessage(obj));
     });
-    audioPlayWidget.registerMessage("AudioPlayStartFilePlayback", (obj) => {
+    mediaPlayWidget.registerMessage("MediaPlayStartAudioFilePlayback", (obj) => {
         if (!obj.File) {
-            audioPlayWidget.send(WidgetResponse.fromError(obj.EventID, `ERROR undefined file to play`));
+            mediaPlayWidget.send(WidgetResponse.fromError(obj.EventID, `ERROR undefined file to play`));
         }
 
-        let audioPlayChain = new AlertChain(obj);
+        let mediaPlayChain = new AlertChain(obj);
         if (obj.RandomRepeat == true) {
-            audioPlayChain.add(new RandomAudioAlert(obj.File, obj.TotalLength, obj.MinInterval, obj.MaxInterval));
+            mediaPlayChain.add(new RandomAudioAlert(obj.File, obj.TotalLength, obj.MinInterval, obj.MaxInterval));
         } else {
-            audioPlayChain.add(new AudioAlert(obj.File));
+            mediaPlayChain.add(new AudioAlert(obj.File));
         }
 
-        audioPlayChain.add(new AlertChainComplete(obj, audioPlayWidget, executionQueue));
+        mediaPlayChain.add(new AlertChainComplete(obj, mediaPlayWidget, executionQueue));
         if (Settings.QueuePlayback) {
-            executionQueue.push(audioPlayChain);
+            executionQueue.push(mediaPlayChain);
         } else {
-            audioPlayChain.execute();
+            mediaPlayChain.execute();
         }
     });
-    audioPlayWidget.registerMessage("AudioPlayStartTTSPlayback", (obj) => {
-        let audioPlayChain = new AlertChain(obj);
-        audioPlayChain.add(new TTSAlert(obj.Voice, obj.Message));
-        audioPlayChain.add(new AlertChainComplete(obj, audioPlayWidget, executionQueue));
+    mediaPlayWidget.registerMessage("MediaPlayStartTTSPlayback", (obj) => {
+        let mediaPlayChain = new AlertChain(obj);
+        mediaPlayChain.add(new TTSAlert(obj.Voice, obj.Message));
+        mediaPlayChain.add(new AlertChainComplete(obj, mediaPlayWidget, executionQueue));
         if (Settings.QueuePlayback) {
-            executionQueue.push(audioPlayChain);
+            executionQueue.push(mediaPlayChain);
         } else {
-            audioPlayChain.execute();
+            mediaPlayChain.execute();
         }
     });
 

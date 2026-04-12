@@ -7,6 +7,6 @@
         nowplaying,
         chat,
         alerts,
-        audioplay,
+        mediaplay,
     }
 }

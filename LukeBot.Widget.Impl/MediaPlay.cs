@@ -17,16 +17,16 @@ namespace LukeBot.Widget.Impl
      *
      * TODO consider adding some sort of "stop playing" event or whatever
      */
-    public class AudioPlay: QueueableEventWidget
+    public class MediaPlay: QueueableEventWidget
     {
         private const string FILE_REDEMPTION = "file";
         private const string TTS_REDEMPTION = "tts";
 
-        public class AudioPlayStartPlayback: SerializableEventArgsBase
+        public class MediaPlayStartPlayback: SerializableEventArgsBase
         {
             public string Type { get; set; }
 
-            public AudioPlayStartPlayback(string eventName, string type)
+            public MediaPlayStartPlayback(string eventName, string type)
                 : base(eventName)
             {
                 Type = type;
@@ -34,11 +34,11 @@ namespace LukeBot.Widget.Impl
 
             public override string Serialize()
             {
-                return JsonSerializer.Serialize<AudioPlayStartPlayback>(this);
+                return JsonSerializer.Serialize<MediaPlayStartPlayback>(this);
             }
         }
 
-        public class AudioPlayStartFilePlayback: AudioPlayStartPlayback
+        public class MediaPlayStartAudioFilePlayback: MediaPlayStartPlayback
         {
             public string File { get; set; }
             public bool RandomRepeat { get; set; }
@@ -46,8 +46,8 @@ namespace LukeBot.Widget.Impl
             public int MinInterval { get; set; }
             public int MaxInterval { get; set; }
 
-            public AudioPlayStartFilePlayback(string file)
-                : base("AudioPlayStartFilePlayback", FILE_REDEMPTION)
+            public MediaPlayStartAudioFilePlayback(string file)
+                : base(nameof(MediaPlayStartAudioFilePlayback), FILE_REDEMPTION)
             {
                 File = file;
                 RandomRepeat = false;
@@ -55,7 +55,7 @@ namespace LukeBot.Widget.Impl
 
             public override string Serialize()
             {
-                return JsonSerializer.Serialize<AudioPlayStartFilePlayback>(this);
+                return JsonSerializer.Serialize<MediaPlayStartAudioFilePlayback>(this);
             }
 
             public override string ToString()
@@ -67,13 +67,13 @@ namespace LukeBot.Widget.Impl
             }
         }
 
-        public class AudioPlayStartTTSPlayback: AudioPlayStartPlayback
+        public class MediaPlayStartTTSPlayback: MediaPlayStartPlayback
         {
             public string Voice { get; set; }
             public string Message { get; set; }
 
-            public AudioPlayStartTTSPlayback(string voice, string message)
-                : base("AudioPlayStartTTSPlayback", TTS_REDEMPTION)
+            public MediaPlayStartTTSPlayback(string voice, string message)
+                : base(nameof(MediaPlayStartTTSPlayback), TTS_REDEMPTION)
             {
                 Voice = voice;
                 Message = message;
@@ -81,7 +81,7 @@ namespace LukeBot.Widget.Impl
 
             public override string Serialize()
             {
-                return JsonSerializer.Serialize<AudioPlayStartTTSPlayback>(this);
+                return JsonSerializer.Serialize<MediaPlayStartTTSPlayback>(this);
             }
 
             public override string ToString()
@@ -91,7 +91,7 @@ namespace LukeBot.Widget.Impl
         }
 
 
-        public class AudioTriggerFile: Configuration<AudioTriggerFile>
+        public class MediaTriggerFile: Configuration<MediaTriggerFile>
         {
             [ConfigurationField]
             public string FileName = "FILLMEIN";
@@ -111,7 +111,7 @@ namespace LukeBot.Widget.Impl
 
         public class VisibleForFileRedemption: ConfigurationParameterizedVisibilityAttribute<string>
         {
-            public VisibleForFileRedemption(): base(nameof(AudioTrigger.RedemptionType)) {}
+            public VisibleForFileRedemption(): base(nameof(MediaTrigger.RedemptionType)) {}
 
             public override bool Predicate(string parameter)
             {
@@ -121,7 +121,7 @@ namespace LukeBot.Widget.Impl
 
         public class VisibleForTTSRedemption: ConfigurationParameterizedVisibilityAttribute<string>
         {
-            public VisibleForTTSRedemption(): base(nameof(AudioTrigger.RedemptionType)) {}
+            public VisibleForTTSRedemption(): base(nameof(MediaTrigger.RedemptionType)) {}
 
             public override bool Predicate(string parameter)
             {
@@ -129,7 +129,7 @@ namespace LukeBot.Widget.Impl
             }
         }
 
-        public class AudioTrigger: Configuration<AudioTrigger>
+        public class MediaTrigger: Configuration<MediaTrigger>
         {
             [ConfigurationField]
             public string RedemptionName = "FILLMEIN";
@@ -139,7 +139,7 @@ namespace LukeBot.Widget.Impl
             // File redemption details
             [ConfigurationField]
             [VisibleForFileRedemption]
-            public List<AudioTriggerFile> Files = new();
+            public List<MediaTriggerFile> Files = new();
             [ConfigurationField]
             [VisibleForFileRedemption]
             public int RepeatLength = 0;
@@ -189,12 +189,12 @@ namespace LukeBot.Widget.Impl
             }
         }
 
-        private Dictionary<string, AudioTrigger> mTriggers = new();
+        private Dictionary<string, MediaTrigger> mTriggers = new();
 
         public class Config: Configuration<Config>
         {
             [ConfigurationField]
-            public List<AudioTrigger> Triggers = new();
+            public List<MediaTrigger> Triggers = new();
             [ConfigurationField]
             public bool QueuePlayback = false;
 
@@ -203,17 +203,17 @@ namespace LukeBot.Widget.Impl
             }
         }
 
-        private class AudioPlayWidgetInternalConfig: SerializableEventArgsBase
+        private class MediaPlayWidgetInternalConfig: SerializableEventArgsBase
         {
             public bool QueuePlayback = false;
 
-            public AudioPlayWidgetInternalConfig()
-                : base(nameof(AudioPlayWidgetInternalConfig))
+            public MediaPlayWidgetInternalConfig()
+                : base(nameof(MediaPlayWidgetInternalConfig))
             {}
 
             public override string Serialize()
             {
-                return JsonSerializer.Serialize<AudioPlayWidgetInternalConfig>(this);
+                return JsonSerializer.Serialize<MediaPlayWidgetInternalConfig>(this);
             }
         }
 
@@ -225,12 +225,12 @@ namespace LukeBot.Widget.Impl
 
             if (!mTriggers.ContainsKey(a.Title))
             {
-                Logger.Log().Debug("Audio trigger {0} does not exist", a.Title);
+                Logger.Log().Debug("Media trigger {0} does not exist", a.Title);
                 a.Completed();
                 return;
             }
 
-            AudioTrigger trigger = mTriggers[a.Title];
+            MediaTrigger trigger = mTriggers[a.Title];
 
             if (trigger.RedemptionType == FILE_REDEMPTION)
             {
@@ -240,7 +240,7 @@ namespace LukeBot.Widget.Impl
                 {
                     if (trigger.Files.Count == 0)
                     {
-                        Logger.Log().Warning("Audio trigger {0} has no files added", a.Title);
+                        Logger.Log().Warning("Media trigger {0} has no files added", a.Title);
                         a.Completed();
                         return;
                     }
@@ -254,7 +254,7 @@ namespace LukeBot.Widget.Impl
 
                     // iterate over all files until odds weight falls where needed
                     fileIdx = 0;
-                    foreach (AudioTriggerFile f in trigger.Files)
+                    foreach (MediaTriggerFile f in trigger.Files)
                     {
                         if (f.Odds > rngRoll) break;
 
@@ -263,7 +263,7 @@ namespace LukeBot.Widget.Impl
                     }
                 }
 
-                AudioPlayStartFilePlayback playback = new(trigger.Files[fileIdx].FileName);
+                MediaPlayStartAudioFilePlayback playback = new(trigger.Files[fileIdx].FileName);
 
                 if (trigger.RepeatLength > 0)
                 {
@@ -279,13 +279,13 @@ namespace LukeBot.Widget.Impl
             {
                 if (a.Message != null)
                 {
-                    AudioPlayStartTTSPlayback playback = new(trigger.Voice, a.Message.Message);
+                    MediaPlayStartTTSPlayback playback = new(trigger.Voice, a.Message.Message);
                     SendEvent(playback);
                 }
             }
         }
 
-        private void SendConfiguration(AudioPlayWidgetInternalConfig config)
+        private void SendConfiguration(MediaPlayWidgetInternalConfig config)
         {
             WidgetResponse response = SendEventAndWait(config);
             if (response == null) return; // quietly ignore, Widget is not connected yet
@@ -305,7 +305,7 @@ namespace LukeBot.Widget.Impl
             EventSubscribe(Events.TWITCH_CHANNEL_POINTS_REDEMPTION, OnChannelPoints, true);
 
             // notify internal config to not queue the alerts
-            AudioPlayWidgetInternalConfig internalConfig = new();
+            MediaPlayWidgetInternalConfig internalConfig = new();
             internalConfig.QueuePlayback = false;
             SendConfiguration(internalConfig);
         }
@@ -321,12 +321,12 @@ namespace LukeBot.Widget.Impl
             mTriggers.Clear();
 
             Config c = GetConfig() as Config;
-            foreach (AudioTrigger t in c.Triggers)
+            foreach (MediaTrigger t in c.Triggers)
             {
                 if (t.RedemptionType == FILE_REDEMPTION)
                 {
                     t.TotalOdds = 0;
-                    foreach (AudioTriggerFile f in t.Files)
+                    foreach (MediaTriggerFile f in t.Files)
                     {
                         t.TotalOdds += f.Odds;
                     }
@@ -336,7 +336,7 @@ namespace LukeBot.Widget.Impl
             }
 
             // send separate internal config to queue the alerts (or not)
-            AudioPlayWidgetInternalConfig internalConfig = new();
+            MediaPlayWidgetInternalConfig internalConfig = new();
             internalConfig.QueuePlayback = c.QueuePlayback;
             SendConfiguration(internalConfig);
         }
@@ -354,17 +354,17 @@ namespace LukeBot.Widget.Impl
             return new Config();
         }
 
-        public AudioPlay(string lbUser, string id, string name)
-            : base(lbUser, "Widgets/AudioPlay.html", id, name)
+        public MediaPlay(string lbUser, string id, string name)
+            : base(lbUser, "Widgets/MediaPlay.html", id, name)
         {
         }
 
         public override WidgetType GetWidgetType()
         {
-            return WidgetType.audioplay;
+            return WidgetType.mediaplay;
         }
 
-        ~AudioPlay()
+        ~MediaPlay()
         {
         }
     }

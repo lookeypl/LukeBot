@@ -566,7 +566,7 @@ namespace LukeBot.Twitch.Impl
             {
                 EventSub.PayloadSubMessageEvent data = eventData as EventSub.PayloadSubMessageEvent;
                 details = new TwitchResubscriptionDetails(
-                    Int32.Parse(data.tier) / 1000,
+                    Int32.Parse(data.tier),
                     data.cumulative_months,
                     (data.streak_months != null) ? (int)data.streak_months : 0,
                     data.duration_months

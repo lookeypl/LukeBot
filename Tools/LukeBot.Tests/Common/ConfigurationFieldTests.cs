@@ -114,6 +114,7 @@ namespace LukeBot.Tests.Common
             Assert.AreEqual(expectedUnderlyingType, field.UnderlyingType);
             Assert.AreEqual(expectedFieldType, field.FieldType);
             Assert.IsTrue(field.Visible); // by default all fields should be visible
+            Assert.IsTrue(field.Serializable); // by default all fields should be serializable
         }
     }
 }

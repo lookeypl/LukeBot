@@ -36,6 +36,7 @@ namespace LukeBot.Common
                 string name = prop.Name;
                 if (!fields.ContainsKey(name)) continue;
                 if (!fields[name].IsRoot) continue;
+                if (!fields[name].Serializable) continue;
 
                 switch (prop.Value.ValueKind)
                 {
@@ -69,6 +70,7 @@ namespace LukeBot.Common
             foreach (ConfigurationField field in fields.Values)
             {
                 if (!IncludeHidden && !field.Visible) continue;
+                if (!field.Serializable) continue;
 
                 // TODO while this prevents writing sub-objects as "separate" objects,
                 // this also will simply write down every single field inside that object, not just ConfigurationFieldAttribute-ones

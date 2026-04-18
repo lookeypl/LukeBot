@@ -372,7 +372,7 @@ namespace LukeBot.Common
             return false;
         }
 
-        public void CollectConfigurationVisibilityAttributes(object fieldRef)
+        public void CollectAdditionalVisibilityAttributes(object fieldRef)
         {
             MemberInfo[] members = fieldRef.GetType().GetMembers(
                 BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic
@@ -380,57 +380,59 @@ namespace LukeBot.Common
 
             foreach (MemberInfo member in members)
             {
-                Attribute[] attrs = Attribute.GetCustomAttributes(member, typeof(ConfigurationFieldVisibilityAttribute), true);
+                Attribute[] attrs = Attribute.GetCustomAttributes(member, typeof(ConfigurationAdditionalAttribute), true);
 
-                if (attrs == null)
+                if (attrs == null || attrs.Length == 0)
                 {
                     // no attributes, quietly ignore this member
                     continue;
                 }
 
-                if (attrs.Length > 1)
+                if (member.MemberType != MemberTypes.Field)
                 {
-                    throw new ConfigurationFieldException("Field {0} can only have one visibility attribute.", member.Name);
+                    Logger.Log().Warning("Configuration declared member {0} as configuration field, but it's not a Field - skipping", member.Name);
+                    continue;
                 }
 
-                if (attrs.Length == 1)
+                FieldInfo field = member as FieldInfo;
+
+                // dig out the field from our preexisting collection
+                if (!mFields.ContainsKey(field.Name))
                 {
-                    if (member.MemberType != MemberTypes.Field)
+                    // if it doesn't exist, it means we should simply ignore it
+                    // additional attributes will have no effect
+                    continue;
+                }
+
+                ConfigurationField confField = mFields[field.Name];
+
+                foreach (Attribute a in attrs)
+                {
+                    if (a is ConfigurationFieldVisibilityAttribute)
                     {
-                        Logger.Log().Warning("Configuration declared member {0} as configuration field, but it's not a Field - skipping", member.Name);
-                        continue;
-                    }
+                        ConfigurationFieldVisibilityAttribute visibility = attrs[0] as ConfigurationFieldVisibilityAttribute;
 
-                    FieldInfo field = member as FieldInfo;
-
-                    // dig out the field from our preexisting collection
-                    if (!mFields.ContainsKey(field.Name))
-                    {
-                        // if it doesn't exist, it means we should simply ignore it
-                        // visibility attribute will have no effect
-                        // TODO should we though?
-                        continue;
-                    }
-
-                    ConfigurationFieldVisibilityAttribute visibility = attrs[0] as ConfigurationFieldVisibilityAttribute;
-                    ConfigurationField confField = mFields[field.Name];
-
-                    if (visibility.GetType().IsAssignableTo(typeof(ConfigurationParameterizedVisibilityBaseAttribute)))
-                    {
-                        ConfigurationParameterizedVisibilityBaseAttribute baseVisibility = visibility as ConfigurationParameterizedVisibilityBaseAttribute;
-
-                        if (!mFields.ContainsKey(baseVisibility.mParameterName))
+                        if (visibility.GetType().IsAssignableTo(typeof(ConfigurationParameterizedVisibilityBaseAttribute)))
                         {
-                            throw new ConfigurationFieldException("Predicate-based visibility attribute refers to non-existent field: {0}", baseVisibility.mParameterName);
+                            ConfigurationParameterizedVisibilityBaseAttribute baseVisibility = visibility as ConfigurationParameterizedVisibilityBaseAttribute;
+
+                            if (!mFields.ContainsKey(baseVisibility.mParameterName))
+                            {
+                                throw new ConfigurationFieldException("Predicate-based visibility attribute refers to non-existent field: {0}", baseVisibility.mParameterName);
+                            }
+
+                            baseVisibility.SetPredicateAccessor(mFields[baseVisibility.mParameterName]);
                         }
 
-                        baseVisibility.SetPredicateAccessor(mFields[baseVisibility.mParameterName]);
+                        // check if visibility attribute is actually a derivative of ConfigurationParameterizedVisibilityAttribute
+                        // if it is, we need to perform field resolution so that Predicate() calls work
+
+                        confField.SetVisibilityPredicate(visibility);
                     }
-
-                    // check if visibility attribute is actually a derivative of ConfigurationParameterizedVisibilityAttribute
-                    // if it is, we need to perform field resolution so that Predicate() calls work
-
-                    confField.SetVisibilityPredicate(visibility);
+                    else if (a is ConfigurationSerializationIgnoreAttribute)
+                    {
+                        confField.SetSerializable(false);
+                    }
                 }
             }
         }
@@ -439,7 +441,7 @@ namespace LukeBot.Common
             : base(typeof(Configurable).Name, typeof(Configurable).FullName)
         {
             RegisterConfigurationFields(this);
-            CollectConfigurationVisibilityAttributes(this);
+            CollectAdditionalVisibilityAttributes(this);
         }
 
         public override string Serialize(bool includeHidden)

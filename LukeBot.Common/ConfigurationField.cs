@@ -61,9 +61,20 @@ namespace LukeBot.Common
     }
 
 
+    public class ConfigurationAdditionalAttribute: Attribute
+    {
+    }
+
+    // Ignore serialization attribute
+    // When added, Configuration.Serialize() will skip the member and not serialize it.
+    public class ConfigurationSerializationIgnoreAttribute: ConfigurationAdditionalAttribute
+    {
+    }
+
+
     // Visibility attribute base
     // Inherit this to define a custom visibility predicate
-    public abstract class ConfigurationFieldVisibilityAttribute: Attribute
+    public abstract class ConfigurationFieldVisibilityAttribute: ConfigurationAdditionalAttribute
     {
         internal abstract bool Visible { get; }
     }
@@ -175,6 +186,7 @@ namespace LukeBot.Common
         public abstract Type Type { get; }
         public abstract Type UnderlyingType { get; }
         public bool Visible { get => mVisibility.Visible; }
+        public bool Serializable { get; internal set; }
         public ConfigurationBase.OnUpdateDelegate mUpdateDelegate = null;
         private ConfigurationFieldVisibilityAttribute mVisibility = new ConfigurationFieldVisibleAttribute();
         internal bool IsRoot { get; set; }
@@ -190,6 +202,7 @@ namespace LukeBot.Common
             FieldType = type;
             IsRoot = ConfigurationBase.IsRootField(name);
             UnderlyingFieldType = ConfigurationBase.DetermineFieldType(UnderlyingType);
+            Serializable = true;
         }
 
         public T Get<T>()
@@ -224,6 +237,11 @@ namespace LukeBot.Common
             }
 
             mVisibility = visibilityAttribute;
+        }
+
+        internal void SetSerializable(bool serializable)
+        {
+            Serializable = serializable;
         }
     }
 

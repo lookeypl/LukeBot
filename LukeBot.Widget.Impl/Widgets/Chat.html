@@ -40,6 +40,10 @@
         vertical-align: baseline;
     }
 
+    .chat-action-text-fragment {
+        font-style: italic;
+    }
+
     .chat-system-text-fragment {
         font-style: italic;
         color: grey;
@@ -120,6 +124,11 @@
         Notice: 3,
     });
 
+    const ChatMessageType = Object.freeze({
+        Message: 0,
+        Action: 1
+    });
+
     const EventType = Object.freeze({
         ChatMessage: "TwitchChatMessage",
         ChatClearMessage: "TwitchChatClearMessage",
@@ -180,6 +189,7 @@
         User = "";
         DisplayName = "";
         Message = "";
+        MessageType = ChatMessageType.Message;
         Emotes = [];
         Badges = [];
 
@@ -197,6 +207,7 @@
             this.User = msgObj.User;
             this.DisplayName = msgObj.DisplayName;
             this.Message = msgObj.Message;
+            this.MessageType = msgObj.MessageType;
             if (msgObj.Emotes != undefined) {
                 msgObj.Emotes.forEach(function (e) {
                     e.Ranges.forEach(function (r) {
@@ -284,6 +295,9 @@
 
             let textNode = document.createElement("span");
             textNode.classList.add("chat-text-fragment");
+            if (this.MessageType == ChatMessageType.Action) {
+                textNode.classList.add("chat-action-text-fragment");
+            }
             let textDataNode = document.createTextNode(`${this.Message}`);
             textNode.appendChild(textDataNode);
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using LukeBot.Logging;
 
 
@@ -7,6 +8,15 @@ namespace LukeBot.Common
 {
     public class IRCMessage
     {
+        public enum TrailingType
+        {
+            Message = 0,
+            Action,
+        };
+
+        // deliminator for extended messages in IRC
+        private const char X_DELIM = (char)1;
+
         // These are kept as private fields and accessible via API
 
         // Original, untouched contents of the message. Useful for debugging.
@@ -24,6 +34,9 @@ namespace LukeBot.Common
 
         // Trailing parameter which can be anything with spaces, interpreted as one string.
         private string mTrailingParam;
+
+        // How to interpret trailing parameters
+        private TrailingType mTrailingParamType;
 
 
         // Attributes, for simpler parameters of the Message
@@ -258,9 +271,51 @@ namespace LukeBot.Common
                 }
                 case State.TrailingParam:
                 {
-                    m.mTrailingParam = string.Join(' ', tokens, i, tokens.Length - i).Substring(1);
+                    string startToken = tokens[i].Substring(1); // strip starting colon
+                    if (startToken[0] == X_DELIM)
+                    {
+                        m.mTrailingParam = String.Empty;
+                        m.mTrailingParamType = TrailingType.Message;
 
-                    i = tokens.Length; // exit parsing
+                        // message is delimited and contains a subcommand (probably)
+                        // try and parse the subcommand
+                        // NOTE: we will also only "ingest" delimited contents and ignore the rest
+                        // this should be enough and the IRC backend is on its way out anyway
+                        if (startToken.Substring(1) == "ACTION")
+                        {
+                            ++i;
+                            m.mTrailingParamType = TrailingType.Action;
+                        }
+
+                        while (i < tokens.Length)
+                        {
+                            string tok = tokens[i];
+                            if (tok.Length > 0)
+                            {
+                                if (tok[tok.Length - 1] == X_DELIM)
+                                {
+                                    m.mTrailingParam += tok.Substring(0, tok.Length - 1);
+                                    break;
+                                }
+                                else
+                                {
+                                    m.mTrailingParam += tok + ' ';
+                                }
+                            }
+
+                            ++i;
+                        }
+
+                        i = tokens.Length; // exit parsing
+                    }
+                    else
+                    {
+                        // no delimiter, treat remaining params as a regular message
+                        m.mTrailingParam = string.Join(' ', tokens, i, tokens.Length - i).Substring(1);
+                        m.mTrailingParamType = TrailingType.Message;
+
+                        i = tokens.Length; // exit parsing
+                    }
                     break;
                 }
                 }
@@ -421,6 +476,8 @@ namespace LukeBot.Common
                 Logger.Log().Message(level, "   -> {0}", p);
             Logger.Log().Message(level, "  Extracted params:");
             Logger.Log().Message(level, "   -> Channel: {0}", Channel);
+            Logger.Log().Message(level, "  Trailing param type: {0}", mTrailingParamType.ToString());
+            Logger.Log().Message(level, "  Trailing param: {0}", mTrailingParam);
         }
 
         public bool GetTag(string tag, out string value)
@@ -446,6 +503,11 @@ namespace LukeBot.Common
         public string GetTrailingParam()
         {
             return mTrailingParam;
+        }
+
+        public TrailingType GetTrailingParamType()
+        {
+            return mTrailingParamType;
         }
 
         public void AddTag(string t, string v)

@@ -29,6 +29,12 @@ namespace LukeBot.Twitch
 
     // Chat
 
+    public enum ChatMessageType
+    {
+        Message = 0,
+        Action,
+    }
+
     public class TwitchChatMessageArgs: SerializableEventArgsBase
     {
         public string MessageID { get; private set; }
@@ -39,12 +45,14 @@ namespace LukeBot.Twitch
         public string User { get; set; }
         public string DisplayName { get; set; }
         public string Message { get; set; }
+        public ChatMessageType MessageType { get; set; }
 
         public TwitchChatMessageArgs(string msgID, string user, string displayName, string message)
             : base(Events.TWITCH_CHAT_MESSAGE)
         {
             MessageID = msgID;
             Message = message;
+            MessageType = ChatMessageType.Message;
             User = user;
             DisplayName = displayName;
             UserID = "";
@@ -104,6 +112,11 @@ namespace LukeBot.Twitch
             }
 
             Emotes.AddRange(filteredEmotes);
+        }
+
+        public void SetMessageType(ChatMessageType type)
+        {
+            MessageType = type;
         }
 
         public override string Serialize()

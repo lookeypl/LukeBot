@@ -254,6 +254,15 @@ namespace LukeBot.Twitch.Impl
                 displayName = m.User;
 
             TwitchChatMessageArgs message = new TwitchChatMessageArgs(msgID, m.User, displayName, chatMsg);
+            switch (m.GetTrailingParamType())
+            {
+            case IRCMessage.TrailingType.Action:
+                message.SetMessageType(ChatMessageType.Action);
+                break;
+            default:
+                message.SetMessageType(ChatMessageType.Message);
+                break;
+            }
 
             if (tagsEnabled)
             {

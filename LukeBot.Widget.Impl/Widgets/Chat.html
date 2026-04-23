@@ -291,7 +291,11 @@
             userNode.appendChild(userTextNode);
 
             let colonNode = document.createElement("span");
-            colonNode.appendChild(document.createTextNode(": "));
+            if (this.MessageType == ChatMessageType.Message) {
+                colonNode.appendChild(document.createTextNode(": "));
+            } else {
+                colonNode.appendChild(document.createTextNode(" "));
+            }
 
             let textNode = document.createElement("span");
             textNode.classList.add("chat-text-fragment");

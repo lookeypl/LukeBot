@@ -221,11 +221,8 @@ namespace LukeBot.Twitch.Impl
 
         void TryConnect()
         {
-            int reconnectTimeout = 1; // in seconds
-            int reconnectAttempt = 0;
             int reconnectCount = Constants.RECONNECT_ATTEMPTS;
             int refreshTokenAfterTries = 3;
-            bool successful = false;
 
             int reconnectCountConf = 0;
             if (Conf.TryGet(CommonConstants.PROP_STORE_RECONNECT_COUNT_PROP, out reconnectCountConf))
@@ -234,39 +231,29 @@ namespace LukeBot.Twitch.Impl
                 reconnectCount = reconnectCountConf;
             }
 
-            while (reconnectAttempt < reconnectCount)
+            Common.Utils.TryConnect(reconnectCount, 1000, (attempt) =>
             {
-                if (reconnectAttempt > 0)
+                if (attempt > 0)
                 {
-                    Logger.Log().Info("TwitchIRC reconnect attempt #{0}", reconnectAttempt);
+                    Logger.Log().Info("TwitchIRC (re)connect attempt #{0}", attempt);
                 }
 
                 mIRCClient = new IRCClient("irc.chat.twitch.tv", 6697, true);
                 mIRCClient.Login(mName, mToken);
 
-                successful = CheckIfLoginSuccessful();
-                if (successful)
-                    break;
-
-                // connection failed - close, wait, retry
-                Logger.Log().Warning("Login to Twitch IRC server failed - retrying in {0} seconds...", reconnectTimeout);
-                mIRCClient.Close();
-                if (refreshTokenAfterTries == 0)
+                if (!CheckIfLoginSuccessful())
                 {
-                    Logger.Log().Warning("Attempting force-refresh of Twitch login token just in case...");
-                    mToken.Refresh();
+                    // connection failed - close, wait, retry
+                    mIRCClient.Close();
+                    if (attempt == refreshTokenAfterTries)
+                    {
+                        Logger.Log().Warning("Attempting force-refresh of Twitch login token just in case...");
+                        mToken.Refresh();
+                    }
+
+                    throw new LoginFailedException("Connection to Twitch IRC failed.");
                 }
-
-                Thread.Sleep(reconnectTimeout * 1000); // converted to ms
-                reconnectTimeout *= 2;
-                reconnectAttempt++;
-                refreshTokenAfterTries--;
-            }
-
-            if (!successful)
-            {
-                throw new LoginFailedException("Login to Twitch IRC server failed");
-            }
+            });
 
             Logger.Log().Info("Login to Twitch IRC server successful, acquiring caps");
 

@@ -1,6 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using LukeBot.Common;
+using System.Threading.Tasks;
+using System;
 
 
 namespace LukeBot.Tests.Common
@@ -95,6 +97,45 @@ namespace LukeBot.Tests.Common
 
             Assert.AreEqual(expected1, Utils.Shorten(msg, 12));
             Assert.AreEqual(expected1, Utils.Shorten(msg, 10));
+        }
+
+        [TestMethod]
+        public async Task Utils_TryConnect_Successful()
+        {
+            const int ATTEMPTS_TOTAL = 5;
+            const int EXPECTED_RESULT = ATTEMPTS_TOTAL - 1;
+
+            int ret = await Utils.TryConnectAsync(ATTEMPTS_TOTAL, 10, async (attempt) =>
+            {
+                if (attempt < ATTEMPTS_TOTAL - 1)
+                    throw new System.Exception(String.Format("Expected fail #{0}", attempt));
+                return attempt;
+            });
+
+            Assert.AreEqual(EXPECTED_RESULT, ret);
+        }
+
+        class ExpectedInnerException: System.Exception
+        {
+            public ExpectedInnerException()
+                : base("This Exception is expected")
+            {}
+        }
+
+        [TestMethod]
+        public async Task Utils_TryConnect_Failing()
+        {
+            const int ATTEMPTS_TOTAL = 5;
+
+            ConnectionFailedException e = await Assert.ThrowsExceptionAsync<ConnectionFailedException>(async () =>
+            {
+                await Utils.TryConnectAsync(ATTEMPTS_TOTAL, 10, async (attempt) =>
+                {
+                    throw new ExpectedInnerException();
+                });
+            });
+
+            Assert.IsInstanceOfType(e.InnerException, typeof(ExpectedInnerException));
         }
     }
 }

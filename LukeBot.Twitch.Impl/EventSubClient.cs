@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using LukeBot.API;
 using LukeBot.Communication;
 using LukeBot.Common;
+using LukeBot.Config;
 using LukeBot.Twitch;
 using LukeBot.Logging;
 using LukeBot.Services;
@@ -57,7 +58,6 @@ namespace LukeBot.Twitch.Impl
 
         private IUserContext mLBUser = null;
         private TwitchUserIdentity mChannelIdentity = null;
-        private int mConnectionCounter = 0;
         private EventCallback mChannelPointsRedemptionCallback;
         private EventCallback mCheerCallback;
         private EventCallback mSubscriptionCallback;
@@ -498,9 +498,10 @@ namespace LukeBot.Twitch.Impl
                     msg.Badges.AddRange(identity.Badges);
                 }
             }
-            catch (System.Exception e) when (e is KeyNotFoundException || e is APIErrorException)
+            catch (System.Exception e) when (e is KeyNotFoundException || e is APIErrorException || e is UnknownServiceException)
             {
                 // user was not present and fetch failed - assume test generator called us, set default color and quietly leave
+                // UnknownServiceException would realistically only be thrown during Unit Tests
                 msg.Color = Constants.DEFAULT_CHAT_USER_COLOR;
                 return;
             }
@@ -835,16 +836,24 @@ namespace LukeBot.Twitch.Impl
             mToken = token;
             mConnectURI = new(url);
 
-            ClientWebSocket socket = new ClientWebSocket();
-            mConnectionCounter++;
-            await socket.ConnectAsync(mConnectURI, new CancellationTokenSource(mKeepaliveTimeoutSeconds * 1000).Token);
+            int reconnectCount = Constants.RECONNECT_ATTEMPTS;
+            if (Conf.TryGet(Common.Constants.PROP_STORE_RECONNECT_COUNT_PROP, out int reconnectCountConf))
+            {
+                Logger.Log().Debug("Custom reconnect count set in config: {0}", reconnectCountConf);
+                reconnectCount = reconnectCountConf;
+            }
 
-            return socket;
+            return await Common.Utils.TryConnectAsync(reconnectCount, 1000, async (attempts) =>
+            {
+                ClientWebSocket socket = new();
+                await socket.ConnectAsync(mConnectURI, new CancellationTokenSource(mKeepaliveTimeoutSeconds * 1000).Token);
+                return socket;
+            });
         }
 
         public void Connect(Token token, string url = EVENTSUB_URI_MAIN)
         {
-            var mSocketTask = ConnectInternal(token, url);
+            Task<ClientWebSocket> mSocketTask = ConnectInternal(token, url);
             mSocketTask.Wait();
             mSocket = mSocketTask.Result;
 

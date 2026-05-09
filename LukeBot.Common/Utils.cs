@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using LukeBot.Config;
 using LukeBot.Logging;
 
@@ -332,6 +334,107 @@ namespace LukeBot.Common
         public static void RemoveUserModuleFromConfig(string service, string lbUser)
         {
             ConfUtil.ArrayRemove(GetUserModulesPath(service), lbUser);
+        }
+
+        /**
+         * Attempts a connection multiple times with increasing sleep timeout in-between.
+         * This is used in cases where outer services can sometimes fail to connect
+         * for reasons unknown to mankind and retrying is the easiest option. After
+         * connection fails for @p attempts times, throws an Exception.
+         *
+         * @p attempts is the total attempts count before throwing an Exception.
+         * @p waitIntervalMs is in milliseconds and doubled between each attempt.
+         * @p connectFunc is the connection routine. It can return an object of choice
+         * of type T. Throwing an Exception from inside signifies connection failing.
+         * Takes one int argument, which is the current attempt counter.
+         *
+         * If @p connectFunc fails an attempt, it should throw an Exception - it will
+         * be caught by the try-catch block of this utility function which will then log
+         * the error, sleep for @p waitIntervalMs time interval and retry the connection
+         * routine. If this routine exits without throwing it is assumed the connection
+         * attempt was successful and we can leave without raising any errors or retrying.
+         *
+         * Throws: ConnectionFailedException. InnerException will contain the reason for failure
+         * that was thrown by @p connectFunc.
+         *
+         * Example:
+         *
+         * Assuming @p waitInternal is set to 1000ms (1s) and @p attempts is 4
+         * the function will work as follows if all connection attempts fail:
+         *    connectFunc() -- fails
+         *    wait(waitIntervalMs) -- 1s wait
+         *    waitIntervalMs *= 2
+         *    connectFunc() -- fails
+         *    wait(waitIntervalMs) -- 2s wait
+         *    waitIntervalMs *= 2
+         *    connectFunc() -- fails
+         *    wait(waitIntervalMs) -- 4s wait
+         *    waitIntervalMs *= 2
+         *    connectFunc() -- fails, throws ConnectionFailedException
+         *
+         * If any of above connectFunc() attempts succeeds, the utility function exits
+         * returning the object returned by @p connectFunc.
+         */
+        public static async Task<T> TryConnectAsync<T>(int attempts, int waitIntervalMs, Func<int, Task<T>> connectFunc)
+        {
+            int currentAttempt = 0;
+            int currentWaitInterval = waitIntervalMs;
+
+            while (currentAttempt < attempts)
+            {
+                try
+                {
+                    return await connectFunc(currentAttempt);
+                }
+                catch (System.Exception e) when (currentAttempt < (attempts - 1))
+                {
+                    Logger.Log().Warning("Connection attempt {0} failed, caught {1}. Retrying in {2} seconds...", currentAttempt, e.Message, currentWaitInterval / 1000);
+                    Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
+
+                }
+                catch (System.Exception e)
+                {
+                    throw new ConnectionFailedException(String.Format("Failed to connect after {0} attempts.", attempts), e);
+                }
+
+                currentAttempt++;
+                if (currentAttempt < attempts)
+                {
+                    Thread.Sleep(currentWaitInterval);
+                    currentWaitInterval *= 2;
+                }
+            }
+
+            throw new ConnectionFailedException(String.Format("Failed to connect after {0} attempts.", attempts));
+        }
+
+        public static T TryConnect<T>(int attempts, int waitIntervalMs, Func<int, T> f)
+        {
+            Task<T> t = TryConnectAsync(attempts, waitIntervalMs, async (attempts) =>
+            {
+                return f(attempts);
+            });
+            t.Wait();
+            return t.Result;
+        }
+
+        public static async Task TryConnectAsync(int attempts, int waitIntervalMs, Func<int, Task> a)
+        {
+            await TryConnectAsync<int>(attempts, waitIntervalMs, async (attempts) =>
+            {
+                await a(attempts);
+                return 0;
+            });
+        }
+
+        public static void TryConnect(int attempts, int waitIntervalMs, Action<int> a)
+        {
+            Task<int> t = TryConnectAsync<int>(attempts, waitIntervalMs, async (attempts) =>
+            {
+                a(attempts);
+                return 0;
+            });
+            t.Wait();
         }
     }
 }

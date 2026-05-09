@@ -29,8 +29,6 @@ namespace LukeBot.Endpoint
 {
     public class Startup
     {
-        private string mTTSEndpoint = "";
-
         private IWidgetService GetWidgetService()
         {
             return Service.Get<IWidgetService>();

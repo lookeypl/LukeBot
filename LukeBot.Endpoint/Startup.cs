@@ -3,12 +3,18 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.Json;
 using LukeBot.API;
+using LukeBot.AWS;
 using LukeBot.Common;
 using LukeBot.Communication;
 using LukeBot.Config;
@@ -16,12 +22,7 @@ using LukeBot.Logging;
 using LukeBot.Services;
 using LukeBot.Widget;
 using Microsoft.Extensions.FileProviders;
-using System.Net.Http;
-using NgrokExtensions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+using System.Buffers;
 
 
 namespace LukeBot.Endpoint
@@ -33,6 +34,11 @@ namespace LukeBot.Endpoint
         private IWidgetService GetWidgetService()
         {
             return Service.Get<IWidgetService>();
+        }
+
+        private IAWSService GetAWSService()
+        {
+            return Service.Get<IAWSService>();
         }
 
         private IIntermediary GetIntermediaryForService(string service)
@@ -216,14 +222,6 @@ namespace LukeBot.Endpoint
 
         async Task HandleTTSCallback(HttpContext context)
         {
-            // TODO this endpoint MUST validate the request came from an active widget
-            if (mTTSEndpoint == "")
-            {
-                context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-                await context.Response.WriteAsync("TTS Endpoint not available");
-                return;
-            }
-
             if (!context.Request.Query.ContainsKey("voice") ||
                 !context.Request.Query.ContainsKey("text"))
             {
@@ -232,37 +230,45 @@ namespace LukeBot.Endpoint
                 return;
             }
 
-            string voice = context.Request.Query["voice"];
-            string text = context.Request.Query["text"];
-
-            HttpClient client = new HttpClient();
-
-            Dictionary<string, string> query = new();
-            query.Add("voice", voice);
-            query.Add("text", text);
-
-            UriBuilder builder = new UriBuilder(new Uri(mTTSEndpoint));
-            builder.Query += String.Join('&', query.Select(x => x.Key + '=' + x.Value).ToArray());
-
-            HttpResponseMessage ttsFetchResponse = await client.GetAsync(builder.ToString());
-
-            if (!ttsFetchResponse.IsSuccessStatusCode)
+            try
             {
-                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                await context.Response.WriteAsync(String.Format("Failed to fetch TTS: {0} ({1})", ttsFetchResponse.StatusCode, ttsFetchResponse.ReasonPhrase));
-                return;
+                IAWSService aws = GetAWSService();
+
+                string voiceStr = context.Request.Query["voice"];
+                PollyVoice voice;
+                if (!Enum.TryParse<PollyVoice>(voiceStr, out voice))
+                {
+                    context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    await context.Response.WriteAsync(String.Format("Incorrect voice {0}", voiceStr));
+                    Logger.Log().Error("TTS Request failed - Incorrect voice {0}.", voiceStr);
+                    return;
+                }
+
+                string text = context.Request.Query["text"];
+
+                Stream ttsStream = await aws.Polly().SynthesizeSpeech(voice, text);
+                context.Response.ContentType = "audio/ogg";
+
+                const int bufferSize = 4 * 1024;
+                byte[] buffer = new byte[bufferSize];
+                int read = 0;
+                while ((read = await ttsStream.ReadAsync(buffer, 0, bufferSize)) > 0)
+                {
+                    await context.Response.Body.WriteAsync(buffer, 0, read);
+                }
             }
-
-            byte[] data = await ttsFetchResponse.Content.ReadAsByteArrayAsync();
-
-            // BIG TODO
-            // This step requires some sort of file manager
-            // We should cache these results somewhere, maybe invalidate them after some time
-            // And forward a path to resource that the Widget can use
-
-            // forward data to the response
-            context.Response.ContentType = "audio/ogg";
-            await context.Response.BodyWriter.WriteAsync(data);
+            catch (UnknownServiceException)
+            {
+                context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+                await context.Response.WriteAsync("TTS Service is not available.");
+                Logger.Log().Error("TTS Request failed - AWS Service is not available.");
+            }
+            catch (System.Exception e)
+            {
+                Common.Utils.PrintAllExceptions("TTS Request failed", e);
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                await context.Response.WriteAsync("TTS Request failed.");
+            }
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -270,11 +276,6 @@ namespace LukeBot.Endpoint
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-            }
-
-            if (!Conf.TryGet<string>(Common.Constants.PROP_STORE_TTS_ENDPOINT_PROP, out mTTSEndpoint))
-            {
-                Logger.Log().Warning("TTS Endpoint not configured, TTS not available");
             }
 
             app.UseHttpsRedirection();

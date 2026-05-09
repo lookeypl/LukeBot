@@ -246,7 +246,7 @@ namespace LukeBot.Common
             {
                 Logger.Log().Error("...which caused {0}: {1}", e.GetType().ToString(), e.Message);
             }
-            Logger.Log().Trace("Stack trace:{0}\n", e.StackTrace);
+            Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
             return true;
         }
 

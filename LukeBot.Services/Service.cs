@@ -135,7 +135,7 @@ namespace LukeBot.Services
                     Logger.Log().Error("Tearing down all running services");
                     Teardown();
 
-                    throw new ServiceRunFailedException(sd.service.GetServiceDebugName(), e);;
+                    throw new ServiceRunFailedException(sd.service.GetServiceDebugName(), e);
                 }
             }
         }

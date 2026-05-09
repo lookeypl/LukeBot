@@ -27,6 +27,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\LukeBot.AWS.Impl\LukeBot.AWS.Impl.csproj" />
     <ProjectReference Include="..\LukeBot.Common\LukeBot.Common.csproj" />
     <ProjectReference Include="..\LukeBot.Communication.Impl\LukeBot.Communication.Impl.csproj" />
     <ProjectReference Include="..\LukeBot.Config\LukeBot.Config.csproj" />

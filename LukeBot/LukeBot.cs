@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.Threading;
+using LukeBot.AWS.Impl;
 using LukeBot.Communication.Impl;
 using LukeBot.Spotify.Impl;
 using LukeBot.Twitch.Impl;
@@ -85,6 +86,7 @@ namespace LukeBot
                 Logger.Log().Info("Initializing Services...");
                 Service.Register(EventService.Create());
                 Service.Register(IntermediaryService.Create());
+                Service.Register(AWSService.Create());
                 Service.Register(UserService.Create());
                 Service.Register(TwitchService.Create());
                 Service.Register(SpotifyService.Create());
@@ -101,14 +103,9 @@ namespace LukeBot
                 AddCLICommands();
                 UserInterface.CLI.MainLoop();
             }
-            catch (Common.Exception e)
-            {
-                e.Print(LogLevel.Error);
-            }
             catch (System.Exception e)
             {
-                Logger.Log().Error("Exception caught: {0}", e.Message);
-                Logger.Log().Error("Backtrace:\n{0}", e.StackTrace);
+                Common.Utils.PrintAllExceptions("Exception caught by top-level LukeBot module.", e);
             }
 
             Shutdown();

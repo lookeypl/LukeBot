@@ -16,7 +16,9 @@ namespace LukeBot.Common
         public const string PROP_STORE_LOGIN_PROP = "login";
         public const string PROP_STORE_RECONNECT_COUNT_PROP_NAME = "reconnect_count";
         public const string PROP_STORE_SERVER_PING_THRESHOLD_PROP_NAME = "ping_threshold";
-        public const string PROP_STORE_TTS_ENDPOINT_PROP_NAME = "tts_endpoint";
+        public const string PROP_STORE_CLIENT_ID_PROP_NAME = "client_id";
+        public const string PROP_STORE_CLIENT_SECRET_PROP_NAME = "client_secret";
+        public const string PROP_STORE_REGION_PROP_NAME = "region"; // for now used to mark AWS region
 
         public static readonly Path PROP_STORE_SERVER_IP_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_SERVER_IP_PROP_NAME);
         public static readonly Path PROP_STORE_SERVER_PORT_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_SERVER_PORT_PROP_NAME);
@@ -25,13 +27,13 @@ namespace LukeBot.Common
         public static readonly Path PROP_STORE_USERS_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_USERS_PROP_NAME);
         public static readonly Path PROP_STORE_RECONNECT_COUNT_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_RECONNECT_COUNT_PROP_NAME);
         public static readonly Path PROP_STORE_SERVER_PING_THRESHOLD_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_SERVER_PING_THRESHOLD_PROP_NAME);
-        public static readonly Path PROP_STORE_TTS_ENDPOINT_PROP = Path.Form(LUKEBOT_USER_ID, PROP_STORE_TTS_ENDPOINT_PROP_NAME);
 
         public const string DEFAULT_SERVER_IP = "127.0.0.1";
         public const int DEFAULT_SERVER_PORT = 443;
         public const string DEFAULT_SERVER_HTTPS_DOMAIN = "localhost";
         public const string PROPERTY_STORE_FILE = "Data/props.lukebot";
         public const string DEFAULT_LOGIN_NAME = "SET_BOT_LOGIN_HERE";
+        public const string DEFAULT_AWS_REGION = "eu-central-1";
         public const string DEFAULT_CLIENT_ID_NAME = "SET_YOUR_CLIENT_ID_HERE";
         public const string DEFAULT_CLIENT_SECRET_NAME = "SET_YOUR_CLIENT_SECRET_HERE";
         public const int DEFAULT_PING_TIMER_THRESHOLD = 2 * 60 * 1000; // 2 minutes = 120 seconds in miliseconds
@@ -40,6 +42,7 @@ namespace LukeBot.Common
 
         public const string EVENT_SERVICE_NAME = "event";
         public const string INTERMEDIARY_SERVICE_NAME = "intermediary";
+        public const string AWS_SERVICE_NAME = "aws";
         public const string SPOTIFY_SERVICE_NAME = "spotify";
         public const string TWITCH_SERVICE_NAME = "twitch";
         public const string USER_SERVICE_NAME = "user";

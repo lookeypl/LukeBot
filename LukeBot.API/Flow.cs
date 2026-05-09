@@ -7,9 +7,6 @@ namespace LukeBot.API
 {
     abstract class Flow
     {
-        private readonly string CLIENT_ID_PROP_NAME = "client_id";
-        private readonly string CLIENT_SECRET_PROP_NAME = "client_secret";
-
         protected string mService;
         protected string mClientID;
         protected string mClientSecret;
@@ -38,16 +35,16 @@ namespace LukeBot.API
             mTokenURL = tokenURL;
             mRevokeURL = revokeURL;
 
-            mClientID = ReadFromConfig(CLIENT_ID_PROP_NAME);
+            mClientID = ReadFromConfig(Common.Constants.PROP_STORE_CLIENT_ID_PROP_NAME);
             if (mClientID == Common.Constants.DEFAULT_CLIENT_ID_NAME)
             {
-                throw new InvalidClientDataException("Client ID for {0} not set in Property Store", mService);
+                throw new InvalidCredentialsException(mService);
             }
 
-            mClientSecret = ReadFromConfig(CLIENT_SECRET_PROP_NAME);
+            mClientSecret = ReadFromConfig(Common.Constants.PROP_STORE_CLIENT_SECRET_PROP_NAME);
             if (mClientSecret == Common.Constants.DEFAULT_CLIENT_SECRET_NAME)
             {
-                throw new InvalidClientDataException("Client secret for {0} not set in Property Store", mService);
+                throw new InvalidCredentialsException(mService);
             }
         }
 

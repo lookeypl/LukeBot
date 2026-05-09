@@ -26,12 +26,15 @@ public class DefaultStoreTemplate: StoreTemplate
         store.Add(LukeBot.Common.Constants.PROP_STORE_USERS_PROP, Property.Create<string[]>(new string[] {}));
         store.Add(LukeBot.Common.Constants.PROP_STORE_RECONNECT_COUNT_PROP, Property.Create<int>(10));
         store.Add(LukeBot.Common.Constants.PROP_STORE_SERVER_PING_THRESHOLD_PROP, Property.Create<int>(LukeBot.Common.Constants.DEFAULT_PING_TIMER_THRESHOLD));
-        store.Add(LukeBot.Common.Constants.PROP_STORE_TTS_ENDPOINT_PROP, Property.Create<string>(""));
 
         store.Add(LukeBot.Config.Path.Parse("twitch.api_endpoint"), Property.Create<string>(Twitch.DEFAULT_API_URI));
         store.Add(LukeBot.Config.Path.Parse("twitch.login"), Property.Create<string>(LukeBot.Common.Constants.DEFAULT_LOGIN_NAME));
         store.Add(LukeBot.Config.Path.Parse("twitch.client_id"), Property.Create<string>(LukeBot.Common.Constants.DEFAULT_CLIENT_ID_NAME, true));
         store.Add(LukeBot.Config.Path.Parse("twitch.client_secret"), Property.Create<string>(LukeBot.Common.Constants.DEFAULT_CLIENT_SECRET_NAME, true));
+
+        store.Add(LukeBot.Config.Path.Parse("aws.region"), Property.Create<string>(LukeBot.Common.Constants.DEFAULT_AWS_REGION, true));
+        store.Add(LukeBot.Config.Path.Parse("aws.client_id"), Property.Create<string>(LukeBot.Common.Constants.DEFAULT_CLIENT_ID_NAME, true));
+        store.Add(LukeBot.Config.Path.Parse("aws.client_secret"), Property.Create<string>(LukeBot.Common.Constants.DEFAULT_CLIENT_SECRET_NAME, true));
 
         store.Add(LukeBot.Config.Path.Parse("spotify.api_endpoint"), Property.Create<string>(Spotify.DEFAULT_API_URI));
         store.Add(LukeBot.Config.Path.Parse("spotify.client_id"), Property.Create<string>(LukeBot.Common.Constants.DEFAULT_CLIENT_ID_NAME, true));

@@ -54,6 +54,12 @@ namespace LukeBot.Twitch.Impl
                 throw new APIResponseErrorException(resp.code);
             }
 
+            if (resp.data.Count == 0)
+            {
+                Logger.Log().Error("Failed to fetch user data from Twitch - no data received (possibly invalid/non-existent username)");
+                throw new APIResponseErrorException(resp.code, "No data received (possibly invalid/non-existent username)");
+            }
+
             string[] ids = resp.data.Select((ud) => ud.id).ToArray();
             List<API.Twitch.UserChatColorData> chatColors = null;
             API.Twitch.GetUserChatColorResponse colorsResp = API.Twitch.GetUsersChatColor(apiToken, ids);

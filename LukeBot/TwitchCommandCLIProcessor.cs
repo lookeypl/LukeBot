@@ -130,7 +130,11 @@ namespace LukeBot
         {
             try
             {
-                GetTwitchUserModule(CLI.GetCurrentUser()).AddChatCommand(cmd.Name, cmd.Type, string.Join(' ', cmd.Value));
+                string value = "";
+                if (cmd.Value != null)
+                    value = String.Join(' ', cmd.Value);
+
+                GetTwitchUserModule(CLI.GetCurrentUser()).AddChatCommand(cmd.Name, cmd.Type, value);
             }
             catch (System.Exception e)
             {

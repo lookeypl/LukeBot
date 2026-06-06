@@ -19,6 +19,7 @@ namespace LukeBot.Twitch
         public void SetChatCommandEnabled(string name, bool enabled);
         public void RefreshEmotes();
         public void RestartEventSub();
+        public void TestChatMessage(string message);
         public void UpdateLogin(string newLogin);
         public IEnumerable<string> GetKnownChatUsers();
         public Chatter GetChatter(string username);

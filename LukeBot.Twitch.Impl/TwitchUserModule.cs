@@ -294,6 +294,14 @@ namespace LukeBot.Twitch.Impl
             }
         }
 
+        public void TestChatMessage(string message)
+        {
+            lock (mImplLock)
+            {
+                mIRCChannel.TestChatMessage(message);
+            }
+        }
+
         public void RestartEventSub()
         {
             lock (mImplLock)

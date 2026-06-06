@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using LukeBot.Common;
+using LukeBot.Communication;
 using LukeBot.Config;
+using LukeBot.Logging;
 using LukeBot.Services;
 using LukeBot.Interface;
 using LukeBot.Twitch;
@@ -43,6 +45,13 @@ namespace LukeBot
     {
         [Value(0, MetaName = "chatterName", Required = true, HelpText = "Username of chatter to fetch information of.")]
         public string ChatterName { get; set; }
+    }
+
+    [Verb("chat", HelpText = "Emits an event as if a Chat message was sent in user's Twitch chat room. Used for internal testing.")]
+    public class TwitchChatSubverb
+    {
+        [Value(0, MetaName = "message", Required = true, HelpText = "Message to emit")]
+        public IEnumerable<string> Message { get; set; }
     }
 
     [Verb("enable", HelpText = "Enable Twitch module")]
@@ -210,6 +219,23 @@ namespace LukeBot
             }
         }
 
+        private void HandleChatSubverb(TwitchChatSubverb arg, CLIMessageProxy CLI, out string result)
+        {
+            result = "";
+
+            try
+            {
+                string msg = String.Join(' ', arg.Message);
+                GetTwitchUserModule(CLI.GetCurrentUser()).TestChatMessage(msg);
+
+                result = "Message \"" + msg + "\" emitted successfully.";
+            }
+            catch (System.Exception e)
+            {
+                result = "Failed to send a test chat message: " + e.Message;
+            }
+        }
+
         public void HandleEnableSubverb(CLIMessageProxy CLI, out string msg)
         {
             msg = "";
@@ -249,7 +275,6 @@ namespace LukeBot
             UserInterface.CLI.AddCommand(Constants.TWITCH_SERVICE_NAME, PermissionLevel.User, (CLIMessageProxy cliProxy, string[] args) =>
             {
                 string result = "";
-                string[] cmdArgs = args.Take(2).ToArray(); // filters out any additional options/commands that might confuse CommandLine
                 Parser p = new Parser(with => with.HelpWriter = new CLIUtils.CLIMessageProxyTextWriter(cliProxy));
                 p.ParseArguments<
                     TwitchCommandSubverb,
@@ -258,15 +283,17 @@ namespace LukeBot
                     TwitchLoginSubverb,
                     TwitchChattersSubverb,
                     TwitchChatterSubverb,
+                    TwitchChatSubverb,
                     TwitchEnableSubverb,
                     TwitchDisableSubverb
-                >(cmdArgs)
+                >(args)
                     .WithParsed<TwitchCommandSubverb>((TwitchCommandSubverb arg) => HandleCommandSubverb(arg, cliProxy, args.Skip(1).ToArray(), out result))
                     .WithParsed<TwitchEmoteRefreshSubverb>((TwitchEmoteRefreshSubverb arg) => HandleEmoteRefreshSubverb(cliProxy, out result))
                     .WithParsed<TwitchEventSubRestartSubverb>((TwitchEventSubRestartSubverb arg) => HandleEventSubRestartSubverb(cliProxy, out result))
                     .WithParsed<TwitchLoginSubverb>((TwitchLoginSubverb arg) => HandleLoginSubverb(arg, cliProxy, args.Skip(1).ToArray(), out result))
                     .WithParsed<TwitchChattersSubverb>((TwitchChattersSubverb arg) => HandleChattersSubverb(arg, cliProxy, out result))
                     .WithParsed<TwitchChatterSubverb>((TwitchChatterSubverb arg) => HandleChatterSubverb(arg, cliProxy, out result))
+                    .WithParsed<TwitchChatSubverb>((TwitchChatSubverb arg) => HandleChatSubverb(arg, cliProxy, out result))
                     .WithParsed<TwitchEnableSubverb>((TwitchEnableSubverb arg) => HandleEnableSubverb(cliProxy, out result))
                     .WithParsed<TwitchDisableSubverb>((TwitchDisableSubverb arg) => HandleDisableSubverb(cliProxy, out result))
                     .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, Constants.TWITCH_SERVICE_NAME, out result));

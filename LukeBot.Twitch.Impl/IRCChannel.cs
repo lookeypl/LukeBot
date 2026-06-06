@@ -310,7 +310,7 @@ namespace LukeBot.Twitch.Impl
                 TwitchUserIdentity identity = collection.FetchUser(mChannelToken, true, message.User);
                 identity.Badges = message.Badges;
             }
-            catch (System.Exception e) when (e is KeyNotFoundException || e is APIErrorException)
+            catch (System.Exception e) when (e is KeyNotFoundException || e is APIErrorException || e is APIResponseErrorException)
             {
                 // this should not happen techincally, but it either means the user was not found
                 // in the collection, or it does not exist on Twitch. Log a warning anyway in case
@@ -425,6 +425,19 @@ namespace LukeBot.Twitch.Impl
         public void AddExternalEmotesToMessage(TwitchChatMessageArgs message)
         {
             message.AddExternalEmotes(GetUserModule().ParseEmotes(message.Message));
+        }
+
+        public void TestChatMessage(string message)
+        {
+            // form a test IRC message so it goes through the entire chain
+            IRCMessage testMessage = IRCMessage.PRIVMSG(mChannelName, message);
+            testMessage.User = "lukebot_testuser";
+            testMessage.Host = "test@test.lukebot";
+            testMessage.AddTag("badges", "broadcaster/1");
+            testMessage.AddTag("color", "#42069f");
+            testMessage.AddTag("display-name", "LukeBot_TestUser");
+
+            ProcessMSG(testMessage, true);
         }
 
         public Dictionary<string, ICommand> GetCommands()

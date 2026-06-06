@@ -247,14 +247,18 @@ namespace LukeBot.Communication.Impl
             Event ev = mEvents[name];
 
             if (ev.TestGenerator == null)
-                throw new TestArgGeneratorMissingException(ev.Name);
+                throw new TestEventFailedException(ev.Name, "Event is not testable");
 
             string dispatcher = ev.Dispatcher;
             if (dispatcher == null || dispatcher.Length == 0)
                 dispatcher = DEFAULT_DISPATCHER_NAME;
 
             ValidateEventTestArgs(ev, args);
-            mDispatchers[dispatcher].Submit(ev, ev.TestGenerator(args));
+            EventArgsBase evArgs = ev.TestGenerator(args);
+            if (evArgs == null)
+                throw new TestEventFailedException(ev.Name, "Test generator failed to parse event args");
+
+            mDispatchers[dispatcher].Submit(ev, evArgs);
         }
     }
 }

@@ -79,7 +79,7 @@ namespace LukeBot.Twitch.Impl
                 response = mChannels[m.Channel].ProcessMSG(m, mTagsEnabled);
             }
 
-            if (response.Length > 0)
+            if (!String.IsNullOrEmpty(response))
                 mIRCClient.Send(IRCMessage.PRIVMSG(m.Channel, response));
         }
 

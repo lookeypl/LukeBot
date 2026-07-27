@@ -34,7 +34,7 @@ namespace LukeBot.API
             new Lazy<AuthManager>(() => new AuthManager());
         public static AuthManager Instance { get { return mInstance.Value; } }
 
-        Dictionary<Path, Token> mTokens = new();
+        Dictionary<Path, Token> mTokens = new(new PathEqualityComparer());
         Mutex mMutex = new();
         EventCallback mOpenBrowserURLDelegate;
 

@@ -222,8 +222,9 @@ namespace LukeBot.API
         {
             lock (mTokenLock)
             {
+                Conf.Remove(mTokenPath);
+
                 if (Loaded) {
-                    Conf.Remove(mTokenPath);
                     mFlow.Revoke(mToken);
                     mToken = null;
                     Loaded = false;

@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+
 
 namespace LukeBot.Config
 {
@@ -47,13 +50,14 @@ namespace LukeBot.Config
 
         public Path Copy()
         {
-            string[] pathArray = new string[mPath.Count];
-            mPath.CopyTo(pathArray, 0);
-            return Path.Form(pathArray);
+            return Path.Form(AsStringArray());
         }
 
         public Path Push(string domain)
         {
+            if (String.IsNullOrEmpty(domain))
+                throw new ArgumentNullException(nameof(domain));
+
             mPath.Enqueue(domain);
             return this;
         }
@@ -68,8 +72,7 @@ namespace LukeBot.Config
 
         public override string ToString()
         {
-            string[] pathArray = new string[mPath.Count];
-            mPath.CopyTo(pathArray, 0);
+            string[] pathArray = AsStringArray();
 
             string result = "";
             for (int pIdx = 0; pIdx < pathArray.Length; ++pIdx)
@@ -80,6 +83,42 @@ namespace LukeBot.Config
             }
 
             return result;
+        }
+
+        internal string[] AsStringArray()
+        {
+            string[] array = new string[Count];
+            mPath.CopyTo(array, 0);
+            return array;
+        }
+    }
+
+    public class PathEqualityComparer: IEqualityComparer<Path>
+    {
+        public bool Equals(Path x, Path y)
+        {
+            if (x.Count != y.Count) return false;
+            string[] xArray = x.AsStringArray();
+            string[] yArray = y.AsStringArray();
+
+            for (int i = 0; i < x.Count; ++i)
+            {
+                if (xArray[i] != yArray[i]) return false;
+            }
+
+            return true;
+        }
+
+        public int GetHashCode([DisallowNull] Path obj)
+        {
+            int hash = 0;
+            string[] array = obj.AsStringArray();
+            foreach (string s in array)
+            {
+                hash ^= s.GetHashCode();
+            }
+
+            return hash;
         }
     }
 }

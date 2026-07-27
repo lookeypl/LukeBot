@@ -6,7 +6,6 @@ obj
 # Visual Studio details
 /.vs
 /.vscode
-.editorconfig
 
 # Appsettings for prod
 appsettings.json

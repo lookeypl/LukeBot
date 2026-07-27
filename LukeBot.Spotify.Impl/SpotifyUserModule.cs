@@ -52,22 +52,31 @@ namespace LukeBot.Spotify.Impl
 
         private void Login()
         {
-            // TODO should also be from Config...
-            mToken = AuthManager.Instance.GetToken(ServiceType.Spotify, LBUser);
-            mToken.SetScope(new List<string>
+            try
             {
-                "user-read-currently-playing",
-                "user-read-playback-state",
-                "user-modify-playback-state",
-                "user-read-email"
-            });
+                // TODO should also be from Config...
+                mToken = AuthManager.Instance.GetToken(ServiceType.Spotify, LBUser);
+                mToken.SetScope(new List<string>
+                {
+                    "user-read-currently-playing",
+                    "user-read-playback-state",
+                    "user-modify-playback-state",
+                    "user-read-email"
+                });
 
-            if (!mToken.Loaded)
-                mToken.Request();
+                if (!mToken.Loaded)
+                    mToken.Request();
 
-            if (!CheckIfLoginSuccessful())
+                if (!CheckIfLoginSuccessful())
+                {
+                    throw new InvalidOperationException("Failed to login to Spotify");
+                }
+            }
+            catch (System.Exception e)
             {
-                throw new InvalidOperationException("Failed to login to Spotify");
+                Logger.Log().Error("Failed to acquire token for Spotify User {0}: {1}", LBUser, e.Message);
+                Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
+                mToken = null;
             }
         }
 
@@ -85,12 +94,15 @@ namespace LukeBot.Spotify.Impl
 
             Login();
 
-            mNowPlaying = new NowPlaying(LBUser, mToken);
-            mNowPlayingTextFile = new NowPlayingTextFile(
-                LBUser,
-                "Outputs/" + CommonConstants.SPOTIFY_SERVICE_NAME + "/" + LBUser + "/nowplaying_artist.txt",
-                "Outputs/" + CommonConstants.SPOTIFY_SERVICE_NAME + "/" + LBUser +  "/nowplaying_title.txt"
-            );
+            if (mToken != null)
+            {
+                mNowPlaying = new NowPlaying(LBUser, mToken);
+                mNowPlayingTextFile = new NowPlayingTextFile(
+                    LBUser,
+                    "Outputs/" + CommonConstants.SPOTIFY_SERVICE_NAME + "/" + LBUser + "/nowplaying_artist.txt",
+                    "Outputs/" + CommonConstants.SPOTIFY_SERVICE_NAME + "/" + LBUser +  "/nowplaying_title.txt"
+                );
+            }
         }
 
         ~SpotifyUserModule()
@@ -172,11 +184,15 @@ namespace LukeBot.Spotify.Impl
             Login();
 
             mNowPlaying = new NowPlaying(LBUser, mToken);
+            mNowPlaying.Run();
         }
 
         public void Run()
         {
-            mNowPlaying.Run();
+            if (mNowPlaying != null)
+            {
+                mNowPlaying.Run();
+            }
         }
 
         public void RequestShutdown()

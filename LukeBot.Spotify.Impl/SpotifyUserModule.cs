@@ -16,6 +16,7 @@ namespace LukeBot.Spotify.Impl
     public class SpotifyUserModule: ISpotifyUserModule
     {
         internal string LBUser { get; private set; }
+
         private string mSpotifyUsername;
         private Token mToken;
         private API.Spotify.UserProfile mProfile;
@@ -23,6 +24,14 @@ namespace LukeBot.Spotify.Impl
         private NowPlayingTextFile mNowPlayingTextFile;
         private object mImplLock = new();
 
+        private Config.Path GetSpotifyUsernameConfigPath()
+        {
+            return Config.Path.Start()
+                    .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
+                    .Push(LBUser)
+                    .Push(CommonConstants.SPOTIFY_SERVICE_NAME)
+                    .Push(CommonConstants.PROP_STORE_LOGIN_PROP);
+        }
 
         private bool CheckIfLoginSuccessful()
         {
@@ -72,13 +81,7 @@ namespace LukeBot.Spotify.Impl
             string storagePath = "Outputs/" + CommonConstants.SPOTIFY_SERVICE_NAME + "/" + LBUser;
             Directory.CreateDirectory(storagePath);
 
-            mSpotifyUsername = Conf.Get<string>(
-                Config.Path.Start()
-                    .Push(CommonConstants.PROP_STORE_USER_DOMAIN)
-                    .Push(LBUser)
-                    .Push(CommonConstants.SPOTIFY_SERVICE_NAME)
-                    .Push(CommonConstants.PROP_STORE_LOGIN_PROP)
-            );
+            mSpotifyUsername = Conf.Get<string>(GetSpotifyUsernameConfigPath());
 
             Login();
 
@@ -153,6 +156,24 @@ namespace LukeBot.Spotify.Impl
             throw new NotImplementedException("Updating login for Spotify modules not yet implemented");
         }
 
+        public void RenewAuthToken()
+        {
+            // first stop the now playing thread
+            if (mNowPlaying != null && mNowPlaying.IsRunning)
+            {
+                mNowPlaying.RequestShutdown();
+                mNowPlaying.Wait();
+                mNowPlaying.Dispose();
+                mNowPlaying = null;
+            }
+
+            mToken = null;
+            AuthManager.Instance.InvalidateToken(ServiceType.Spotify, LBUser);
+            Login();
+
+            mNowPlaying = new NowPlaying(LBUser, mToken);
+        }
+
         public void Run()
         {
             mNowPlaying.Run();
@@ -160,13 +181,21 @@ namespace LukeBot.Spotify.Impl
 
         public void RequestShutdown()
         {
-            mNowPlaying.RequestShutdown();
-            mNowPlayingTextFile.Cleanup();
+            if (mNowPlaying != null)
+            {
+                mNowPlaying.RequestShutdown();
+                mNowPlayingTextFile.Cleanup();
+            }
         }
 
         public void WaitForShutdown()
         {
-            mNowPlaying.Wait();
+            if (mNowPlaying != null)
+            {
+                mNowPlaying.Wait();
+                mNowPlaying.Dispose();
+                mNowPlaying = null;
+            }
         }
 
         public string GetModuleType()

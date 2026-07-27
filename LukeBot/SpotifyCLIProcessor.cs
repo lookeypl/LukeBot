@@ -23,6 +23,11 @@ namespace LukeBot
         }
     }
 
+    [Verb("renew-token", HelpText = "Removes existing token and restarts the OAuth process from scratch using existing login.")]
+    public class SpotifyRenewTokenSubverb
+    {
+    }
+
     [Verb("enable", HelpText = "Enable Spotify module")]
     public class SpotifyEnableSubverb
     {
@@ -68,18 +73,33 @@ namespace LukeBot
             return GetService().GetModule(user) as ISpotifyUserModule;
         }
 
-        private void HandleLoginSubverb(SpotifyLoginSubverb arg, CLIMessageProxy CLI, out string result)
+        private void HandleLoginSubverb(SpotifyLoginSubverb arg, CLIMessageProxy CLI, out string msg)
         {
-            result = "";
+            msg = "";
 
             try
             {
                 GetUserModule(CLI.GetCurrentUser()).UpdateLogin(arg.Login);
-                result = "Successfully updated Spotify login.";
+                msg = "Successfully updated Spotify login.";
             }
             catch (System.Exception e)
             {
-                result = "Failed to update Spotify login: " + e.Message;
+                msg = "Failed to update Spotify login: " + e.Message;
+            }
+        }
+
+        private void HandleRenewTokenSubverb(SpotifyRenewTokenSubverb arg, CLIMessageProxy CLI, out string msg)
+        {
+            msg = "";
+
+            try
+            {
+                CheckForLogin(CLI);
+                GetUserModule(CLI.GetCurrentUser()).RenewAuthToken();
+            }
+            catch(System.Exception e)
+            {
+                msg = "Failed to renew Spotify auth token: " + e.Message;
             }
         }
 
@@ -122,8 +142,9 @@ namespace LukeBot
             {
                 string result = "";
                 Parser p = new Parser(with => with.HelpWriter = new CLIUtils.CLIMessageProxyTextWriter(cliProxy));
-                p.ParseArguments<SpotifyLoginSubverb, SpotifyEnableSubverb, SpotifyDisableSubverb>(args)
+                p.ParseArguments<SpotifyLoginSubverb, SpotifyRenewTokenSubverb, SpotifyEnableSubverb, SpotifyDisableSubverb>(args)
                     .WithParsed<SpotifyLoginSubverb>((SpotifyLoginSubverb arg) => HandleLoginSubverb(arg, cliProxy, out result))
+                    .WithParsed<SpotifyRenewTokenSubverb>((SpotifyRenewTokenSubverb arg) => HandleRenewTokenSubverb(arg, cliProxy, out result))
                     .WithParsed<SpotifyEnableSubverb>((SpotifyEnableSubverb arg) => HandleEnableSubverb(arg, cliProxy, out result))
                     .WithParsed<SpotifyDisableSubverb>((SpotifyDisableSubverb arg) => HandleDisableSubverb(arg, cliProxy, out result))
                     .WithNotParsed((IEnumerable<Error> errs) => CLIUtils.HandleCLIError(errs, Constants.SPOTIFY_SERVICE_NAME, out result));

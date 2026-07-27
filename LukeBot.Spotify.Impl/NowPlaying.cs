@@ -7,11 +7,13 @@ using LukeBot.Spotify;
 using LukeBot.Communication;
 using LukeBot.Common;
 using LukeBot.Services;
+using System;
+using System.IO;
 
 
 namespace LukeBot.Spotify.Impl
 {
-    class NowPlaying: IEventPublisher
+    class NowPlaying: IEventPublisher, IDisposable
     {
         private readonly int DEFAULT_EVENT_TIMEOUT = 5 * 1000; // 5 seconds
         private readonly int EXTRA_EVENT_TIMEOUT = 2000; // see FetchData() for details
@@ -19,8 +21,8 @@ namespace LukeBot.Spotify.Impl
         private string mLBUser;
         private Token mToken;
         private Thread mThread;
-        private Mutex mDataAccessMutex;
-        private ManualResetEvent mShutdownEvent;
+        private object mDataAccessLock = new();
+        private ManualResetEvent mShutdownEvent = new(false);
         private API.Spotify.PlaybackState mCurrentPlaybackState;
         private SpotifyStateUpdateArgs mCurrentStateUpdate;
         private int mEventTimeout;
@@ -28,6 +30,11 @@ namespace LukeBot.Spotify.Impl
         private bool mNoItemWarningEmitted;
         private EventCallback mTrackChangedCallback;
         private EventCallback mStateUpdateCallback;
+
+        public bool IsRunning
+        {
+            get => mThread != null ? mThread.IsAlive : false;
+        }
 
         public string GetEventPublisherName()
         {
@@ -59,8 +66,6 @@ namespace LukeBot.Spotify.Impl
             mLBUser = lbUser;
             mToken = token;
             mThread = new Thread(new ThreadStart(ThreadMain));
-            mDataAccessMutex = new Mutex();
-            mShutdownEvent = new ManualResetEvent(false);
             mEventTimeout = DEFAULT_EVENT_TIMEOUT;
             mChangeExpected = false;
             mNoItemWarningEmitted = false;
@@ -134,72 +139,71 @@ namespace LukeBot.Spotify.Impl
                 return;
             }
 
-            mDataAccessMutex.WaitOne();
-
             mNoItemWarningEmitted = false;
 
-            // Track change
-            if ((mCurrentPlaybackState == null) || (state.item.id != mCurrentPlaybackState.item.id))
+            lock(mDataAccessLock)
             {
-                // Spotify doesn't provide copyright holder info (aka label info) with
-                // currently played track API call. For that reason we will fetch the info
-                // separately from album details and copy it to our "data" object for
-                // further reference. Shallow copy should be ok.
-                API.Spotify.Album album = API.Spotify.GetAlbum(mToken, state.item.album.id);
-                state.item.album.copyrights = album.copyrights;
-
-                mCurrentPlaybackState = state;
-                mChangeExpected = false;
-                Logger.Log().Debug("{0}", mCurrentPlaybackState.ToString());
-                mTrackChangedCallback.PublishEvent(Utils.DataItemToTrackChangedArgs(mCurrentPlaybackState.item));
-            }
-
-            // State read - must reach for fetched "state" to get correct playback info
-            SpotifyStateUpdateArgs stateUpdate = Utils.DataToStateUpdateArgs(state);
-
-            // Update internal logic according to state
-            if (stateUpdate.State == PlayerState.Playing)
-            {
-                if (mChangeExpected)
+                // Track change
+                if ((mCurrentPlaybackState == null) || (state.item.id != mCurrentPlaybackState.item.id))
                 {
-                    // if mChangeExpected is set here, that means server must've lagged a bit
-                    // and new song is still not updated. Rush the next update just in case.
-                    mEventTimeout = 1000;
+                    // Spotify doesn't provide copyright holder info (aka label info) with
+                    // currently played track API call. For that reason we will fetch the info
+                    // separately from album details and copy it to our "data" object for
+                    // further reference. Shallow copy should be ok.
+                    API.Spotify.Album album = API.Spotify.GetAlbum(mToken, state.item.album.id);
+                    state.item.album.copyrights = album.copyrights;
+
+                    mCurrentPlaybackState = state;
+                    mChangeExpected = false;
+                    Logger.Log().Debug("{0}", mCurrentPlaybackState.ToString());
+                    mTrackChangedCallback.PublishEvent(Utils.DataItemToTrackChangedArgs(mCurrentPlaybackState.item));
                 }
-                else
+
+                // State read - must reach for fetched "state" to get correct playback info
+                SpotifyStateUpdateArgs stateUpdate = Utils.DataToStateUpdateArgs(state);
+
+                // Update internal logic according to state
+                if (stateUpdate.State == PlayerState.Playing)
                 {
-                    int trackLeftMs = mCurrentPlaybackState.item.duration_ms - (int)mCurrentPlaybackState.progress_ms;
-                    if (trackLeftMs < DEFAULT_EVENT_TIMEOUT)
+                    if (mChangeExpected)
                     {
-                        // We are close to switch to new track.
-                        // To make the switch more "instantenous" we could wait only for as long
-                        // as it takes for our track to go to finish.
-                        // Add extra timeout to let server fetch new data
-                        mEventTimeout = trackLeftMs + EXTRA_EVENT_TIMEOUT;
-                        mChangeExpected = true;
+                        // if mChangeExpected is set here, that means server must've lagged a bit
+                        // and new song is still not updated. Rush the next update just in case.
+                        mEventTimeout = 1000;
                     }
                     else
                     {
-                        // Default timeout, track is still somewhere in the middle
-                        mEventTimeout = DEFAULT_EVENT_TIMEOUT;
-                        mChangeExpected = false;
+                        int trackLeftMs = mCurrentPlaybackState.item.duration_ms - (int)mCurrentPlaybackState.progress_ms;
+                        if (trackLeftMs < DEFAULT_EVENT_TIMEOUT)
+                        {
+                            // We are close to switch to new track.
+                            // To make the switch more "instantenous" we could wait only for as long
+                            // as it takes for our track to go to finish.
+                            // Add extra timeout to let server fetch new data
+                            mEventTimeout = trackLeftMs + EXTRA_EVENT_TIMEOUT;
+                            mChangeExpected = true;
+                        }
+                        else
+                        {
+                            // Default timeout, track is still somewhere in the middle
+                            mEventTimeout = DEFAULT_EVENT_TIMEOUT;
+                            mChangeExpected = false;
+                        }
                     }
                 }
-            }
-            else
-            {
-                // Track unloaded or stopped; timeout default
-                mEventTimeout = DEFAULT_EVENT_TIMEOUT;
-                mChangeExpected = false;
-            }
+                else
+                {
+                    // Track unloaded or stopped; timeout default
+                    mEventTimeout = DEFAULT_EVENT_TIMEOUT;
+                    mChangeExpected = false;
+                }
 
-            if (stateUpdate != mCurrentStateUpdate)
-            {
-                mCurrentStateUpdate = stateUpdate;
-                mStateUpdateCallback.PublishEvent(stateUpdate);
+                if (stateUpdate != mCurrentStateUpdate)
+                {
+                    mCurrentStateUpdate = stateUpdate;
+                    mStateUpdateCallback.PublishEvent(stateUpdate);
+                }
             }
-
-            mDataAccessMutex.ReleaseMutex();
         }
 
         void ThreadMain()
@@ -243,10 +247,21 @@ namespace LukeBot.Spotify.Impl
 
         public API.Spotify.PlaybackState GetPlaybackState()
         {
-            mDataAccessMutex.WaitOne();
-            API.Spotify.PlaybackState data = mCurrentPlaybackState;
-            mDataAccessMutex.ReleaseMutex();
-            return data;
+            lock (mDataAccessLock)
+            {
+                return mCurrentPlaybackState;
+            }
+        }
+
+        public void Dispose()
+        {
+            if (mThread.IsAlive)
+            {
+                RequestShutdown();
+                Wait();
+            }
+
+            Service.Get<IEventService>().User(mLBUser).UnregisterPublisher(this);
         }
     }
 }

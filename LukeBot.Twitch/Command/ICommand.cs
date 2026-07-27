@@ -26,7 +26,19 @@ namespace LukeBot.Twitch.Command
         // To be called from within Command's Execute() call. Triggers a Config update.
         protected void UpdateConfig()
         {
-            mUpdateConfig(mName);
+            if (mUpdateConfig != null)
+            {
+                mUpdateConfig(mName);
+            }
+        }
+
+        // to call in-command whether the privilege matches allowed combination
+        // true if check passed (userIdentity is a part of allowed), false if user is not allowed
+        protected bool CheckPrivilege(ChatUser userIdentity, ChatUser allowed)
+        {
+            //   B M V S C
+            //   1 0 0 0 0  priv
+            return (userIdentity & allowed) > 0;
         }
 
         public void SetUpdateConfigDelegate(UpdateConfigDelegate d)
@@ -57,11 +69,10 @@ namespace LukeBot.Twitch.Command
             mPrivilegeLevel &= ~u;
         }
 
+        // checks privilege against command's privilege level
         public bool CheckPrivilege(ChatUser userIdentity)
         {
-            //   B M V S C
-            //   1 0 0 0 0  priv
-            return (userIdentity & mPrivilegeLevel) > 0;
+            return CheckPrivilege(userIdentity, mPrivilegeLevel);
         }
 
         public void SetEnabled(bool enabled)

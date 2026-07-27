@@ -8,5 +8,6 @@ namespace LukeBot.Twitch.Impl
     {
         void FetchEmoteSet(ref Dictionary<string, Emote> emoteSet);
         void GetEmoteInfo();
+        string GetName();
     };
 }

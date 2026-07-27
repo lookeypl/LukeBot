@@ -44,8 +44,7 @@ namespace LukeBot.Twitch.Impl.Command
             // privilege check - assume past that point only broadcaster and mods can
             // change/edit the counter.
             // TODO this should be configurable
-            ChatUser allowedPrivilege = ChatUser.Broadcaster | ChatUser.Moderator;
-            if ((allowedPrivilege & callerPrivilege) == 0)
+            if (CheckPrivilege(callerPrivilege, ChatUser.Broadcaster | ChatUser.Moderator))
             {
                 return ""; // no response
             }

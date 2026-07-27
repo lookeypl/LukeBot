@@ -278,9 +278,9 @@ namespace LukeBot.Common
             return ret;
         }
 
-        public static string GetDSTDetails(string abbrev)
+        public static TimeZoneInfo GetTimeZoneInfo(TimeZoneShort tzs)
         {
-            return ABBREV_TO_IANA[abbrev];
+            return TimeZoneInfo.FindSystemTimeZoneById(ABBREV_TO_IANA[tzs.Abbreviation]);
         }
 
         // TEST METHODS

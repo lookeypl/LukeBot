@@ -10,5 +10,6 @@ namespace LukeBot.Twitch.Command
         editcom,
         counter,
         songrequest,
+        timezone,
     }
 }

@@ -109,7 +109,17 @@ namespace LukeBot.Twitch.Impl
                 return "";
             }
 
-            return mCommands[cmd].Execute(userIdentity, args);
+            string response = mCommands[cmd].Execute(userIdentity, args);
+            if (String.IsNullOrEmpty(response))
+            {
+                Logger.Log().Debug("Command {0} left no response.", cmd);
+            }
+            else
+            {
+                Logger.Log().Debug("Bot's response to {0}: {1}", cmd, response);
+            }
+
+            return response;
         }
 
         // IEventPublisher implementations

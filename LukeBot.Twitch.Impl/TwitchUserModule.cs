@@ -97,20 +97,7 @@ namespace LukeBot.Twitch.Impl
 
         private ICommand AllocateChatCommand(Descriptor d)
         {
-            ICommand cmd = null;
-
-            switch (d.Type)
-            {
-            case CommandType.print: cmd = new Command.Print(d); break;
-            case CommandType.shoutout: cmd = new Command.Shoutout(d); break;
-            case CommandType.addcom: cmd = new Command.AddCommand(d, mLBUser); break;
-            case CommandType.editcom: cmd = new Command.EditCommand(d, mLBUser); break;
-            case CommandType.delcom: cmd = new Command.DeleteCommand(d, mLBUser); break;
-            case CommandType.counter: cmd = new Command.Counter(d); break;
-            case CommandType.songrequest: cmd = new Command.SongRequest(d, mLBUser); break;
-            default: return null;
-            }
-
+            ICommand cmd = Utils.AllocateChatCommand(mLBUser, d);
             cmd.SetUpdateConfigDelegate((string name) => UpdateCommandInConfig(name));
             return cmd;
         }

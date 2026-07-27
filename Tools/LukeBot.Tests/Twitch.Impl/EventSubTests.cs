@@ -1,104 +1,16 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Net.Sockets;
 using System;
-using System.IO;
 using System.Net.WebSockets;
 using System.Diagnostics;
-using System.Reflection;
 using System.Threading;
-using LukeBot.Config;
-using LukeBot.Communication;
-using LukeBot.Communication.Impl;
-using LukeBot.Services;
 using LukeBot.Twitch;
 using LukeBot.Twitch.Impl;
-using LukeBot.User;
-using LukeBot.User.Impl;
 
 
 namespace LukeBot.Tests.Twitch.Impl
 {
-    /**
-     * Additional attribute for EventSub tests. Will attempt to find twitch.exe in PATH and, if
-     * located, will attempt to call `twitch help` to make sure this is the tool we need.
-     *
-     * Failure to locate Twitch CLI in PATH (or a different unrelated binary) will cause the test
-     * method to be skipped.
-     */
-    public class TestMethodSkippedWithoutTwitchCLIAttribute: IgnorableTestMethodAtribute
-    {
-        private static string mTwitchCLIFullPath = null;
-
-        public static string GetCLIPath()
-        {
-            return mTwitchCLIFullPath;
-        }
-
-        private bool IsBinaryActuallyTwitchCLI(string path)
-        {
-            ProcessStartInfo startInfo = new();
-            startInfo.FileName = path;
-            startInfo.Arguments = "help";
-            startInfo.UseShellExecute = false;
-            startInfo.RedirectStandardOutput = true;
-            startInfo.CreateNoWindow = true;
-
-            Process twitchCLI = new Process();
-            twitchCLI.StartInfo = startInfo;
-
-            try
-            {
-                twitchCLI.Start();
-                string firstLine = twitchCLI.StandardOutput.ReadLine();
-                if (!firstLine.Contains("A simple CLI tool for the New Twitch API"))
-                    return false;
-                else
-                    return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        protected override bool ShouldIgnore(ITestMethod testMethod)
-        {
-            if (mTwitchCLIFullPath == null)
-            {
-                // test if twitch binary exists in PATH
-                string str = Environment.GetEnvironmentVariable("PATH");
-                if (str == null)
-                    return true;
-
-                string twitchBinaryName = "twitch";
-                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-                    twitchBinaryName += ".exe";
-
-                string[] paths = str.Split(System.IO.Path.PathSeparator);
-                foreach (string path in paths)
-                {
-                    string fullPath = System.IO.Path.Combine(path, twitchBinaryName);
-                    if (File.Exists(fullPath) && IsBinaryActuallyTwitchCLI(fullPath))
-                    {
-                        mTwitchCLIFullPath = fullPath;
-                        return false;
-                    }
-                }
-
-                // not found, fill in empty string
-                mTwitchCLIFullPath = "";
-                return true;
-            }
-
-            if (mTwitchCLIFullPath.Length > 0)
-                return false;
-            else
-                return true;
-        }
-    }
-
     /**
      * EventSub tests class.
      *
@@ -108,7 +20,7 @@ namespace LukeBot.Tests.Twitch.Impl
      * Instructions to download the tool can be found here:
      *   https://github.com/twitchdev/twitch-cli/tree/main#download
      *
-     * If Twitch CLI tool is not found in PATH at test runtime, all tests will be skipped.
+     * If Twitch CLI tool is not found in PATH at test runtime all tests will be skipped.
      *
      * Tests can run in two ways, which is chosen automatically by the fixture:
      *  - As-is - Test class will setup its own mock Twitch WebSocket server and use it for testing.
@@ -125,7 +37,7 @@ namespace LukeBot.Tests.Twitch.Impl
      * calling Twitch CLI (ex. reconnect or specific events).
      */
     [TestClass]
-    public class EventSubTests
+    public class EventSubTests: TwitchTestBase
     {
         private enum TwitchWSStatus
         {
@@ -136,32 +48,11 @@ namespace LukeBot.Tests.Twitch.Impl
 
         private static Process mTwitchWSProcess;
         private static TwitchWSStatus mTwitchWSStatus = TwitchWSStatus.Unknown;
-        private static readonly string EVENT_SUB_TEST_USER = "testUserEventSub";
-        private static readonly string TWITCH_MOCK_USERID = "420691234";
-        private static readonly string TWITCH_MOCK_LOGIN = "verygoodstreamer";
-        private static readonly string TWITCH_MOCK_URI = "ws://127.0.0.1:8080/ws";
+
         private static readonly string EVENT_SUB_TEST_REDEMPTION_USER = "chatter";
         private static readonly string EVENT_SUB_TEST_REDEMPTION_ID = "thisisatestid";
         private static readonly string EVENT_SUB_TEST_REDEMPTION_NAME = "Test reward";
         private static readonly int EVENT_SUB_TEST_REDEMPTION_COST = 420;
-
-        private static IEventService eventService = null;
-        private static IUserService userService = null;
-        private static IUserContext testUserContext = null;
-
-        private static API.Twitch.GetUserData mockUserData = new ()
-        {
-            broadcaster_type = "partner",
-            description = "fake streamer lol",
-            id = TWITCH_MOCK_USERID,
-            login = TWITCH_MOCK_LOGIN,
-            display_name = TWITCH_MOCK_LOGIN,
-            type = "",
-            view_count = 300,
-            email = "streamer@streamers.paradise",
-            created_at = DateTime.Now
-        };
-        private static TwitchUserIdentity mockIdentity = new(mockUserData);
 
         private EventSubClient es = null;
 
@@ -249,27 +140,18 @@ namespace LukeBot.Tests.Twitch.Impl
         [ClassInitialize]
         static public void EventSub_Initialize(TestContext context)
         {
-            // Needed to cause LukeBot.Twitch.Common assembly to load, which is
-            // required by EventSystem. Warnings suppressed for that part.
-            #pragma warning disable 0168
-            TwitchChannelPointsRedemptionArgs args;
-            #pragma warning restore 0168
+            InitializeTestClass();
+        }
 
-            // EventSub needs config for twitch.api_endpoint reference
-            // This is to access mock Twitch API set up by Twitch CLI
-            // and test subscriptions
-            Conf.Initialize(Constants.TEST_PROPS_DATA_FILE);
+        [ClassCleanup]
+        static public void EventSub_Teardown()
+        {
+            if (mTwitchWSProcess != null && mTwitchWSStatus == TwitchWSStatus.Own)
+            {
+                mTwitchWSProcess.Kill();
+            }
 
-            eventService = EventService.Create();
-            Service.Register(eventService);
-
-            userService = UserService.Create();
-            userService.CreateNewUser(EVENT_SUB_TEST_USER); // creates EventService user-specific part
-            testUserContext = userService.GetUser(EVENT_SUB_TEST_USER);
-
-            eventService.User(EVENT_SUB_TEST_USER).AddEventDispatcher(
-                global::LukeBot.Twitch.Utils.DispatcherNameForUser(testUserContext), EventDispatcherType.SubscriberQueued
-            );
+            CleanupTestClass();
         }
 
         [TestInitialize]
@@ -321,7 +203,7 @@ namespace LukeBot.Tests.Twitch.Impl
         {
             AutoResetEvent notificationReceivedEvent = new(false);
             bool castedSuccessfully = false;
-            eventService.User(EVENT_SUB_TEST_USER).Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Subscribe((e, a) =>
+            eventService.User(TWITCH_TEST_USER).Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Subscribe((e, a) =>
             {
                 TwitchChannelPointsRedemptionArgs args = a as TwitchChannelPointsRedemptionArgs;
                 castedSuccessfully = (args != null);
@@ -382,7 +264,7 @@ namespace LukeBot.Tests.Twitch.Impl
             bool correctCost = false;
             bool correctTitle = false;
 
-            eventService.User(EVENT_SUB_TEST_USER).Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Subscribe((e, a) =>
+            eventService.User(TWITCH_TEST_USER).Event(Events.TWITCH_CHANNEL_POINTS_REDEMPTION).Subscribe((e, a) =>
             {
                 TwitchChannelPointsRedemptionArgs args = a as TwitchChannelPointsRedemptionArgs;
 
@@ -436,17 +318,6 @@ namespace LukeBot.Tests.Twitch.Impl
         public void EventSub_Generators()
         {
             // ...
-        }
-
-        [ClassCleanup]
-        static public void EventSub_Teardown()
-        {
-            if (mTwitchWSProcess != null && mTwitchWSStatus == TwitchWSStatus.Own)
-            {
-                mTwitchWSProcess.Kill();
-            }
-
-            Service.Unregister(eventService);
         }
     }
 }

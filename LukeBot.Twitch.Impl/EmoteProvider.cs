@@ -27,7 +27,7 @@ namespace LukeBot.Twitch.Impl
             }
             catch (System.Exception e)
             {
-                Logger.Log().Error("Failed to fetch emote set for source {0}: {1} - {2}", e.GetType().ToString(), e.Message);
+                Logger.Log().Error("Failed to fetch emote set for source {0}: {1} - {2}", source.GetName(), e.GetType().ToString(), e.Message);
                 Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
             }
         }
@@ -64,7 +64,7 @@ namespace LukeBot.Twitch.Impl
                 }
                 catch (System.Exception e)
                 {
-                    Logger.Log().Error("Failed to fetch emote set for source {0}: {1} - {2}", e.GetType().ToString(), e.Message);
+                    Logger.Log().Error("Failed to fetch emote set for source {0}: {1} - {2}", source.GetName(), e.GetType().ToString(), e.Message);
                     Logger.Log().Trace("Stack trace:\n{0}", e.StackTrace);
                 }
             }

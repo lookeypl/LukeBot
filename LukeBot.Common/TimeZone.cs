@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace LukeBot.Common
 {
@@ -10,5 +11,11 @@ namespace LukeBot.Common
         DST_ALIAS // for abbrevs which alias into a different zone completely depending on DST ex. ET -> EST or EDT. We assume first alt is standard and second is DST.
     }
 
-    public record TimeZoneShort(string Abbreviation, string FullName, TimeSpan UTC, AlternativeKind AlternativeKind, string[] Alternatives);
+    public record TimeZoneShort(string Abbreviation, string FullName, TimeSpan UTC, AlternativeKind AlternativeKind, string[] Alternatives)
+    {
+        public string ToString(TimeOnly time)
+        {
+            return String.Format("{0} {1}", time.ToString("t", CultureInfo.InvariantCulture), Abbreviation);
+        }
+    }
 }

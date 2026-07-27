@@ -42,5 +42,10 @@ namespace LukeBot.Twitch.Impl
         {
             throw new System.NotImplementedException();
         }
+
+        public string GetName()
+        {
+            return "BTTV";
+        }
     }
 }
